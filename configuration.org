@@ -146,34 +146,79 @@ And these are some general keybindings I like
     ('(normal visual) "gr" 'eval-region))
 #+end_src
 
+*** Commenter
+
+#+begin_src elisp
+  (use-package evil-nerd-commenter
+    :config
+    (evilnc-default-hotkeys))
+#+end_src
+
+** Theme
+#+begin_src elisp
+     ;; (load-theme 'wombat t)
+  (use-package doom-themes
+    :disabled
+    :config
+    ;; Global settings (defaults)
+    (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+          doom-themes-enable-italic t) ; if nil, italics is universally disabled
+    (load-theme 'doom-tomorrow-night t)
+
+    ;; Enable flashing mode-line on errors
+    (doom-themes-visual-bell-config)
+
+    ;; Enable custom neotree theme (all-the-icons must be installed!)
+    (doom-themes-neotree-config)
+    ;; or for treemacs users
+    (setq doom-themes-treemacs-theme "doom-colors") ; use the colorful treemacs theme
+    (doom-themes-treemacs-config)
+
+    ;; Corrects (and improves) org-mode's native fontification.
+    (doom-themes-org-config))
+#+end_src
+
 ** NANO
 
 #+begin_src elisp
-(use-package nano
-  :defer t
-  :elpaca (nano :host github
-                :repo "rougier/nano-emacs")
-  :init
-  ;; Add nano to load path
-  (add-to-list 'load-path (locate-user-emacs-file "elpaca/builds/nano-emacs"))
+  (use-package nano
+    :defer t
+    :elpaca (nano :host github
+                  :repo "rougier/nano-emacs")
+    :init
+    (setq nano-font-size 13)
+    ;; Add nano to load path
+    (add-to-list 'load-path (locate-user-emacs-file "elpaca/builds/nano-emacs"))
 
-  ;; (require 'nano-layout)
-  (require 'nano-faces)
-  (require 'nano-theme)
-  ;; (require 'nano-theme-dark)
+    ;; (require 'nano-layout)
+    (require 'nano-base-colors)
+    (require 'nano-faces)
+    (require 'nano-theme)
 
-  ;; (nano-theme-set-dark)
-  (call-interactively 'nano-refresh-theme)
+    ;; (require 'nano-theme-dark)
+    ;; (nano-theme-set-dark)
 
-  ;; ;; (require 'nano-defaults)
-  (require 'nano-modeline))
+    ;; Turns out [[https://www.colorhexa.com/][colorhexa]] is a great resource
+    ;; for finding colors that work well together.
+    (setq frame-background-mode 'dark
+          nano-color-foreground "#e3ccb8" ;; Snow Storm 3  / nord  6
+          nano-color-background "#212121" ;; Polar Night -1 / nord  0
+          nano-color-highlight  "#bc8556" ;; Polar Night 0 / nord  1
+          nano-color-critical   "#EBCB8B";; Aurora        / nord 11
+          nano-color-salient    "#81A1C1";; Frost         / nord  9
+          nano-color-strong     "#ddc2aa";; Snow Storm 2  / nord  6
+          nano-color-popout     "#D08770";; Aurora        / nord 12
+          nano-color-subtle     "#2e2e2e";; Polar Night 1 / nord  2
+          nano-color-faded      "#c79972";;
+          ;; to allow for toggling of the themes.
+          nano-theme-var "dark")
+
+   (call-interactively 'nano-refresh-theme)
+
+      ;; ;; (require 'nano-defaults)
+   (require 'nano-modeline))
 
 #+end_src
-** Theme
-#+begin_src elisp
-(load-theme 'wombat t)
-#+end_src
-
 ** Olivetti
 #+begin_src elisp
 (use-package olivetti
@@ -235,13 +280,29 @@ Show keybinds and doc-strings in the M-x ivy list
 A better help buffer
 #+begin_src elisp
   (use-package helpful
+    :custom
+    (counsel-describe-function-function #'helpful-callable)
+    (counsel-describe-variable-function #'helpful-variable)
     :general
-    ('(normal visual)
-       "SPC hv" '("describe-variable" . helpful-variable)
-       "SPC hf" '("describe-function" . helpful-callable)
-       "SPC hk" '("describe-key" . helpful-key))
-    ('normal "K" 'helpful-at-point))
+    ('normal "K" 'helpful-at-point)
+    :bind
+      ([remap describe-function] . counsel-describe-function)
+      ([remap describe-variable] . counsel-describe-variable)
+      ([remap describe-key] . helpful-key)
+      ([remap describe-command] . helpful-command))
 #+end_src
+
+Some 'helpful' keybinds
+
+#+begin_src elisp
+  (general-def '(normal visual)
+    "SPC hp" 'describe-package
+    "SPC ht" 'describe-theme
+    "SPC hv" 'describe-variable
+    "SPC hf" 'describe-function
+    "SPC hk" 'describe-key)
+#+end_src
+
 ** Which-key
 #+begin_src elisp
   (use-package which-key
@@ -266,6 +327,14 @@ A better help buffer
 #+begin_src elisp
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
+#+end_src
+** Rainbow mode
+Visualize the colors of color codes
+
+#+begin_src elisp
+  (use-package rainbow-mode
+    :config
+    (rainbow-mode 1))
 #+end_src
 
 * Org
