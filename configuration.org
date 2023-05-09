@@ -1,4 +1,31 @@
 
+* Sane defaults
+These are the defaults that I deem sane, and that should set before anything else.
+#+begin_src elisp
+  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)   ;; esc quits the current action
+
+  (setq auto-revert-interval 1            ; Refresh buffers fast
+	default-input-method "TeX"        ; Use TeX when toggling input method
+	echo-keystrokes 0.1               ; Show keystrokes asap
+	frame-inhibit-implied-resize 1    ; Don't resize frame implicitly
+	inhibit-startup-screen t          ; No splash screen please
+	initial-scratch-message nil       ; Clean scratch buffer
+	recentf-max-saved-items 10000     ; Show more recent files
+	ring-bell-function 'ignore        ; Quiet
+	scroll-margin 1                   ; Space between cursor and top/bottom
+	sentence-end-double-space nil)     ; No double space
+
+  (dolist (mode '(tool-bar-mode
+		  scroll-bar-mode
+		  menu-bar-mode))
+    (funcall mode 0))
+
+  (dolist (mode '(global-auto-revert-mode))
+    (funcall mode t))
+
+  (set-fringe-mode 10)
+#+end_src
+
 * Elpaca
 Install elpaca
 
@@ -53,14 +80,143 @@ Enable elpaca use-package support
 
 ;; Block until current queue processed.
 (elpaca-wait)
+
+(require 'bind-key)
  #+end_src
 
-
+ #+begin_src elisp
+(use-package use-package-ensure-system-package)
+(elpaca-wait)
+ #+end_src
 * Look and feel
+** General
+Yes, the package is called general. It's a keybinding framework.
+
+#+begin_src elisp
+(use-package general
+  :commands general-def)
+(elpaca-wait)
+#+end_src
+
+** Top level keybindings
+
+#+begin_src elisp
+(general-def 'normal "SPC t" '(:ignore t :which-key "toggle")
+                     "SPC h" '(:ignore t :which-key "help")
+                     "SPC o" '(:ignore t :which-key "open"))
+#+end_src
+
 ** Evil mode
 
 #+begin_src elisp
 (use-package evil
-  :ensure t
   :init (evil-mode 1))
 #+end_src
+** NANO
+
+#+begin_src elisp
+(use-package nano
+  :defer t
+  :elpaca (nano :host github
+                :repo "rougier/nano-emacs")
+  :init
+  ;; Add nano to load path
+  (add-to-list 'load-path (locate-user-emacs-file "elpaca/builds/nano-emacs"))
+
+  ;; (require 'nano-layout)
+  (require 'nano-faces)
+  (require 'nano-theme)
+  ;; (require 'nano-theme-dark)
+
+  ;; (nano-theme-set-dark)
+  (call-interactively 'nano-refresh-theme)
+
+  ;; ;; (require 'nano-defaults)
+  (require 'nano-modeline))
+
+#+end_src
+** Theme
+#+begin_src elisp
+(load-theme 'wombat t)
+#+end_src
+
+** Olivetti
+#+begin_src elisp
+(use-package olivetti
+  :general
+  ('normal "SPC t o" 'olivetti-mode))
+#+end_src
+* Misc
+** Ivy
+Ivy is a completion framework, which replaces the default Emacs
+completion framework. It among other things provides a fuzzy search
+and completion alternatives.
+
+#+begin_src elisp
+(use-package ivy
+ :config
+ (ivy-mode 1))
+#+end_src
+** Copilot
+#+begin_src elisp
+(use-package copilot
+  :elpaca (:host github
+           :repo "zerolfx/copilot.el"
+           :main nil
+           :files ("dist" "*.el"))
+  :ensure-system-package (nodejs)
+  :config
+  (global-copilot-mode)
+  :general
+  ('normal
+        "SPC ta" 'global-copilot-mode)
+
+  :bind (("C-TAB" . 'copilot-accept-completion-by-word)
+         ("C-<tab>" . 'copilot-accept-completion-by-word)
+         :map copilot-completion-map
+         ("<tab>" . 'copilot-accept-completion)
+         ("TAB" . 'copilot-accept-completion)))
+#+end_src
+
+#+RESULTS:
+** Editorconfig
+#+begin_src elisp
+(use-package editorconfig
+  :commands editorconfig-mode)
+#+end_src
+** Helpful
+A better help buffer
+#+begin_src elisp
+(use-package helpful
+  :general
+  ('normal "SPC hv" 'helpful-variable))
+#+end_src
+** Which-key
+#+begin_src elisp
+(use-package which-key
+  :defer 3
+  :config
+  (which-key-mode))
+#+end_src
+** Wakatime
+
+#+begin_src elisp
+  (use-package wakatime-mode
+    :defer 5
+    :init (global-wakatime-mode)
+    :config
+    (setq wakatime-disable-on-error t)
+    (setq wakatime-cli-path "~/.wakatime/wakatime-cli"))
+#+end_src
+
+* Org
+** Evil-org
+#+begin_src elisp
+  (use-package evil-org
+    :after org
+    :hook (org-mode .  evil-org-mode)
+    :config
+    (require 'evil-org-agenda)
+    (evil-org-agenda-set-keys))
+#+end_src
+
