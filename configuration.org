@@ -287,10 +287,20 @@ icon fonts.
 ** Magit
 #+begin_src elisp
   (use-package magit
+    :ensure-system-package
+    ((ssh . openssh)
+     (git . git))
     :custom
     (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
     :general
     (oskah/leader-keys "gg" 'magit-status))
+#+end_src
+** Forge
+#+begin_src elisp
+  (use-package forge
+    :after magit
+    :config
+    (setq auth-sources '("~/.authinfo")))
 #+end_src
 ** Projectile
 #+begin_src elisp
