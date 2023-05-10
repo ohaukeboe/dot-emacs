@@ -9,7 +9,6 @@ These are the defaults that I deem sane, and that should set before anything els
 
   (setq auto-revert-interval 1            ; Refresh buffers fast
         display-line-numbers-type 'relative
-        visible-bell t
         default-input-method "TeX"        ; Use TeX when toggling input method
         echo-keystrokes 0.1               ; Show keystrokes asap
         frame-inhibit-implied-resize 1    ; Don't resize frame implicitly
@@ -36,16 +35,23 @@ These are the defaults that I deem sane, and that should set before anything els
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
   (fset 'yes-or-no-p 'y-or-n-p)
-
   (set-fringe-mode 10)
+
+
 #+end_src
 
 Some variables are buffer-local, and should therefore be set using ~setq-default~
 in order to set them globally.
 
 #+begin_src elisp
-  (setq-default indent-tabs-mode nil   ; Use spaces instead of tabs
-                tab-width 4)           ; Tab width
+  (setq-default indent-tabs-mode nil              ; Use spaces instead of tabs
+                tab-width 4                       ; Smaller tabs
+                fill-column 80                    ; Maximum line width
+                truncate-lines t                  ; Don't fold lines
+                split-width-threshold 160         ; Split verticly by default
+                split-height-threshold nil        ; Split verticly by default
+                frame-resize-pixelwise t          ; Fine-grained frame resize
+                auto-fill-function 'do-auto-fill) ; Auto-fill-mode everywhere
 #+end_src
 
 * Elpaca
@@ -213,6 +219,12 @@ And these are some general keybindings I like
     ";" '("eval-expression" . pp-eval-expression)
     "wv" '(evil-window-vsplit :which-key "split vertically")
     "wh" '(evil-window-split :which-key "split horizontally"))
+
+
+  ;; Scale text
+  (general-def 'normal
+    "C-=" 'text-scale-increase
+    "C--" 'text-scale-decrease)
 #+end_src
 
 * Look and feel
@@ -236,21 +248,18 @@ And these are some general keybindings I like
     (add-to-list 'default-frame-alist
                  '(internal-border-width . 10))
 
-    ;; (require 'nano-theme-dark)
-    ;; (nano-theme-set-dark)
-
     ;; Turns out [[https://www.colorhexa.com/][colorhexa]] is a great resource
     ;; for finding colors that work well together.
     (setq frame-background-mode 'dark
-          nano-color-foreground "#e8d6c6" ;; Snow Storm 3  / nord  6
-          nano-color-background "#171717" ;; Polar Night -1 / nord  0
-          nano-color-highlight  "#c79972" ;; Polar Night 0 / nord  1
-          nano-color-critical   "#EBCB8B";; Aurora        / nord 11
-          nano-color-salient    "#aac5dd";; Frost         / nord  9
-          nano-color-strong     "#e3ccb8";; Snow Storm 2  / nord  6
-          nano-color-popout     "#D08770";; Aurora        / nord 12
-          nano-color-subtle     "#212121";; Polar Night 1 / nord  2
-          nano-color-faded      "#c79972";;
+          nano-color-foreground "#e8d6c6"
+          nano-color-background "#171717"
+          nano-color-highlight  "#c79972"
+          nano-color-critical   "#EBCB8B"
+          nano-color-salient    "#aac5dd"
+          nano-color-strong     "#e3ccb8"
+          nano-color-popout     "#c77276"
+          nano-color-subtle     "#212121"
+          nano-color-faded      "#c79972"
           ;; to allow for toggling of the themes.
           nano-theme-var "dark")
 
@@ -258,7 +267,6 @@ And these are some general keybindings I like
 
       ;; ;; (require 'nano-defaults)
    (require 'nano-modeline))
-
 #+end_src
 
 ** All the icons
@@ -275,6 +283,80 @@ icon fonts.
   :general
   (oskah/leader-keys "to" 'olivetti-mode))
 #+end_src
+* Project management
+** Magit
+#+begin_src elisp
+  (use-package magit
+    :custom
+    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+    :general
+    (oskah/leader-keys "gg" 'magit-status))
+#+end_src
+** Projectile
+#+begin_src elisp
+  (use-package projectile
+    :init
+    (projectile-mode 1)
+    :custom
+    (projectile-completion-system 'ivy)
+    :general
+    (oskah/leader-keys "p" 'projectile-command-map)
+    :init
+    (when (file-directory-p "~/projects")
+      (setq projectile-project-search-path '("~/projects"))))
+#+end_src
+*** Projectile counsel
+#+begin_src elisp
+  (use-package counsel-projectile
+    :after (counsel projectile)
+    :ensure-system-package (rg . ripgrep)
+    :config
+    (counsel-projectile-mode))
+#+end_src
+* Programming
+** Rainbow delimiters
+#+begin_src elisp
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+#+end_src
+** Rainbow mode
+Visualize the colors of color codes
+
+#+begin_src elisp
+  (use-package rainbow-mode
+    :hook prog-mode)
+#+end_src
+
+* Org
+** Evil-org
+#+begin_src elisp
+  (use-package evil-org
+    :after org
+    :hook (org-mode .  evil-org-mode)
+    :config
+    (require 'evil-org-agenda)
+    (evil-org-agenda-set-keys))
+#+end_src
+
+** Org
+#+begin_src elisp
+  (use-package org
+    :elpaca nil
+    :general
+    (oskah/leader-keys org-mode-map "m '" 'org-edit-special))
+#+end_src
+
+** Org-modern
+
+#+begin_src elisp
+  (use-package org-modern
+    :hook (org-mode . org-modern-mode)
+    :after org
+    :custom
+    (org-modern-priority nil)
+    (org-modern-table nil))
+#+end_src
+
 * Misc
 ** Ivy
 Ivy is a completion framework, which replaces the default Emacs
@@ -375,80 +457,3 @@ Some 'helpful' keybinds
     (setq wakatime-disable-on-error t)
     (setq wakatime-cli-path "~/.wakatime/wakatime-cli"))
 #+end_src
-* Project management
-** Magit
-#+begin_src elisp
-  (use-package magit
-    :custom
-    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
-    :general
-    (oskah/leader-keys "gg" 'magit-status))
-#+end_src
-** Projectile
-#+begin_src elisp
-  (use-package projectile
-    :init
-    (projectile-mode 1)
-    :custom
-    (projectile-completion-system 'ivy)
-    :general
-    (oskah/leader-keys "p" 'projectile-command-map)
-    :init
-    (when (file-directory-p "~/projects")
-      (setq projectile-project-search-path '("~/projects"))))
-#+end_src
-*** Projectile counsel
-#+begin_src elisp
-  (use-package counsel-projectile
-    :after (counsel projectile)
-    :ensure-system-package (rg . ripgrep)
-    :config
-    (counsel-projectile-mode))
-#+end_src
-* Programming
-** Rainbow delimiters
-#+begin_src elisp
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
-#+end_src
-** Rainbow mode
-Visualize the colors of color codes
-
-#+begin_src elisp
-  (use-package rainbow-mode
-    :config
-    (rainbow-mode 1))
-#+end_src
-
-* Org
-** Evil-org
-#+begin_src elisp
-  (use-package evil-org
-    :after org
-    :hook (org-mode .  evil-org-mode)
-    :config
-    (require 'evil-org-agenda)
-    (evil-org-agenda-set-keys))
-#+end_src
-
-** Org
-#+begin_src elisp
-  ;; (use-package org
-  ;;   :ensure nil
-  ;;   :general
-  ;;   (oskah/leader-keys org-mode-map "m '" 'org-edit-special))
-  (oskah/leader-keys org-mode-map "m '" 'org-edit-special)
-#+end_src
-
-** Org-modern
-
-#+begin_src elisp
-  (use-package org-modern
-    :hook (org-mode . org-modern-mode)
-    :after org
-    :custom
-    (org-modern-priority nil)
-    (org-modern-table nil))
-#+end_src
-
-
