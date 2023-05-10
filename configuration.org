@@ -1,5 +1,6 @@
 #+title: My emacs configuration
 #+startup: fold
+#+property: header-args:elisp :tangle ./init.el
 
 * Sane defaults
 These are the defaults that I deem sane, and that should set before anything else.
@@ -7,17 +8,17 @@ These are the defaults that I deem sane, and that should set before anything els
 #+begin_src elisp
   (global-set-key (kbd "<escape>") 'keyboard-escape-quit)   ;; esc quits the current action
 
-  (setq auto-revert-interval 1            ; Refresh buffers fast
-        display-line-numbers-type 'relative
-        default-input-method "TeX"        ; Use TeX when toggling input method
-        echo-keystrokes 0.1               ; Show keystrokes asap
-        frame-inhibit-implied-resize 1    ; Don't resize frame implicitly
-        inhibit-startup-screen t          ; No splash screen please
-        initial-scratch-message nil       ; Clean scratch buffer
-        recentf-max-saved-items 10000     ; Show more recent files
-        ring-bell-function 'ignore        ; Quiet
-        scroll-margin 1                   ; Space between cursor and top/bottom
-        sentence-end-double-space nil)     ; No double space
+  (setq auto-revert-interval 1              ; Refresh buffers fast
+        display-line-numbers-type 'relative ; Show relative line numbers
+        default-input-method "TeX"          ; Use TeX when toggling input method
+        echo-keystrokes 0.1                 ; Show keystrokes asap
+        frame-inhibit-implied-resize 1      ; Don't resize frame implicitly
+        inhibit-startup-screen t            ; No splash screen please
+        initial-scratch-message nil         ; Clean scratch buffer
+        recentf-max-saved-items 10000       ; Show more recent files
+        ring-bell-function 'ignore          ; Quiet
+        scroll-margin 1                     ; Space between cursor and top/bottom
+        sentence-end-double-space nil)      ; No double space
 
   (dolist (mode '(tool-bar-mode
                   scroll-bar-mode
@@ -135,7 +136,6 @@ Yes, the package is called general. It's a keybinding framework.
 #+end_src
 
 ** Evil
-
 *** Evil mode
 
 #+begin_src elisp
@@ -146,19 +146,12 @@ Yes, the package is called general. It's a keybinding framework.
     (evil-want-keybinding nil)
     (evil-want-C-u-scroll t)
     (evil-want-C-i-jump t)
+    (evil-undo-system 'undo-tree)
     :general
     ('(normal visual) "gr" 'eval-region)
+    (oskah/leader-keys "w" 'evil-window-map)
     :config
     (evil-global-set-key 'normal (kbd "C-g") 'evil-force-normal-state)
-    (evil-global-set-key 'normal (kbd "C-h") 'evil-window-left)
-    (evil-global-set-key 'normal (kbd "C-j") 'evil-window-down)
-    (evil-global-set-key 'normal (kbd "C-k") 'evil-window-up)
-    (evil-global-set-key 'normal (kbd "C-l") 'evil-window-right)
-
-    (evil-global-set-key 'normal (kbd "C-S-h") 'evil-window-move-far-left)
-    (evil-global-set-key 'normal (kbd "C-S-j") 'evil-window-move-very-bottom)
-    (evil-global-set-key 'normal (kbd "C-S-k") 'evil-window-move-very-top)
-    (evil-global-set-key 'normal (kbd "C-S-l") 'evil-window-move-far-right)
 
     (evil-global-set-key 'normal (kbd "j") 'evil-next-visual-line)
     (evil-global-set-key 'normal (kbd "k") 'evil-previous-visual-line)
@@ -182,6 +175,74 @@ Yes, the package is called general. It's a keybinding framework.
   (use-package evil-nerd-commenter
     :config
     (evilnc-default-hotkeys))
+#+end_src
+*** Machit
+Enables pressing =%= to jump between matching pairs. Despite the name, It does
+not depend on evil mode. I have it set to =m= as well.
+
+#+begin_src elisp
+  (use-package evil-matchit
+    :custom
+    (evilmi-shortcut "m")
+    :config
+    (global-evil-matchit-mode 1))
+#+end_src
+*** Surround
+
+#+begin_src elisp
+  (use-package evil-surround
+    :after evil
+    :config
+    (global-evil-surround-mode 1))
+#+end_src
+*** Numbers
+
+#+begin_src elisp
+  (use-package evil-numbers
+    :general
+    ('(normal visual)
+      "g=" 'evil-numbers/inc-at-pt-incremental
+      "g-" 'evil-numbers/dec-at-pt
+      "g+" 'evil-numbers/inc-at-pt))
+#+end_src
+*** Goggles
+Add visual hints to ceirtain evil opperations such as yank.
+
+#+begin_src elisp
+  (use-package evil-goggles
+    :custom
+    (evil-goggles-enable-delete nil)
+    :config
+    (evil-goggles-mode))
+#+end_src
+*** Exchange
+
+#+begin_src elisp
+  (use-package evil-exchange
+    :config
+    (evil-exchange-install))
+#+end_src
+*** Args
+
+#+begin_src elisp
+  (use-package evil-args
+    :ensure t
+    :after evil
+    :config
+    (define-key evil-inner-text-objects-map "a" 'evil-inner-arg)
+    (define-key evil-outer-text-objects-map "a" 'evil-outer-arg)
+    (define-key evil-normal-state-map "L" 'evil-forward-arg)
+    (define-key evil-normal-state-map "H" 'evil-backward-arg)
+    (define-key evil-motion-state-map "L" 'evil-forward-arg)
+    (define-key evil-motion-state-map "H" 'evil-backward-arg)
+    (define-key evil-normal-state-map "K" 'evil-jump-out-args))
+#+end_src
+*** Lion
+
+#+begin_src elisp
+  (use-package evil-lion
+    :config
+    (evil-lion-mode))
 #+end_src
 
 ** Hydra
@@ -338,6 +399,47 @@ Visualize the colors of color codes
 #+end_src
 
 * Org
+** Org
+#+begin_src elisp
+  (use-package org
+    :elpaca nil
+    :general
+    (oskah/leader-keys org-mode-map "m '" 'org-edit-special)
+    :custom
+    (org-hide-emphasis-markers t)
+    (org-ellipsis " ↴")
+
+    :config
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((emacs-lisp . t)
+       (python . t)))
+
+    (defun oh/org-babel-tangle-config ()
+      (when (string-equal (buffer-file-name)
+                          (expand-file-name
+                           (locate-user-emacs-file "configuration.org")))
+        ;; Dynamic scoping to the rescue
+        (let ((org-confirm-babel-evaluate nil))
+          (org-babel-tangle))))
+
+    (add-hook 'org-mode-hook (lambda ()
+                               (add-hook 'after-save-hook #'oh/org-babel-tangle-config))))
+
+#+end_src
+** Org tempo
+  Allows typing e.g. `<elTAB` in order to create elisp code block
+  
+    #+begin_src elisp
+  (use-package org-tempo
+    :elpaca nil
+    :after org
+    :config
+    (add-to-list 'org-structure-template-alist '("sh" . "src sh"))
+    (add-to-list 'org-structure-template-alist '("el" . "src elisp"))
+    (add-to-list 'org-structure-template-alist '("py" . "src python")))
+    #+end_src
+    
 ** Evil-org
 #+begin_src elisp
   (use-package evil-org
@@ -346,14 +448,6 @@ Visualize the colors of color codes
     :config
     (require 'evil-org-agenda)
     (evil-org-agenda-set-keys))
-#+end_src
-
-** Org
-#+begin_src elisp
-  (use-package org
-    :elpaca nil
-    :general
-    (oskah/leader-keys org-mode-map "m '" 'org-edit-special))
 #+end_src
 
 ** Org-modern
@@ -365,6 +459,25 @@ Visualize the colors of color codes
     :custom
     (org-modern-priority nil)
     (org-modern-table nil))
+#+end_src
+
+** Appear
+
+#+begin_src elisp
+  (use-package org-appear
+    :hook (org-mode . org-appear-mode)
+    :custom
+    (setq! org-appear-inside-latex t)
+    (setq! org-appear-autosubmarkers t))
+#+end_src
+
+** Fragtog
+
+#+begin_src elisp
+  (use-package org-fragtog
+    :ensure-system-package
+      ((latex . texlive-most))
+    :hook (org-mode . org-fragtog-mode))
 #+end_src
 
 * Misc
@@ -386,6 +499,23 @@ Show keybinds and doc-strings in the M-x ivy list
     :config
     (ivy-rich-mode 1))
 #+end_src
+** Eshell-fish
+
+#+begin_src elisp
+  (use-package fish-completion
+    :if (executable-find "fish")
+    :config
+    (global-fish-completion-mode))
+#+end_src
+** Undo-tree
+
+#+begin_src elisp
+  (use-package undo-tree
+    :diminish undo-tree-mode
+    :config
+    (global-undo-tree-mode))
+#+end_src
+
 ** Counsel
 #+begin_src elisp
   (use-package counsel
@@ -406,7 +536,7 @@ Show keybinds and doc-strings in the M-x ivy list
     :ensure-system-package (node . nodejs)
     :hook (prog-mode . copilot-mode)
     :general
-    (oskah/leader-keys "ta" 'global-copilot-mode)
+    (oskah/leader-keys "ta" 'copilot-mode)
 
     :bind (("C-TAB" . 'copilot-accept-completion-by-word)
            ("C-<tab>" . 'copilot-accept-completion-by-word)
