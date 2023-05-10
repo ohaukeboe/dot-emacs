@@ -9,6 +9,7 @@ These are the defaults that I deem sane, and that should set before anything els
 
   (setq auto-revert-interval 1            ; Refresh buffers fast
         display-line-numbers-type 'relative
+        visible-bell t
         default-input-method "TeX"        ; Use TeX when toggling input method
         echo-keystrokes 0.1               ; Show keystrokes asap
         frame-inhibit-implied-resize 1    ; Don't resize frame implicitly
@@ -109,32 +110,22 @@ Enable elpaca use-package support
 (use-package use-package-ensure-system-package)
 (elpaca-wait)
  #+end_src
-* Look and feel
+* Keybinds
 ** General
 Yes, the package is called general. It's a keybinding framework.
 
 #+begin_src elisp
-(use-package general
-  :commands general-def)
-(elpaca-wait)
-#+end_src
+  (use-package general
+    :commands general-def
+    :init
+    (general-create-definer oskah/leader-keys
+      :states '(normal insert visual emacs)
+      :prefix "SPC"
+      :non-normal-prefix "C-SPC"))
 
-** Top level keybindings
-These are the top level keybindings, which are only used to group other
-keybindings in a logical way, and to describe them in the which-key popup.
-
-#+begin_src elisp
-  (general-def '(normal visual) "SPC m" '(:ignore t :which-key "localleader")
-                               "SPC t" '(:ignore t :which-key "toggle")
-                               "SPC h" '(:ignore t :which-key "help")
-                               "SPC o" '(:ignore t :which-key "open"))
-#+end_src
-
-And these are some general keybindings I like
-
-#+begin_src elisp
-  (general-def '(normal visual) "SPC :" '("M-x" . execute-extended-command)
-                                "SPC ;" '("eval-expression" . pp-eval-expression))
+  ;; Wait until this is setup before loading the rest of the config.
+  ;; This is needed for the =:general= flag to work.
+  (elpaca-wait)
 #+end_src
 
 ** Evil mode
@@ -142,8 +133,40 @@ And these are some general keybindings I like
 #+begin_src elisp
   (use-package evil
     :init (evil-mode 1)
+    :custom
+    (evil-want-integration t)
+    (evil-want-keybinding nil)
+    (evil-want-C-u-scroll t)
+    (evil-want-C-i-jump t)
     :general
-    ('(normal visual) "gr" 'eval-region))
+    ('(normal visual) "gr" 'eval-region)
+    :config
+    (evil-global-set-key 'normal (kbd "C-g") 'evil-force-normal-state)
+    (evil-global-set-key 'normal (kbd "C-h") 'evil-window-left)
+    (evil-global-set-key 'normal (kbd "C-j") 'evil-window-down)
+    (evil-global-set-key 'normal (kbd "C-k") 'evil-window-up)
+    (evil-global-set-key 'normal (kbd "C-l") 'evil-window-right)
+
+    (evil-global-set-key 'normal (kbd "C-S-h") 'evil-window-move-far-left)
+    (evil-global-set-key 'normal (kbd "C-S-j") 'evil-window-move-very-bottom)
+    (evil-global-set-key 'normal (kbd "C-S-k") 'evil-window-move-very-top)
+    (evil-global-set-key 'normal (kbd "C-S-l") 'evil-window-move-far-right)
+
+    (evil-global-set-key 'normal (kbd "j") 'evil-next-visual-line)
+    (evil-global-set-key 'normal (kbd "k") 'evil-previous-visual-line)
+
+    (dolist (mode '(custom-mode
+                        eshell-mode
+                        git-rebase-mode
+                        term-mode))
+            (add-to-list 'evil-emacs-state-modes mode)))
+#+end_src
+
+#+begin_src elisp
+  (use-package evil-collection
+    :after evil
+    :config
+    (evil-collection-init))
 #+end_src
 
 *** Commenter
@@ -154,28 +177,40 @@ And these are some general keybindings I like
     (evilnc-default-hotkeys))
 #+end_src
 
-** Theme
+** Hydra
 #+begin_src elisp
-     ;; (load-theme 'wombat t)
-  (use-package doom-themes
-    :disabled
+  (use-package hydra
+    :ensure t
     :config
-    ;; Global settings (defaults)
-    (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-          doom-themes-enable-italic t) ; if nil, italics is universally disabled
-    (load-theme 'doom-tomorrow-night t)
+    (defhydra hydra-text-scale (:timeout 4)
+      "scale text"
+      ("k" text-scale-increase "in")
+      ("j" text-scale-decrease "out")
+      ("r" (text-scale-set 0) "reset")
+      ("q" nil "quit" :exit t))
 
-    ;; Enable flashing mode-line on errors
-    (doom-themes-visual-bell-config)
+    (oskah/leader-keys
+      "ts" '(hydra-text-scale/body :which-key "scale text")))
+#+end_src
 
-    ;; Enable custom neotree theme (all-the-icons must be installed!)
-    (doom-themes-neotree-config)
-    ;; or for treemacs users
-    (setq doom-themes-treemacs-theme "doom-colors") ; use the colorful treemacs theme
-    (doom-themes-treemacs-config)
+* Look and feel
+** Top level keybindings
+These are the top level keybindings, which are only used to group other
+keybindings in a logical way, and to describe them in the which-key popup.
 
-    ;; Corrects (and improves) org-mode's native fontification.
-    (doom-themes-org-config))
+#+begin_src elisp
+  (oskah/leader-keys "m" '(:ignore t :which-key "localleader")
+                     "t" '(:ignore t :which-key "toggle")
+                     "b" '(:ignore t :which-key "buffer")
+                     "h" '(:ignore t :which-key "help")
+                     "o" '(:ignore t :which-key "open"))
+#+end_src
+
+And these are some general keybindings I like
+
+#+begin_src elisp
+  (oskah/leader-keys ":" '("M-x" . execute-extended-command)
+                     ";" '("eval-expression" . pp-eval-expression))
 #+end_src
 
 ** NANO
@@ -195,20 +230,23 @@ And these are some general keybindings I like
     (require 'nano-faces)
     (require 'nano-theme)
 
+    (add-to-list 'default-frame-alist
+                 '(internal-border-width . 10))
+
     ;; (require 'nano-theme-dark)
     ;; (nano-theme-set-dark)
 
     ;; Turns out [[https://www.colorhexa.com/][colorhexa]] is a great resource
     ;; for finding colors that work well together.
     (setq frame-background-mode 'dark
-          nano-color-foreground "#e3ccb8" ;; Snow Storm 3  / nord  6
-          nano-color-background "#212121" ;; Polar Night -1 / nord  0
-          nano-color-highlight  "#bc8556" ;; Polar Night 0 / nord  1
+          nano-color-foreground "#e8d6c6" ;; Snow Storm 3  / nord  6
+          nano-color-background "#171717" ;; Polar Night -1 / nord  0
+          nano-color-highlight  "#c79972" ;; Polar Night 0 / nord  1
           nano-color-critical   "#EBCB8B";; Aurora        / nord 11
-          nano-color-salient    "#81A1C1";; Frost         / nord  9
-          nano-color-strong     "#ddc2aa";; Snow Storm 2  / nord  6
+          nano-color-salient    "#aac5dd";; Frost         / nord  9
+          nano-color-strong     "#e3ccb8";; Snow Storm 2  / nord  6
           nano-color-popout     "#D08770";; Aurora        / nord 12
-          nano-color-subtle     "#2e2e2e";; Polar Night 1 / nord  2
+          nano-color-subtle     "#212121";; Polar Night 1 / nord  2
           nano-color-faded      "#c79972";;
           ;; to allow for toggling of the themes.
           nano-theme-var "dark")
@@ -219,22 +257,37 @@ And these are some general keybindings I like
    (require 'nano-modeline))
 
 #+end_src
+
+** All the icons
+It is necessary to run ~M-x all-the-icons-install-fonts~ to set up
+icon fonts.
+
+#+begin_src elisp
+  (use-package all-the-icons
+    :if (display-graphic-p))
+#+end_src
 ** Olivetti
 #+begin_src elisp
 (use-package olivetti
   :general
-  ('(normal visual) "SPC t o" 'olivetti-mode))
+  (oskah/leader-keys "to" 'olivetti-mode))
 #+end_src
 * Misc
+** Magit
+#+begin_src elisp
+  (use-package magit
+    :general
+    (oskah/leader-keys "gg" 'magit-status))
+#+end_src
 ** Ivy
 Ivy is a completion framework, which replaces the default Emacs
 completion framework. It among other things provides a fuzzy search
 and completion alternatives.
 
 #+begin_src elisp
-(use-package ivy
- :init
- (ivy-mode 1))
+  (use-package ivy
+   :init
+   (ivy-mode 1))
 #+end_src
 *** Ivy rich
 Show keybinds and doc-strings in the M-x ivy list
@@ -248,7 +301,11 @@ Show keybinds and doc-strings in the M-x ivy list
 #+begin_src elisp
   (use-package counsel
     :config
-    (counsel-mode 1))
+    (counsel-mode 1)
+    :general
+    (oskah/leader-keys
+     "bb" 'counsel-switch-buffer
+     "." 'counsel-find-file))
 #+end_src
 ** Copilot
 #+begin_src elisp
@@ -260,8 +317,7 @@ Show keybinds and doc-strings in the M-x ivy list
     :ensure-system-package (node . nodejs)
     :hook (prog-mode . copilot-mode)
     :general
-    ('(normal visual)
-          "SPC ta" 'global-copilot-mode)
+    (oskah/leader-keys "ta" 'global-copilot-mode)
 
     :bind (("C-TAB" . 'copilot-accept-completion-by-word)
            ("C-<tab>" . 'copilot-accept-completion-by-word)
@@ -295,12 +351,12 @@ A better help buffer
 Some 'helpful' keybinds
 
 #+begin_src elisp
-  (general-def '(normal visual)
-    "SPC hp" 'describe-package
-    "SPC ht" 'describe-theme
-    "SPC hv" 'describe-variable
-    "SPC hf" 'describe-function
-    "SPC hk" 'describe-key)
+  (oskah/leader-keys
+    "hp" 'describe-package
+    "ht" 'describe-theme
+    "hv" 'describe-variable
+    "hf" 'describe-function
+    "hk" 'describe-key)
 #+end_src
 
 ** Which-key
@@ -352,8 +408,7 @@ Visualize the colors of color codes
 #+begin_src elisp
   (use-package org
     :general
-    ('(normal visual)
-       org-mode-map "SPC m '" 'org-edit-special))
+    (oskah/leader-keys org-mode-map "m '" 'org-edit-special))
 #+end_src
 
 ** Org-modern
@@ -361,8 +416,10 @@ Visualize the colors of color codes
 #+begin_src elisp
   (use-package org-modern
     :hook (org-mode . org-modern-mode)
+    :after org
     :custom
     (org-modern-priority nil)
     (org-modern-table nil))
 #+end_src
+
 
