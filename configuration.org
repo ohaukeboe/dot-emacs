@@ -128,7 +128,9 @@ Yes, the package is called general. It's a keybinding framework.
   (elpaca-wait)
 #+end_src
 
-** Evil mode
+** Evil
+
+*** Evil mode
 
 #+begin_src elisp
   (use-package evil
@@ -168,7 +170,6 @@ Yes, the package is called general. It's a keybinding framework.
     :config
     (evil-collection-init))
 #+end_src
-
 *** Commenter
 
 #+begin_src elisp
@@ -193,7 +194,6 @@ Yes, the package is called general. It's a keybinding framework.
       "ts" '(hydra-text-scale/body :which-key "scale text")))
 #+end_src
 
-* Look and feel
 ** Top level keybindings
 These are the top level keybindings, which are only used to group other
 keybindings in a logical way, and to describe them in the which-key popup.
@@ -210,9 +210,12 @@ And these are some general keybindings I like
 
 #+begin_src elisp
   (oskah/leader-keys ":" '("M-x" . execute-extended-command)
-                     ";" '("eval-expression" . pp-eval-expression))
+    ";" '("eval-expression" . pp-eval-expression)
+    "wv" '(evil-window-vsplit :which-key "split vertically")
+    "wh" '(evil-window-split :which-key "split horizontally"))
 #+end_src
 
+* Look and feel
 ** NANO
 
 #+begin_src elisp
@@ -273,12 +276,6 @@ icon fonts.
   (oskah/leader-keys "to" 'olivetti-mode))
 #+end_src
 * Misc
-** Magit
-#+begin_src elisp
-  (use-package magit
-    :general
-    (oskah/leader-keys "gg" 'magit-status))
-#+end_src
 ** Ivy
 Ivy is a completion framework, which replaces the default Emacs
 completion framework. It among other things provides a fuzzy search
@@ -378,6 +375,36 @@ Some 'helpful' keybinds
     (setq wakatime-disable-on-error t)
     (setq wakatime-cli-path "~/.wakatime/wakatime-cli"))
 #+end_src
+* Project management
+** Magit
+#+begin_src elisp
+  (use-package magit
+    :custom
+    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+    :general
+    (oskah/leader-keys "gg" 'magit-status))
+#+end_src
+** Projectile
+#+begin_src elisp
+  (use-package projectile
+    :init
+    (projectile-mode 1)
+    :custom
+    (projectile-completion-system 'ivy)
+    :general
+    (oskah/leader-keys "p" 'projectile-command-map)
+    :init
+    (when (file-directory-p "~/projects")
+      (setq projectile-project-search-path '("~/projects"))))
+#+end_src
+*** Projectile counsel
+#+begin_src elisp
+  (use-package counsel-projectile
+    :after (counsel projectile)
+    :ensure-system-package (rg . ripgrep)
+    :config
+    (counsel-projectile-mode))
+#+end_src
 * Programming
 ** Rainbow delimiters
 #+begin_src elisp
@@ -406,9 +433,11 @@ Visualize the colors of color codes
 
 ** Org
 #+begin_src elisp
-  (use-package org
-    :general
-    (oskah/leader-keys org-mode-map "m '" 'org-edit-special))
+  ;; (use-package org
+  ;;   :ensure nil
+  ;;   :general
+  ;;   (oskah/leader-keys org-mode-map "m '" 'org-edit-special))
+  (oskah/leader-keys org-mode-map "m '" 'org-edit-special)
 #+end_src
 
 ** Org-modern
