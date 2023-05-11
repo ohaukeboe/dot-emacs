@@ -599,13 +599,31 @@ Show keybinds and doc-strings in the M-x ivy list
 
 #+begin_src elisp
   (use-package ivy-rich
+    :after ivy
     :config
     (ivy-rich-mode 1))
 #+end_src
+** Dired
+
+#+begin_src elisp
+  (use-package dired
+    :elpaca nil
+    :commands (dired dired-jump)
+    :custom ((dired-listing-switches "-agho --group-directories-first"))
+    :general
+    (oskah/leader-keys
+      "fd" '(dired-jump :which-key "dired jump"))
+    :general
+    ('normal 'dired-mode-map
+      "h" 'dired-up-directory
+      "l" 'dired-find-file))
+#+end_src
+
 ** Eshell-fish
 
 #+begin_src elisp
   (use-package fish-completion
+    :after eshell
     :if (executable-find "fish")
     :config
     (global-fish-completion-mode))
