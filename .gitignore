@@ -12,3 +12,5 @@
 /forge-database.sqlite
 /.configuration.org.~undo-tree~
 /ltximg/
+/init.el.rej
+/.cache/

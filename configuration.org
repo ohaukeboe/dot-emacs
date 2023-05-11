@@ -1,6 +1,5 @@
 #+title: My emacs configuration
 #+startup: fold
-#+property: header-args:elisp :tangle ./init.el
 
 * Sane defaults
 These are the defaults that I deem sane, and that should set before anything else.
@@ -397,9 +396,22 @@ Visualize the colors of color codes
   (use-package rainbow-mode
     :hook prog-mode)
 #+end_src
+** LSP
 
-* Org
+#+begin_src elisp
+  (use-package lsp-mode
+    :ensure-system-package zip
+    :commands (lsp lsp-deferred)
+    :hook ((c-mode c++-mode) . lsp-deferred)
+    :config
+    (lsp-enable-which-key-integration t))
+#+end_src
+
+** Languages
+
+* Org mode
 ** Org
+
 #+begin_src elisp
   (use-package org
     :elpaca nil
@@ -408,25 +420,13 @@ Visualize the colors of color codes
     :custom
     (org-hide-emphasis-markers t)
     (org-ellipsis " ↴")
-
     :config
     (org-babel-do-load-languages
      'org-babel-load-languages
      '((emacs-lisp . t)
-       (python . t)))
-
-    (defun oh/org-babel-tangle-config ()
-      (when (string-equal (buffer-file-name)
-                          (expand-file-name
-                           (locate-user-emacs-file "configuration.org")))
-        ;; Dynamic scoping to the rescue
-        (let ((org-confirm-babel-evaluate nil))
-          (org-babel-tangle))))
-
-    (add-hook 'org-mode-hook (lambda ()
-                               (add-hook 'after-save-hook #'oh/org-babel-tangle-config))))
-
+       (python . t))))
 #+end_src
+
 ** Org tempo
   Allows typing e.g. `<elTAB` in order to create elisp code block
   
