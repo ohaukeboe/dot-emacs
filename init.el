@@ -1,3 +1,7 @@
+;; This can be used to debug the loading of the configuration.
+;; (eval-after-load "editorconfig"
+;;   '(debug))
+
 ;; Load the configuration from the org file if it exists, otherwise load the
 ;; already tangled file.
 (let ((org-file (expand-file-name (locate-user-emacs-file "configuration.org")))

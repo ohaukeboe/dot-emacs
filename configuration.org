@@ -29,11 +29,11 @@ These are the defaults that I deem sane, and that should set before anything els
                   global-display-line-numbers-mode))
     (funcall mode t))
 
-  ;; (dolist (mode '(org-mode-hook
-  ;;                   term-mode-hook
-  ;;                   shell-mode-hook
-  ;;                   eshell-mode-hook))
-  ;;   (add-hook mode (lambda () (display-line-numbers-mode 0))))
+  (dolist (mode '(org-mode-hook
+                    term-mode-hook
+                    shell-mode-hook
+                    eshell-mode-hook))
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
   (fset 'yes-or-no-p 'y-or-n-p)
   (set-fringe-mode 10)
@@ -123,6 +123,7 @@ Yes, the package is called general. It's a keybinding framework.
 
 #+begin_src elisp
   (use-package general
+    :diminish
     :commands general-def
     :init
     (general-create-definer oskah/leader-keys
@@ -140,6 +141,7 @@ Yes, the package is called general. It's a keybinding framework.
 
 #+begin_src elisp
   (use-package evil
+    :diminish 
     :init (evil-mode 1)
     :custom
     (evil-want-integration t)
@@ -354,6 +356,7 @@ icon fonts.
 ** Olivetti
 #+begin_src elisp
   (use-package olivetti
+    :diminish
     :commands olivetti-mode
     :general
     (oskah/leader-keys "to" 'olivetti-mode))
@@ -474,6 +477,7 @@ Visualize the colors of color codes
     (setq company-backends (remove 'company-clang company-backends)))
 
   (use-package company-box
+    :diminish
     :hook (company-mode . company-box-mode))
 #+end_src
 
@@ -482,10 +486,11 @@ Visualize the colors of color codes
 
 #+begin_src elisp
   (use-package parinfer-rust-mode
-      :commands parinfer-rust-mode
-      :hook emacs-lisp-mode
-      :init
-      (setq parinfer-rust-auto-download t))
+    :diminish
+    :commands parinfer-rust-mode
+    :hook emacs-lisp-mode
+    :init
+    (setq parinfer-rust-auto-download t))
 #+end_src
 *** C
 
@@ -520,10 +525,14 @@ Visualize the colors of color codes
     :config
     (org-babel-do-load-languages
      'org-babel-load-languages
-     org-babel-load-languages)
+     org-babel-load-languages))
 
+#+end_src
 
+Make the configuration get tangled on save
 
+#+begin_src elisp
+  (with-eval-after-load 'org
     (defun oh/org-babel-tangle-config ()
       (when (string-equal (buffer-file-name)
                           (expand-file-name
@@ -578,6 +587,7 @@ to make them hidden.
 ** Evil-org
 #+begin_src elisp
   (use-package evil-org
+    :diminish
     :after org
     :hook (org-mode .  evil-org-mode)
     :config
@@ -667,7 +677,7 @@ Show keybinds and doc-strings in the M-x ivy list
 
 #+begin_src elisp
   (use-package fish-completion
-    :after eshell
+    :hook (eshell-mode . fish-completion-mode)
     :if (executable-find "fish")
     :config
     (global-fish-completion-mode))
@@ -677,7 +687,7 @@ Show keybinds and doc-strings in the M-x ivy list
 #+begin_src elisp
   (use-package undo-tree
     :defer 0
-    :diminish undo-tree-mode
+    :diminish
     :config
     (global-undo-tree-mode))
 #+end_src
@@ -695,12 +705,13 @@ Show keybinds and doc-strings in the M-x ivy list
 ** Copilot
 #+begin_src elisp
   (use-package copilot
+    :defer t
     :elpaca (:host github
              :repo "zerolfx/copilot.el"
              :main nil
              :files ("dist" "*.el"))
     :ensure-system-package (node . nodejs)
-    :hook (prog-mode . copilot-mode)
+    ;; :hook (prog-mode . copilot-mode)
     :general
     (oskah/leader-keys "ta" 'copilot-mode)
 
@@ -711,7 +722,22 @@ Show keybinds and doc-strings in the M-x ivy list
            ("TAB" . 'copilot-accept-completion)))
 #+end_src
 
-#+RESULTS:
+I don't want copilot to start on emacs startup, but I also want it to be hooked
+to ='prog-mode-hook=, which in case is run on startup. I therefore have a /nice/
+lambda expression to load hook it after emacs has loaded. I also added a small
+delay to make it easier to analyze when packages are loaded as the startup
+message is also run on ='emacs-startup-hook=..
+
+#+begin_src elisp
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (run-at-time "1 sec" nil
+                           (lambda ()
+                             (add-hook 'prog-mode-hook 'copilot-mode)
+                             (when (derived-mode-p 'prog-mode)
+                               (copilot-mode))))))
+#+end_src
+
 ** ChatGPT
 
 #+begin_src elisp
@@ -750,13 +776,16 @@ Show keybinds and doc-strings in the M-x ivy list
 
 ** Editorconfig
 #+begin_src elisp
-(use-package editorconfig
-  :commands editorconfig-mode)
+  (use-package editorconfig
+    :defer 0
+    :config
+    (editorconfig-mode 1))
 #+end_src
 ** Helpful
 A better help buffer
 #+begin_src elisp
   (use-package helpful
+    :diminish
     :custom
     (counsel-describe-function-function #'helpful-callable)
     (counsel-describe-variable-function #'helpful-variable)
