@@ -177,12 +177,11 @@ Yes, the package is called general. It's a keybinding framework.
 #+end_src
 *** Machit
 Enables pressing =%= to jump between matching pairs. Despite the name, It does
-not depend on evil mode. I have it set to =m= as well.
+not depend on evil mode.
 
 #+begin_src elisp
   (use-package evil-matchit
-    :custom
-    (evilmi-shortcut "m")
+    :after evil
     :config
     (global-evil-matchit-mode 1))
 #+end_src
@@ -267,6 +266,7 @@ keybindings in a logical way, and to describe them in the which-key popup.
 #+begin_src elisp
   (oskah/leader-keys "m" '(:ignore t :which-key "localleader")
                      "t" '(:ignore t :which-key "toggle")
+                     "f" '(:ignore t :which-key "file")
                      "b" '(:ignore t :which-key "buffer")
                      "h" '(:ignore t :which-key "help")
                      "o" '(:ignore t :which-key "open"))
@@ -275,10 +275,17 @@ keybindings in a logical way, and to describe them in the which-key popup.
 And these are some general keybindings I like
 
 #+begin_src elisp
-  (oskah/leader-keys ":" '("M-x" . execute-extended-command)
+  (oskah/leader-keys
+    ":" '("M-x" . execute-extended-command)
     ";" '("eval-expression" . pp-eval-expression)
-    "wv" '(evil-window-vsplit :which-key "split vertically")
-    "wh" '(evil-window-split :which-key "split horizontally"))
+
+    "hb" '("describe keybindings" . describe-bindings)
+    "hm" '("describe mode" . describe-mode)
+
+    ;; "wv" '(evil-window-vsplit :which-key "split vertically")
+    ;; "wh" '(evil-window-split :which-key "split horizontally")
+
+    "oe" '("open terminal" . eshell))
 
 
   ;; Scale text
@@ -339,9 +346,10 @@ icon fonts.
 #+end_src
 ** Olivetti
 #+begin_src elisp
-(use-package olivetti
-  :general
-  (oskah/leader-keys "to" 'olivetti-mode))
+  (use-package olivetti
+    :commands olivetti-mode
+    :general
+    (oskah/leader-keys "to" 'olivetti-mode))
 #+end_src
 * Project management
 ** Magit
@@ -425,14 +433,15 @@ Visualize the colors of color codes
   (use-package company
     :diminish
     :hook (prog-mode . company-mode)
-    ;;:bind
-    ;;(:map company-active-map
-          ;;("<tab>" . company-complete-selection))
-    ;;(:map lsp-mode-map
-          ;;("<tab>" . company-indent-or-complete-common))
     :custom
     (company-idle-delay 0.0)
     (company-minimum-prefix-length 1)
+    :general
+    ('company-active-map   ; Allow creating newline during completion
+     "M-RET" (lambda ()
+               (interactive)
+               (company-abort)
+               (newline-and-indent)))
     :config
     (setq company-backends (remove 'company-clang company-backends)))
 
@@ -690,28 +699,25 @@ A better help buffer
     (counsel-describe-variable-function #'helpful-variable)
     :general
     ('normal "K" 'helpful-at-point)
+
+    (oskah/leader-keys
+      "hp" 'describe-package
+      "ht" 'describe-theme
+      "hv" 'describe-variable
+      "hf" 'describe-function
+      "hk" 'describe-key)
+
     :bind
-      ([remap describe-function] . counsel-describe-function)
-      ([remap describe-variable] . counsel-describe-variable)
-      ([remap describe-key] . helpful-key)
-      ([remap describe-command] . helpful-command))
-#+end_src
-
-Some 'helpful' keybinds
-
-#+begin_src elisp
-  (oskah/leader-keys
-    "hp" 'describe-package
-    "ht" 'describe-theme
-    "hv" 'describe-variable
-    "hf" 'describe-function
-    "hk" 'describe-key)
+    ([remap describe-function] . counsel-describe-function)
+    ([remap describe-variable] . counsel-describe-variable)
+    ([remap describe-key] . helpful-key)
+    ([remap describe-command] . helpful-command))
 #+end_src
 
 ** Which-key
 #+begin_src elisp
   (use-package which-key
-    :defer 3
+    :defer 1
     :custom
     (which-key-idle-delay 0.3)
     :config
