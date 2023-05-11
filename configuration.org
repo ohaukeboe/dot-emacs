@@ -578,8 +578,9 @@ to make them hidden.
 
 #+begin_src elisp
   (use-package org-inline-pdf
+    :disabled ; TODO: fix. It doesn't work with org 9.5.5
     :ensure-system-package pdf2svg
-    :after orog
+    :after org
     :hook (org-mode . org-inline-pdf-mode))
 #+end_src
 
@@ -750,4 +751,16 @@ A better help buffer
     :config
     (setq wakatime-disable-on-error t)
     (setq wakatime-cli-path "~/.wakatime/wakatime-cli"))
+#+end_src
+
+** Keep folders clean
+No littering puts the files that packages places in the emacs directory into
+=var/= and =etc/= in the emacs directory.
+
+#+begin_src elisp
+  (use-package no-littering
+    :custom
+    (auto-save-file-name-transforms
+     `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
+
 #+end_src
