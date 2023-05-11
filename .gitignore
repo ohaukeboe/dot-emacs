@@ -14,3 +14,10 @@
 /ltximg/
 /init.el.rej
 /.cache/
+/.configuration.el.~undo-tree~
+/.init.el.~undo-tree~
+/.lsp-session-v1
+/chatgpt/
+/configuration.el~
+/elpa/
+/parinfer-rust/

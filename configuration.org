@@ -400,14 +400,66 @@ Visualize the colors of color codes
 
 #+begin_src elisp
   (use-package lsp-mode
-    :ensure-system-package zip
-    :commands (lsp lsp-deferred)
-    :hook ((c-mode c++-mode) . lsp-deferred)
+    :ensure-system-package (zip unzip)
+    :commands lsp-deferred
+    :custom
+    (lsp-keymap-prefix "C-c l")
+    (lsp-headerline-breadcrumb-enable nil)
     :config
     (lsp-enable-which-key-integration t))
+
+
+  (use-package lsp-ui
+    :disabled
+    :after lsp-mode
+    :hook (lsp-mode . lsp-ui-mode))
+
+  (use-package lsp-ivy
+    :after (lsp-mode ivy)
+    :commands lsp-ivy-workspace-symbol)
+#+end_src
+
+** Company
+
+#+begin_src elisp
+  (use-package company
+    :diminish
+    :hook (prog-mode . company-mode)
+    ;;:bind
+    ;;(:map company-active-map
+          ;;("<tab>" . company-complete-selection))
+    ;;(:map lsp-mode-map
+          ;;("<tab>" . company-indent-or-complete-common))
+    :custom
+    (company-idle-delay 0.0)
+    (company-minimum-prefix-length 1)
+    :config
+    (setq company-backends (remove 'company-clang company-backends)))
+
+  (use-package company-box
+    :hook (company-mode . company-box-mode))
 #+end_src
 
 ** Languages
+*** Elisp
+
+#+begin_src elisp
+  (use-package parinfer-rust-mode
+      :commands parinfer-rust-mode
+      :hook emacs-lisp-mode
+      :init
+      (setq parinfer-rust-auto-download t))
+#+end_src
+*** C
+
+#+begin_src elisp
+  (use-package c-mode
+    :elpaca nil
+    :hook ((c-mode c++-mode) . lsp-deferred)
+    :init
+    (add-to-list 'org-babel-load-languages '(C . t)))
+
+#+end_src
 
 * Org mode
 ** Org
@@ -420,11 +472,44 @@ Visualize the colors of color codes
     :custom
     (org-hide-emphasis-markers t)
     (org-ellipsis " ↴")
+    (org-confirm-babel-evaluate nil)
+    (org-directory "~/Nextcloud/org_notes/")
+    (org-attach-id-dir "~/Nextcloud/org_notes/.attach/")
+    (org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ;; Set scale of preview images
+    (org-export-with-tags nil)
+    (org-startup-with-inline-images t)
+    (org-startup-with-latex-preview t)
+    (shr-max-image-proportion 0.6)  ; Smaller max image size
     :config
     (org-babel-do-load-languages
      'org-babel-load-languages
-     '((emacs-lisp . t)
-       (python . t))))
+     org-babel-load-languages))
+#+end_src
+
+The following is some code which allows for using the =:hidden= tag for src blocks
+to make them hidden.
+
+#+begin_src elisp
+;; (defun individual-visibility-source-blocks ()
+;;   "Fold some blocks in the current buffer."
+;;   (interactive)
+;;   (org-show-block-all)
+;;   (org-block-map
+;;    (lambda ()
+;;      (let ((case-fold-search t))
+;;        (when (and
+;;               (save-excursion
+;;                 (beginning-of-line 1)
+;;                 (looking-at org-block-regexp))
+;;               (cl-assoc
+;;                ':hidden
+;;                (cl-third
+;;                 (org-babel-get-src-block-info))))
+;;          (org-hide-block-toggle))))))
+
+;; (add-hook
+;;  'org-mode-hook
+;;  (function individual-visibility-source-blocks))
 #+end_src
 
 ** Org tempo
@@ -478,6 +563,15 @@ Visualize the colors of color codes
     :ensure-system-package
       ((latex . texlive-most))
     :hook (org-mode . org-fragtog-mode))
+#+end_src
+
+** PDF preview
+
+#+begin_src elisp
+  (use-package org-inline-pdf
+    :ensure-system-package pdf2svg
+    :after orog
+    :hook (org-mode . org-inline-pdf-mode))
 #+end_src
 
 * Misc
@@ -546,6 +640,42 @@ Show keybinds and doc-strings in the M-x ivy list
 #+end_src
 
 #+RESULTS:
+** ChatGPT
+
+#+begin_src elisp
+  (defvar openai-key-memo nil "Memoized OpenAI key")
+
+  (use-package chatgpt-shell
+    :commands (chatgpt-shell)
+    :custom
+    (chatgpt-shell-openai-key
+     (lambda ()
+       (if openai-key-memo
+           openai-key-memo
+         (setq openai-key-memo (auth-source-pass-get 'secret "openai-key")))))
+
+    :general
+    (oskah/leader-keys
+      "og" '("gpt" . chatgpt-shell)))
+
+
+  (use-package dall-e-shell
+    :commands (dall-e-shell)
+    :custom
+    (chatgpt-shell-openai-key
+     (lambda ()
+       (if openai-key-memo
+           openai-key-memo
+         (setq openai-key-memo (auth-source-pass-get 'secret "openai-key")))))
+    :general
+    (oskah/leader-keys
+      "od" '("dall-e" . dall-e-shell)))
+
+  (use-package ob-chatgpt-shell
+    :after org
+    :init 'ob-chatgpt-shell-setup)
+#+end_src
+
 ** Editorconfig
 #+begin_src elisp
 (use-package editorconfig
