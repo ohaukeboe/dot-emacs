@@ -1,5 +1,6 @@
 #+title: My emacs configuration
 #+startup: fold
+#+property: header-args:elisp :tangle configuration.el
 
 * Sane defaults
 These are the defaults that I deem sane, and that should set before anything else.
@@ -28,11 +29,11 @@ These are the defaults that I deem sane, and that should set before anything els
                   global-display-line-numbers-mode))
     (funcall mode t))
 
-  (dolist (mode '(org-mode-hook
-                    term-mode-hook
-                    shell-mode-hook
-                    eshell-mode-hook))
-    (add-hook mode (lambda () (display-line-numbers-mode 0))))
+  ;; (dolist (mode '(org-mode-hook
+  ;;                   term-mode-hook
+  ;;                   shell-mode-hook
+  ;;                   eshell-mode-hook))
+  ;;   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
   (fset 'yes-or-no-p 'y-or-n-p)
   (set-fringe-mode 10)
@@ -247,16 +248,19 @@ Add visual hints to ceirtain evil opperations such as yank.
 #+begin_src elisp
   (use-package hydra
     :ensure t
+    :commands (hydra-text-scale/body)
+    :defer t
+    :init
+    (oskah/leader-keys
+      "ts" '(hydra-text-scale/body :which-key "scale text"))
     :config
     (defhydra hydra-text-scale (:timeout 4)
       "scale text"
       ("k" text-scale-increase "in")
       ("j" text-scale-decrease "out")
       ("r" (text-scale-set 0) "reset")
-      ("q" nil "quit" :exit t))
+      ("q" nil "quit" :exit t)))
 
-    (oskah/leader-keys
-      "ts" '(hydra-text-scale/body :which-key "scale text")))
 #+end_src
 
 ** Top level keybindings
@@ -285,8 +289,11 @@ And these are some general keybindings I like
     ;; "wv" '(evil-window-vsplit :which-key "split vertically")
     ;; "wh" '(evil-window-split :which-key "split horizontally")
 
-    "oe" '("open terminal" . eshell))
+    "oe" '("open terminal" . eshell)
 
+    "fc" '("open config" . (lambda ()
+                             (interactive)
+                             (find-file (locate-user-emacs-file "configuration.org")))))
 
   ;; Scale text
   (general-def 'normal
@@ -351,6 +358,28 @@ icon fonts.
     :general
     (oskah/leader-keys "to" 'olivetti-mode))
 #+end_src
+
+* Startup performance message
+A message which says how long it took to load emacs. It can be useful for
+knowing how much/if packages slow down the emacs startup.
+
+#+begin_src elisp
+  (defun oskah/display-startup-time ()
+    (message "Emacs loaded in %s with %d garbage collections."
+             (format "%.2f seconds"
+                     (float-time
+                      (time-subtract after-init-time before-init-time)))
+             gcs-done))
+
+  (add-hook 'emacs-startup-hook #'oskah/display-startup-time)
+#+end_src
+
+Enable messages about the loading of packages
+
+#+begin_src elisp
+  (setq use-package-verbose t)
+#+end_src
+
 * Project management
 ** Magit
 #+begin_src elisp
@@ -373,13 +402,12 @@ icon fonts.
 ** Projectile
 #+begin_src elisp
   (use-package projectile
-    :init
-    (projectile-mode 1)
-    :custom
-    (projectile-completion-system 'ivy)
+    :after ivy
     :general
     (oskah/leader-keys "p" 'projectile-command-map)
-    :init
+    :custom
+    (projectile-mode 1)
+    (projectile-completion-system 'ivy)
     (when (file-directory-p "~/projects")
       (setq projectile-project-search-path '("~/projects"))))
 #+end_src
@@ -432,7 +460,7 @@ Visualize the colors of color codes
 #+begin_src elisp
   (use-package company
     :diminish
-    :hook (prog-mode . company-mode)
+    :hook ((prog-mode org-mode) . company-mode)
     :custom
     (company-idle-delay 0.0)
     (company-minimum-prefix-length 1)
@@ -466,8 +494,8 @@ Visualize the colors of color codes
     :elpaca nil
     :hook ((c-mode c++-mode) . lsp-deferred)
     :init
-    (add-to-list 'org-babel-load-languages '(C . t)))
-
+    (with-eval-after-load 'org
+      (add-to-list 'org-babel-load-languages '(C . t))))
 #+end_src
 
 * Org mode
@@ -475,7 +503,7 @@ Visualize the colors of color codes
 
 #+begin_src elisp
   (use-package org
-    :elpaca nil
+    :defer t
     :general
     (oskah/leader-keys org-mode-map "m '" 'org-edit-special)
     :custom
@@ -484,7 +512,7 @@ Visualize the colors of color codes
     (org-confirm-babel-evaluate nil)
     (org-directory "~/Nextcloud/org_notes/")
     (org-attach-id-dir "~/Nextcloud/org_notes/.attach/")
-    (org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ;; Set scale of preview images
+    ;;(org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ;; Set scale of preview images
     (org-export-with-tags nil)
     (org-startup-with-inline-images t)
     (org-startup-with-latex-preview t)
@@ -492,7 +520,20 @@ Visualize the colors of color codes
     :config
     (org-babel-do-load-languages
      'org-babel-load-languages
-     org-babel-load-languages))
+     org-babel-load-languages)
+
+
+
+    (defun oh/org-babel-tangle-config ()
+      (when (string-equal (buffer-file-name)
+                          (expand-file-name
+                           (locate-user-emacs-file "configuration.org")))
+        ;; Dynamic scoping to the rescue
+        (let ((org-confirm-babel-evaluate nil))
+          (org-babel-tangle))))
+
+    (add-hook 'org-mode-hook (lambda ()
+                               (add-hook 'after-save-hook #'oh/org-babel-tangle-config))))
 #+end_src
 
 The following is some code which allows for using the =:hidden= tag for src blocks
@@ -549,7 +590,6 @@ to make them hidden.
 #+begin_src elisp
   (use-package org-modern
     :hook (org-mode . org-modern-mode)
-    :after org
     :custom
     (org-modern-priority nil)
     (org-modern-table nil))
@@ -569,6 +609,7 @@ to make them hidden.
 
 #+begin_src elisp
   (use-package org-fragtog
+    :diminish
     :ensure-system-package
       ((latex . texlive-most))
     :hook (org-mode . org-fragtog-mode))
@@ -578,7 +619,8 @@ to make them hidden.
 
 #+begin_src elisp
   (use-package org-inline-pdf
-    :disabled ; TODO: fix. It doesn't work with org 9.5.5
+    :diminish
+    ;;:disabled ; TODO: fix. It doesn't work with org 9.5.5
     :ensure-system-package pdf2svg
     :after org
     :hook (org-mode . org-inline-pdf-mode))
@@ -592,7 +634,8 @@ and completion alternatives.
 
 #+begin_src elisp
   (use-package ivy
-   :init
+   :defer 0
+   :config
    (ivy-mode 1))
 #+end_src
 *** Ivy rich
@@ -633,6 +676,7 @@ Show keybinds and doc-strings in the M-x ivy list
 
 #+begin_src elisp
   (use-package undo-tree
+    :defer 0
     :diminish undo-tree-mode
     :config
     (global-undo-tree-mode))
@@ -701,7 +745,7 @@ Show keybinds and doc-strings in the M-x ivy list
 
   (use-package ob-chatgpt-shell
     :after org
-    :init 'ob-chatgpt-shell-setup)
+    :config 'ob-chatgpt-shell-setup)
 #+end_src
 
 ** Editorconfig
@@ -736,7 +780,7 @@ A better help buffer
 ** Which-key
 #+begin_src elisp
   (use-package which-key
-    :defer 1
+    :defer 0
     :custom
     (which-key-idle-delay 0.3)
     :config
@@ -747,10 +791,10 @@ A better help buffer
 #+begin_src elisp
   (use-package wakatime-mode
     :defer 5
-    :init (global-wakatime-mode)
     :config
     (setq wakatime-disable-on-error t)
-    (setq wakatime-cli-path "~/.wakatime/wakatime-cli"))
+    (setq wakatime-cli-path "~/.wakatime/wakatime-cli")
+    (global-wakatime-mode))
 #+end_src
 
 ** Keep folders clean
