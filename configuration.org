@@ -167,7 +167,7 @@ Yes, the package is called general. It's a keybinding framework.
 
 #+begin_src elisp
   (use-package evil-collection
-    :after evil
+    ;;:after evil
     :config
     (evil-collection-init))
 #+end_src
