@@ -299,7 +299,7 @@ Add visual hints to ceirtain evil opperations such as yank.
     :demand  ; sldkfj
     :general
     ('(normal visual) "g l" 'evil-lion-left
-     '(normal visual) "g L" 'evil-lion-right)
+                      "g L" 'evil-lion-right)
     :config
     (evil-lion-mode))
 #+end_src
@@ -307,7 +307,7 @@ Add visual hints to ceirtain evil opperations such as yank.
 ** Hydra
 #+begin_src elisp
   (use-package hydra
-    :commands (oh/window-resize hydra-text-scale defhydra)
+    :commands (defhydra)
     :demand)
 #+end_src
 
@@ -444,6 +444,7 @@ icon fonts.
 #+begin_src elisp
   (use-package olivetti
     :diminish
+    :hook (org-mode . olivetti-mode)
     :commands olivetti-mode
     :general
     (oskah/leader-keys "to" 'olivetti-mode))
