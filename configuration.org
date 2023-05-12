@@ -55,7 +55,7 @@ in order to set them globally.
                 tab-width 4                       ; Smaller tabs
                 fill-column 80                    ; Maximum line width
                 truncate-lines t                  ; Don't fold lines
-                split-width-threshold 160         ; Split verticly by default
+                split-width-threshold 0           ; Split verticly by default
                 split-height-threshold nil        ; Split verticly by default
                 frame-resize-pixelwise t          ; Fine-grained frame resize
                 auto-fill-function 'do-auto-fill) ; Auto-fill-mode everywhere
@@ -281,7 +281,6 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-args
-    :ensure t
     :demand
     :after evil
     :config
@@ -290,15 +289,17 @@ Add visual hints to ceirtain evil opperations such as yank.
     (define-key evil-normal-state-map "L" 'evil-forward-arg)
     (define-key evil-normal-state-map "H" 'evil-backward-arg)
     (define-key evil-motion-state-map "L" 'evil-forward-arg)
-    (define-key evil-motion-state-map "H" 'evil-backward-arg)
-    (define-key evil-normal-state-map "K" 'evil-jump-out-args))
+    (define-key evil-motion-state-map "H" 'evil-backward-arg))
 #+end_src
 *** Lion
 
 #+begin_src elisp
   (use-package evil-lion
-    :after evil
-    :demand
+    :after evil  ; sldf
+    :demand  ; sldkfj
+    :general
+    ('(normal visual) "g l" 'evil-lion-left
+     '(normal visual) "g L" 'evil-lion-right)
     :config
     (evil-lion-mode))
 #+end_src
@@ -366,11 +367,13 @@ And these are some general keybindings I like
 
 
     (oskah/leader-keys
+      "wn" '(evil-window-new :wk "new window")
       "ws" '(evil-window-split :wk "horizontal split")
       "wv" '(evil-window-vsplit :wk "vertical split")
       "wd" '(evil-window-delete :wk "delete window")
       "wo" '(delete-other-windows :wk "delete other windows")
       "w=" '(balance-windows :wk "balance windows")
+      "wx" '(evil-window-exchange :wk "exchange windows")
 
       "wh" '(evil-window-left :wk "move left")
       "wj" '(evil-window-down :wk "move down")
@@ -790,7 +793,8 @@ Show keybinds and doc-strings in the M-x ivy list
     :custom ((dired-listing-switches "-agho --group-directories-first"))
     :general
     (oskah/leader-keys
-      "fd" '(dired-jump :which-key "dired jump"))
+      "fd" '(dired-jump :which-key "dired jump")
+      "fD" '(dired-jump-other-window :which-key "dired"))
     :general
     ('normal 'dired-mode-map
       "h" 'dired-up-directory
@@ -877,6 +881,7 @@ together. It is also necessary to install =aspell-en= and =aspell-nb=.
     :general
     (oskah/leader-keys
      "bb" 'counsel-switch-buffer
+     "bo" 'counsel-switch-buffer-other-window
      "." 'counsel-find-file))
 #+end_src
 ** Copilot
