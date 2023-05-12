@@ -55,7 +55,7 @@ in order to set them globally.
                 tab-width 4                       ; Smaller tabs
                 fill-column 80                    ; Maximum line width
                 truncate-lines t                  ; Don't fold lines
-                split-width-threshold 160         ; Split verticly by default
+                split-width-threshold 0           ; Split verticly by default
                 split-height-threshold nil        ; Split verticly by default
                 frame-resize-pixelwise t          ; Fine-grained frame resize
                 auto-fill-function 'do-auto-fill) ; Auto-fill-mode everywhere
@@ -85,15 +85,15 @@ A message which says how long it took to load emacs. It can be useful for
 knowing how much/if packages slow down the emacs startup.
 
 #+begin_src elisp
-  (defun oskah/display-startup-time ()
-      (message "Emacs loaded in %s with %d garbage collections."
-                 (format "%.2f seconds"
-                           (float-time
-                              (time-subtract after-init-time before-init-time)))
-                 gcs-done))
+   (defun oskah/display-startup-time ()
+       (message "Emacs loaded in %s with %d garbage collections."
+                  (format "%.2f seconds"
+                            (float-time
+                               (time-subtract after-init-time before-init-time)))
+                  gcs-done))
 
-  (add-hook 'emacs-startup-hook #'oskah/display-startup-time) ;
- ;; (setq use-package-verbose t)
+   (add-hook 'emacs-startup-hook #'oskah/display-startup-time) ;
+  (setq use-package-verbose t)
 #+end_src
 
 * Elpaca
@@ -171,7 +171,7 @@ Yes, the package is called general. It's a keybinding framework.
     (general-create-definer oskah/leader-keys
       :states '(normal insert visual emacs)
       :prefix "SPC"
-      :non-normal-prefix "C-SPC"))
+      :global-prefix "C-SPC"))
 
   ;; Wait until this is setup before loading the rest of the config.
   ;; This is needed for the =:general= flag to work.
@@ -184,7 +184,7 @@ Yes, the package is called general. It's a keybinding framework.
 #+begin_src elisp
   (use-package evil
     :diminish 
-    :init (evil-mode 1)
+    :defer 0
     :custom
     (evil-want-integration t)
     (evil-want-keybinding nil)
@@ -196,10 +196,10 @@ Yes, the package is called general. It's a keybinding framework.
     ('(normal visual) "gr" 'eval-region)
     ('insert "S-<return>" 'newline-and-indent)  ; Make S-RET always do newline-and-indent
     (oskah/leader-keys
-      "w" 'evil-window-map
-      "bk" 'evil-delete-buffer)
+      "we" '(evil-window-map :which-key "evil window map")) 
 
     :config
+    (evil-mode 1)
     (evil-global-set-key 'normal (kbd "C-g") 'evil-force-normal-state)
 
     (evil-global-set-key 'normal (kbd "j") 'evil-next-visual-line)
@@ -214,7 +214,8 @@ Yes, the package is called general. It's a keybinding framework.
 
 #+begin_src elisp
   (use-package evil-collection
-    ;;:after evil
+    :after evil
+    :demand
     :config
     (evil-collection-init))
 #+end_src
@@ -222,6 +223,7 @@ Yes, the package is called general. It's a keybinding framework.
 
 #+begin_src elisp
   (use-package evil-nerd-commenter
+    :after evil                           
     :config
     (evilnc-default-hotkeys))
 #+end_src
@@ -240,6 +242,7 @@ not depend on evil mode.
 #+begin_src elisp
   (use-package evil-surround
     :after evil
+    :demand
     :config
     (global-evil-surround-mode 1))
 #+end_src
@@ -258,6 +261,8 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-goggles
+    :after evil
+    :demand
     :custom
     (evil-goggles-enable-delete nil)
     :config
@@ -267,6 +272,8 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-exchange
+    :after evil
+    :demand
     :config
     (evil-exchange-install))
 #+end_src
@@ -274,7 +281,7 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-args
-    :ensure t
+    :demand
     :after evil
     :config
     (define-key evil-inner-text-objects-map "a" 'evil-inner-arg)
@@ -282,13 +289,17 @@ Add visual hints to ceirtain evil opperations such as yank.
     (define-key evil-normal-state-map "L" 'evil-forward-arg)
     (define-key evil-normal-state-map "H" 'evil-backward-arg)
     (define-key evil-motion-state-map "L" 'evil-forward-arg)
-    (define-key evil-motion-state-map "H" 'evil-backward-arg)
-    (define-key evil-normal-state-map "K" 'evil-jump-out-args))
+    (define-key evil-motion-state-map "H" 'evil-backward-arg))
 #+end_src
 *** Lion
 
 #+begin_src elisp
   (use-package evil-lion
+    :after evil  ; sldf
+    :demand  ; sldkfj
+    :general
+    ('(normal visual) "g l" 'evil-lion-left
+                      "g L" 'evil-lion-right)
     :config
     (evil-lion-mode))
 #+end_src
@@ -296,20 +307,8 @@ Add visual hints to ceirtain evil opperations such as yank.
 ** Hydra
 #+begin_src elisp
   (use-package hydra
-    :ensure t
-    :commands (hydra-text-scale/body)
-    :defer t
-    :init
-    (oskah/leader-keys
-      "ts" '(hydra-text-scale/body :which-key "scale text"))
-    :config
-    (defhydra hydra-text-scale (:timeout 4)
-      "scale text"
-      ("k" text-scale-increase "in")
-      ("j" text-scale-decrease "out")
-      ("r" (text-scale-set 0) "reset")
-      ("q" nil "quit" :exit t)))
-
+    :commands (defhydra)
+    :demand)
 #+end_src
 
 ** Top level keybindings
@@ -317,12 +316,12 @@ These are the top level keybindings, which are only used to group other
 keybindings in a logical way, and to describe them in the which-key popup.
 
 #+begin_src elisp
-  (oskah/leader-keys "m" '(:ignore t :which-key "localleader")
-                     "t" '(:ignore t :which-key "toggle")
-                     "f" '(:ignore t :which-key "file")
-                     "b" '(:ignore t :which-key "buffer")
-                     "h" '(:ignore t :which-key "help")
-                     "o" '(:ignore t :which-key "open"))
+  (oskah/leader-keys "m" '(:ignore t :wk "localleader")
+                     "t" '(:ignore t :wk "toggle")
+                     "f" '(:ignore t :wk "file")
+                     "b" '(:ignore t :wk "buffer")
+                     "h" '(:ignore t :wk "help")
+                     "o" '(:ignore t :wk "open"))
 #+end_src
 
 And these are some general keybindings I like
@@ -348,6 +347,47 @@ And these are some general keybindings I like
   (general-def 'normal
     "C-=" 'text-scale-increase
     "C--" 'text-scale-decrease)
+#+end_src
+
+** Window management
+
+#+begin_src elisp :lexical no
+  (with-eval-after-load 'evil
+    (defhydra oh/window-resize (:timeout 2)
+      "resize window"
+      ("h" evil-window-decrease-width "decrease width")
+      ("j" evil-window-decrease-height "decrease height")
+      ("k" evil-window-increase-height "increase height")
+      ("l" evil-window-increase-width "increase width")
+      ("H" (evil-window-decrease-width 10) "decrease width")
+      ("J" (evil-window-decrease-height 10) "decrease height")
+      ("K" (evil-window-increase-height 10) "increase height")
+      ("L" (evil-window-increase-width 10) "increase width")
+      ("q" nil "quit"))
+
+
+    (oskah/leader-keys
+      "wn" '(evil-window-new :wk "new window")
+      "ws" '(evil-window-split :wk "horizontal split")
+      "wv" '(evil-window-vsplit :wk "vertical split")
+      "wd" '(evil-window-delete :wk "delete window")
+      "wo" '(delete-other-windows :wk "delete other windows")
+      "w=" '(balance-windows :wk "balance windows")
+      "wx" '(evil-window-exchange :wk "exchange windows")
+
+      "wh" '(evil-window-left :wk "move left")
+      "wj" '(evil-window-down :wk "move down")
+      "wk" '(evil-window-up :wk "move up")
+      "wl" '(evil-window-right :wk "move right")
+      "wH" '(evil-window-move-far-left :wk "move to far left")
+      "wJ" '(evil-window-move-very-bottom :wk "move to very bottom")
+      "wK" '(evil-window-move-very-top :wk "move to very top")
+      "wL" '(evil-window-move-far-right :wk "move to far right")
+
+      "wr" '(evil-window-rotate-downwards :wk "rotate downwards")
+      "wR" '(evil-window-rotate-upwards :wk "rotate upwards")
+
+      "wz" '(oh/window-resize/body :wk "resize window")))
 #+end_src
 
 * Look and feel
@@ -404,6 +444,7 @@ icon fonts.
 #+begin_src elisp
   (use-package olivetti
     :diminish
+    :hook (org-mode . olivetti-mode)
     :commands olivetti-mode
     :general
     (oskah/leader-keys "to" 'olivetti-mode))
@@ -553,15 +594,17 @@ Visualize the colors of color codes
     :general
     (oskah/leader-keys org-mode-map "m '" 'org-edit-special)
     :custom
+    (org-attach-use-inheritance t)  ; Make sure attachments are inherited throuch headings
     (org-hide-emphasis-markers t)
     (org-ellipsis " ↴")
     (org-confirm-babel-evaluate nil)
     (org-directory "~/Nextcloud/org_notes/")
     (org-attach-id-dir "~/Nextcloud/org_notes/.attach/")
-    ;;(org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ;; Set scale of preview images
+    ;;(org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ; Set scale of preview images
     (org-export-with-tags nil)
     (org-startup-with-inline-images t)
     (org-startup-with-latex-preview t)
+    (org-startup-folded t)   ; Start org-mode with everything folded
     (shr-max-image-proportion 0.6)  ; Smaller max image size
     :config
     (org-babel-do-load-languages
@@ -707,6 +750,20 @@ to make them hidden.
 
 #+end_src
 
+** Noter
+
+#+begin_src elisp :lexical no
+  (use-package org-noter
+    :general
+    (oskah/leader-keys
+      "ne" '(org-noter :which-key "org-noter"))
+    ('org-noter-doc-mode-map
+     "I" '(org-noter-insert-note :which-key "insert note"))
+    :custom
+    (org-noter-auto-save-last-location t)
+    (org-noter-notes-search-path '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
+#+end_src
+
 * Misc
 ** Ivy
 Ivy is a completion framework, which replaces the default Emacs
@@ -737,7 +794,8 @@ Show keybinds and doc-strings in the M-x ivy list
     :custom ((dired-listing-switches "-agho --group-directories-first"))
     :general
     (oskah/leader-keys
-      "fd" '(dired-jump :which-key "dired jump"))
+      "fd" '(dired-jump :which-key "dired jump")
+      "fD" '(dired-jump-other-window :which-key "dired"))
     :general
     ('normal 'dired-mode-map
       "h" 'dired-up-directory
@@ -753,6 +811,36 @@ Show keybinds and doc-strings in the M-x ivy list
     :config
     (global-fish-completion-mode))
 #+end_src
+** Pdf
+
+#+begin_src elisp :lexical no
+  (use-package pdf-tools
+    :config
+    (pdf-tools-install))
+#+end_src
+** Mail
+
+#+begin_src elisp :lexical no
+  ;; (set-email-account! "proton"
+  ;;   '((mu4e-sent-folder       . "/proton/Sent")
+  ;;     (mu4e-drafts-folder     . "/proton/Drafts")
+  ;;     (mu4e-trash-folder      . "/proton/Trash")
+  ;;     (mu4e-refile-folder     . "/proton/All Mail")
+  ;;     (smtpmail-smtp-user     . "ohaukeboe@pm.me")
+  ;;     (mu4e-compose-signature . "---\nRegards\nOskar"))
+  ;;   t)
+
+  ;; (after! mu4e
+  ;;   (setq! mu4e-split-view 'vertical))
+#+end_src
+
+This requires the =mu= program.
+
+#+begin_src elisp
+  (use-package mu4e
+    :elpaca nil)
+#+end_src
+
 ** Undo-tree
 
 #+begin_src elisp
@@ -770,7 +858,21 @@ Magit requires sqlite and recomends using =sqlite3=
     :defer t
     :ensure-system-package (sqlite3 . sqlite))
 #+end_src
+** Spell check
+This sets up spell checking using both english and norwegian dictionaries
+together. It is also necessary to install =aspell-en= and =aspell-nb=.
 
+#+begin_src elisp
+  (use-package ispell
+    :ensure-system-package
+    (ispell aspell)
+    :elpaca nil
+    :custom
+    (ispell-dictionary "en_US,nb_NO")
+    :config
+    (ispell-set-spellchecker-params)
+    (ispell-hunspell-add-multi-dic "en_US,nb_NO"))
+#+end_src
 
 ** Counsel
 #+begin_src elisp
@@ -780,6 +882,7 @@ Magit requires sqlite and recomends using =sqlite3=
     :general
     (oskah/leader-keys
      "bb" 'counsel-switch-buffer
+     "bo" 'counsel-switch-buffer-other-window
      "." 'counsel-find-file))
 #+end_src
 ** Copilot
