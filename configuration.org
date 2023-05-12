@@ -2,6 +2,12 @@
 #+startup: fold
 #+property: header-args:elisp :tangle configuration.el
 
+I run emacs inside a distrobox running arch, and I use
+use-package-ensure-system-package to make sure the required packages are
+installed. In order to make the distrobox use the host's default applications
+you can run ~sudo ln -s /usr/bin/distrobox-host-exec /usr/local/bin/xdg-open~ from
+inside the container.
+
 * Sane defaults
 These are the defaults that I deem sane, and that should set before anything else.
 
@@ -55,6 +61,41 @@ in order to set them globally.
                 auto-fill-function 'do-auto-fill) ; Auto-fill-mode everywhere
 #+end_src
 
+
+Some functionality uses this to identify you, e.g. GPG configuration, email
+clients, file templates and snippets. It is optional.
+
+#+begin_src elisp
+(setq user-full-name "Oskar Haukebøe"
+      user-mail-address "ohaukeboe@pm.me")
+#+end_src
+
+* Startup performance
+
+#+begin_src elisp
+    (setq gc-cons-threshold 100000000)
+
+    (add-hook 'after-init-hook
+              (lambda ()
+                (setq gc-cons-threshold 1000000)))
+#+end_src
+
+** Startup performance message
+A message which says how long it took to load emacs. It can be useful for
+knowing how much/if packages slow down the emacs startup.
+
+#+begin_src elisp
+  (defun oskah/display-startup-time ()
+      (message "Emacs loaded in %s with %d garbage collections."
+                 (format "%.2f seconds"
+                           (float-time
+                              (time-subtract after-init-time before-init-time)))
+                 gcs-done))
+
+  (add-hook 'emacs-startup-hook #'oskah/display-startup-time) ;
+ ;; (setq use-package-verbose t)
+#+end_src
+
 * Elpaca
 Install elpaca
 
@@ -100,17 +141,18 @@ Install elpaca
 Enable elpaca use-package support
 
  #+begin_src elisp
-;; Install use-package support
-(elpaca elpaca-use-package
-  ;; Enable :elpaca use-package keyword.
-  (elpaca-use-package-mode)
-  ;; Assume :elpaca t unless otherwise specified.
-  (setq elpaca-use-package-by-default t))
+   ;; Install use-package support
+   (elpaca elpaca-use-package
+     ;; Enable :elpaca use-package keyword.
+     (elpaca-use-package-mode)
+     ;; Assume :elpaca t unless otherwise specified.
+     (setq elpaca-use-package-by-default t)
+     (setq use-package-always-defer t))
 
-;; Block until current queue processed.
-(elpaca-wait)
+   ;; Block until current queue processed.
+   (elpaca-wait)
 
-(require 'bind-key)
+   ;;(require 'bind-key)
  #+end_src
 
  #+begin_src elisp
@@ -149,9 +191,14 @@ Yes, the package is called general. It's a keybinding framework.
     (evil-want-C-u-scroll t)
     (evil-want-C-i-jump t)
     (evil-undo-system 'undo-tree)
+
     :general
     ('(normal visual) "gr" 'eval-region)
-    (oskah/leader-keys "w" 'evil-window-map)
+    ('insert "S-<return>" 'newline-and-indent)  ; Make S-RET always do newline-and-indent
+    (oskah/leader-keys
+      "w" 'evil-window-map
+      "bk" 'evil-delete-buffer)
+
     :config
     (evil-global-set-key 'normal (kbd "C-g") 'evil-force-normal-state)
 
@@ -362,27 +409,6 @@ icon fonts.
     (oskah/leader-keys "to" 'olivetti-mode))
 #+end_src
 
-* Startup performance message
-A message which says how long it took to load emacs. It can be useful for
-knowing how much/if packages slow down the emacs startup.
-
-#+begin_src elisp
-  (defun oskah/display-startup-time ()
-    (message "Emacs loaded in %s with %d garbage collections."
-             (format "%.2f seconds"
-                     (float-time
-                      (time-subtract after-init-time before-init-time)))
-             gcs-done))
-
-  (add-hook 'emacs-startup-hook #'oskah/display-startup-time)
-#+end_src
-
-Enable messages about the loading of packages
-
-#+begin_src elisp
-  (setq use-package-verbose t)
-#+end_src
-
 * Project management
 ** Magit
 #+begin_src elisp
@@ -507,6 +533,15 @@ Visualize the colors of color codes
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(C . t))))
+#+end_src
+*** Maude
+
+#+begin_src elisp :lexical no
+  (use-package maude-mode
+    :ensure-system-package maude
+    :mode "\\.maude\\'"
+    :config
+    (setq maude-indent 2))
 #+end_src
 
 * Org mode
@@ -641,6 +676,35 @@ to make them hidden.
                          (setq-local company-backends
                                      (cons 'company-org-block company-backends))
                          (company-mode +1)))))
+#+end_src
+
+** Roam
+
+#+begin_src elisp :lexical no
+  (use-package org-roam
+    :custom
+    (org-roam-node-display-template "${title:*} ${tags:10}")
+    (org-roam-directory (file-truename "~/Nextcloud/org_notes/roam"))
+    (org-roam-capture-templates
+              '(("d" "default" plain "%?"
+                   :target
+                        (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+                   :unnarrowed t
+                  ("r" "reference" plain "%?"
+                       :if-new
+                       (file+head "references/%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: %^{filetags}\n")
+                       :immediate-finish t
+                       :unnarrowed t))))
+    :general
+    (oskah/leader-keys
+      "nf" 'org-roam-node-find
+      "nc" 'org-roam-capture
+      "ng" 'org-roam-graph
+      "ni" 'org-roam-node-insert
+      "nl" 'org-roam-buffer-toggle)
+    :config
+    (org-roam-db-autosync-mode 1))
+
 #+end_src
 
 * Misc
@@ -850,6 +914,7 @@ No littering puts the files that packages places in the emacs directory into
   (use-package no-littering
     :custom
     (auto-save-file-name-transforms
-     `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
-
+     `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+    (undo-tree-history-directory-alist
+     `((".*" . ,(no-littering-expand-var-file-name "undo-tree/")))))
 #+end_src
