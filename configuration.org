@@ -144,8 +144,8 @@ Enable elpaca use-package support
      ;; Enable :elpaca use-package keyword.
      (elpaca-use-package-mode)
      ;; Assume :elpaca t unless otherwise specified.
-     (setq elpaca-use-package-by-default t)
-     (setq use-package-always-defer t))
+     (setq elpaca-use-package-by-default t))
+     ;; (setq use-package-always-defer t))
 
    ;; Block until current queue processed.
    (elpaca-wait)
@@ -157,6 +157,7 @@ Enable elpaca use-package support
 (use-package use-package-ensure-system-package)
 (elpaca-wait)
  #+end_src
+ 
 * Keybinds
 ** General
 Yes, the package is called general. It's a keybinding framework.
@@ -217,6 +218,7 @@ Yes, the package is called general. It's a keybinding framework.
     :config
     (evil-collection-init))
 #+end_src
+
 *** Commenter
 
 #+begin_src elisp
@@ -305,8 +307,8 @@ Add visual hints to ceirtain evil opperations such as yank.
 ** Hydra
 #+begin_src elisp
   (use-package hydra
-    :commands (defhydra)
-    :demand)
+    :defer 0
+    :commands (defhydra))
 #+end_src
 
 ** Top level keybindings
@@ -331,6 +333,10 @@ And these are some general keybindings I like
 
     "hb" '("describe keybindings" . describe-bindings)
     "hm" '("describe mode" . describe-mode)
+    "hr" '("rebuild config" . (lambda ()
+                                (interactive)
+                                (org-babel-tangle-file
+                                 (locate-user-emacs-file "configuration.org"))))
 
     ;; "wv" '(evil-window-vsplit :which-key "split vertically")
     ;; "wh" '(evil-window-split :which-key "split horizontally")
@@ -467,6 +473,7 @@ icon fonts.
 
 #+begin_src elisp
   (use-package all-the-icons
+    :defer t
     :if (display-graphic-p))
 #+end_src
 
@@ -637,6 +644,14 @@ Visualize the colors of color codes
     (org-startup-with-latex-preview t)
     (org-startup-folded t)   ; Start org-mode with everything folded
     (shr-max-image-proportion 0.6)  ; Smaller max image size
+    :general
+    (oskah/leader-keys org-mode-map
+      "ma" '(:ignore t :wk "attachments")
+      "mau" '(org-attach-url :wk "attach URL")
+      "mas" '(org-attach-sync :wk "sync attachments")
+      "maS" '(org-attach-set-directory :wk "set attachment directory")
+      "mao" '(org-attach-open :wk "open attachment"))
+
     :config
     (org-babel-do-load-languages
      'org-babel-load-languages
@@ -738,6 +753,23 @@ to make them hidden.
     :hook (org-mode . org-inline-pdf-mode))
 #+end_src
 
+** Download
+
+#+begin_src elisp :lexical no
+  (use-package org-download
+    ;:demand
+    :after org
+    :ensure-system-package (wl-copy . wl-clipboard)
+    :custom
+    (org-download-method 'attach)
+    :general
+    (oskah/leader-keys org-mode-map
+      "map" 'org-download-clipboard
+      "maf" 'org-download-screenshot
+      "mar" 'org-download-rename-at-point))
+
+#+end_src
+
 ** Company org-mode
 
 #+begin_src elisp
@@ -795,6 +827,75 @@ to make them hidden.
     (org-noter-notes-search-path '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
 #+end_src
 
+* Bibilo
+
+#+begin_src elisp :lexical no
+  (defvar oh/bib-files
+     '("~/Nextcloud/.org/references.bib"
+       "~/Nextcloud/.org/bibliography/zotero.bib"
+       "~/Nextcloud/.org/bibliography/uni/IN2000 gang.bib"
+       "~/Nextcloud/.org/bibliography/uni/IN2120_gang-midterm.bib"))
+#+end_src
+
+** Org-cite
+
+#+begin_src elisp :lexical no
+  (use-package oc
+    :elpaca nil
+    :after org
+    :custom
+    (org-cite-global-bibliography oh/bib-files)
+    (org-cite-export-processors
+     '((t csl))))
+       ;; (latex biblatex))))   
+#+end_src
+
+** Org-ref
+
+[cite:@tanenbaumModernOperatingSystems2015]
+
+
+
+#+begin_src elisp :lexical no
+  (use-package org-ref
+    :after org
+    :general
+    (oskah/leader-keys org-mode-map
+      "mr" '(:ignore t :wk "ref")
+      ;; "mrc" '(org-ref-insert-cite-link :wk "cite")
+      ;; "mrb" '(org-ref-insert-bibliography-link :wk "bibliography")
+      "mrr" '(org-ref-insert-ref-link :wk "insert reference")
+      "mrl" '(org-ref-insert-label-link :wk "insert label")))
+#+end_src
+
+** Citar
+
+[cite:@clarkUniversityMinnesotaBanned2021]
+
+#+begin_src elisp
+  (use-package citar
+    ;:after (org latex)
+    :general
+    (oskah/leader-keys '(org-mode-map latex-mode-map)
+      "mrc" '(citar-insert-citation :which-key "insert citation")
+      "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
+    :custom
+    (citar-bibliography oh/bib-files)
+    (citar-notes-paths (list kb/roam-dir))          ; List of directories for reference nodes
+    (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
+    (citar-at-point-function 'embark-act))          ; Use `embark'
+#+end_src
+
+#+begin_src elisp :lexical no
+  (use-package citar-org
+    :elpaca nil
+    :after (oc citar)
+    :custom
+    (org-cite-insert-processor 'citar)
+    (org-cite-follow-processor 'citar)
+    (org-cite-activate-processor 'citar))
+#+end_src
+
 * Misc
 ** Ivy
 Ivy is a completion framework, which replaces the default Emacs
@@ -804,6 +905,7 @@ and completion alternatives.
 #+begin_src elisp
   (use-package ivy
    :defer 0
+   :demand
    :config
    (ivy-mode 1))
 #+end_src
@@ -846,6 +948,7 @@ Show keybinds and doc-strings in the M-x ivy list
 
 #+begin_src elisp :lexical no
   (use-package pdf-tools
+    :defer t
     :config
     (pdf-tools-install))
 #+end_src
@@ -900,6 +1003,7 @@ time.
 
 #+begin_src elisp
   (use-package ispell
+    :after flyspell
     :ensure-system-package
     (hunspell)
     :elpaca nil
@@ -912,6 +1016,7 @@ time.
 
   (use-package flyspell
     :elpaca nil
+    :defer t
     :hook
     ((text-mode . flyspell-mode)
      (prog-mode . flyspell-prog-mode)))
