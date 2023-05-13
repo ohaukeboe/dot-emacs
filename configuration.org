@@ -55,8 +55,6 @@ in order to set them globally.
                 tab-width 4                       ; Smaller tabs
                 fill-column 80                    ; Maximum line width
                 truncate-lines t                  ; Don't fold lines
-                split-width-threshold 0           ; Split verticly by default
-                split-height-threshold nil        ; Split verticly by default
                 frame-resize-pixelwise t          ; Fine-grained frame resize
                 auto-fill-function 'do-auto-fill) ; Auto-fill-mode everywhere
 #+end_src
@@ -353,6 +351,7 @@ And these are some general keybindings I like
 
 #+begin_src elisp :lexical no
   (with-eval-after-load 'evil
+    (winner-mode 1)
     (defhydra oh/window-resize (:timeout 2)
       "resize window"
       ("h" evil-window-decrease-width "decrease width")
@@ -364,7 +363,6 @@ And these are some general keybindings I like
       ("K" (evil-window-increase-height 10) "increase height")
       ("L" (evil-window-increase-width 10) "increase width")
       ("q" nil "quit"))
-
 
     (oskah/leader-keys
       "wn" '(evil-window-new :wk "new window")
@@ -387,7 +385,11 @@ And these are some general keybindings I like
       "wr" '(evil-window-rotate-downwards :wk "rotate downwards")
       "wR" '(evil-window-rotate-upwards :wk "rotate upwards")
 
-      "wz" '(oh/window-resize/body :wk "resize window")))
+      "wz" '(oh/window-resize/body :wk "resize window")
+
+      "wu" '(winner-undo :wk "undo window change")
+      "wU" '(winner-redo :wk "redo window change")))
+
 #+end_src
 
 * Look and feel
