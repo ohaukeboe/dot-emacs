@@ -391,45 +391,52 @@ And these are some general keybindings I like
 #+end_src
 
 * Look and feel
+** General
+
+#+begin_src elisp 
+  (add-to-list 'default-frame-alist
+               '(internal-border-width . 10))
+
+  (set-face-attribute 'default nil :height 130)
+#+end_src
+
 ** NANO
+I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks very good. I have also installed the [[https://github.com/rougier/nano-theme][nano theme]]
+and then simply changed all the colors in order to have a properly dark theme.
+When finding these colors I found the [[https://www.colorhexa.com/][colorhexa]] website to be a great resource.
 
 #+begin_src elisp
-  (use-package nano
-    :defer t
-    :elpaca (nano :host github
-                  :repo "rougier/nano-emacs")
+  (use-package nano-theme
+    :demand
+    :custom
+    (nano-dark-foreground "#e8d6c6")
+    (nano-dark-background "#171717")
+    (nano-dark-highlight  "#212121")
+    (nano-dark-critical   "#EBCB8B")
+    (nano-dark-salient    "#aac5dd")
+    (nano-dark-strong     "#e3ccb8")
+    ;;(nano-dark-popout     "#c77276")
+    (nano-dark-popout     "#ddaaac")
+    (nano-dark-subtle     "#212121")
+    (nano-dark-faded      "#c79972")
+
     :init
-    (setq nano-font-size 13)
-    ;; Add nano to load path
-    (add-to-list 'load-path (locate-user-emacs-file "elpaca/builds/nano-emacs"))
+    (load-theme 'nano-dark t)
+    :config
+    (with-eval-after-load 'org-faces
+     (set-face-attribute 'org-block nil :background (face-background 'default))))
+#+end_src
 
-    ;; (require 'nano-layout)
-    (require 'nano-base-colors)
-    (require 'nano-faces)
-    (require 'nano-theme)
+#+begin_src elisp 
+  (use-package nano-modeline
+    :init
+    (nano-modeline-mode 1))
+#+end_src
 
-    (add-to-list 'default-frame-alist
-                 '(internal-border-width . 10))
-
-    ;; Turns out [[https://www.colorhexa.com/][colorhexa]] is a great resource
-    ;; for finding colors that work well together.
-    (setq frame-background-mode 'dark
-          nano-color-foreground "#e8d6c6"
-          nano-color-background "#171717"
-          nano-color-highlight  "#c79972"
-          nano-color-critical   "#EBCB8B"
-          nano-color-salient    "#aac5dd"
-          nano-color-strong     "#e3ccb8"
-          nano-color-popout     "#c77276"
-          nano-color-subtle     "#212121"
-          nano-color-faded      "#c79972"
-          ;; to allow for toggling of the themes.
-          nano-theme-var "dark")
-
-   (call-interactively 'nano-refresh-theme)
-
-      ;; ;; (require 'nano-defaults)
-   (require 'nano-modeline))
+#+begin_src elisp :lexical no
+  (use-package nano-agenda
+    :disabled       ; It's probably gonna be useful when I start using org-agenda
+    :commands (nano-agenda))
 #+end_src
 
 ** All the icons
@@ -440,6 +447,7 @@ icon fonts.
   (use-package all-the-icons
     :if (display-graphic-p))
 #+end_src
+
 ** Olivetti
 #+begin_src elisp
   (use-package olivetti
@@ -466,6 +474,7 @@ icon fonts.
 #+begin_src elisp
   (use-package forge
     :after magit
+    :demand
     :config
     (setq auth-sources '("~/.authinfo")))
 #+end_src
