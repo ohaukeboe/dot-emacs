@@ -411,20 +411,40 @@ When finding these colors I found the [[https://www.colorhexa.com/][colorhexa]] 
     :custom
     (nano-dark-foreground "#e8d6c6")
     (nano-dark-background "#171717")
-    (nano-dark-highlight  "#212121")
+    (nano-dark-highlight  "#2b2b2b")
     (nano-dark-critical   "#EBCB8B")
     (nano-dark-salient    "#aac5dd")
     (nano-dark-strong     "#e3ccb8")
-    ;;(nano-dark-popout     "#c77276")
-    (nano-dark-popout     "#ddaaac")
+    (nano-dark-popout     "#d79c9e")
     (nano-dark-subtle     "#212121")
-    (nano-dark-faded      "#c79972")
+    (nano-dark-faded      "#c69a72")
 
+    (nano-light-background "#fafafa")
     :init
     (load-theme 'nano-dark t)
+    :commands (oh/cycle-themes)
+    :general
+    (oskah/leader-keys
+      "tt" (list (oh/cycle-themes) :wk "cycle themes"))
     :config
-    (with-eval-after-load 'org-faces
-     (set-face-attribute 'org-block nil :background (face-background 'default))))
+
+    (defun oh/set-org-faces ()
+      "Make org source blocks have the same background as the default face."
+      (with-eval-after-load 'org-faces
+       (set-face-attribute 'org-block nil :background (face-background 'default))))
+
+    (oh/set-org-faces)
+
+    (defun oh/cycle-themes ()
+      "Returns a function that lets you cycle your themes."
+      (let ((themes '(nano-dark nano-light)))
+        (lambda ()
+          (interactive)
+          ;; Rotates the theme cycle and changes the current theme.
+          (let ((rotated (nconc (cdr themes) (list (car themes)))))
+            (load-theme (car (setq themes rotated)) t))
+          (oh/set-org-faces)              
+          (message (concat "Switched to " (symbol-name (car themes))))))))
 #+end_src
 
 #+begin_src elisp 
@@ -609,7 +629,7 @@ Visualize the colors of color codes
     (org-confirm-babel-evaluate nil)
     (org-directory "~/Nextcloud/org_notes/")
     (org-attach-id-dir "~/Nextcloud/org_notes/.attach/")
-    ;;(org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ; Set scale of preview images
+      ;;(org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ; Set scale of preview images
     (org-export-with-tags nil)
     (org-startup-with-inline-images t)
     (org-startup-with-latex-preview t)
