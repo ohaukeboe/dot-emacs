@@ -2,11 +2,15 @@
 #+startup: fold
 #+property: header-args:elisp :tangle configuration.el
 
-I run emacs inside a distrobox running arch, and I use
+I run Emacs inside a distrobox running arch, and I use
 use-package-ensure-system-package to make sure the required packages are
 installed. In order to make the distrobox use the host's default applications
 you can run ~sudo ln -s /usr/bin/distrobox-host-exec /usr/local/bin/xdg-open~ from
 inside the container.
+
+[cite:@Coreutils]
+
+[cite:@PullRequests]
 
 * Sane defaults
 These are the defaults that I deem sane, and that should set before anything else.
@@ -328,6 +332,7 @@ And these are some general keybindings I like
   (oskah/leader-keys
     ":" '("M-x" . execute-extended-command)
     ";" '("eval-expression" . pp-eval-expression)
+    "." '("find file" . find-file)
 
     "hb" '("describe keybindings" . describe-bindings)
     "hm" '("describe mode" . describe-mode)
@@ -525,6 +530,7 @@ icon fonts.
 #+begin_src elisp
   (use-package counsel-projectile
     :after (counsel projectile)
+    :disabled
     :ensure-system-package (rg . ripgrep)
     :config
     (counsel-projectile-mode))
@@ -899,27 +905,132 @@ to make them hidden.
     (org-cite-activate-processor 'citar))
 #+end_src
 
-* Misc
-** Ivy
-Ivy is a completion framework, which replaces the default Emacs
-completion framework. It among other things provides a fuzzy search
-and completion alternatives.
+** Citar-org-roam
 
-#+begin_src elisp
-  (use-package ivy
-   :defer 0
-   :config
-   (ivy-mode 1))
-#+end_src
-*** Ivy rich
-Show keybinds and doc-strings in the M-x ivy list
-
-#+begin_src elisp
-  (use-package ivy-rich
-    :after ivy
+#+begin_src elisp :lexical no
+  (use-package citar-org-roam
+    :after (citar org-roam)
+    :config (citar-org-roam-mode)
+    :custom
+    (citar-org-roam-capture-template-key "n")
     :config
-    (ivy-rich-mode 1))
+    (add-to-list 'org-roam-capture-templates
+       '("n" "literature note" plain
+               "%?"
+               :target
+               (file+head
+                "%(expand-file-name (or citar-org-roam-subdir \"\") org-roam-directory)/${citar-citekey}.org"
+                "#+title: ${citar-citekey} (${citar-date}). ${note-title}.\n#+created: %U\n#+last_modified: %U\n\n")
+               :unnarrowed t)))
 #+end_src
+
+* Misc
+** Vertico
+
+#+begin_src elisp
+  (use-package vertico
+    :defer 0
+    :config
+    (vertico-mode))
+#+end_src
+
+Allow using different vertico configurations for different prompts.
+
+#+begin_src elisp
+  (use-package vertico-multiform
+    :elpaca nil
+    :load-path
+    (lambda () (expand-file-name "vertico/extensions" elpaca-builds-directory))
+    :after vertico)
+#+end_src
+
+Allow displaying the vertico completions in a grid
+
+#+begin_src elisp :lexical no
+  (use-package vertico-grid
+    :elpaca nil
+    :load-path
+    (lambda () (expand-file-name "vertico/extensions" elpaca-builds-directory))
+    :after vertico)
+#+end_src
+
+#+begin_src elisp :lexical no
+  (use-package vertico-indexed
+    :elpaca nil
+    :load-path
+    (lambda () (expand-file-name "vertico/extensions" elpaca-builds-directory))
+    :after vertico
+    :config
+    (vertico-indexed-mode))
+#+end_src
+
+** Marginalia
+
+#+begin_src elisp
+  (use-package marginalia
+    :after vertico
+    ;; :custom
+    ;; (vertico-cycle t)
+    :config
+    (marginalia-mode)
+    (savehist-mode))
+#+end_src
+** Consult
+
+#+begin_src elisp :lexical no
+  (use-package consult
+    :general
+    (oskah/leader-keys
+      "bb" '(consult-buffer :wk "consult buffer")
+      "bB" '(consult-buffer-other-window :wk "consult buffer other window")))
+
+#+end_src
+** Orderless
+
+#+begin_src elisp :lexical no
+  (use-package orderless
+    :after vertico
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-overrides '((file (styles basic partial-completion)))))
+#+end_src
+
+** Embark
+
+#+begin_src elisp
+  (use-package embark
+    :ensure t
+
+    :bind
+    (("C-." . embark-act)         ;; pick some comfortable binding
+     ("C-;" . embark-dwim)        ;; good alternative: M-.
+     ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+
+    :init
+
+    ;; Optionally replace the key help with a completing-read interface
+    (setq prefix-help-command #'embark-prefix-help-command)
+
+    ;; Show the Embark target at point via Eldoc.  You may adjust the Eldoc
+    ;; strategy, if you want to see the documentation from multiple providers.
+    (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
+    ;; (setq eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
+
+    :config
+
+    ;; Hide the mode line of the Embark live/completions buffers
+    (add-to-list 'display-buffer-alist
+                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                   nil
+                   (window-parameters (mode-line-format . none)))))
+#+end_src
+
+#+begin_src elisp :lexical no
+  (use-package embark-consult
+    :hook
+    (embark-collect-mode . consult-preview-at-point-mode))
+#+end_src
+
 ** Dired
 
 #+begin_src elisp
@@ -946,7 +1057,7 @@ Show keybinds and doc-strings in the M-x ivy list
     :config
     (global-fish-completion-mode))
 #+end_src
-** Pdf
+** PDF
 
 #+begin_src elisp
   (use-package pdf-tools
@@ -999,30 +1110,26 @@ This sets up spell checking using both english and Norwegian dictionaries
 together. It is also necessary to install =hunspell-en_us= and =hunspell-nb=. Jinx
 is a much faster alternative to flyspell, and it also supports combining dictionaries.
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package jinx
-    :hook (emacs-startup . global-jinx-mode)
+    :hook (elpaca-after-init . global-jinx-mode)
     :ensure-system-package (enchant-2 . enchant)
     :custom
     (jinx-languages "en_US nb_NO")
     :general
     (oskah/leader-keys
-      "Sc" '(jinx-correct :wk "correct previous")))
+      "Sc" '(jinx-correct :wk "correct previous"))
     ;; :bind (("M-$" . jinx-correct)
     ;;        ("C-M-$" . jinx-languages)))
+    :config
+    (with-eval-after-load 'vertico
+      (add-to-list 'vertico-multiform-categories
+                   '(jinx grid
+                          (:not indexed)
+                          (vertico-grid-annotate . 20)))
+      (vertico-multiform-mode 1)))
 #+end_src
 
-** Counsel
-#+begin_src elisp
-  (use-package counsel
-    :config
-    (counsel-mode 1)
-    :general
-    (oskah/leader-keys
-     "bb" 'counsel-switch-buffer
-     "bo" 'counsel-switch-buffer-other-window
-     "." 'counsel-find-file))
-#+end_src
 ** Copilot
 #+begin_src elisp
   (use-package copilot
@@ -1047,10 +1154,10 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked
 to ='prog-mode-hook=, which in case is run on startup. I therefore have a /nice/
 lambda expression to load hook it after emacs has loaded. I also added a small
 delay to make it easier to analyze when packages are loaded as the startup
-message is also run on ='emacs-startup-hook=..
+message is also run on ='emacs-startup-hook=.
 
 #+begin_src elisp
-  (add-hook 'emacs-startup-hook
+  (add-hook 'elpaca-after-init-hook
             (lambda ()
               (run-at-time "1 sec" nil
                            (lambda ()
@@ -1107,9 +1214,9 @@ A better help buffer
 #+begin_src elisp
   (use-package helpful
     :diminish
-    :custom
-    (counsel-describe-function-function #'helpful-callable)
-    (counsel-describe-variable-function #'helpful-variable)
+    ;; :custom
+    ;; (counsel-describe-function-function #'helpful-callable)
+    ;; (counsel-describe-variable-function #'helpful-variable)
     :general
     ('normal "K" 'helpful-at-point)
 
@@ -1121,8 +1228,8 @@ A better help buffer
       "hk" 'describe-key)
 
     :bind
-    ([remap describe-function] . counsel-describe-function)
-    ([remap describe-variable] . counsel-describe-variable)
+    ;; ([remap describe-function] . counsel-describe-function)
+    ;; ([remap describe-variable] . counsel-describe-variable)
     ([remap describe-key] . helpful-key)
     ([remap describe-command] . helpful-command))
 #+end_src
@@ -1160,6 +1267,3 @@ No littering puts the files that packages places in the emacs directory into
      `((".*" . ,(no-littering-expand-var-file-name "undo-tree/")))))
 #+end_src
 
-# Local Variables:
-# jinx-local-words: #("Flyspell" 0 8 (jinx--group "Accept and save word" jinx--suffix #(" [File]" 0 7 (face jinx-annotation))))
-# End:
