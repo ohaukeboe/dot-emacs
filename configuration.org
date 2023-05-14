@@ -893,7 +893,9 @@ to make them hidden.
 
   (defvar oh/roam-dir
     "~/Nextcloud/org_notes/roam/bibliography/")
-  
+  (defvar oh/library-dir
+    "~/Nextcloud/.org/library/")
+
 #+end_src
 
 ** Org-cite
@@ -910,23 +912,7 @@ to make them hidden.
        ;; (latex biblatex))))   
 #+end_src
 
-** Org-ref
-
-#+begin_src elisp
-  (use-package org-ref
-    :after org
-    :general
-    (oskah/leader-keys org-mode-map
-      "mr" '(:ignore t :wk "ref")
-      ;; "mrc" '(org-ref-insert-cite-link :wk "cite")
-      ;; "mrb" '(org-ref-insert-bibliography-link :wk "bibliography")
-      "mrr" '(org-ref-insert-ref-link :wk "insert reference")
-      "mrl" '(org-ref-insert-label-link :wk "insert label")))
-#+end_src
-
 ** Citar
-
-[cite:@clarkUniversityMinnesotaBanned2021]
 
 #+begin_src elisp
     (use-package citar
@@ -965,7 +951,6 @@ to make them hidden.
 #+begin_src elisp :lexical no
   (use-package oc-csl-activate
     :after org
-    :disabled
     :hook
     (org-mode . (lambda () (cursor-sensor-mode 1)))
     ;; This makes the citations render after every command, which might make the
