@@ -3,14 +3,10 @@
 #+property: header-args:elisp :tangle configuration.el
 
 I run Emacs inside a distrobox running arch, and I use
-use-package-ensure-system-package to make sure the required packages are
+=use-package-ensure-system-package= to make sure the required packages are
 installed. In order to make the distrobox use the host's default applications
 you can run ~sudo ln -s /usr/bin/distrobox-host-exec /usr/local/bin/xdg-open~ from
 inside the container.
-
-[cite:@Coreutils]
-
-[cite:@PullRequests]
 
 * Sane defaults
 These are the defaults that I deem sane, and that should set before anything else.
@@ -96,7 +92,7 @@ knowing how much/if packages slow down the emacs startup.
                   gcs-done))
 
    (add-hook 'emacs-startup-hook #'oskah/display-startup-time) ;
-  ;; (setq use-package-verbose t)
+  (setq use-package-verbose t)
 #+end_src
 
 * Elpaca
@@ -336,6 +332,7 @@ And these are some general keybindings I like
     ";" '("eval-expression" . pp-eval-expression)
     "." '("find file" . find-file)
 
+    "hc" '("describe char" . describe-char)
     "hB" '("describe keybindings" . describe-bindings)
     "hM" '("show manual" . info-display-manual)
     "hm" '("describe mode" . describe-mode)
@@ -343,6 +340,9 @@ And these are some general keybindings I like
                                 (interactive)
                                 (org-babel-tangle-file
                                  (locate-user-emacs-file "configuration.org"))))
+
+    "bk" '(kill-current-buffer :which-key "kill current buffer")
+    "br" '(revert-buffer :which-key "kill current buffer")
 
     ;; "wv" '(evil-window-vsplit :which-key "split vertically")
     ;; "wh" '(evil-window-split :which-key "split horizontally")
@@ -353,7 +353,6 @@ And these are some general keybindings I like
                              (interactive)
                              (find-file (locate-user-emacs-file "configuration.org")))))
 
-  ;; Scale text
   (general-def 'normal
     "C-=" 'text-scale-increase
     "C--" 'text-scale-decrease)
@@ -410,8 +409,13 @@ And these are some general keybindings I like
 #+begin_src elisp 
   (add-to-list 'default-frame-alist
                '(internal-border-width . 10))
+#+end_src
+** Fonts
 
-  (set-face-attribute 'default nil :height 130)
+#+begin_src elisp
+  (set-face-attribute 'default nil :family "Roboto Mono" :height 130)
+  (set-face-attribute 'fixed-pitch nil :family "Roboto Mono" :height 1.0)
+  (set-face-attribute 'variable-pitch nil :family "Open Sans" :height 1.2)
 #+end_src
 
 ** NANO
@@ -442,12 +446,12 @@ When finding these colors I found the [[https://www.colorhexa.com/][colorhexa]] 
       "tt" (list (oh/cycle-themes) :wk "cycle themes"))
     :config
 
-    (defun oh/set-org-faces ()
-      "Make org source blocks have the same background as the default face."
-      (with-eval-after-load 'org-faces
-       (set-face-attribute 'org-block nil :background (face-background 'default))))
+    ;; (defun oh/set-org-faces ()
+    ;;   "Make org source blocks have the same background as the default face."
+    ;;   (with-eval-after-load 'org-faces
+    ;;    (set-face-attribute 'org-block nil :background (face-background 'default))))
 
-    (oh/set-org-faces)
+    ;; (oh/set-org-faces)
 
     (defun oh/cycle-themes ()
       "Returns a function that lets you cycle your themes."
@@ -457,7 +461,7 @@ When finding these colors I found the [[https://www.colorhexa.com/][colorhexa]] 
           ;; Rotates the theme cycle and changes the current theme.
           (let ((rotated (nconc (cdr themes) (list (car themes)))))
             (load-theme (car (setq themes rotated)) t))
-          (oh/set-org-faces)              
+          ;; (oh/set-org-faces)              
           (message (concat "Switched to " (symbol-name (car themes))))))))
 #+end_src
 
@@ -550,6 +554,7 @@ Automatically install and use tree-sitter major modes in Emacs 29+. If the tree-
 #+begin_src elisp :lexical no
   (use-package treesit-auto
     :if (>= emacs-major-version 29)
+    :defer 0
     :custom
     (treesit-auto-install t)
     :config
@@ -650,32 +655,45 @@ Visualize the colors of color codes
     :defer t
     :general
     (oskah/leader-keys org-mode-map "m '" 'org-edit-special)
+    :hook
+    (org-mode . variable-pitch-mode)
+    :custom-face
+    (org-block ((t (:foreground unspecified
+                    :background ,(face-background 'default)
+                    :inherit fixed-pitch))))
+    (org-code ((t (:inherit (shadow fixed-pitch)))))
+    (org-indent ((t (:inherit (org-hide fixed-pitch)))))
+    (org-verbatim ((t (:inherit (shadow fixed-pitch)))))
+    (org-special-keyword ((t (:inherit (font-lock-comment-face fixed-pitch)))))
+    (org-meta-line ((t (:inherit (font-lock-comment-face fixed-pitch)))))
+    (org-checkbox ((t (:inherit fixed-pitch))))
     :custom
-    (org-attach-use-inheritance t)  ; Make sure attachments are inherited throuch headings
+    (org-startup-indented t)
+    (org-attach-use-inheritance t)   ; Make sure attachments are inherited throuch headings
     (org-hide-emphasis-markers t)
     (org-ellipsis " ↴")
-    (org-confirm-babel-evaluate nil)
+    (org-confirm-babel-evaluate nil) ; Don't prompt me to confirm everytime I want to evaluate a block
     (org-directory "~/Nextcloud/org_notes/")
     (org-attach-id-dir "~/Nextcloud/org_notes/.attach/")
-      ;;(org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ; Set scale of preview images
+                                     ;;(org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ; Set scale of preview images
     (org-export-with-tags nil)
     (org-startup-with-inline-images t)
     (org-startup-with-latex-preview t)
-    (org-startup-folded t)   ; Start org-mode with everything folded
-    (shr-max-image-proportion 0.6)  ; Smaller max image size
+    (org-startup-folded t)           ; Start org-mode with everything folded
+    (shr-max-image-proportion 0.6)   ; Smaller max image size
     :general
     (oskah/leader-keys org-mode-map
       "ma" '(:ignore t :wk "attachments")
       "mau" '(org-attach-url :wk "attach URL")
       "mas" '(org-attach-sync :wk "sync attachments")
       "maS" '(org-attach-set-directory :wk "set attachment directory")
-      "mao" '(org-attach-open :wk "open attachment"))
+      "mao" '(org-attach-open :wk "open attachment")
+      "me" '(org-export-dispatch :wk "export"))
 
     :config
     (org-babel-do-load-languages
      'org-babel-load-languages
      org-babel-load-languages))
-
 #+end_src
 
 Make the configuration get tangled on save
@@ -721,6 +739,7 @@ to make them hidden.
 #+end_src
 
 ** Evil-org
+
 #+begin_src elisp
   (use-package evil-org
     :diminish
@@ -738,7 +757,24 @@ to make them hidden.
     :hook (org-mode . org-modern-mode)
     :custom
     (org-modern-priority nil)
-    (org-modern-table nil))
+    (org-modern-table nil)
+    (org-modern-list 
+       '((?- . "•")
+         ;;(?* . "•")
+         (?+ . "‣"))))
+#+end_src
+
+** Org-modern indent
+
+#+begin_src elisp
+  (use-package org-modern-indent
+    :after org
+    :elpaca (org-modern-indent :type git :host github :repo "jdtsmith/org-modern-indent")
+    :config ; add late to hook
+    (add-hook 'org-mode-hook #'org-modern-indent-mode 90)
+    (set-face-attribute 'org-modern-bracket-line nil
+                        :family "Roboto Mono"
+                        :weight 'regular))
 #+end_src
 
 ** Appear
@@ -876,10 +912,6 @@ to make them hidden.
 
 ** Org-ref
 
-[cite:@tanenbaumModernOperatingSystems2015]
-
-
-
 #+begin_src elisp
   (use-package org-ref
     :after org
@@ -897,18 +929,18 @@ to make them hidden.
 [cite:@clarkUniversityMinnesotaBanned2021]
 
 #+begin_src elisp
-  (use-package citar
-    ;:after (org latex)
-    :general
-    (oskah/leader-keys '(org-mode-map latex-mode-map)
-      "mrc" '(citar-insert-citation :which-key "insert citation")
-      "mre" '(citar-export-local-bib-file :which-key "export local bib file")
-      "mro" '(citar-open :wk "open resource"))
-    :custom
-    (citar-bibliography oh/bib-files)
-    (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
-    (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
-    (citar-at-point-function 'embark-act))          ; Use `embark'
+    (use-package citar
+      ;:after (org latex)
+  :general
+      (oskah/leader-keys '(org-mode-map latex-mode-map)
+        "mrc" '(citar-insert-citation :which-key "insert citation")
+        "mre" '(citar-export-local-bib-file :which-key "export local bib file")
+        "mro" '(citar-open :wk "open resource"))
+      :custom
+      (citar-bibliography oh/bib-files)
+      (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
+      (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
+      (citar-at-point-function 'embark-act))          ; Use `embark'
 #+end_src
 
 #+begin_src elisp :lexical no
@@ -926,6 +958,30 @@ to make them hidden.
     (org-cite-insert-processor 'citar)
     (org-cite-follow-processor 'citar)
     (org-cite-activate-processor 'citar))
+#+end_src
+
+** Citation rendering
+
+#+begin_src elisp :lexical no
+  (use-package oc-csl-activate
+    :after org
+    :disabled
+    :hook
+    (org-mode . (lambda () (cursor-sensor-mode 1)))
+    ;; This makes the citations render after every command, which might make the
+    ;; editor slow.
+    (org-mode . (lambda () (add-hook 'post-command-hook
+                                     (lambda ()
+                                       (org-cite-csl-activate-render-all))
+                                     90)))
+    :elpaca (oc-csl-activate
+             :type git
+             :host github
+             :repo "andras-simonyi/org-cite-csl-activate")
+    :custom
+    (org-cite-csl-activate-use-citar-cache t)
+    :config
+    (setq org-cite-activate-processor 'csl-activate))
 #+end_src
 
 ** Citar-org-roam
@@ -1129,7 +1185,8 @@ is a much faster alternative to flyspell, and it also supports combining diction
 
 #+begin_src elisp
   (use-package jinx
-    :hook (elpaca-after-init . global-jinx-mode)
+    ;:hook (elpaca-after-init . global-jinx-mode)
+    :defer 0
     :ensure-system-package (enchant-2 . enchant)
     :custom
     (jinx-languages "en_US nb_NO")
@@ -1139,6 +1196,7 @@ is a much faster alternative to flyspell, and it also supports combining diction
     ;; :bind (("M-$" . jinx-correct)
     ;;        ("C-M-$" . jinx-languages)))
     :config
+    (global-jinx-mode 1)
     (with-eval-after-load 'vertico
       (add-to-list 'vertico-multiform-categories
                    '(jinx grid
@@ -1245,8 +1303,8 @@ A better help buffer
       "hk" 'describe-key)
 
     :bind
-    ;; ([remap describe-function] . counsel-describe-function)
-    ;; ([remap describe-variable] . counsel-describe-variable)
+    ([remap describe-function] . helpful-function)
+    ([remap describe-variable] . helpful-variable)
     ([remap describe-key] . helpful-key)
     ([remap describe-command] . helpful-command))
 #+end_src
