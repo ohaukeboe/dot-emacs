@@ -20,6 +20,7 @@ These are the defaults that I deem sane, and that should set before anything els
 
   (setq auto-revert-interval 1              ; Refresh buffers fast
         display-line-numbers-type 'relative ; Show relative line numbers
+        use-dialog-box nil                  ; No dialog boxes
         default-input-method "TeX"          ; Use TeX when toggling input method
         echo-keystrokes 0.1                 ; Show keystrokes asap
         frame-inhibit-implied-resize 1      ; Don't resize frame implicitly
@@ -95,7 +96,7 @@ knowing how much/if packages slow down the emacs startup.
                   gcs-done))
 
    (add-hook 'emacs-startup-hook #'oskah/display-startup-time) ;
-  (setq use-package-verbose t)
+  ;; (setq use-package-verbose t)
 #+end_src
 
 * Elpaca
@@ -193,7 +194,7 @@ Yes, the package is called general. It's a keybinding framework.
     (evil-want-keybinding nil)
     (evil-want-C-u-scroll t)
     (evil-want-C-i-jump t)
-    (evil-undo-system 'undo-tree)
+    (evil-undo-system 'undo-redo)
 
     :general
     ('(normal visual) "gr" 'eval-region)
@@ -321,6 +322,7 @@ keybindings in a logical way, and to describe them in the which-key popup.
   (oskah/leader-keys "m" '(:ignore t :wk "localleader")
                      "t" '(:ignore t :wk "toggle")
                      "f" '(:ignore t :wk "file")
+                     "s" '(:ignore t :wk "spell")
                      "b" '(:ignore t :wk "buffer")
                      "h" '(:ignore t :wk "help")
                      "o" '(:ignore t :wk "open"))
@@ -334,7 +336,8 @@ And these are some general keybindings I like
     ";" '("eval-expression" . pp-eval-expression)
     "." '("find file" . find-file)
 
-    "hb" '("describe keybindings" . describe-bindings)
+    "hB" '("describe keybindings" . describe-bindings)
+    "hM" '("show manual" . info-display-manual)
     "hm" '("describe mode" . describe-mode)
     "hr" '("rebuild config" . (lambda ()
                                 (interactive)
@@ -506,20 +509,19 @@ icon fonts.
 #+begin_src elisp
   (use-package forge
     :after magit
-    :demand
+    :diminish
     :config
     (setq auth-sources '("~/.authinfo")))
 #+end_src
 ** Projectile
 #+begin_src elisp
   (use-package projectile
-    :after ivy
+    :after vertico
+    :diminish
     :defer 1
     :commands (projectile-mode projectile-command-map)
     :general
     (oskah/leader-keys "p" 'projectile-command-map)
-    :custom
-    (projectile-completion-system 'ivy)
     :config
     (projectile-mode 1)
     (when (file-directory-p "~/projects")
@@ -530,6 +532,7 @@ icon fonts.
 #+begin_src elisp
   (use-package counsel-projectile
     :after (counsel projectile)
+    :diminish
     :disabled
     :ensure-system-package (rg . ripgrep)
     :config
@@ -541,6 +544,18 @@ icon fonts.
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 #+end_src
+** Tree-sitter
+Automatically install and use tree-sitter major modes in Emacs 29+. If the tree-sitter version can’t be used, fall back to the original major mode.
+
+#+begin_src elisp :lexical no
+  (use-package treesit-auto
+    :if (>= emacs-major-version 29)
+    :custom
+    (treesit-auto-install t)
+    :config
+    (global-treesit-auto-mode))
+#+end_src
+
 ** Rainbow mode
 Visualize the colors of color codes
 
@@ -579,7 +594,7 @@ Visualize the colors of color codes
     :diminish
     :defer 0
     :custom
-    (company-idle-delay 0.0)
+    (company-idle-delay 0.1)
     (company-minimum-prefix-length 1)
     :general
     ('company-active-map   ; Allow creating newline during completion
@@ -887,12 +902,20 @@ to make them hidden.
     :general
     (oskah/leader-keys '(org-mode-map latex-mode-map)
       "mrc" '(citar-insert-citation :which-key "insert citation")
-      "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
+      "mre" '(citar-export-local-bib-file :which-key "export local bib file")
+      "mro" '(citar-open :wk "open resource"))
     :custom
     (citar-bibliography oh/bib-files)
     (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
     (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
     (citar-at-point-function 'embark-act))          ; Use `embark'
+#+end_src
+
+#+begin_src elisp :lexical no
+  (use-package citar-embark
+    :after citar embark
+    :no-require
+    :config (citar-embark-mode))
 #+end_src
 
 #+begin_src elisp
@@ -998,31 +1021,12 @@ Allow displaying the vertico completions in a grid
 ** Embark
 
 #+begin_src elisp
-  (use-package embark
-    :ensure t
-
-    :bind
-    (("C-." . embark-act)         ;; pick some comfortable binding
-     ("C-;" . embark-dwim)        ;; good alternative: M-.
-     ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
-
-    :init
-
-    ;; Optionally replace the key help with a completing-read interface
-    (setq prefix-help-command #'embark-prefix-help-command)
-
-    ;; Show the Embark target at point via Eldoc.  You may adjust the Eldoc
-    ;; strategy, if you want to see the documentation from multiple providers.
-    (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
-    ;; (setq eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
-
-    :config
-
-    ;; Hide the mode line of the Embark live/completions buffers
-    (add-to-list 'display-buffer-alist
-                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                   nil
-                   (window-parameters (mode-line-format . none)))))
+    (use-package embark
+      :general
+      (oskah/leader-keys
+        "hb" '(embark-bindings :wk "describe bindings")
+        "aa" '(embark-act :wk "embark act")
+        "ad" '(embark-dwim :wk "default action")))
 #+end_src
 
 #+begin_src elisp :lexical no
@@ -1094,10 +1098,23 @@ This requires the =mu= program.
 #+begin_src elisp
   (use-package undo-tree
     :defer 0
+    :disabled
     :diminish
     :config
     (global-undo-tree-mode))
 #+end_src
+
+** Vundo
+
+#+begin_src elisp 
+  (use-package vundo
+    :custom
+    (vundo-glyph-alist vundo-unicode-symbols)
+    :general
+    (oskah/leader-keys
+      "u" '(vundo :wk "undo tree")))
+#+end_src
+
 ** SQLite
 
 #+begin_src elisp
@@ -1118,7 +1135,7 @@ is a much faster alternative to flyspell, and it also supports combining diction
     (jinx-languages "en_US nb_NO")
     :general
     (oskah/leader-keys
-      "Sc" '(jinx-correct :wk "correct previous"))
+      "sc" '(jinx-correct :wk "correct previous"))
     ;; :bind (("M-$" . jinx-correct)
     ;;        ("C-M-$" . jinx-languages)))
     :config
