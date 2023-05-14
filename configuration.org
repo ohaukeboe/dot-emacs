@@ -242,10 +242,10 @@ not depend on evil mode.
 #+begin_src elisp
   (use-package evil-surround
     :after evil
-    :demand
     :config
     (global-evil-surround-mode 1))
 #+end_src
+
 *** Numbers
 
 #+begin_src elisp
@@ -256,24 +256,24 @@ not depend on evil mode.
       "g-" 'evil-numbers/dec-at-pt
       "g+" 'evil-numbers/inc-at-pt))
 #+end_src
+
 *** Goggles
 Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-goggles
     :after evil
-    :demand
     :custom
     (evil-goggles-enable-delete nil)
     :config
     (evil-goggles-mode))
 #+end_src
+
 *** Exchange
 
 #+begin_src elisp
   (use-package evil-exchange
     :after evil
-    :demand
     :config
     (evil-exchange-install))
 #+end_src
@@ -281,7 +281,6 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-args
-    :demand
     :after evil
     :config
     (define-key evil-inner-text-objects-map "a" 'evil-inner-arg)
@@ -295,8 +294,7 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-lion
-    :after evil  ; sldf
-    :demand  ; sldkfj
+    :after evil  
     :general
     ('(normal visual) "g l" 'evil-lion-left
                       "g L" 'evil-lion-right)
@@ -355,7 +353,7 @@ And these are some general keybindings I like
 
 ** Window management
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (with-eval-after-load 'evil
     (winner-mode 1)
     (defhydra oh/window-resize (:timeout 2)
@@ -461,7 +459,7 @@ When finding these colors I found the [[https://www.colorhexa.com/][colorhexa]] 
     (nano-modeline-mode 1))
 #+end_src
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package nano-agenda
     :disabled       ; It's probably gonna be useful when I start using org-agenda
     :commands (nano-agenda))
@@ -615,7 +613,7 @@ Visualize the colors of color codes
 #+end_src
 *** Maude
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package maude-mode
     :ensure-system-package maude
     :mode "\\.maude\\'"
@@ -755,7 +753,7 @@ to make them hidden.
 
 ** Download
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package org-download
     ;:demand
     :after org
@@ -786,7 +784,7 @@ to make them hidden.
 
 ** Roam
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package org-roam
     :custom
     (org-roam-node-display-template "${title:*} ${tags:10}")
@@ -815,7 +813,7 @@ to make them hidden.
 
 ** Noter
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package org-noter
     :general
     (oskah/leader-keys
@@ -829,21 +827,26 @@ to make them hidden.
 
 * Bibilo
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (defvar oh/bib-files
      '("~/Nextcloud/.org/references.bib"
        "~/Nextcloud/.org/bibliography/zotero.bib"
        "~/Nextcloud/.org/bibliography/uni/IN2000 gang.bib"
        "~/Nextcloud/.org/bibliography/uni/IN2120_gang-midterm.bib"))
+
+  (defvar oh/roam-dir
+    "~/Nextcloud/org_notes/roam/bibliography/")
+  
 #+end_src
 
 ** Org-cite
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package oc
     :elpaca nil
     :after org
     :custom
+    (org-cite-csl-styles-dir "~/Zotero/styles")
     (org-cite-global-bibliography oh/bib-files)
     (org-cite-export-processors
      '((t csl))))
@@ -856,7 +859,7 @@ to make them hidden.
 
 
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package org-ref
     :after org
     :general
@@ -881,12 +884,12 @@ to make them hidden.
       "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
     :custom
     (citar-bibliography oh/bib-files)
-    (citar-notes-paths (list kb/roam-dir))          ; List of directories for reference nodes
+    (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
     (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
     (citar-at-point-function 'embark-act))          ; Use `embark'
 #+end_src
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package citar-org
     :elpaca nil
     :after (oc citar)
@@ -905,7 +908,6 @@ and completion alternatives.
 #+begin_src elisp
   (use-package ivy
    :defer 0
-   :demand
    :config
    (ivy-mode 1))
 #+end_src
@@ -946,7 +948,7 @@ Show keybinds and doc-strings in the M-x ivy list
 #+end_src
 ** Pdf
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package pdf-tools
     :defer t
     :config
@@ -954,7 +956,7 @@ Show keybinds and doc-strings in the M-x ivy list
 #+end_src
 ** Mail
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   ;; (set-email-account! "proton"
   ;;   '((mu4e-sent-folder       . "/proton/Sent")
   ;;     (mu4e-drafts-folder     . "/proton/Drafts")
@@ -986,50 +988,28 @@ This requires the =mu= program.
     (global-undo-tree-mode))
 #+end_src
 ** SQLite
-Magit requires sqlite and recomends using =sqlite3=
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package sqlite3
     :defer t
     :ensure-system-package (sqlite3 . sqlite))
 #+end_src
 ** Spell check
 This sets up spell checking using both english and Norwegian dictionaries
-together. It is also necessary to install =hunspell-en_us= and =hunspell-nb=.
+together. It is also necessary to install =hunspell-en_us= and =hunspell-nb=. Jinx
+is a much faster alternative to flyspell, and it also supports combining dictionaries.
 
-If the spell checker makes the cursor hang, it can be useful to setup
-[[https://github.com/rolandwalker/flyspell-lazy][flyspell-lazy]] which delays the spellchecker until Emacs has been idle for some
-time.
-
-#+begin_src elisp
-  (use-package ispell
-    :after flyspell
-    :ensure-system-package
-    (hunspell)
-    :elpaca nil
+#+begin_src elisp :lexical no
+  (use-package jinx
+    :hook (emacs-startup . global-jinx-mode)
+    :ensure-system-package (enchant-2 . enchant)
     :custom
-    (ispell-program-name "hunspell")
-    (ispell-dictionary "en_US,nb_NO")
-    :config
-    (ispell-set-spellchecker-params)
-    (ispell-hunspell-add-multi-dic "en_US,nb_NO"))
-
-  (use-package flyspell
-    :elpaca nil
-    :defer t
-    :hook
-    ((text-mode . flyspell-mode)
-     (prog-mode . flyspell-prog-mode)))
-
-  (use-package flyspell-correct
-    :after flyspell
+    (jinx-languages "en_US nb_NO")
     :general
     (oskah/leader-keys
-      "S" '(:ignore t :which-key "spell")
-      "S c" '(flyspell-correct-wrapper :which-key "correct")))
-
-  (use-package flyspell-correct-ivy
-    :after flyspell-correct)
+      "Sc" '(jinx-correct :wk "correct previous")))
+    ;; :bind (("M-$" . jinx-correct)
+    ;;        ("C-M-$" . jinx-languages)))
 #+end_src
 
 ** Counsel
@@ -1179,3 +1159,7 @@ No littering puts the files that packages places in the emacs directory into
     (undo-tree-history-directory-alist
      `((".*" . ,(no-littering-expand-var-file-name "undo-tree/")))))
 #+end_src
+
+# Local Variables:
+# jinx-local-words: #("Flyspell" 0 8 (jinx--group "Accept and save word" jinx--suffix #(" [File]" 0 7 (face jinx-annotation))))
+# End:
