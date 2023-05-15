@@ -4,8 +4,6 @@
 
 I run Emacs inside a distrobox running arch, and I use =use-package-ensure-system-package= to make sure the required packages are installed. In order to make the distrobox use the host's default applications you can run ~sudo ln -s /usr/bin/distrobox-host-exec /usr/local/bin/xdg-open~ from inside the container.
 
-Hello there. It is me ... Oskar.
-
 * Sane defaults
 These are the defaults that I deem sane, and that should set before anything else.
 
@@ -70,11 +68,11 @@ clients, file templates and snippets. It is optional.
 * Startup performance
 
 #+begin_src elisp
-    (setq gc-cons-threshold 100000000)
+  (setq gc-cons-threshold 100000000)
 
-    (add-hook 'after-init-hook
-              (lambda ()
-                (setq gc-cons-threshold 1000000)))
+  (add-hook 'after-init-hook
+            (lambda ()
+              (setq gc-cons-threshold 1000000)))
 #+end_src
 
 ** Startup performance message
@@ -90,7 +88,7 @@ knowing how much/if packages slow down the emacs startup.
           gcs-done))
 
    (add-hook 'emacs-startup-hook #'oskah/display-startup-time) ;
-  (setq use-package-verbose t)
+  ;; (setq use-package-verbose t)
 #+end_src
 
 * Elpaca
@@ -411,14 +409,25 @@ And these are some general keybindings I like
 ** Fonts
 
 #+begin_src elisp
-  (set-face-attribute 'default nil :family "Roboto Mono" :height 130)
-  (set-face-attribute 'fixed-pitch nil :family "Roboto Mono" :height 0.9)
-  (set-face-attribute 'variable-pitch nil :family "Roboto Serif" :height 1.3)
-  ;; (set-face-attribute 'variable-pitch nil :family "Open Sans" :height 1.2)
-  (set-face-attribute 'italic nil :slant 'italic :inherit nil)
+  (set-face-attribute 'default nil
+                      :family "Roboto Mono"
+                      :height 130)
+  (set-face-attribute 'fixed-pitch nil
+                      :family "Roboto Mono"
+                      :height 0.9)
+  (set-face-attribute 'variable-pitch nil
+                      :family "Roboto Serif"
+                      :height 1.3)
+  ;; (set-face-attribute 'variable-pitch nil
+  ;;                  :family "Open Sans"
+  ;;                  :height 1.2
+  (set-face-attribute 'italic nil
+                      :slant 'italic
+                      :inherit nil)
 
   (with-eval-after-load 'nano-theme
-    (set-face-attribute 'nano-strong nil :weight 'semi-bold))
+    (set-face-attribute 'nano-strong nil
+                        :weight 'semi-bold))
 #+end_src
 
 ** NANO
@@ -502,17 +511,22 @@ icon fonts.
 
 * Project management
 ** Magit
+
 #+begin_src elisp
   (use-package magit
     :ensure-system-package
     ((ssh . openssh)
      (git . git))
     :custom
-    (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+    (magit-display-buffer-function
+     #'magit-display-buffer-same-window-except-diff-v1)
     :general
     (oskah/leader-keys "gg" 'magit-status))
 #+end_src
+
+
 ** Forge
+
 #+begin_src elisp
   (use-package forge
     :after magit
@@ -520,7 +534,9 @@ icon fonts.
     :config
     (setq auth-sources '("~/.authinfo")))
 #+end_src
+
 ** Projectile
+
 #+begin_src elisp
   (use-package projectile
     :after vertico
@@ -625,6 +641,27 @@ Visualize the colors of color codes
     :config
     (setq maude-indent 2))
 #+end_src
+*** Plantuml
+
+#+begin_src elisp :lexical no
+    (use-package plantuml-mode
+      :ensure-system-package plantuml
+      :init
+      (with-eval-after-load 'org
+        (add-to-list 'org-src-lang-modes
+                     '("plantuml" . plantuml))
+        (add-to-list 'org-babel-load-languages
+                     '(plantuml . t)))
+
+      :custom
+      (plantuml-default-exec-mode 'executable)
+      (org-plantuml-exec-mode 'plantuml)
+      :mode
+      ("\\.plantuml\\'" . plantuml-mode)
+      ("\\.puml\\'" . plantuml-mode)
+      :config
+      (setq plantuml-output-type "png"))
+#+end_src
 
 * Org mode
 ** Org
@@ -639,31 +676,44 @@ Visualize the colors of color codes
     (org-mode . (lambda () (auto-fill-mode 0)))
     (org-mode . (lambda () (visual-line-mode 1)))
     :custom-face
-    (org-block ((t (:foreground unspecified
-                    :background ,(face-background 'default)
-                    :inherit fixed-pitch))))
-    (org-italic ((t (:inherit (variable-pitch italic)))))
-    (org-code ((t (:inherit (shadow fixed-pitch)))))
-    (org-indent ((t (:inherit (org-hide fixed-pitch)))))
-    (org-verbatim ((t (:inherit (shadow fixed-pitch)))))
-    (org-special-keyword ((t (:inherit (font-lock-comment-face fixed-pitch)))))
-    (org-meta-line ((t (:inherit (font-lock-comment-face fixed-pitch)))))
-    (org-checkbox ((t (:inherit fixed-pitch))))
+    (org-block
+     ((t (:foreground unspecified
+          :background ,(face-background 'default)
+          :inherit fixed-pitch))))
+    (org-italic
+     ((t (:inherit (variable-pitch italic)))))
+    (org-code
+     ((t (:inherit (shadow fixed-pitch)))))
+    (org-indent
+     ((t (:inherit (org-hide fixed-pitch)))))
+    (org-verbatim
+     ((t (:inherit (shadow fixed-pitch)))))
+    (org-special-keyword
+     ((t (:inherit (font-lock-comment-face fixed-pitch)))))
+    (org-meta-line
+     ((t (:inherit (font-lock-comment-face fixed-pitch)))))
+    (org-checkbox
+     ((t (:inherit fixed-pitch))))
+    (org-table
+     ((t (:inherit (nano-faded fixed-pitch)))))
     :custom
     (org-startup-indented t)
-    (org-attach-use-inheritance t)   ; Make sure attachments are inherited throuch
-                                     ; headings
+    (org-attach-use-inheritance t)   ; Make sure attachments are
+                                     ; inherited throuch headings
     (org-hide-emphasis-markers t)
     (org-ellipsis " ↴")
-    (org-confirm-babel-evaluate nil) ; Don't prompt me to confirm everytime I want
-                                     ; to evaluate a block
+    (org-confirm-babel-evaluate nil) ; Don't prompt me to confirm
+                                     ; everytime I want to
+                                     ; evaluate a block
     (org-directory "~/Nextcloud/org_notes/")
     (org-attach-id-dir "~/Nextcloud/org_notes/.attach/")
-    ;;(org-format-latex-options (plist-put org-format-latex-options :scale 1.3)) ; Set scale of preview images
+    ;;(org-format-latex-options
+    ;;  (plist-put org-format-latex-options :scale 1.3) ; Set scale ; of preview images
     (org-export-with-tags nil)
     (org-startup-with-inline-images t)
     (org-startup-with-latex-preview t)
-    (org-startup-folded t)           ; Start org-mode with everything folded
+    (org-startup-folded 'content)    ; Start org-mode with everything
+                                     ; folded
     (shr-max-image-proportion 0.6)   ; Smaller max image size
     :general
     (oskah/leader-keys org-mode-map
@@ -678,6 +728,18 @@ Visualize the colors of color codes
     (org-babel-do-load-languages
      'org-babel-load-languages
      org-babel-load-languages))
+#+end_src
+
+When evaluating a source block which generates an image the image will usually not be rendered immediately. This fixes that
+
+#+begin_src elisp :lexical no
+  (defun my/org-babel-after-execute-refresh-images ()
+    "Refresh inline images after a src block is executed."
+    (org-redisplay-inline-images))
+
+  (add-hook 'org-babel-after-execute-hook
+            'my/org-babel-after-execute-refresh-images)
+
 #+end_src
 
 Make the configuration get tangled on save
@@ -753,7 +815,10 @@ to make them hidden.
 #+begin_src elisp
   (use-package org-modern-indent
     :after org
-    :elpaca (org-modern-indent :type git :host github :repo "jdtsmith/org-modern-indent")
+    :elpaca (org-modern-indent
+             :type git
+             :host github
+             :repo "jdtsmith/org-modern-indent")
     :config ; add late to hook
     (add-hook 'org-mode-hook #'org-modern-indent-mode 90)
     (set-face-attribute 'org-modern-bracket-line nil
@@ -814,6 +879,7 @@ to make them hidden.
 #+begin_src elisp
   (use-package company-org-block
     :diminish
+    :disabled
     :defer t
     :custom
     (company-org-block-edit-style 'auto) ;; 'auto, 'prompt, or 'inline
@@ -821,6 +887,16 @@ to make them hidden.
                          (setq-local company-backends
                                      (cons 'company-org-block company-backends))
                          (company-mode +1)))))
+#+end_src
+
+** Src block completion
+
+#+begin_src elisp
+  (use-package org-block-capf
+    :elpaca
+    (org-block-capf :type git :host github :repo "xenodium/org-block-capf")
+    :hook
+    (org-mode . org-block-capf-add-to-completion-at-point-functions))
 #+end_src
 
 ** Roam
@@ -866,7 +942,7 @@ to make them hidden.
     (org-noter-notes-search-path '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
 #+end_src
 
-* Completion framework
+* Completion frameworks
 ** Vertico
 
 #+begin_src elisp
@@ -892,7 +968,8 @@ Allow displaying the vertico completions in a grid
   (use-package vertico-grid
     :elpaca nil
     :load-path
-    (lambda () (expand-file-name "vertico/extensions" elpaca-builds-directory))
+    (lambda ()
+      (expand-file-name "vertico/extensions" elpaca-builds-directory))
     :after vertico)
 #+end_src
 
@@ -900,7 +977,8 @@ Allow displaying the vertico completions in a grid
   (use-package vertico-indexed
     :elpaca nil
     :load-path
-    (lambda () (expand-file-name "vertico/extensions" elpaca-builds-directory))
+    (lambda ()
+      (expand-file-name "vertico/extensions" elpaca-builds-directory))
     :after vertico
     :config
     (vertico-indexed-mode))
@@ -911,6 +989,7 @@ Allow displaying the vertico completions in a grid
 #+begin_src elisp
   (use-package company
     :diminish
+    :disabled
     :defer 0
     :custom
     (company-idle-delay 0.3)
@@ -930,6 +1009,80 @@ Allow displaying the vertico completions in a grid
     :hook (company-mode . company-box-mode))
 #+end_src
 
+** Corfu
+
+#+begin_src elisp :lexical no
+  (use-package corfu
+    :defer 0
+    :custom
+    ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    (corfu-auto t)                 ;; Enable auto completion
+    ;; (corfu-separator ?\s)          ;; Orderless field separator
+    ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
+    ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
+    ;; (corfu-preview-current nil)    ;; Disable current candidate preview
+    (corfu-preselect 'first)      ;; Preselect the prompt
+    ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
+    ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+
+    ;; Enable Corfu only for certain modes.
+    ;; :hook ((prog-mode . corfu-mode)
+    ;;        (shell-mode . corfu-mode)
+    ;;        (eshell-mode . corfu-mode))
+
+    ;; Recommended: Enable Corfu globally.
+    ;; This is recommended since Dabbrev can be used globally (M-/).
+    ;; See also `corfu-exclude-modes'.
+    :config
+    (global-corfu-mode)
+
+    ;; Enable indentation+completion using the TAB key.
+    ;; `completion-at-point' is often bound to M-TAB.
+    (setq tab-always-indent 'complete))
+
+
+  (use-package corfu-popupinfo
+    :after corfu
+    :elpaca nil
+    ;:custom
+    ;(corfu-popupinfo-delay (1.0 0.5))
+    :load-path
+    (lambda ()
+      (expand-file-name "corfu/extensions" elpaca-builds-directory))
+    :config
+    (corfu-popupinfo-mode))
+
+  (use-package corfu-history
+    :after corfu
+    :elpaca nil
+    :load-path
+    (lambda ()
+      (expand-file-name "corfu/extensions" elpaca-builds-directory))
+    :config
+    (corfu-history-mode))
+#+end_src
+
+** Cape
+
+#+begin_src elisp :lexical no
+  (use-package cape
+    :init
+    ;; Add `completion-at-point-functions', used by `completion-at-point'.
+    ;; NOTE: The order matters!
+    (add-to-list 'completion-at-point-functions #'cape-dabbrev)
+    (add-to-list 'completion-at-point-functions #'cape-file)
+    (add-to-list 'completion-at-point-functions #'cape-elisp-block)
+    (add-to-list 'completion-at-point-functions #'cape-history)
+    ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
+    ;;(add-to-list 'completion-at-point-functions #'cape-tex)
+    ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
+    ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
+    ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
+    (add-to-list 'completion-at-point-functions #'cape-dict))
+    ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
+    ;;(add-to-list 'completion-at-point-functions #'cape-line)
+#+end_src
+
 ** Consult
 
 #+begin_src elisp :lexical no
@@ -938,7 +1091,8 @@ Allow displaying the vertico completions in a grid
     :general
     (oskah/leader-keys
       "bb" '(consult-buffer :wk "consult buffer")
-      "bB" '(consult-buffer-other-window :wk "consult buffer other window"))
+      "bB" '(consult-buffer-other-window :wk "consult buffer other window")
+      "fr" '(consult-recent-file :wk "recent file"))
     :config
     (recentf-mode 1))
 
@@ -954,7 +1108,7 @@ Allow displaying the vertico completions in a grid
         "ad" '(embark-dwim :wk "default action")))
 #+end_src
 
-#+begin_src elisp :lexical no
+#+begin_src elisp 
   (use-package embark-consult
     :hook
     (embark-collect-mode . consult-preview-at-point-mode))
@@ -1119,6 +1273,8 @@ Allow displaying the vertico completions in a grid
 #+begin_src elisp
   (use-package pdf-tools
     :defer t
+    :hook (pdf-view-mode-hook . evil-normal-state)
+    :mode ("\\.pdf\\'" . pdf-tools)
     :config
     (pdf-tools-install))
 #+end_src
@@ -1338,4 +1494,5 @@ No littering puts the files that packages places in the emacs directory into
     (undo-tree-history-directory-alist
      `((".*" . ,(no-littering-expand-var-file-name "undo-tree/")))))
 #+end_src
+
 
