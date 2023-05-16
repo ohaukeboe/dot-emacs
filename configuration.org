@@ -513,6 +513,8 @@ icon fonts.
     :ensure-system-package
     ((ssh . openssh)
      (git . git))
+    :hook
+    (git-commit-mode . evil-insert-state)
     :custom
     (magit-display-buffer-function
      #'magit-display-buffer-same-window-except-diff-v1)
