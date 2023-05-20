@@ -1381,7 +1381,7 @@ This is the configuration that should be put in ~~/.config/fish/config.fish~. Th
   (use-package pdf-tools
     :defer t
     :hook (pdf-view-mode-hook . evil-normal-state)
-    :mode ("\\.pdf\\'" . pdf-tools)
+    :mode ("\\.pdf\\'" . pdf-view-mode)
     :config
     (pdf-tools-install))
 #+end_src
