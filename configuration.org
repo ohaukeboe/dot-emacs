@@ -37,20 +37,21 @@ These are the defaults that I deem sane, and that should set before anything els
     (funcall mode t))
 
   (dolist (mode '(org-mode-hook
-                    term-mode-hook
-                    vterm-mode-hook
-                    shell-mode-hook
-                    eshell-mode-hook))
+                  image-mode-hook
+                  term-mode-hook
+                  vterm-mode-hook
+                  shell-mode-hook
+                  eshell-mode-hook))
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
   (fset 'yes-or-no-p 'y-or-n-p)
   (set-fringe-mode 10)
 
-
+  (add-hook 'before-save-hook
+            'delete-trailing-whitespace)
 #+end_src
 
-Some variables are buffer-local, and should therefore be set using ~setq-default~
-in order to set them globally.
+Some variables are buffer-local, and should therefore be set using ~setq-default~ in order to set them globally.
 
 #+begin_src elisp
   (setq-default indent-tabs-mode nil              ; Use spaces instead of tabs
@@ -146,7 +147,8 @@ Enable elpaca use-package support
      ;; Enable :elpaca use-package keyword.
      (elpaca-use-package-mode)
      ;; Assume :elpaca t unless otherwise specified.
-     (setq elpaca-use-package-by-default t))
+     (setq elpaca-use-package-by-default t)
+     (setq package-user-dir (expand-file-name "builds" elpaca-directory)))
      ;; (setq use-package-always-defer t))
 
    ;; Block until current queue processed.
@@ -159,7 +161,7 @@ Enable elpaca use-package support
 (use-package use-package-ensure-system-package)
 (elpaca-wait)
  #+end_src
- 
+
 * Keybinds
 ** General
 Yes, the package is called general. It's a keybinding framework.
@@ -184,7 +186,7 @@ Yes, the package is called general. It's a keybinding framework.
 
 #+begin_src elisp
   (use-package evil
-    :diminish 
+    :diminish
     :defer 0
     :custom
     (evil-want-integration t)
@@ -197,7 +199,7 @@ Yes, the package is called general. It's a keybinding framework.
     ('(normal visual) "gr" 'eval-region)
     ('insert "S-<return>" 'newline-and-indent)  ; Make S-RET always do newline-and-indent
     (oskah/leader-keys
-      "we" '(evil-window-map :which-key "evil window map")) 
+      "we" '(evil-window-map :which-key "evil window map"))
 
     :config
     (evil-mode 1)
@@ -225,11 +227,11 @@ Yes, the package is called general. It's a keybinding framework.
 
 #+begin_src elisp
   (use-package evil-nerd-commenter
-    :after evil                           
+    :after evil
     :config
     (evilnc-default-hotkeys))
 #+end_src
-*** Machit
+*** Matchit
 Enables pressing =%= to jump between matching pairs. Despite the name, It does
 not depend on evil mode.
 
@@ -296,7 +298,7 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-lion
-    :after evil  
+    :after evil
     :general
     ('(normal visual) "g l" 'evil-lion-left
                       "g L" 'evil-lion-right)
@@ -400,17 +402,23 @@ And these are some general keybindings I like
       "wz" '(oh/window-resize/body :wk "resize window")
 
       "wu" '(winner-undo :wk "undo window change")
-      "wU" '(winner-redo :wk "redo window change")))
+      "wU" '(winner-redo :wk "redo window change")
+
+      "qf" '(delete-frame :wk "delete frame")
+      "qF" '(delete-other-frames :wk "delete other frames")
+      "qe" '(kill-emacs :wk "kill emacs")
+      "qr" '(restart-emacs :wk "restart emacs")))
 
 #+end_src
 
 * Look and feel
 ** General
 
-#+begin_src elisp 
+#+begin_src elisp
   (add-to-list 'default-frame-alist
                '(internal-border-width . 10))
 #+end_src
+
 ** Fonts
 
 #+begin_src elisp
@@ -469,11 +477,11 @@ When finding these colors I found the [[https://www.colorhexa.com/][colorhexa]] 
           ;; Rotates the theme cycle and changes the current theme.
           (let ((rotated (nconc (cdr themes) (list (car themes)))))
             (load-theme (car (setq themes rotated)) t))
-          ;; (oh/set-org-faces)              
+          ;; (oh/set-org-faces)
           (message (concat "Switched to " (symbol-name (car themes))))))))
 #+end_src
 
-#+begin_src elisp 
+#+begin_src elisp
   (use-package nano-modeline
     :init
     (nano-modeline-mode 1))
@@ -537,11 +545,14 @@ icon fonts.
 #+begin_src elisp
   (use-package projectile
     :after vertico
+    :ensure-system-package (rg . ripgrep)
     :diminish
     :defer 1
     :commands (projectile-mode projectile-command-map)
     :general
-    (oskah/leader-keys "p" 'projectile-command-map)
+    (oskah/leader-keys
+      "p" 'projectile-command-map
+      "SPC" 'projectile-find-file)
     :config
     (projectile-mode 1)
     (when (file-directory-p "~/projects")
@@ -593,19 +604,48 @@ Visualize the colors of color codes
     :commands lsp-deferred
     :custom
     (lsp-keymap-prefix "C-c l")
-    (lsp-headerline-breadcrumb-enable nil)
-    :config
-    (lsp-enable-which-key-integration t))
+    (lsp-headerline-breadcrumb-enable nil))
 
 
   (use-package lsp-ui
-    :disabled
     :after lsp-mode
-    :hook (lsp-mode . lsp-ui-mode))
+    :custom
+    (lsp-uio-doc-show-with-cursor nil)
+    (lsp-uio-doc-show-with-mouse nil)
+    :hook (lsp-mode . lsp-ui-mode)
+    :general
+    (oskah/leader-keys
+      "cfr" 'lsp-ui-peek-find-references :wk "find references"
+      "cfd" 'lsp-ui-peek-find-definitions :wk "find definitions"
+      "cfi" 'lsp-ui-peek-find-implementation :wk "find implementations"
+      "cfs" 'lsp-ui-peek-find-workspace-symbol :wk "find workspace symbol"
+      "cdf" 'lsp-ui-doc-focus-frame :wk "focus frame"
+      "cdd" 'lsp-ui-doc-show :wk "show documentation"
+      "cdc" 'lsp-ui-doc-hide :wk "hide documentation")
 
-  (use-package lsp-ivy
-    :after (lsp-mode ivy)
-    :commands lsp-ivy-workspace-symbol)
+    ('normal 'lsp-ui-mode-map
+      "K" 'lsp-ui-doc-show :wk "show documentation"))
+
+
+  (use-package consult-lsp
+    :after lsp-mode)
+#+end_src
+** Flycheck
+
+#+begin_src elisp :lexical no
+  (use-package flycheck
+    :defer 1
+    :custom
+    (flycheck-emacs-lisp-initialize-packages t)
+    :config
+    (global-flycheck-mode)
+
+    ;; Disable checkdoc for elisp. This is useful for org-mode source blocks.
+    ;; but will also disable checkdoc for elisp files.
+    (defun my-org-mode-setup ()
+      (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
+    (add-hook 'emacs-lisp-mode-hook #'my-org-mode-setup))
+
 #+end_src
 
 ** Languages
@@ -624,7 +664,7 @@ Visualize the colors of color codes
 #+begin_src elisp
   (use-package c-mode
     :elpaca nil
-    :hook ((c-mode c++-mode) . lsp-deferred)
+    :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . lsp-deferred)
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(C . t))))
@@ -668,6 +708,34 @@ Visualize the colors of color codes
     :config
     (setq plantuml-output-type "png"))
 #+end_src
+
+#+begin_src elisp :lexical no
+  (use-package flycheck-plantuml
+    :after plantuml-mode
+    :custom
+    (flycheck-plantuml-executable "plantuml")
+    :config
+    (flycheck-plantuml-setup))
+#+end_src
+
+*** Latex
+
+#+begin_src elisp :lexical no
+  (use-package auctex
+    :mode ("\\.tex\\'" . latex-mode)
+    :custom
+    (TeX-auto-save t)
+    (TeX-parse-self t)
+    (TeX-master nil)
+    (TeX-view-program-selection '((output-pdf "PDF Tools"))))
+    ;; (TeX-source-correlate-start-server t)
+
+    ;; :config)
+    ;; Update PDF buffers after successful LaTeX runs
+    ;; (add-hook 'TeX-after-compilation-finished-functions
+    ;;            #'TeX-revert-document-buffer))
+#+end_src
+
 *** Kotlin
 
 #+begin_src elisp :lexical no
@@ -820,7 +888,7 @@ to make them hidden.
     :custom
     (org-modern-priority nil)
     (org-modern-table nil)
-    (org-modern-list 
+    (org-modern-list
        '((?- . "•")
          ;;(?* . "•")
          (?+ . "‣"))))
@@ -949,13 +1017,15 @@ to make them hidden.
 #+begin_src elisp
   (use-package org-noter
     :general
-    (oskah/leader-keys
+    (oskah/leader-keys 'org-mode-map
       "ne" '(org-noter :which-key "org-noter"))
-    ('org-noter-doc-mode-map
-     "I" '(org-noter-insert-note :which-key "insert note"))
+    ('(normal visual insert emacs)
+      'org-noter-doc-mode-map
+     "i" '(org-noter-insert-note :which-key "insert note"))
     :custom
     (org-noter-auto-save-last-location t)
-    (org-noter-notes-search-path '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
+    (org-noter-notes-search-path
+     '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
 #+end_src
 
 * Completion frameworks
@@ -987,17 +1057,6 @@ Allow displaying the vertico completions in a grid
     (lambda ()
       (expand-file-name "vertico/extensions" elpaca-builds-directory))
     :after vertico)
-#+end_src
-
-#+begin_src elisp :lexical no
-  (use-package vertico-indexed
-    :elpaca nil
-    :load-path
-    (lambda ()
-      (expand-file-name "vertico/extensions" elpaca-builds-directory))
-    :after vertico
-    :config
-    (vertico-indexed-mode))
 #+end_src
 
 ** Company
@@ -1108,7 +1167,8 @@ Allow displaying the vertico completions in a grid
     (oskah/leader-keys
       "bb" '(consult-buffer :wk "consult buffer")
       "bB" '(consult-buffer-other-window :wk "consult buffer other window")
-      "fr" '(consult-recent-file :wk "recent file"))
+      "fr" '(consult-recent-file :wk "recent file")
+      "sg" '(consult-ripgrep :wk "ripgrep"))
     :config
     (recentf-mode 1))
 
@@ -1124,7 +1184,7 @@ Allow displaying the vertico completions in a grid
         "ad" '(embark-dwim :wk "default action")))
 #+end_src
 
-#+begin_src elisp 
+#+begin_src elisp
   (use-package embark-consult
     :hook
     (embark-collect-mode . consult-preview-at-point-mode))
@@ -1168,7 +1228,7 @@ Allow displaying the vertico completions in a grid
     (org-cite-global-bibliography oh/bib-files)
     (org-cite-export-processors
      '((t csl))))
-       ;; (latex biblatex))))   
+       ;; (latex biblatex))))
 #+end_src
 
 ** Citar
@@ -1362,7 +1422,7 @@ This requires the =mu= program.
 
 ** Vundo
 
-#+begin_src elisp 
+#+begin_src elisp
   (use-package vundo
     :custom
     (vundo-glyph-alist vundo-unicode-symbols)
@@ -1400,6 +1460,21 @@ This sets up spell checking using both english and Norwegian dictionaries togeth
                           (:not indexed)
                           (vertico-grid-annotate . 20)))
       (vertico-multiform-mode 1)))
+#+end_src
+** Ripgrep
+
+#+begin_src elisp :lexical no
+  (use-package rg
+    :defer t)
+#+end_src
+
+** Thesaurus
+
+#+begin_src elisp :lexical no
+  (use-package powerthesaurus
+    :general
+    (oskah/leader-keys
+      "s t" '(powerthesaurus-hydra/body :wk "thesaurus")))
 #+end_src
 
 ** Copilot
@@ -1490,7 +1565,7 @@ A better help buffer
     ;; (counsel-describe-function-function #'helpful-callable)
     ;; (counsel-describe-variable-function #'helpful-variable)
     :general
-    ('normal "K" 'helpful-at-point)
+    ('normal '(org-mode-map emacs-lisp-mode-map) "K" 'helpful-at-point)
 
     (oskah/leader-keys
       "hp" 'describe-package
@@ -1532,12 +1607,8 @@ No littering puts the files that packages places in the emacs directory into
 
 #+begin_src elisp
   (use-package no-littering
-    :custom
-    (auto-save-file-name-transforms
-     `((".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
-    (undo-tree-history-directory-alist
-     `((".*" . ,(no-littering-expand-var-file-name "undo-tree/")))))
+    :demand t)
+    ;; :custom
+    ;; (auto-save-file-name-transforms
+    ;;  `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
 #+end_src
-
-
-
