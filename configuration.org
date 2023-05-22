@@ -38,6 +38,7 @@ These are the defaults that I deem sane, and that should set before anything els
 
   (dolist (mode '(org-mode-hook
                   image-mode-hook
+                  pdf-view-mode-hook
                   term-mode-hook
                   vterm-mode-hook
                   shell-mode-hook
@@ -799,6 +800,7 @@ Visualize the colors of color codes
     (org-startup-folded 'content)    ; Start org-mode with everything
                                      ; folded
     (shr-max-image-proportion 0.6)   ; Smaller max image size
+    (org-export-with-smart-quotes t) ; Use smart quotes on export
     :general
     (oskah/leader-keys org-mode-map
       "ma" '(:ignore t :wk "attachments")
@@ -1274,10 +1276,11 @@ Allow displaying the vertico completions in a grid
     (org-mode . (lambda () (cursor-sensor-mode 1)))
     ;; This makes the citations render after every command, which might make the
     ;; editor slow.
-    (org-mode . (lambda () (add-hook 'post-command-hook
-                                     (lambda ()
-                                       (org-cite-csl-activate-render-all))
-                                     90)))
+    ;; (org-mode . (lambda () (add-hook 'post-command-hook
+    ;;                                  (lambda ()
+    ;;                                    (org-cite-csl-activate-render-all))
+    ;;                                  90)))
+    (org-mode . (lambda () (org-cite-csl-activate-render-all)))
     :elpaca (oc-csl-activate
              :type git
              :host github
@@ -1380,8 +1383,12 @@ This is the configuration that should be put in ~~/.config/fish/config.fish~. Th
 #+begin_src elisp
   (use-package pdf-tools
     :defer t
-    :hook (pdf-view-mode-hook . evil-normal-state)
+    ;; :hook
+    ;(pdf-view-mode-hook . evil-normal-state)
     :mode ("\\.pdf\\'" . pdf-view-mode)
+    :custom
+    (pdf-view-midnight-colors (cons (face-foreground 'default)
+                                    (face-background 'default)))
     :config
     (pdf-tools-install))
 #+end_src
@@ -1457,7 +1464,7 @@ This sets up spell checking using both english and Norwegian dictionaries togeth
     (with-eval-after-load 'vertico
       (add-to-list 'vertico-multiform-categories
                    '(jinx grid
-                          (:not indexed)
+                          ;; (:not indexed)
                           (vertico-grid-annotate . 20)))
       (vertico-multiform-mode 1)))
 #+end_src
@@ -1565,7 +1572,7 @@ A better help buffer
     ;; (counsel-describe-function-function #'helpful-callable)
     ;; (counsel-describe-variable-function #'helpful-variable)
     :general
-    ('normal '(org-mode-map emacs-lisp-mode-map) "K" 'helpful-at-point)
+    ('normal "K" 'helpful-at-point)
 
     (oskah/leader-keys
       "hp" 'describe-package
