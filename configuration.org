@@ -703,6 +703,7 @@ Visualize the colors of color codes
     :custom
     (plantuml-default-exec-mode 'executable)
     (org-plantuml-exec-mode 'plantuml)
+    (plantuml-indent-level 4)
     :mode
     ("\\.plantuml\\'" . plantuml-mode)
     ("\\.puml\\'" . plantuml-mode)
@@ -1526,6 +1527,7 @@ message is also run on ='emacs-startup-hook=.
   (defvar openai-key-memo nil "Memoized OpenAI key")
 
   (use-package chatgpt-shell
+    :ensure-system-package pass
     :commands (chatgpt-shell)
     :custom
     (chatgpt-shell-openai-key
@@ -1542,7 +1544,7 @@ message is also run on ='emacs-startup-hook=.
   (use-package dall-e-shell
     :commands (dall-e-shell)
     :custom
-    (chatgpt-shell-openai-key
+    (dall-e-shell-openai-key
      (lambda ()
        (if openai-key-memo
            openai-key-memo
