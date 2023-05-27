@@ -650,6 +650,17 @@ Visualize the colors of color codes
 #+end_src
 
 ** Languages
+*** Markdown
+
+#+begin_src elisp :lexical no
+  (use-package markdown-mode
+    :elpaca nil
+    :defer t
+    :hook
+    (markdown-mode . (lambda () (auto-fill-mode 0)))
+    (markdown-mode . (lambda () (visual-line-mode 1))))
+#+end_src
+
 *** Elisp
 
 #+begin_src elisp
@@ -684,6 +695,12 @@ Visualize the colors of color codes
 #+begin_src elisp :lexical no
   (use-package fish-mode
     :mode "\\.fish\\'")
+#+end_src
+*** Yaml
+
+#+begin_src elisp :lexical no
+  (use-package yaml-mode
+    :mode "\\.yml\\'")
 #+end_src
 
 *** Plantuml
@@ -783,7 +800,7 @@ Visualize the colors of color codes
     (org-table
      ((t (:inherit (nano-faded fixed-pitch)))))
     :custom
-    (org-startup-indented t)
+    ;; (org-startup-indented t)
     (org-attach-use-inheritance t)   ; Make sure attachments are
                                      ; inherited throuch headings
     (org-hide-emphasis-markers t)
@@ -819,7 +836,7 @@ Visualize the colors of color codes
 
 When evaluating a source block which generates an image the image will usually not be rendered immediately. This fixes that
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (defun my/org-babel-after-execute-refresh-images ()
     "Refresh inline images after a src block is executed."
     (org-redisplay-inline-images))
@@ -849,26 +866,26 @@ The following is some code which allows for using the =:hidden= tag for src bloc
 to make them hidden.
 
 #+begin_src elisp
-;; (defun individual-visibility-source-blocks ()
-;;   "Fold some blocks in the current buffer."
-;;   (interactive)
-;;   (org-show-block-all)
-;;   (org-block-map
-;;    (lambda ()
-;;      (let ((case-fold-search t))
-;;        (when (and
-;;               (save-excursion
-;;                 (beginning-of-line 1)
-;;                 (looking-at org-block-regexp))
-;;               (cl-assoc
-;;                ':hidden
-;;                (cl-third
-;;                 (org-babel-get-src-block-info))))
-;;          (org-hide-block-toggle))))))
+  ;; (defun individual-visibility-source-blocks ()
+  ;;   "Fold some blocks in the current buffer."
+  ;;   (interactive)
+  ;;   (org-show-block-all)
+  ;;   (org-block-map
+  ;;    (lambda ()
+  ;;      (let ((case-fold-search t))
+  ;;        (when (and
+  ;;               (save-excursion
+  ;;                 (beginning-of-line 1)
+  ;;                 (looking-at org-block-regexp))
+  ;;               (cl-assoc
+  ;;                ':hidden
+  ;;                (cl-third
+  ;;                 (org-babel-get-src-block-info))))
+  ;;          (org-hide-block-toggle))))))
 
-;; (add-hook
-;;  'org-mode-hook
-;;  (function individual-visibility-source-blocks))
+  ;; (add-hook
+  ;;  'org-mode-hook
+  ;;  (function individual-visibility-source-blocks))
 #+end_src
 
 ** Evil-org
@@ -899,8 +916,11 @@ to make them hidden.
 
 ** Org-modern indent
 
+Adds vertical lines next to src-blocks when org-indent is on
+
 #+begin_src elisp
   (use-package org-modern-indent
+    :disabled
     :after org
     :elpaca (org-modern-indent
              :type git
@@ -1029,6 +1049,14 @@ to make them hidden.
     (org-noter-auto-save-last-location t)
     (org-noter-notes-search-path
      '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
+#+end_src
+
+** oc-pandoc
+
+#+begin_src elisp :lexical no
+  (use-package ox-pandoc
+    :ensure-system-package pandoc
+    :after org)
 #+end_src
 
 * Completion frameworks
