@@ -229,6 +229,11 @@ Yes, the package is called general. It's a keybinding framework.
 #+begin_src elisp
   (use-package evil-nerd-commenter
     :after evil
+    :demand
+    :general
+    ('(normal visual)
+     "gc" 'evilnc-comment-or-uncomment-lines
+     "M-;" 'comment-indent)
     :config
     (evilnc-default-hotkeys))
 #+end_src
@@ -829,6 +834,7 @@ Visualize the colors of color codes
       "me" '(org-export-dispatch :wk "export"))
 
     :config
+    (add-to-list 'org-babel-load-languages '(shell . t))
     (org-babel-do-load-languages
      'org-babel-load-languages
      org-babel-load-languages))
