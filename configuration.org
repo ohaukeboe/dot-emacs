@@ -25,7 +25,8 @@ These are the defaults that I deem sane, and that should set before anything els
         recentf-max-saved-items 10000       ; Show more recent files
         ring-bell-function 'ignore          ; Quiet
         scroll-margin 1                     ; Space between cursor and top/bottom
-        sentence-end-double-space nil)      ; No double space
+        sentence-end-double-space nil      ; No double space
+        backup-directory-alist `(("." . ,(concat user-emacs-directory "var/backups"))))
 
   (dolist (mode '(tool-bar-mode
                   scroll-bar-mode
@@ -95,7 +96,7 @@ knowing how much/if packages slow down the emacs startup.
           gcs-done))
 
    (add-hook 'emacs-startup-hook #'oskah/display-startup-time) ;
-  ;; (setq use-package-verbose t)
+  (setq use-package-verbose t)
 #+end_src
 
 * Elpaca
@@ -195,13 +196,13 @@ Yes, the package is called general. It's a keybinding framework.
     (evil-want-C-u-scroll t)
     (evil-want-C-i-jump t)
     (evil-undo-system 'undo-redo)
+    (evil-shift-width 2)
 
     :general
     ('(normal visual) "gr" 'eval-region)
     ('insert "S-<return>" 'newline-and-indent)  ; Make S-RET always do newline-and-indent
     (oskah/leader-keys
       "we" '(evil-window-map :which-key "evil window map"))
-
     :config
     (evil-mode 1)
     (evil-global-set-key 'normal (kbd "C-g") 'evil-force-normal-state)
@@ -499,6 +500,67 @@ When finding these colors I found the [[https://www.colorhexa.com/][colorhexa]] 
     :commands (nano-agenda))
 #+end_src
 
+** svg-lib
+
+#+begin_src elisp :lexical no
+  (use-package svg-lib)
+  (use-package svg-tag-mode
+    :hook (org-mode . svg-tag-mode)
+    :custom
+    (svg-tag-tags
+     '(
+       ;; Org tags
+       ("\\(:[A-Z]+:\\)" . ((lambda (tag)
+                              (svg-tag-make tag :beg 1 :end -1))))
+       (":TODO:" . ((lambda (tag) (svg-tag-make "TODO" :face 'org-todo :inverse t :margin 0))))
+       (":DONE:" . ((lambda (tag) (svg-tag-make "DONE" :face 'org-done :margin 0))))
+
+       ("\\(:#[A-Za-z0-9]+\\)" . ((lambda (tag)
+                                      (svg-tag-make tag :beg 2))))
+       ("\\(:#[A-Za-z0-9]+:\\)$" . ((lambda (tag)
+                                      (svg-tag-make tag :beg 2 :end -1))))
+
+       ;; This replaces any occurence of ":XXX|YYY:" with two adjacent
+       ;; dynamic SVG tags displaying "XXX" and "YYY"
+       ("\\(:[A-Z]+\\)\|[a-zA-Z#0-9]+:" .
+                ((lambda (tag) (svg-tag-make tag :beg 1
+                                                 :inverse t
+                                                 :margin 0
+                                                 :crop-right t))))
+       (":[A-Z]+\\(\|[a-zA-Z#0-9]+:\\)" .
+                ((lambda (tag) (svg-tag-make tag :beg 1
+                                                 :end -1
+                                                 :margin 0
+                                                 :crop-left t))))
+
+       ;; Progress
+       ("\\(\\[[0-9]\\{1,3\\}%\\]\\)" . ((lambda (tag)
+                                           (svg-progress-percent (substring tag 1 -2)))))
+       ("\\(\\[[0-9]+/[0-9]+\\]\\)" . ((lambda (tag)
+                                         (svg-progress-count (substring tag 1 -1)))))))
+       ;; TODO / DONE
+       ;; ("TODO" . ((lambda (tag) (svg-tag-make "TODO" :face 'org-todo :inverse t :margin 0))))
+       ;; ("DONE" . ((lambda (tag) (svg-tag-make "DONE" :face 'org-done :margin 0))))
+
+    :config
+    (defun svg-progress-percent (value)
+     (svg-image (svg-lib-concat
+                 (svg-lib-progress-bar (/ (string-to-number value) 100.0)
+                                   nil :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                 (svg-lib-tag (concat value "%")
+                              nil :stroke 0 :margin 0)) :ascent 'center))
+
+    (defun svg-progress-count (value)
+      (let* ((seq (mapcar #'string-to-number (split-string value "/")))
+             (count (float (car seq)))
+             (total (float (cadr seq))))
+       (svg-image (svg-lib-concat
+                   (svg-lib-progress-bar (/ count total) nil
+                                         :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                   (svg-lib-tag value nil
+                                :stroke 0 :margin 0)) :ascent 'center))))
+#+end_src
+
 ** All the icons
 It is necessary to run ~M-x all-the-icons-install-fonts~ to set up
 icon fonts.
@@ -527,8 +589,10 @@ icon fonts.
     :ensure-system-package
     ((ssh . openssh)
      (git . git))
-    :hook
-    (git-commit-mode . evil-insert-state)
+    :general
+    ('magit-mode-map
+     "w" 'magit-worktree
+     "h" 'magit-patch)
     :custom
     (magit-display-buffer-function
      #'magit-display-buffer-same-window-except-diff-v1)
@@ -601,10 +665,11 @@ Visualize the colors of color codes
   (use-package rainbow-mode
     :hook prog-mode)
 #+end_src
-** LSP
+** LSP-mode
 
 #+begin_src elisp
   (use-package lsp-mode
+    :disabled
     :diminish
     :ensure-system-package (zip unzip)
     :commands lsp-deferred
@@ -615,6 +680,7 @@ Visualize the colors of color codes
 
   (use-package lsp-ui
     :after lsp-mode
+    :disabled
     :custom
     (lsp-uio-doc-show-with-cursor nil)
     (lsp-uio-doc-show-with-mouse nil)
@@ -634,8 +700,30 @@ Visualize the colors of color codes
 
 
   (use-package consult-lsp
+    :disabled
     :after lsp-mode)
 #+end_src
+** Eglot
+
+#+begin_src elisp :lexical no
+  (use-package eglot
+    :elpaca nil
+    :hook (eglot--managed-mode . (lambda ()
+                                   (eldoc-mode -1)))
+    :general
+    ;; ('(normal visual emacs)
+    ;;  "K" 'eldoc :wk "help at point")
+    (oskah/leader-keys
+      "cr" 'eglot-rename :wk "rename"
+      ;; "cd" 'eglot-find-declaration :wk "find declaration"
+      ;; "ci" 'eglot-find-references :wk "find references"
+      "cf" 'eglot-format :wk "format region"
+      "ca" 'eglot-code-actions :wk "code actions"
+      "cD" 'flymake-show-buffer-diagnostics :wk "show diagnostics"
+      "cn" 'consult-imenu :wk "navigate symbols"))
+
+#+end_src
+
 ** Flycheck
 
 #+begin_src elisp :lexical no
@@ -681,7 +769,9 @@ Visualize the colors of color codes
 #+begin_src elisp
   (use-package c-mode
     :elpaca nil
-    :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . lsp-deferred)
+    :ensure-system-package clang gcc
+    ;; :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . lsp-deferred)
+    :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(C . t))))
@@ -764,15 +854,24 @@ Visualize the colors of color codes
 
 #+begin_src elisp :lexical no
   (use-package kotlin-mode
-    :hook (kotlin-mode . lsp-deferred)
+    ;; :hook (kotlin-mode . lsp-deferred)
     :mode "\\.kt\\'") ; if you want this mode to be auto-enabled
 
   (use-package kotlin-ts-mode
     :mode "\\.kt\\'") ; if you want this mode to be auto-enabled
 #+end_src
 
+*** Yuck
+
+#+begin_src elisp :lexical no
+    (use-package yuck-mode
+      :mode "\\.yuck\\'")
+#+end_src
+
 * Org mode
 ** Org
+
+Minted needs to be installed on the system for pretty src-blocks in latex export.
 
 #+begin_src elisp
   (use-package org
@@ -806,7 +905,8 @@ Visualize the colors of color codes
      ((t (:inherit (nano-faded fixed-pitch)))))
     :custom
     ;; (org-startup-indented t)
-    (org-attach-use-inheritance t)   ; Make sure attachments are
+    (org-default-notes-file "~/Nextcloud/org_notes/notes.org")
+    ;; (org-attach-use-inheritance t)   ; Make sure attachments are
                                      ; inherited throuch headings
     (org-hide-emphasis-markers t)
     (org-ellipsis " ↴")
@@ -824,6 +924,7 @@ Visualize the colors of color codes
                                      ; folded
     (shr-max-image-proportion 0.6)   ; Smaller max image size
     (org-export-with-smart-quotes t) ; Use smart quotes on export
+    (org-latex-pdf-process '("latexmk -f -pdf -%latex -interaction=nonstopmode -output-directory=%o %f"))
     :general
     (oskah/leader-keys org-mode-map
       "ma" '(:ignore t :wk "attachments")
@@ -893,6 +994,10 @@ to make them hidden.
   ;;  'org-mode-hook
   ;;  (function individual-visibility-source-blocks))
 #+end_src
+** Org sidebar
+
+#+begin_src elisp :lexical no
+#+end_src
 
 ** Evil-org
 
@@ -912,6 +1017,10 @@ to make them hidden.
   (use-package org-modern
     :hook (org-mode . org-modern-mode)
     :custom
+    (org-modern-statistics nil)
+    (org-modern-todo nil)
+    (org-modern-progress nil)
+    (org-modern-tag nil)
     (org-modern-priority nil)
     (org-modern-table nil)
     (org-modern-list
@@ -1373,6 +1482,22 @@ Allow displaying the vertico completions in a grid
       "l" 'dired-find-file))
 #+end_src
 
+** Imenu-list
+
+A minor mode which shows an automatically updated sidebar with the current buffers imenu entries.
+
+#+begin_src elisp :lexical no
+  (use-package imenu-list
+    :custom
+    (imenu-list-after-jump-hook #'my/org-tree-to-indirect-buffer)
+    (imenu-list-position 'left)
+    (imenu-list-size 36)
+    (imenu-list-focus-after-activation t)
+    :general
+    (oskah/leader-keys
+      "ti" 'imenu-list-smart-toggle :wk "toggle imenu list"))
+#+end_src
+
 ** Eshell-fish
 
 #+begin_src elisp
@@ -1417,7 +1542,6 @@ This is the configuration that should be put in ~~/.config/fish/config.fish~. Th
 
 #+begin_src elisp
   (use-package pdf-tools
-    :defer t
     ;; :hook
     ;(pdf-view-mode-hook . evil-normal-state)
     :mode ("\\.pdf\\'" . pdf-view-mode)
@@ -1645,13 +1769,14 @@ A better help buffer
 #+end_src
 
 ** Keep folders clean
+
 No littering puts the files that packages places in the emacs directory into
 =var/= and =etc/= in the emacs directory.
 
 #+begin_src elisp
   (use-package no-littering
-    :demand t)
-    ;; :custom
-    ;; (auto-save-file-name-transforms
-    ;;  `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
+    :demand t
+    :custom
+    (auto-save-file-name-transforms
+     `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
 #+end_src
