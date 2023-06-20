@@ -162,8 +162,8 @@ Enable elpaca use-package support
  #+end_src
 
  #+begin_src elisp
-(use-package use-package-ensure-system-package)
-(elpaca-wait)
+;; (use-package use-package-ensure-system-package)
+;; (elpaca-wait)
  #+end_src
 
 * Keybinds
@@ -463,12 +463,12 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 
     (nano-light-background "#fafafa")
     :init
-    (load-theme 'nano-dark t)
-    :commands (oh/cycle-themes)
-    :general
-    (oskah/leader-keys
-      "tt" (list (oh/cycle-themes) :wk "cycle themes"))
-    :config
+    (load-theme 'nano-dark t))
+    ;; :commands (oh/cycle-themes)
+    ;; :general
+    ;; (oskah/leader-keys
+    ;;   "tt" (list (oh/cycle-themes) :wk "cycle themes"))
+    ;; :config)
 
     ;; (defun oh/set-org-faces ()
     ;;   "Make org source blocks have the same background as the default face."
@@ -477,35 +477,36 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 
     ;; (oh/set-org-faces)
 
-    (defun oh/cycle-themes ()
-      "Returns a function that lets you cycle your themes."
-      (let ((themes '(nano-dark nano-light)))
-        (lambda ()
-          (interactive)
-          ;; Rotates the theme cycle and changes the current theme.
-          (let ((rotated (nconc (cdr themes) (list (car themes)))))
-            (load-theme (car (setq themes rotated)) t))
-          ;; (oh/set-org-faces)
-          (message (concat "Switched to " (symbol-name (car themes))))))))
+    ;; (defun oh/cycle-themes ()
+    ;;   "Returns a function that lets you cycle your themes."
+    ;;   (let ((themes '(nano-dark nano-light)))
+    ;;     (lambda ()
+    ;;       (interactive)
+    ;;       ;; Rotates the theme cycle and changes the current theme.
+    ;;       (let ((rotated (nconc (cdr themes) (list (car themes)))))
+    ;;         (load-theme (car (setq themes rotated)) t))
+    ;;       ;; (oh/set-org-faces)
+    ;;       (message (concat "Switched to " (symbol-name (car themes))))))))
 #+end_src
 
 #+begin_src elisp
   (use-package nano-modeline
     :init
     (setq-default mode-line-format nil)  ; disable default mode-line
-    (add-hook 'prog-mode-hook            #'nano-modeline-prog-mode)
-    (add-hook 'text-mode-hook            #'nano-modeline-text-mode)
-    (add-hook 'org-mode-hook             #'nano-modeline-org-mode)
-    (add-hook 'pdf-view-mode-hook        #'nano-modeline-pdf-mode)
-    (add-hook 'mu4e-headers-mode-hook    #'nano-modeline-mu4e-headers-mode)
-    (add-hook 'mu4e-view-mode-hook       #'nano-modeline-mu4e-message-mode)
-    (add-hook 'elfeed-show-mode-hook     #'nano-modeline-elfeed-entry-mode)
-    (add-hook 'elfeed-search-mode-hook   #'nano-modeline-elfeed-search-mode)
-    (add-hook 'term-mode-hook            #'nano-modeline-term-mode)
-    (add-hook 'xwidget-webkit-mode-hook  #'nano-modeline-xwidget-mode)
-    (add-hook 'messages-buffer-mode-hook #'nano-modeline-message-mode)
-    (add-hook 'org-capture-mode-hook     #'nano-modeline-org-capture-mode)
-    (add-hook 'org-agenda-mode-hook      #'nano-modeline-org-agenda-mode))
+    :hook
+    (prog-mode            . nano-modeline-prog-mode)
+    (text-mode            . nano-modeline-text-mode)
+    (org-mode             . nano-modeline-org-mode)
+    (pdf-view-mode        . nano-modeline-pdf-mode)
+    (mu4e-headers-mode    . nano-modeline-mu4e-headers-mode)
+    (mu4e-view-mode       . nano-modeline-mu4e-message-mode)
+    (elfeed-show-mode     . nano-modeline-elfeed-entry-mode)
+    (elfeed-search-mode   . nano-modeline-elfeed-search-mode)
+    (term-mode            . nano-modeline-term-mode)
+    (xwidget-webkit-mode  . nano-modeline-xwidget-mode)
+    (messages-buffer-mode . nano-modeline-message-mode)
+    (org-capture-mode     . nano-modeline-org-capture-mode)
+    (org-agenda-mode      . nano-modeline-org-agenda-mode))
 
 #+end_src
 
@@ -601,9 +602,9 @@ icon fonts.
 
 #+begin_src elisp
   (use-package magit
-    :ensure-system-package
-    ((ssh . openssh)
-     (git . git))
+    ;; :ensure-system-package
+    ;; ((ssh . openssh)
+    ;;  (git . git))
     :general
     ('magit-mode-map
      "w" 'magit-worktree
@@ -630,7 +631,7 @@ icon fonts.
 #+begin_src elisp
   (use-package projectile
     :after vertico
-    :ensure-system-package (rg . ripgrep)
+    ;; :ensure-system-package (rg . ripgrep)
     :diminish
     :defer 1
     :commands (projectile-mode projectile-command-map)
@@ -650,7 +651,7 @@ icon fonts.
     :after (counsel projectile)
     :diminish
     :disabled
-    :ensure-system-package (rg . ripgrep)
+    ;; :ensure-system-package (rg . ripgrep)
     :config
     (counsel-projectile-mode))
 #+end_src
@@ -686,7 +687,7 @@ Visualize the colors of color codes
   (use-package lsp-mode
     :disabled
     :diminish
-    :ensure-system-package (zip unzip)
+    ;; :ensure-system-package (zip unzip)
     :commands lsp-deferred
     :custom
     (lsp-keymap-prefix "C-c l")
@@ -738,16 +739,6 @@ Visualize the colors of color codes
       "cn" 'consult-imenu :wk "navigate symbols"))
 
 #+end_src
-** Make
-
-#+begin_src elisp :lexical no
-  (use-package makefile-executor
-    :hook
-    ('makefile-mode-hook 'makefile-executor-mode)
-    :after
-    (projectile-commander))
-#+end_src
-
 ** Flycheck
 
 #+begin_src elisp :lexical no
@@ -766,7 +757,24 @@ Visualize the colors of color codes
 
 #+end_src
 
+** Make
+
+#+begin_src elisp
+  (use-package makefile-executor
+    :hook
+    ('makefile-mode-hook 'makefile-executor-mode)
+    :after
+    (projectile-commander))
+#+end_src
+
 ** Languages
+*** Nix
+
+#+begin_src elisp
+  (use-package nix-mode
+    :mode "\\.nix\\'")
+#+end_src
+
 *** Markdown
 
 #+begin_src elisp :lexical no
@@ -777,7 +785,6 @@ Visualize the colors of color codes
     (markdown-mode . (lambda () (auto-fill-mode 0)))
     (markdown-mode . (lambda () (visual-line-mode 1))))
 #+end_src
-
 *** Elisp
 
 #+begin_src elisp
@@ -793,7 +800,7 @@ Visualize the colors of color codes
 #+begin_src elisp
   (use-package c-mode
     :elpaca nil
-    :ensure-system-package clang gcc
+    ;; :ensure-system-package clang gcc
     ;; :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . lsp-deferred)
     :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
     :init
@@ -804,7 +811,7 @@ Visualize the colors of color codes
 
 #+begin_src elisp
   (use-package maude-mode
-    :ensure-system-package maude
+    ;; :ensure-system-package maude
     :mode "\\.maude\\'"
     :config
     (setq maude-indent 2)
@@ -827,9 +834,9 @@ Visualize the colors of color codes
 
 #+begin_src elisp :lexical no
   (use-package plantuml-mode
-    :ensure-system-package
-    (dot . graphviz)
-    (plantuml)
+    ;; :ensure-system-package
+    ;; (dot . graphviz)
+    ;; (plantuml)
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-src-lang-modes
@@ -889,8 +896,9 @@ Visualize the colors of color codes
 *** Yuck
 
 #+begin_src elisp :lexical no
-    (use-package yuck-mode
-      :mode "\\.yuck\\'")
+  (use-package yuck-mode
+    :hook (yuck-mode . parinfer-rust-mode)
+    :mode "\\.yuck\\'")
 #+end_src
 
 * Org mode
@@ -1021,10 +1029,6 @@ to make them hidden.
   ;;  'org-mode-hook
   ;;  (function individual-visibility-source-blocks))
 #+end_src
-** Org sidebar
-
-#+begin_src elisp :lexical no
-#+end_src
 
 ** Evil-org
 
@@ -1123,25 +1127,11 @@ Adds vertical lines next to src-blocks when org-indent is on
 
 #+end_src
 
-** Company org-mode
-
-#+begin_src elisp
-  (use-package company-org-block
-    :diminish
-    :disabled
-    :defer t
-    :custom
-    (company-org-block-edit-style 'auto) ;; 'auto, 'prompt, or 'inline
-    :hook ((org-mode . (lambda ()
-                         (setq-local company-backends
-                                     (cons 'company-org-block company-backends))
-                         (company-mode +1)))))
-#+end_src
-
 ** Src block completion
 
 #+begin_src elisp
   (use-package org-block-capf
+    :disabled
     :elpaca
     (org-block-capf :type git :host github :repo "xenodium/org-block-capf")
     :hook
@@ -1197,7 +1187,7 @@ Adds vertical lines next to src-blocks when org-indent is on
 
 #+begin_src elisp :lexical no
   (use-package ox-pandoc
-    :ensure-system-package pandoc
+    ;; :ensure-system-package pandoc
     :after org)
 #+end_src
 
@@ -1539,10 +1529,10 @@ A minor mode which shows an automatically updated sidebar with the current buffe
 
 #+begin_src elisp :lexical no
   (use-package vterm
-    :ensure-system-package
-    cmake
-    (hostname . inetutils) ; This is needed for direcoty tracking
-                           ; to work
+    ;; :ensure-system-package
+    ;; cmake
+    ;; (hostname . inetutils) ; This is needed for direcoty tracking
+    ;;                        ; to work
     :general
     (oskah/leader-keys
       "ov" 'vterm
@@ -1628,8 +1618,8 @@ This requires the =mu= program.
 
 #+begin_src elisp
   (use-package sqlite3
-    :defer t
-    :ensure-system-package (sqlite3 . sqlite))
+    :defer t)
+    ;; :ensure-system-package (sqlite3 . sqlite))
 #+end_src
 ** Spell check
 This sets up spell checking using both english and Norwegian dictionaries together. It is also necessary to install =hunspell-en_us= and =hunspell-nb=. Jinx is a much faster alternative to flyspell, and it also supports combining dictionaries.
@@ -1638,7 +1628,7 @@ This sets up spell checking using both english and Norwegian dictionaries togeth
   (use-package jinx
     ;:hook (elpaca-after-init . global-jinx-mode)
     :defer 0
-    :ensure-system-package (enchant-2 . enchant)
+    ;; :ensure-system-package (enchant-2 . enchant)
     :custom
     (jinx-languages "en_US nb_NO")
     :general
@@ -1678,7 +1668,7 @@ This sets up spell checking using both english and Norwegian dictionaries togeth
              :repo "zerolfx/copilot.el"
              :main nil
              :files ("dist" "*.el"))
-    :ensure-system-package (node . nodejs)
+    ;; :ensure-system-package (node . nodejs)
     ;; :hook (prog-mode . copilot-mode)
     :general
     (oskah/leader-keys "ta" 'copilot-mode)
@@ -1712,7 +1702,7 @@ message is also run on ='emacs-startup-hook=.
   (defvar openai-key-memo nil "Memoized OpenAI key")
 
   (use-package chatgpt-shell
-    :ensure-system-package pass
+    ;; :ensure-system-package pass
     :commands (chatgpt-shell)
     :custom
     (chatgpt-shell-openai-key
