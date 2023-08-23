@@ -10,6 +10,11 @@ For future me, [[https://samsai.eu/post/toolbox-based-emacs-flatpak-workflow/][t
 
 [[https://web.archive.org/web/20210921233717/https://ambrevar.xyz/emacs-eshell/index.html][This]] and [[https://web.archive.org/web/20211017064048/https://ambrevar.xyz/emacs-eshell-versus-shell/index.html][this]] are some nice articles about shell and eshell that can be worth reading.
 
+#+begin_src elisp
+  ;; (add-to-list 'custom-theme-load-path "~/projects/emacs-theme/")
+  ;; (load-theme 'my-theme t)
+#+end_src
+
 * Sane defaults
 These are the defaults that I deem sane, and that should set before anything else.
 
@@ -49,7 +54,7 @@ These are the defaults that I deem sane, and that should set before anything els
     (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
   (fset 'yes-or-no-p 'y-or-n-p)
-  (set-fringe-mode 10)
+  (set-fringe-mode 0)
 
   (add-hook 'before-save-hook
             'delete-trailing-whitespace)
@@ -105,7 +110,7 @@ knowing how much/if packages slow down the emacs startup.
 Install elpaca
 
  #+begin_src elisp
-   (defvar elpaca-installer-version 0.4)
+   (defvar elpaca-installer-version 0.5)
    (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
    (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
    (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -426,6 +431,11 @@ And these are some general keybindings I like
 #+begin_src elisp
   (add-to-list 'default-frame-alist
                '(internal-border-width . 10))
+
+  ;; add spacing between windows
+  (setq window-divider-default-right-width 10)
+  (setq window-divider-default-places 'right-only)
+  (window-divider-mode)
 #+end_src
 
 ** Fonts
@@ -461,21 +471,21 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
     (nano-dark-subtle     "#212121")
     (nano-dark-faded      "#c69a72")
 
-    (nano-light-background "#fafafa")
+    ;; (nano-light-background "#fafafa")
     :init
-    (load-theme 'nano-dark t))
+    (load-theme 'nano-dark t)
     ;; :commands (oh/cycle-themes)
     ;; :general
     ;; (oskah/leader-keys
     ;;   "tt" (list (oh/cycle-themes) :wk "cycle themes"))
-    ;; :config)
+    :config
 
-    ;; (defun oh/set-org-faces ()
-    ;;   "Make org source blocks have the same background as the default face."
-    ;;   (with-eval-after-load 'org-faces
-    ;;    (set-face-attribute 'org-block nil :background (face-background 'default))))
+    (defun oh/set-org-faces ()
+      "Make org source blocks have the same background as the default face."
+      (with-eval-after-load 'org-faces
+       (set-face-attribute 'org-block nil :background (face-background 'default))))
 
-    ;; (oh/set-org-faces)
+    (oh/set-org-faces))
 
     ;; (defun oh/cycle-themes ()
     ;;   "Returns a function that lets you cycle your themes."
@@ -521,6 +531,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 #+begin_src elisp :lexical no
   (use-package svg-lib)
   (use-package svg-tag-mode
+    :disabled
     :hook (org-mode . svg-tag-mode)
     :custom
     (svg-tag-tags
@@ -794,6 +805,14 @@ Visualize the colors of color codes
     (markdown-mode . (lambda () (visual-line-mode 1))))
 #+end_src
 
+*** Racket Scheme
+
+#+begin_src elisp
+  (use-package racket-mode
+    :mode "\\.rkt\\'"
+          "\\.scm\\'")
+#+end_src
+
 *** Elisp
 
 #+begin_src elisp
@@ -1062,7 +1081,7 @@ to make them hidden.
     (org-modern-statistics nil)
     (org-modern-todo nil)
     (org-modern-progress nil)
-    (org-modern-tag nil)
+    ;; (org-modern-tag nil)
     (org-modern-priority nil)
     (org-modern-table nil)
     (org-modern-list
@@ -1183,7 +1202,7 @@ Adds vertical lines next to src-blocks when org-indent is on
 #+begin_src elisp
   (use-package org-noter
     :general
-    (oskah/leader-keys 'org-mode-map
+    (oskah/leader-keys
       "ne" '(org-noter :which-key "org-noter"))
     ('(normal visual insert emacs)
       'org-noter-doc-mode-map
@@ -1377,11 +1396,12 @@ Allow displaying the vertico completions in a grid
 #+begin_src elisp
     (use-package citar
       ;:after (org latex)
-  :general
+     :general
       (oskah/leader-keys '(org-mode-map latex-mode-map)
         "mrc" '(citar-insert-citation :which-key "insert citation")
-        "mre" '(citar-export-local-bib-file :which-key "export local bib file")
-        "mro" '(citar-open :wk "open resource"))
+        "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
+      (oskah/leader-keys
+        "nro" '(citar-open :wk "open resource"))
       :custom
       (citar-bibliography oh/bib-files)
       (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
@@ -1458,6 +1478,11 @@ Allow displaying the vertico completions in a grid
     :custom
     (completion-styles '(orderless basic))
     (completion-category-overrides '((file (styles basic partial-completion)))))
+#+end_src
+** sicp
+
+#+begin_src elisp
+  (use-package sicp)
 #+end_src
 
 ** Dired
@@ -1537,14 +1562,15 @@ This is the configuration that should be put in ~~/.config/fish/config.fish~. Th
 
 #+begin_src elisp
   (use-package pdf-tools
-    ;; :hook
-    ;(pdf-view-mode-hook . evil-normal-state)
-    :mode ("\\.pdf\\'" . pdf-view-mode)
-    :custom
-    (pdf-view-midnight-colors (cons (face-foreground 'default)
-                                    (face-background 'default)))
-    :config
-    (pdf-tools-install))
+    :hook
+    (pdf-view-mode-hook . evil-normal-state)
+    :elpaca nil
+    :mode ("\\.pdf\\'" . pdf-view-mode))
+    ;; :custom
+    ;; (pdf-view-midnight-colors (cons (face-foreground 'default)
+    ;;                                 (face-background 'default)))
+    ;; :config
+    ;; (pdf-tools-install))
 #+end_src
 ** Mail
 
@@ -1605,6 +1631,9 @@ This sets up spell checking using both english and Norwegian dictionaries togeth
 #+begin_src elisp
   (use-package jinx
     ;:hook (elpaca-after-init . global-jinx-mode)
+    ;; :disabled
+    :elpaca nil
+
     :defer 0
     ;; :ensure-system-package (enchant-2 . enchant)
     :custom
