@@ -137,7 +137,7 @@ Install elpaca
                                           "--eval" "(byte-recompile-directory \".\" 0 'force)")))
                     ((require 'elpaca))
                     ((elpaca-generate-autoloads "elpaca" repo)))
-               (kill-buffer buffer)
+               (progn (message "%s" (buffer-string)) (kill-buffer buffer))
              (error "%s" (with-current-buffer buffer (buffer-string))))
          ((error) (warn "%s" err) (delete-directory repo 'recursive))))
      (unless (require 'elpaca-autoloads nil t)
@@ -741,6 +741,7 @@ Visualize the colors of color codes
     ;; ('(normal visual emacs)
     ;;  "K" 'eldoc :wk "help at point")
     (oskah/leader-keys
+      "ch" 'eldoc :wk "help at point"
       "cr" 'eglot-rename :wk "rename"
       ;; "cd" 'eglot-find-declaration :wk "find declaration"
       ;; "ci" 'eglot-find-references :wk "find references"
@@ -835,6 +836,28 @@ Visualize the colors of color codes
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(C . t))))
+#+end_src
+
+*** Rust
+
+#+begin_src elisp
+  (use-package rust-mode
+    :mode "\\.rs\\'"
+    :hook (rust-ts-mode . eglot-ensure))
+    ;; :init
+    ;; (add-hook 'rust-mode-hook 'eglot-ensure))
+#+end_src
+
+*** Python
+
+#+begin_src elisp
+  (use-package python-ts-mode
+    :elpaca nil
+    :hook (python-ts-mode . eglot-ensure)
+    :init
+    (with-eval-after-load 'eglot
+      (add-to-list 'eglot-server-programs '(python-ts-mode . ("ruff-lsp")))))
+  ;; (add-to-list 'eglot-server-programs '((python-mode python-ts-mode) . ("ruff"))))
 #+end_src
 
 *** Maude
@@ -1479,6 +1502,14 @@ Allow displaying the vertico completions in a grid
     (completion-styles '(orderless basic))
     (completion-category-overrides '((file (styles basic partial-completion)))))
 #+end_src
+** Direnv
+
+#+begin_src elisp
+  (use-package direnv
+   :config
+   (direnv-mode))
+#+end_src
+
 ** sicp
 
 #+begin_src elisp
@@ -1756,7 +1787,7 @@ A better help buffer
     ;; (counsel-describe-function-function #'helpful-callable)
     ;; (counsel-describe-variable-function #'helpful-variable)
     :general
-    ('normal "K" 'helpful-at-point)
+    ;; ('normal "K" 'helpful-at-point)
 
     (oskah/leader-keys
       "hp" 'describe-package
