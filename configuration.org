@@ -448,9 +448,9 @@ And these are some general keybindings I like
    '(variable-pitch ((t (:family "Roboto Serif" :height 1.3))))
    '(italic ((t (:slant italic :inherit nil)))))
 
-  (with-eval-after-load 'nano-theme
-    (set-face-attribute 'nano-strong nil
-                        :weight 'semi-bold))
+  ;; (with-eval-after-load 'nano-theme
+  ;;   (set-face-attribute 'nano-strong nil
+  ;;                       :weight 'semi-bold))
 #+end_src
 
 ** NANO
@@ -466,8 +466,8 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
     (nano-dark-highlight  "#2b2b2b")
     (nano-dark-critical   "#EBCB8B")
     (nano-dark-salient    "#aac5dd")
-    (nano-dark-strong     "#e3ccb8")
-    (nano-dark-popout     "#d79c9e")
+    (nano-dark-strong     "#e8dfc6")
+    (nano-dark-popout     "#d79ca3")
     (nano-dark-subtle     "#212121")
     (nano-dark-faded      "#c69a72")
 
@@ -486,6 +486,8 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
        (set-face-attribute 'org-block nil :background (face-background 'default))))
 
     (oh/set-org-faces))
+
+
 
     ;; (defun oh/cycle-themes ()
     ;;   "Returns a function that lets you cycle your themes."
@@ -980,7 +982,8 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     (org-indent
      ((t (:inherit (org-hide variable-pitch)))))
     (org-verbatim
-     ((t (:inherit (shadow fixed-pitch)))))
+     ((t (:foreground ,nano-dark-popout
+          :inherit (nano-salient fixed-pitch)))))
     (org-special-keyword
      ((t (:inherit (font-lock-comment-face fixed-pitch)))))
     (org-meta-line
@@ -989,9 +992,27 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
      ((t (:inherit fixed-pitch))))
     (org-table
      ((t (:inherit (nano-faded fixed-pitch)))))
+    (org-level-1
+     ((t (:weight semi-bold
+          :inherit (nano-strong variable-pitch)))))
+    (org-level-2
+     ((t (:weight semi-bold
+                  :inherit (nano-strong variable-pitch)))))
+    (org-level-3
+     ((t (:weight semi-bold
+                  :inherit (nano-strong variable-pitch)))))
+    (org-level-4
+     ((t (:weight semi-bold
+                  :inherit (nano-strong variable-pitch)))))
+    (org-level-5
+     ((t (:weight semi-bold
+                  :inherit (nano-strong variable-pitch)))))
+    (org-level-6
+     ((t (:weight semi-bold
+                  :inherit (nano-strong variable-pitch)))))
     :custom
     (org-startup-indented t)
-    (org-indent-indentation-per-level 0)
+    (org-indent-indentation-per-level 2)
     (org-default-notes-file "~/Nextcloud/org_notes/notes.org")
     ;; (org-attach-use-inheritance t)   ; Make sure attachments are
                                      ; inherited throuch headings
@@ -1104,7 +1125,7 @@ to make them hidden.
     (org-modern-statistics nil)
     (org-modern-todo nil)
     (org-modern-progress nil)
-    ;; (org-modern-tag nil)
+    (org-modern-tag nil)
     (org-modern-priority nil)
     (org-modern-table nil)
     (org-modern-list
@@ -1136,19 +1157,20 @@ Adds vertical lines next to src-blocks when org-indent is on
 
 #+begin_src elisp
   (use-package org-appear
-    :hook (org-mode . org-appear-mode)
+    :hook org-mode
+    ;; :hook (org-mode . org-appear-mode))
     :custom
-    (setq! org-appear-inside-latex t)
-    (setq! org-appear-autosubmarkers t))
+    (org-appear-inside-latex t)
+    (org-appear-autosubmarkers t))
 #+end_src
 
 ** Fragtog
 
 #+begin_src elisp
   (use-package org-fragtog
-    :diminish
-    :ensure-system-package
-      ((latex . texlive-most))
+    ;; :diminish
+    ;; :ensure-system-package
+    ;;   ((latex . texlive-most))
     :hook (org-mode . org-fragtog-mode))
 #+end_src
 
@@ -1158,7 +1180,7 @@ Adds vertical lines next to src-blocks when org-indent is on
   (use-package org-inline-pdf
     :diminish
     ;;:disabled ; TODO: fix. It doesn't work with org 9.5.5
-    :ensure-system-package pdf2svg
+    ;; :ensure-system-package pdf2svg
     :after org
     :hook (org-mode . org-inline-pdf-mode))
 #+end_src
@@ -1234,6 +1256,27 @@ Adds vertical lines next to src-blocks when org-indent is on
     (org-noter-auto-save-last-location t)
     (org-noter-notes-search-path
      '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
+#+end_src
+
+** Present
+
+#+begin_src elisp
+  (use-package org-present
+    :config
+    ;; (eval-after-load "org-present")
+    ;; '(progn
+    (add-hook 'org-present-mode-hook
+              (lambda ()
+                ;; (org-present-big)
+                ;; (org-display-inline-images)
+                ;; (org-present-hide-cursor)
+                (org-present-read-only)))
+    (add-hook 'org-present-mode-quit-hook
+              (lambda ()
+                ;; (org-present-small)
+                ;; (org-remove-inline-images)
+                ;; (org-present-show-cursor)
+                (org-present-read-write))))
 #+end_src
 
 ** oc-pandoc
