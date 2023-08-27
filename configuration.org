@@ -166,11 +166,6 @@ Enable elpaca use-package support
    ;;(require 'bind-key)
  #+end_src
 
- #+begin_src elisp
-;; (use-package use-package-ensure-system-package)
-;; (elpaca-wait)
- #+end_src
-
 * Keybinds
 ** General
 Yes, the package is called general. It's a keybinding framework.
@@ -615,9 +610,6 @@ icon fonts.
 
 #+begin_src elisp
   (use-package magit
-    ;; :ensure-system-package
-    ;; ((ssh . openssh)
-    ;;  (git . git))
     :general
     ('magit-mode-map
      "w" 'magit-worktree
@@ -644,7 +636,6 @@ icon fonts.
 #+begin_src elisp
   (use-package projectile
     :after vertico
-    ;; :ensure-system-package (rg . ripgrep)
     :diminish
     :defer 1
     :commands (projectile-mode projectile-command-map)
@@ -664,7 +655,6 @@ icon fonts.
     :after (counsel projectile)
     :diminish
     :disabled
-    ;; :ensure-system-package (rg . ripgrep)
     :config
     (counsel-projectile-mode))
 #+end_src
@@ -700,7 +690,6 @@ Visualize the colors of color codes
   (use-package lsp-mode
     :disabled
     :diminish
-    ;; :ensure-system-package (zip unzip)
     :commands lsp-deferred
     :custom
     (lsp-keymap-prefix "C-c l")
@@ -832,8 +821,6 @@ Visualize the colors of color codes
 #+begin_src elisp
   (use-package c-mode
     :elpaca nil
-    ;; :ensure-system-package clang gcc
-    ;; :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . lsp-deferred)
     :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
     :init
     (with-eval-after-load 'org
@@ -866,7 +853,6 @@ Visualize the colors of color codes
 
 #+begin_src elisp
   (use-package maude-mode
-    ;; :ensure-system-package maude
     :mode "\\.maude\\'"
     :config
     (setq maude-indent 2)
@@ -889,9 +875,6 @@ Visualize the colors of color codes
 
 #+begin_src elisp :lexical no
   (use-package plantuml-mode
-    ;; :ensure-system-package
-    ;; (dot . graphviz)
-    ;; (plantuml)
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-src-lang-modes
@@ -1017,7 +1000,7 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     ;; (org-attach-use-inheritance t)   ; Make sure attachments are
                                      ; inherited throuch headings
     (org-hide-emphasis-markers t)
-    (org-ellipsis " ↴")
+    (org-ellipsis " ↩")
     (org-confirm-babel-evaluate nil) ; Don't prompt me to confirm
                                      ; everytime I want to
                                      ; evaluate a block
@@ -1169,8 +1152,6 @@ Adds vertical lines next to src-blocks when org-indent is on
 #+begin_src elisp
   (use-package org-fragtog
     ;; :diminish
-    ;; :ensure-system-package
-    ;;   ((latex . texlive-most))
     :hook (org-mode . org-fragtog-mode))
 #+end_src
 
@@ -1180,7 +1161,6 @@ Adds vertical lines next to src-blocks when org-indent is on
   (use-package org-inline-pdf
     :diminish
     ;;:disabled ; TODO: fix. It doesn't work with org 9.5.5
-    ;; :ensure-system-package pdf2svg
     :after org
     :hook (org-mode . org-inline-pdf-mode))
 #+end_src
@@ -1191,7 +1171,6 @@ Adds vertical lines next to src-blocks when org-indent is on
   (use-package org-download
     ;:demand
     :after org
-    :ensure-system-package (wl-copy . wl-clipboard)
     :custom
     (org-download-method 'attach)
     :general
@@ -1286,7 +1265,6 @@ Adds vertical lines next to src-blocks when org-indent is on
 
 #+begin_src elisp :lexical no
   (use-package ox-pandoc
-    ;; :ensure-system-package pandoc
     :after org)
 #+end_src
 
@@ -1609,10 +1587,6 @@ A minor mode which shows an automatically updated sidebar with the current buffe
 
 #+begin_src elisp :lexical no
   (use-package vterm
-    ;; :ensure-system-package
-    ;; cmake
-    ;; (hostname . inetutils) ; This is needed for direcoty tracking
-    ;;                        ; to work
     :general
     (oskah/leader-keys
       "pv" 'projectile-run-vterm :wk "projectile vterm"
@@ -1702,19 +1676,15 @@ This requires the =mu= program.
 #+begin_src elisp
   (use-package sqlite3
     :defer t)
-    ;; :ensure-system-package (sqlite3 . sqlite))
 #+end_src
 ** Spell check
-This sets up spell checking using both english and Norwegian dictionaries together. It is also necessary to install =hunspell-en_us= and =hunspell-nb=. Jinx is a much faster alternative to flyspell, and it also supports combining dictionaries.
+This sets up spell checking using both English and Norwegian dictionaries together. It is also necessary to install =hunspell-en_us= and =hunspell-nb=. Jinx is a much faster alternative to flyspell, and it also supports combining dictionaries.
 
 #+begin_src elisp
   (use-package jinx
     ;:hook (elpaca-after-init . global-jinx-mode)
-    ;; :disabled
     :elpaca nil
-
     :defer 0
-    ;; :ensure-system-package (enchant-2 . enchant)
     :custom
     (jinx-languages "en_US nb_NO")
     :general
@@ -1754,7 +1724,6 @@ This sets up spell checking using both english and Norwegian dictionaries togeth
              :repo "zerolfx/copilot.el"
              :main nil
              :files ("dist" "*.el"))
-    ;; :ensure-system-package (node . nodejs)
     ;; :hook (prog-mode . copilot-mode)
     :general
     (oskah/leader-keys "ta" 'copilot-mode)
@@ -1788,7 +1757,6 @@ message is also run on ='emacs-startup-hook=.
   (defvar openai-key-memo nil "Memoized OpenAI key")
 
   (use-package chatgpt-shell
-    ;; :ensure-system-package pass
     :commands (chatgpt-shell)
     :custom
     (chatgpt-shell-openai-key
@@ -1883,3 +1851,7 @@ No littering puts the files that packages places in the emacs directory into
     (auto-save-file-name-transforms
      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
 #+end_src
+
+# Local Variables:
+# jinx-local-words: "svg"
+# End:
