@@ -1262,6 +1262,9 @@ Adds vertical lines next to src-blocks when org-indent is on
 
 #+begin_src elisp
   (use-package org-present
+    :general
+    (oskah/leader-keys 'org-mode-map
+      "tp" 'org-present :wk "present")
     :config
     ;; (eval-after-load "org-present")
     ;; '(progn
@@ -1612,8 +1615,10 @@ A minor mode which shows an automatically updated sidebar with the current buffe
     ;;                        ; to work
     :general
     (oskah/leader-keys
-      "ov" 'vterm
-      "oV" 'vterm-other-window))
+      "pv" 'projectile-run-vterm :wk "projectile vterm"
+      "pV" 'projectile-run-vterm-other-window :wk "projectile vterm other window"
+      "ov" 'vterm :wk "vterm"
+      "oV" 'vterm-other-window :wk "vterm other window"))
 #+end_src
 
 This is the configuration that should be put in ~~/.config/fish/config.fish~. This is describe in the [[https://github.com/akermu/emacs-libvterm/tree/94e2b0b2b4a750e7907dacd5b4c0584900846dd1#shell-side-configuration][GitHub]].
