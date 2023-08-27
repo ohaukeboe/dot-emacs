@@ -1829,6 +1829,7 @@ A better help buffer
     (which-key-mode))
 #+end_src
 ** Wakatime
+I've encountered issues with the =wakatime-cli= program not functioning properly. As a result, I've discovered that the most dependable method to install Wakatime is by using the Wakatime VS Code extension and simply directing it to the binary installed by VS Code.
 
 #+begin_src elisp
   (use-package wakatime-mode
