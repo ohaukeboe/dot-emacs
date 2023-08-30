@@ -8,7 +8,7 @@ I run Emacs inside a distrobox running arch, and I use =use-package-ensure-syste
 
 For future me, [[https://samsai.eu/post/toolbox-based-emacs-flatpak-workflow/][this]] article explains a Toolbox-based Emacs workflow for improved containerization between different projects.
 
-[[https://web.archive.org/web/20210921233717/https://ambrevar.xyz/emacs-eshell/index.html][This]] and [[https://web.archive.org/web/20211017064048/https://ambrevar.xyz/emacs-eshell-versus-shell/index.html][this]] are some nice articles about shell and eshell that can be worth reading.
+[[https://web.archive.org/web/20210921233717/https://ambrevar.xyz/emacs-eshell/index.html][This]] and [[https://web.archive.org/web/20211017064048/https://ambrevar.xyz/emacs-eshell-versus-shell/index.html][this]] are some nice articles about =shell= and =eshell= that can be worth reading.
 
 #+begin_src elisp
   ;; (add-to-list 'custom-theme-load-path "~/projects/emacs-theme/")
@@ -45,6 +45,7 @@ These are the defaults that I deem sane, and that should set before anything els
     (funcall mode t))
 
   (dolist (mode '(org-mode-hook
+                  Info-mode-hook
                   image-mode-hook
                   pdf-view-mode-hook
                   term-mode-hook
@@ -187,12 +188,16 @@ Yes, the package is called general. It's a keybinding framework.
 
 ** Evil
 *** Evil mode
-
 #+begin_src elisp
   (use-package evil
     :diminish
     :defer 0
     :custom
+    (evil-lookup-func #'(lambda ()
+                          (interactive)
+                          (condition-case nil
+                              (helpful-at-point)
+                            (error (woman)))))
     (evil-want-integration t)
     (evil-want-keybinding nil)
     (evil-want-C-u-scroll t)
@@ -328,6 +333,7 @@ keybindings in a logical way, and to describe them in the which-key popup.
 
 #+begin_src elisp
   (oskah/leader-keys "m" '(:ignore t :wk "localleader")
+                     "w" '(:ignore t :wk "window")
                      "t" '(:ignore t :wk "toggle")
                      "f" '(:ignore t :wk "file")
                      "s" '(:ignore t :wk "spell")
@@ -514,7 +520,6 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
     (messages-buffer-mode . nano-modeline-message-mode)
     (org-capture-mode     . nano-modeline-org-capture-mode)
     (org-agenda-mode      . nano-modeline-org-agenda-mode))
-
 #+end_src
 
 #+begin_src elisp
@@ -744,7 +749,7 @@ Visualize the colors of color codes
 #+end_src
 ** Flycheck
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package flycheck
     :defer 1
     :custom
@@ -752,8 +757,9 @@ Visualize the colors of color codes
     :config
     (global-flycheck-mode)
 
-    ;; Disable checkdoc for elisp. This is useful for org-mode source blocks.
-    ;; but will also disable checkdoc for elisp files.
+    ;; Disable checkdoc for elisp. This is useful for org-mode
+    ;; source blocks. But will also disable checkdoc for elisp
+    ;; files.
     (defun my-org-mode-setup ()
       (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
     (add-hook 'emacs-lisp-mode-hook #'my-org-mode-setup))
@@ -798,11 +804,23 @@ Visualize the colors of color codes
 #+end_src
 
 *** Racket Scheme
-
 #+begin_src elisp
   (use-package racket-mode
+    ;; :disabled
+    :hook (racket-mode . parinfer-rust-mode)
     :mode "\\.rkt\\'"
           "\\.scm\\'")
+#+end_src
+
+*** Geiser
+#+begin_src elisp
+  (use-package geiser-guile
+    :hook (scheme-mode . parinfer-rust-mode)
+    :custom
+    (geiser-active-implementations '(guile))
+    :init
+    (with-eval-after-load 'org
+      (add-to-list 'org-babel-load-languages '(scheme . t))))
 #+end_src
 
 *** Elisp
@@ -844,9 +862,13 @@ Visualize the colors of color codes
     :elpaca nil
     :hook (python-ts-mode . eglot-ensure)
     :init
+    (with-eval-after-load 'org
+      (add-to-list 'org-babel-load-languages '(python . t)))
     (with-eval-after-load 'eglot
-      (add-to-list 'eglot-server-programs '(python-ts-mode . ("ruff-lsp")))))
-  ;; (add-to-list 'eglot-server-programs '((python-mode python-ts-mode) . ("ruff"))))
+      (add-to-list 'eglot-server-programs
+                   '((python-mode python-ts-mode) . ("jedi-language-server")))))
+      ;; (add-to-list 'eglot-server-programs
+      ;;              '((python-mode python-ts-mode) . ("ruff")))))
 #+end_src
 
 *** Maude
@@ -1190,6 +1212,13 @@ Adds vertical lines next to src-blocks when org-indent is on
     (org-block-capf :type git :host github :repo "xenodium/org-block-capf")
     :hook
     (org-mode . org-block-capf-add-to-completion-at-point-functions))
+#+end_src
+
+** ob-async
+=ob-async= enables asynchronous execution of org-babel src blocks.
+#+begin_src elisp
+  (use-package ob-async
+    :after org)
 #+end_src
 
 ** Roam
@@ -1626,16 +1655,70 @@ This is the configuration that should be put in ~~/.config/fish/config.fish~. Th
     ;; (pdf-tools-install))
 #+end_src
 ** Mail
+To use =mbsync= over a secure connection add
+#+begin_example
+SSLType STARTTLS
+SSLVersions TLSv1.2
+CertificateFile ~/.cert/protonmail.crt
+#+end_example
+to =.mbsyncrc= and put the certificate generated by ~openssl s_client -starttls imap -connect 127.0.0.1:1143 -showcerts~ in =~/.cert/protonmail.crt=, i.e. the lines between (and incluying) /-----BEGIN CERTIFICATE-----/ and /-----END CERTIFICATE-----/
 
 #+begin_src elisp
-  ;; (set-email-account! "proton"
-  ;;   '((mu4e-sent-folder       . "/proton/Sent")
-  ;;     (mu4e-drafts-folder     . "/proton/Drafts")
-  ;;     (mu4e-trash-folder      . "/proton/Trash")
-  ;;     (mu4e-refile-folder     . "/proton/All Mail")
-  ;;     (smtpmail-smtp-user     . "ohaukeboe@pm.me")
-  ;;     (mu4e-compose-signature . "---\nRegards\nOskar"))
-  ;;   t)
+  (use-package mu4e
+    :elpaca nil
+    :defer t
+    :if (and (file-exists-p "~/mail")
+             (executable-find "mbsync")
+             (executable-find "msmtp")
+             (executable-find "mu"))
+    :general
+    (oskah/leader-keys
+      "om" '(mu4e :which-key "mu4e"))
+    :config
+    (setq sendmail-program (executable-find "msmtp")
+          send-mail-function 'smtpmail-send-it
+          mu4e-maildir "~/mail"
+
+          message-sendmail-f-is-evil t
+          message-sendmail-extra-arguments '("--read-envelope-from")
+          message-send-mail-function 'message-send-mail-with-sendmail
+          message-kill-buffer-on-exit t
+
+          mu4e-get-mail-command (concat (executable-find "mbsync") " -a")
+          mu4e-change-filenames-when-moving t
+
+          mu4e-use-fancy-chars t)
+
+    (setq mu4e-contexts
+          (list
+           (make-mu4e-context
+            :name "ifi"
+            :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/ifi" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "oskah@ifi.uio.no")
+                    (user-full-name . "Oskar Haukebøe")
+                    (mu4e-sent-folder . "/ifi/Sent Items")
+                    (mu4e-trash-folder . "/ifi/Deleted Items")
+                    (mu4e-drafts-folder . "/ifi/Drafts")
+                    (mu4e-refile-folder . "/ifi/Archive")
+                    (smtpmail-smtp-user .)))
+           (make-mu4e-context
+            :name "proton"
+            :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/proton" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "ohaukeboe@pm.me")
+                    (user-full-name . "Oskar Haukebøe")
+                    (mu4e-sent-folder . "/proton/Sent")
+                    (mu4e-trash-folder . "/proton/Trash")
+                    (mu4e-drafts-folder . "/proton/Drafts")
+                    (mu4e-refile-folder . "/proton/All Mail")
+                    (smtpmail-smtp-user . "ohaukeboe@pm.me")
+                    (mu4e-compose-signature . "---\nRegards\nOskar"))))))
+
 
   ;; (after! mu4e
   ;;   (setq! mu4e-split-view 'vertical))
@@ -1702,18 +1785,18 @@ This sets up spell checking using both English and Norwegian dictionaries togeth
 #+end_src
 ** Ripgrep
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package rg
     :defer t)
 #+end_src
 
 ** Thesaurus
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package powerthesaurus
     :general
     (oskah/leader-keys
-      "s t" '(powerthesaurus-hydra/body :wk "thesaurus")))
+      "st" '(powerthesaurus-hydra/body :wk "thesaurus")))
 #+end_src
 
 ** Copilot
@@ -1854,5 +1937,5 @@ No littering puts the files that packages places in the emacs directory into
 #+end_src
 
 # Local Variables:
-# jinx-local-words: "svg"
+# jinx-local-words: "Flycheck Imenu Ripgrep eshell svg"
 # End:
