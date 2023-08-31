@@ -46,6 +46,7 @@ These are the defaults that I deem sane, and that should set before anything els
 
   (dolist (mode '(org-mode-hook
                   Info-mode-hook
+                  special-mode-hook
                   image-mode-hook
                   pdf-view-mode-hook
                   term-mode-hook
@@ -195,10 +196,19 @@ Yes, the package is called general. It's a keybinding framework.
     :custom
     (evil-lookup-func #'(lambda ()
                           (interactive)
-                          (condition-case nil
-                              (helpful-at-point)
-                            (error (woman)))))
-    (evil-want-integration t)
+                          ;; (let ((word-at-point (thing-at-point 'word))))
+                          (or (call-interactively 'eldoc)
+                              (condition-case nil
+                                  (funcall-interactively 'helpful-at-point)
+                                (error nil))
+                              (call-interactively 'woman-follow))))
+    ;; (evil-lookup-func #'(lambda ()
+    ;;                       (interactive)
+    ;;                       (let ((word-at-point (thing-at-point 'word)))
+    ;;                         (condition-case nil
+    ;;                             (helpful-at-point)
+    ;;                           (error (when word-at-point
+    ;;                                    (woman word-at-point)))))))  (evil-want-integration t)
     (evil-want-keybinding nil)
     (evil-want-C-u-scroll t)
     (evil-want-C-i-jump t)
@@ -336,10 +346,16 @@ keybindings in a logical way, and to describe them in the which-key popup.
                      "w" '(:ignore t :wk "window")
                      "t" '(:ignore t :wk "toggle")
                      "f" '(:ignore t :wk "file")
+                     "c" '(:ignore t :wk "code")
+                     "g" '(:ignore t :wk "git")
+                     "a" '(:ignore t :wk "embark")
                      "s" '(:ignore t :wk "spell")
                      "b" '(:ignore t :wk "buffer")
                      "h" '(:ignore t :wk "help")
-                     "o" '(:ignore t :wk "open"))
+                     "n" '(:ignore t :wk "notes")
+                     "p" '(:ignore t :wk "project")
+                     "o" '(:ignore t :wk "open")
+                     "q" '(:ignore t :wk "quit"))
 #+end_src
 
 And these are some general keybindings I like
@@ -733,18 +749,25 @@ Visualize the colors of color codes
     :elpaca nil
     :hook (eglot--managed-mode . (lambda ()
                                    (eldoc-mode -1)))
+    :custom
+    (eldoc-display-functions '(eldoc-display-in-buffer))
     :general
     ;; ('(normal visual emacs)
     ;;  "K" 'eldoc :wk "help at point")
     (oskah/leader-keys
-      "ch" 'eldoc :wk "help at point"
-      "cr" 'eglot-rename :wk "rename"
+      "ch" '(eldoc :wk "help at point")
+      "cr" '(eglot-rename :wk "rename")
       ;; "cd" 'eglot-find-declaration :wk "find declaration"
       ;; "ci" 'eglot-find-references :wk "find references"
-      "cf" 'eglot-format :wk "format region"
-      "ca" 'eglot-code-actions :wk "code actions"
-      "cD" 'flymake-show-buffer-diagnostics :wk "show diagnostics"
-      "cn" 'consult-imenu :wk "navigate symbols"))
+      "cf" '(eglot-format :wk "format region")
+      "ca" '(eglot-code-actions :wk "code actions")
+      "cD" '(flymake-show-buffer-diagnostics :wk "show diagnostics")
+      "cn" '(consult-imenu :wk "navigate symbols")
+      "ce" '(consult-flymake :wk "show errors"))
+    ('(normal) eglot-mode-map
+     "K" nil))
+    ;; :config)
+    ;; (define-key (eglot-mode-map) "K" nil))
 
 #+end_src
 ** Flycheck
@@ -1272,7 +1295,7 @@ Adds vertical lines next to src-blocks when org-indent is on
   (use-package org-present
     :general
     (oskah/leader-keys 'org-mode-map
-      "tp" 'org-present :wk "present")
+      "tp" '(org-present :wk "present"))
     :config
     ;; (eval-after-load "org-present")
     ;; '(progn
@@ -1599,7 +1622,7 @@ A minor mode which shows an automatically updated sidebar with the current buffe
     (imenu-list-focus-after-activation t)
     :general
     (oskah/leader-keys
-      "ti" 'imenu-list-smart-toggle :wk "toggle imenu list"))
+      "ti" '(imenu-list-smart-toggle :wk "toggle imenu list")))
 #+end_src
 
 ** Eshell-fish
@@ -1618,10 +1641,10 @@ A minor mode which shows an automatically updated sidebar with the current buffe
   (use-package vterm
     :general
     (oskah/leader-keys
-      "pv" 'projectile-run-vterm :wk "projectile vterm"
-      "pV" 'projectile-run-vterm-other-window :wk "projectile vterm other window"
-      "ov" 'vterm :wk "vterm"
-      "oV" 'vterm-other-window :wk "vterm other window"))
+      "pv" '(projectile-run-vterm :wk "projectile vterm")
+      "pV" '(projectile-run-vterm-other-window :wk "projectile vterm other window")
+      "ov" '(vterm :wk "vterm")
+      "oV" '(vterm-other-window :wk "vterm other window")))
 #+end_src
 
 This is the configuration that should be put in ~~/.config/fish/config.fish~. This is describe in the [[https://github.com/akermu/emacs-libvterm/tree/94e2b0b2b4a750e7907dacd5b4c0584900846dd1#shell-side-configuration][GitHub]].
@@ -1809,7 +1832,7 @@ This sets up spell checking using both English and Norwegian dictionaries togeth
              :files ("dist" "*.el"))
     ;; :hook (prog-mode . copilot-mode)
     :general
-    (oskah/leader-keys "ta" 'copilot-mode)
+    (oskah/leader-keys "ta" '(copilot-mode :wk "copilot"))
 
     :bind (("C-TAB" . 'copilot-accept-completion-by-word)
            ("C-<tab>" . 'copilot-accept-completion-by-word)
