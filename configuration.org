@@ -194,21 +194,7 @@ Yes, the package is called general. It's a keybinding framework.
     :diminish
     :defer 0
     :custom
-    (evil-lookup-func #'(lambda ()
-                          (interactive)
-                          ;; (let ((word-at-point (thing-at-point 'word))))
-                          (or (call-interactively 'eldoc)
-                              (condition-case nil
-                                  (funcall-interactively 'helpful-at-point)
-                                (error nil))
-                              (call-interactively 'woman-follow))))
-    ;; (evil-lookup-func #'(lambda ()
-    ;;                       (interactive)
-    ;;                       (let ((word-at-point (thing-at-point 'word)))
-    ;;                         (condition-case nil
-    ;;                             (helpful-at-point)
-    ;;                           (error (when word-at-point
-    ;;                                    (woman word-at-point)))))))  (evil-want-integration t)
+    (evil-lookup-func 'oskah/evil-lookup-func)
     (evil-want-keybinding nil)
     (evil-want-C-u-scroll t)
     (evil-want-C-i-jump t)
@@ -228,10 +214,27 @@ Yes, the package is called general. It's a keybinding framework.
     (evil-global-set-key 'normal (kbd "k") 'evil-previous-visual-line)
 
     (dolist (mode '(custom-mode
-                        eshell-mode
-                        git-rebase-mode
-                        term-mode))
+                    eshell-mode
+                    git-rebase-mode
+                    term-mode))
             (add-to-list 'evil-emacs-state-modes mode)))
+#+end_src
+
+#+begin_src elisp
+  (setq-default oskah/evil-lookup-procs '(helpful-at-point
+                                          eldoc))
+
+  (defun oskah/evil-lookup-func ()
+    (interactive)
+    (let ((success nil))
+      (dolist (proc oskah/evil-lookup-procs)
+        (unless success
+          (setq success
+                (condition-case nil
+                    (call-interactively proc)
+                  (error nil)))))))
+
+        ;; (call-interactively 'woman-follow)))
 #+end_src
 
 #+begin_src elisp
@@ -747,13 +750,13 @@ Visualize the colors of color codes
 #+begin_src elisp :lexical no
   (use-package eglot
     :elpaca nil
+    ;; :hook (eglot--managed-mode . (lambda ()
+    ;;                                (eldoc-mode -1)))
     :hook (eglot--managed-mode . (lambda ()
-                                   (eldoc-mode -1)))
+                                   (general-def 'normal eglot-mode-map "K" nil)))
     :custom
     (eldoc-display-functions '(eldoc-display-in-buffer))
     :general
-    ;; ('(normal visual emacs)
-    ;;  "K" 'eldoc :wk "help at point")
     (oskah/leader-keys
       "ch" '(eldoc :wk "help at point")
       "cr" '(eglot-rename :wk "rename")
@@ -763,11 +766,11 @@ Visualize the colors of color codes
       "ca" '(eglot-code-actions :wk "code actions")
       "cD" '(flymake-show-buffer-diagnostics :wk "show diagnostics")
       "cn" '(consult-imenu :wk "navigate symbols")
-      "ce" '(consult-flymake :wk "show errors"))
-    ('(normal) eglot-mode-map
-     "K" nil))
-    ;; :config)
-    ;; (define-key (eglot-mode-map) "K" nil))
+      "ce" '(consult-flymake :wk "show errors")))
+    ;; ('(normal) 'eglot-mode-map
+    ;;  "K" nil))
+    ;; :config
+    ;; (general-def 'normal eglot-mode-map "K" nil))
 
 #+end_src
 ** Flycheck
@@ -862,7 +865,14 @@ Visualize the colors of color codes
 #+begin_src elisp
   (use-package c-mode
     :elpaca nil
-    :hook ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
+    :hook
+    ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
+    ((c-mode c++-mode c-ts-mode c++-ts-mode) .
+     (lambda ()
+       (require 'woman)
+       (setq-local oskah/evil-lookup-procs (copy-sequence
+                                            oskah/evil-lookup-procs))
+       (add-to-list 'oskah/evil-lookup-procs 'woman-follow)))
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(C . t))))
@@ -873,9 +883,42 @@ Visualize the colors of color codes
 #+begin_src elisp
   (use-package rust-mode
     :mode "\\.rs\\'"
-    :hook (rust-ts-mode . eglot-ensure))
-    ;; :init
-    ;; (add-hook 'rust-mode-hook 'eglot-ensure))
+    :hook (rust-ts-mode . (lambda ()
+                            (eglot-ensure)
+                            (electric-pair-local-mode))))
+#+end_src
+
+#+begin_src elisp
+  (use-package flycheck-rust
+    ;; :hook (rust-mode . #'flycheck-rust-setup)
+    :init
+    (with-eval-after-load 'rust-mode
+      (add-hook 'flycheck-mode-hook #'flycheck-rust-setup)))
+#+end_src
+
+#+begin_src elisp
+  (use-package cargo
+    :hook (rust-mode . cargo-minor-mode)
+    :general
+    (oskah/leader-keys
+      "mb" '(cargo-process-build :wk "cargo build")
+      "mr" '(cargo-process-run :wk "cargo run")
+      "mt" '(cargo-process-test :wk "cargo test")
+      "mx" '(cargo-process-clean :wk "cargo clean")
+      "mc" '(cargo-process-check :wk "cargo check")
+      "mR" '(cargo-process-repeat :wk "cargo repeat")
+      "mD" '(cargo-process-doc :wk "cargo doc")
+      "md" '(cargo-process-doc-open :wk "cargo doc open")
+      "mX" '(cargo-process-run-example :wk "cargo run example")
+      "mI" '(cargo-process-init :wk "cargo init")
+      "mU" '(cargo-process-update :wk "cargo update")
+      "mS" '(cargo-process-search :wk "cargo search")
+      "mT" '(cargo-process-current-test :wk "cargo current test")
+      "mF" '(cargo-process-fmt :wk "cargo fmt")
+      "mC" '(cargo-process-clippy :wk "cargo clippy")
+      "mB" '(cargo-process-bench :wk "cargo bench")))
+
+
 #+end_src
 
 *** Python
@@ -1153,7 +1196,7 @@ to make them hidden.
     (org-modern-statistics nil)
     (org-modern-todo nil)
     (org-modern-progress nil)
-    (org-modern-tag nil)
+    ;; (org-modern-tag nil)
     (org-modern-priority nil)
     (org-modern-table nil)
     (org-modern-list
@@ -1311,6 +1354,24 @@ Adds vertical lines next to src-blocks when org-indent is on
                 ;; (org-remove-inline-images)
                 ;; (org-present-show-cursor)
                 (org-present-read-write))))
+#+end_src
+
+** Reveal
+[[https://github.com/yjwen/org-reveal/][Org-Reveal]] is makes it possible to make beautiful =Reveal.js= presentations using Org-mode.
+
+#+begin_src elisp
+  (use-package ox-reveal
+    :custom
+    (org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+    (org-reveal-theme "black"))
+    ;; (org-reveal-klipsify-src t))
+    ;; (org-reveal-init-options "slideNumber: true"))
+#+end_src
+
+=htmlize.el= is also needed to enable code highlighting using the emacs theme.
+#+begin_src elisp
+  (use-package htmlize
+    :after ox-reveal)
 #+end_src
 
 ** oc-pandoc
