@@ -26,3 +26,5 @@ var/
 /etc/
 /tree-sitter/
 /dall-e/
+/eglot-java-eclipse-jdt-cache/
+/share/
