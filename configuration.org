@@ -221,8 +221,7 @@ Yes, the package is called general. It's a keybinding framework.
 #+end_src
 
 #+begin_src elisp
-  (setq-default oskah/evil-lookup-procs '(helpful-at-point
-                                          eldoc))
+  (setq-default oskah/evil-lookup-procs '(eldoc))
 
   (defun oskah/evil-lookup-func ()
     (interactive)
@@ -388,7 +387,8 @@ And these are some general keybindings I like
 
     "fc" '("open config" . (lambda ()
                              (interactive)
-                             (find-file (locate-user-emacs-file "configuration.org")))))
+                             (find-file (locate-user-emacs-file "configuration.org"))))
+    "tv" '(visual-line-mode :wk "word wrap"))
 
   (general-def 'normal
     "C-=" 'text-scale-increase
@@ -754,6 +754,7 @@ Visualize the colors of color codes
     ;;                                (eldoc-mode -1)))
     :hook (eglot--managed-mode . (lambda ()
                                    (general-def 'normal eglot-mode-map "K" nil)))
+    (special-mode . (lambda () (visual-line-mode 1)))
     :custom
     (eldoc-display-functions '(eldoc-display-in-buffer))
     :general
@@ -830,12 +831,22 @@ Visualize the colors of color codes
 #+end_src
 
 *** Racket Scheme
+This requires some additional Racket packages to be installed. Once you have Racket installed you can simply run
+#+begin_src sh
+  raco pkg install --auto drracket sicp
+#+end_src
+
 #+begin_src elisp
-  (use-package racket-mode
-    ;; :disabled
-    :hook (racket-mode . parinfer-rust-mode)
-    :mode "\\.rkt\\'"
-          "\\.scm\\'")
+   (use-package racket-mode
+     :hook (racket-mode . parinfer-rust-mode)
+     :mode "\\.rkt\\'"
+           "\\.scm\\'")
+
+  (use-package ob-racket
+    :elpaca (ob-racket :type git :host github :repo "DEADB17/ob-racket")
+    :init
+    (with-eval-after-load 'org
+      (add-to-list 'org-babel-load-languages '(racket . t))))
 #+end_src
 
 *** Geiser
@@ -856,6 +867,12 @@ Visualize the colors of color codes
     :diminish
     :commands parinfer-rust-mode
     :hook emacs-lisp-mode
+    ((emacs-lisp-mode) .
+     (lambda ()
+       (setq-local oskah/evil-lookup-procs (copy-sequence
+                                            oskah/evil-lookup-procs))
+       (add-to-list 'oskah/evil-lookup-procs 'helpful-at-point)))
+
     :init
     (setq parinfer-rust-auto-download t))
 #+end_src
@@ -946,6 +963,16 @@ Visualize the colors of color codes
     (setq maude-indent 2)
     (electric-indent-local-mode -1))
 #+end_src
+
+*** Java
+
+#+begin_src elisp
+  (use-package eglot-java
+    :hook
+    ((java-mode java-ts-mode) . eglot-java-mode)
+    ((java-mode java-ts-mode) . (lambda () (electric-pair-mode t))))
+#+end_src
+
 *** Fish
 
 #+begin_src elisp :lexical no
@@ -1048,6 +1075,10 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
           :inherit fixed-pitch))))
     (org-italic
      ((t (:inherit (variable-pitch italic)))))
+    (org-document-title
+     ((t (:weight bold
+          :font-size 1.75
+          :inherit (variable-pitch)))))
     (org-code
      ((t (:inherit (shadow fixed-pitch)))))
     (org-indent
@@ -1099,7 +1130,8 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     (org-export-with-tags nil)
     (org-startup-with-inline-images t)
     (org-startup-with-latex-preview t)
-    (org-startup-folded 'content)    ; Start org-mode with everything
+    (org-startup-folded 'show2levels)    ; Start org-mode with everything
+    ;(org-startup-folded 'content)    ; Start org-mode with everything
                                      ; folded
     (shr-max-image-proportion 0.6)   ; Smaller max image size
     (org-export-with-smart-quotes t) ; Use smart quotes on export
@@ -1340,20 +1372,21 @@ Adds vertical lines next to src-blocks when org-indent is on
     (oskah/leader-keys 'org-mode-map
       "tp" '(org-present :wk "present"))
     :config
-    ;; (eval-after-load "org-present")
-    ;; '(progn
+    (setq org-present-text-scale 2)
+    (setq org-present-startup-folded t)
     (add-hook 'org-present-mode-hook
               (lambda ()
-                ;; (org-present-big)
-                ;; (org-display-inline-images)
-                ;; (org-present-hide-cursor)
-                (org-present-read-only)))
+                (org-present-big)
+                (org-appear-mode -1)
+                (org-present-read-only)
+                (setq header-line-format " ")))
     (add-hook 'org-present-mode-quit-hook
               (lambda ()
-                ;; (org-present-small)
-                ;; (org-remove-inline-images)
-                ;; (org-present-show-cursor)
-                (org-present-read-write))))
+                (org-present-small)
+                (org-appear-mode t)
+                (org-present-read-write)
+                (setq header-line-format nil)
+                (nano-modeline-org-mode))))
 #+end_src
 
 ** Reveal
@@ -1363,9 +1396,8 @@ Adds vertical lines next to src-blocks when org-indent is on
   (use-package ox-reveal
     :custom
     (org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
-    (org-reveal-theme "black"))
-    ;; (org-reveal-klipsify-src t))
-    ;; (org-reveal-init-options "slideNumber: true"))
+    (org-reveal-theme "black")
+    (org-reveal-init-options "slideNumber: true"))
 #+end_src
 
 =htmlize.el= is also needed to enable code highlighting using the emacs theme.
@@ -2023,3 +2055,12 @@ No littering puts the files that packages places in the emacs directory into
 # Local Variables:
 # jinx-local-words: "Flycheck Imenu Ripgrep eshell svg"
 # End:
+
+** Devilry
+#+begin_src elisp
+  (use-package devilry-mode
+    :elpaca (devilry-mode :type git :host github :repo
+                          "MathiasCiarlo/devilry-mode")
+    :config
+    (setq dm-java-compilation nil))
+#+end_src
