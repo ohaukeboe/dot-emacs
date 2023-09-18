@@ -1,12 +1,12 @@
 #+title: My Emacs configuration
 :HEADER:
-#+startup: fold
+#+startup: fold hideblocks
 #+property: header-args:elisp :tangle configuration.el
 :END:
 
-I run Emacs inside a distrobox running arch, and I use =use-package-ensure-system-package= to make sure the required packages are installed. In order to make the distrobox use the host's default applications you can run ~sudo ln -s /usr/bin/distrobox-host-exec /usr/local/bin/xdg-open~ from inside the container.
+Welcome to my Emacs config. It is written in [[https://orgmode.org/][org mode]] as it sort of helps a bit for keeping it tidy. I use [[https://github.com/emacs-evil/evil][evil mode]] as I really like vim binds, and I am also inspired by [[https://github.com/doomemacs/doomemacs][Doom emacs]] which I used before I started on this config. The programs that this config depend on are all listed in my nix/home-manager [[https://codeberg.org/ohaukeboe/home-manager][config]].
 
-For future me, [[https://samsai.eu/post/toolbox-based-emacs-flatpak-workflow/][this]] article explains a Toolbox-based Emacs workflow for improved containerization between different projects.
+I would not recommend using this config /as-is/ since I probably have a lot of stuff that you don't need (and probably that I don't need either).
 
 [[https://web.archive.org/web/20210921233717/https://ambrevar.xyz/emacs-eshell/index.html][This]] and [[https://web.archive.org/web/20211017064048/https://ambrevar.xyz/emacs-eshell-versus-shell/index.html][this]] are some nice articles about =shell= and =eshell= that can be worth reading.
 
@@ -72,7 +72,6 @@ Some variables are buffer-local, and should therefore be set using ~setq-default
                 frame-resize-pixelwise t          ; Fine-grained frame resize
                 auto-fill-function 'do-auto-fill) ; Auto-fill-mode everywhere
 #+end_src
-
 
 Some functionality uses this to identify you, e.g. GPG configuration, email
 clients, file templates and snippets. It is optional.
@@ -198,7 +197,7 @@ Yes, the package is called general. It's a keybinding framework.
     (evil-want-keybinding nil)
     (evil-want-C-u-scroll t)
     (evil-want-C-i-jump t)
-    (evil-undo-system 'undo-redo)
+    (evil-undo-system 'undo-fu)
     (evil-shift-width 2)
 
     :general
@@ -258,8 +257,7 @@ Yes, the package is called general. It's a keybinding framework.
     (evilnc-default-hotkeys))
 #+end_src
 *** Matchit
-Enables pressing =%= to jump between matching pairs. Despite the name, It does
-not depend on evil mode.
+Enables pressing =%= to jump between matching pairs. Despite the name, It does not depend on evil mode.
 
 #+begin_src elisp
   (use-package evil-matchit
@@ -549,7 +547,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 
 ** svg-lib
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package svg-lib)
   (use-package svg-tag-mode
     :disabled
@@ -610,8 +608,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 #+end_src
 
 ** All the icons
-It is necessary to run ~M-x all-the-icons-install-fonts~ to set up
-icon fonts.
+It is necessary to run ~M-x all-the-icons-install-fonts~ to set up icon fonts.
 
 #+begin_src elisp
   (use-package all-the-icons
@@ -901,6 +898,7 @@ This requires some additional Racket packages to be installed. Once you have Rac
   (use-package rust-mode
     :mode "\\.rs\\'"
     :hook (rust-ts-mode . (lambda ()
+                            (flycheck-rust-setup)
                             (eglot-ensure)
                             (electric-pair-local-mode))))
 #+end_src
@@ -1079,6 +1077,9 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
      ((t (:weight bold
           :font-size 1.75
           :inherit (variable-pitch)))))
+    (org-drawer
+     ((t (:height 0.8
+          :inherit (fixed-pitch)))))
     (org-code
      ((t (:inherit (shadow fixed-pitch)))))
     (org-indent
@@ -1113,6 +1114,7 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
      ((t (:weight semi-bold
                   :inherit (nano-strong variable-pitch)))))
     :custom
+    (org-pretty-entities t)
     (org-startup-indented t)
     (org-indent-indentation-per-level 2)
     (org-default-notes-file "~/Nextcloud/org_notes/notes.org")
@@ -1146,11 +1148,22 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
       "me" '(org-export-dispatch :wk "export"))
 
     :config
-    (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
+    (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
     (add-to-list 'org-babel-load-languages '(shell . t))
     (org-babel-do-load-languages
      'org-babel-load-languages
      org-babel-load-languages))
+#+end_src
+
+#+begin_src elisp
+  (defun oskah/org-unfold-heading ()
+    "Show first children (or whichever ones be visible) and entry of heading.
+  Assumes that point be at a heading."
+    (interactive)
+    (outline-hide-subtree)
+    (org-fold-show-children)
+    (org-fold-show-entry))
+
 #+end_src
 
 When evaluating a source block which generates an image the image will usually not be rendered immediately. This fixes that
@@ -1305,11 +1318,12 @@ Adds vertical lines next to src-blocks when org-indent is on
 
 #+begin_src elisp
   (use-package org-block-capf
-    :disabled
     :elpaca
     (org-block-capf :type git :host github :repo "xenodium/org-block-capf")
     :hook
-    (org-mode . org-block-capf-add-to-completion-at-point-functions))
+    (org-mode . org-block-capf-add-to-completion-at-point-functions)
+    :custom
+    (org-block-capf-explicit-lang-defaults nil))
 #+end_src
 
 ** ob-async
@@ -1493,12 +1507,13 @@ Allow displaying the vertico completions in a grid
 
 #+begin_src elisp :lexical no
   (use-package cape
+    :after corfu
     :init
     ;; Add `completion-at-point-functions', used by `completion-at-point'.
     ;; NOTE: The order matters!
+    (add-to-list 'completion-at-point-functions #'cape-elisp-block)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev)
     (add-to-list 'completion-at-point-functions #'cape-file)
-    (add-to-list 'completion-at-point-functions #'cape-elisp-block)
     (add-to-list 'completion-at-point-functions #'cape-history)
     ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
     ;;(add-to-list 'completion-at-point-functions #'cape-tex)
@@ -1553,6 +1568,7 @@ Allow displaying the vertico completions in a grid
     (marginalia-mode)
     (savehist-mode))
 #+end_src
+
 * Bibilo
 
 #+begin_src elisp
@@ -1679,7 +1695,7 @@ Allow displaying the vertico completions in a grid
    (direnv-mode))
 #+end_src
 
-** sicp
+** SICP
 
 #+begin_src elisp
   (use-package sicp)
@@ -1848,26 +1864,32 @@ This requires the =mu= program.
     :elpaca nil)
 #+end_src
 
-** Undo-tree
-
-#+begin_src elisp
-  (use-package undo-tree
-    :defer 0
-    :disabled
-    :diminish
-    :config
-    (global-undo-tree-mode))
-#+end_src
-
 ** Vundo
+Not undo-tree
 
 #+begin_src elisp
   (use-package vundo
     :custom
     (vundo-glyph-alist vundo-unicode-symbols)
+    (vundo-window-max-height 10)
     :general
     (oskah/leader-keys
-      "u" '(vundo :wk "undo tree")))
+      "u" '(vundo :wk "not undo tree")))
+#+end_src
+
+** Undo-fu
+Save & recover undo steps between Emacs sessions.
+
+#+begin_src elisp
+  (use-package undo-fu
+    :custom
+    (undo-limit (* 64 1024 1024))               ; 64mB.
+    (undo-strong-limit (* 96 1024 1024))        ; 96mB.
+    (undo-outer-limit (* 10 undo-strong-limit))) ; 960mB.
+
+  (use-package undo-fu-session
+    :init
+    (undo-fu-session-global-mode))
 #+end_src
 
 ** SQLite
@@ -1934,11 +1956,7 @@ This sets up spell checking using both English and Norwegian dictionaries togeth
            ("TAB" . 'copilot-accept-completion)))
 #+end_src
 
-I don't want copilot to start on emacs startup, but I also want it to be hooked
-to ='prog-mode-hook=, which in case is run on startup. I therefore have a /nice/
-lambda expression to load hook it after emacs has loaded. I also added a small
-delay to make it easier to analyze when packages are loaded as the startup
-message is also run on ='emacs-startup-hook=.
+I don't want copilot to start on emacs startup, but I also want it to be hooked to ='prog-mode-hook=, which in case is run on startup. I therefore have a /nice/ lambda expression to load hook it after emacs has loaded. I also added a small delay to make it easier to analyze when packages are loaded as the startup message is also run on ='emacs-startup-hook=.
 
 #+begin_src elisp
   (add-hook 'elpaca-after-init-hook
@@ -2052,10 +2070,6 @@ No littering puts the files that packages places in the emacs directory into
      `((".*" ,(no-littering-expand-var-file-name "auto-save/") t))))
 #+end_src
 
-# Local Variables:
-# jinx-local-words: "Flycheck Imenu Ripgrep eshell svg"
-# End:
-
 ** Devilry
 #+begin_src elisp
   (use-package devilry-mode
@@ -2064,3 +2078,8 @@ No littering puts the files that packages places in the emacs directory into
     :config
     (setq dm-java-compilation nil))
 #+end_src
+
+* Spell checker local stuff
+# Local Variables:
+# jinx-local-words: "Direnv Flycheck Imenu Ripgrep Vundo eshell svg"
+# End:
