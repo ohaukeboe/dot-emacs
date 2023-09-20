@@ -32,7 +32,8 @@ These are the defaults that I deem sane, and that should set before anything els
         recentf-max-saved-items 10000       ; Show more recent files
         ring-bell-function 'ignore          ; Quiet
         scroll-margin 1                     ; Space between cursor and top/bottom
-        sentence-end-double-space nil      ; No double space
+        sentence-end-double-space nil       ; No double space
+        electric-pair-mode 1                ; Auto close ({[...
         backup-directory-alist `(("." . ,(concat user-emacs-directory "var/backups"))))
 
   (dolist (mode '(tool-bar-mode
@@ -868,7 +869,8 @@ This requires some additional Racket packages to be installed. Once you have Rac
      (lambda ()
        (setq-local oskah/evil-lookup-procs (copy-sequence
                                             oskah/evil-lookup-procs))
-       (add-to-list 'oskah/evil-lookup-procs 'helpful-at-point)))
+       (add-to-list 'oskah/evil-lookup-procs 'helpful-at-point)
+       (electric-pair-local-mode -1)))
 
     :init
     (setq parinfer-rust-auto-download t))
@@ -899,8 +901,8 @@ This requires some additional Racket packages to be installed. Once you have Rac
     :mode "\\.rs\\'"
     :hook (rust-ts-mode . (lambda ()
                             (flycheck-rust-setup)
-                            (eglot-ensure)
-                            (electric-pair-local-mode))))
+                            (eglot-ensure))))
+                            ;; (electric-pair-local-mode))))
 #+end_src
 
 #+begin_src elisp
@@ -915,7 +917,7 @@ This requires some additional Racket packages to be installed. Once you have Rac
   (use-package cargo
     :hook (rust-mode . cargo-minor-mode)
     :general
-    (oskah/leader-keys
+    (oskah/leader-keys rust-mode
       "mb" '(cargo-process-build :wk "cargo build")
       "mr" '(cargo-process-run :wk "cargo run")
       "mt" '(cargo-process-test :wk "cargo test")
@@ -967,8 +969,8 @@ This requires some additional Racket packages to be installed. Once you have Rac
 #+begin_src elisp
   (use-package eglot-java
     :hook
-    ((java-mode java-ts-mode) . eglot-java-mode)
-    ((java-mode java-ts-mode) . (lambda () (electric-pair-mode t))))
+    ((java-mode java-ts-mode) . eglot-java-mode))
+    ;; ((java-mode java-ts-mode) . (lambda () (electric-pair-local-mode t))))
 #+end_src
 
 *** Fish
@@ -1338,6 +1340,7 @@ Adds vertical lines next to src-blocks when org-indent is on
 #+begin_src elisp
   (use-package org-roam
     :custom
+    (org-roam-complete-everywhere t)
     (org-roam-node-display-template "${title:*} ${tags:10}")
     (org-roam-directory (file-truename "~/Nextcloud/org_notes/roam"))
     (org-roam-capture-templates
@@ -1352,11 +1355,14 @@ Adds vertical lines next to src-blocks when org-indent is on
                        :unnarrowed t))))
     :general
     (oskah/leader-keys
-      "nf" 'org-roam-node-find
-      "nc" 'org-roam-capture
-      "ng" 'org-roam-graph
-      "ni" 'org-roam-node-insert
-      "nl" 'org-roam-buffer-toggle)
+      "nf" '(org-roam-node-find :wk "find")
+      "nc" '(org-roam-capture :wk "capture")
+      "ng" '(org-roam-graph :wk "graph")
+      "ni" '(org-roam-node-insert :wk "insert")
+      "nl" '(org-roam-buffer-toggle :wk "buffer")
+      "nt" '(org-roam-tag-add :wk "tag-add")
+      "nr" '(org-roam-refile :wk "refile"))
+
     :config
     (org-roam-db-autosync-mode 1))
 
@@ -1527,7 +1533,7 @@ Allow displaying the vertico completions in a grid
 
 ** Consult
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package consult
     :defer 1
     :general
@@ -1535,11 +1541,15 @@ Allow displaying the vertico completions in a grid
       "bb" '(consult-buffer :wk "consult buffer")
       "bB" '(consult-buffer-other-window :wk "consult buffer other window")
       "fr" '(consult-recent-file :wk "recent file")
-      "sg" '(consult-ripgrep :wk "ripgrep"))
+      "sg" '(consult-ripgrep :wk "ripgrep")
+      "ss" '(consult-line :wk "consult line"))
+    (oskah/leader-keys org-mode-map
+      "mh" '(consult-org-heading :wk "consult org heading"))
     :config
     (recentf-mode 1))
 
 #+end_src
+
 ** Embark
 
 #+begin_src elisp
@@ -1609,7 +1619,7 @@ Allow displaying the vertico completions in a grid
         "mrc" '(citar-insert-citation :which-key "insert citation")
         "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
       (oskah/leader-keys
-        "nro" '(citar-open :wk "open resource"))
+        "nbo" '(citar-open :wk "open resource"))
       :custom
       (citar-bibliography oh/bib-files)
       (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
