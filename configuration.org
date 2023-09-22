@@ -709,50 +709,11 @@ Visualize the colors of color codes
   (use-package rainbow-mode
     :hook prog-mode)
 #+end_src
-** LSP-mode
-
-#+begin_src elisp
-  (use-package lsp-mode
-    :disabled
-    :diminish
-    :commands lsp-deferred
-    :custom
-    (lsp-keymap-prefix "C-c l")
-    (lsp-headerline-breadcrumb-enable nil))
-
-
-  (use-package lsp-ui
-    :after lsp-mode
-    :disabled
-    :custom
-    (lsp-uio-doc-show-with-cursor nil)
-    (lsp-uio-doc-show-with-mouse nil)
-    :hook (lsp-mode . lsp-ui-mode)
-    :general
-    (oskah/leader-keys
-      "cfr" 'lsp-ui-peek-find-references :wk "find references"
-      "cfd" 'lsp-ui-peek-find-definitions :wk "find definitions"
-      "cfi" 'lsp-ui-peek-find-implementation :wk "find implementations"
-      "cfs" 'lsp-ui-peek-find-workspace-symbol :wk "find workspace symbol"
-      "cdf" 'lsp-ui-doc-focus-frame :wk "focus frame"
-      "cdd" 'lsp-ui-doc-show :wk "show documentation"
-      "cdc" 'lsp-ui-doc-hide :wk "hide documentation")
-
-    ('normal 'lsp-ui-mode-map
-      "K" 'lsp-ui-doc-show :wk "show documentation"))
-
-
-  (use-package consult-lsp
-    :disabled
-    :after lsp-mode)
-#+end_src
 ** Eglot
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package eglot
     :elpaca nil
-    ;; :hook (eglot--managed-mode . (lambda ()
-    ;;                                (eldoc-mode -1)))
     :hook (eglot--managed-mode . (lambda ()
                                    (general-def 'normal eglot-mode-map "K" nil)))
     (special-mode . (lambda () (visual-line-mode 1)))
@@ -767,14 +728,15 @@ Visualize the colors of color codes
       "cf" '(eglot-format :wk "format region")
       "ca" '(eglot-code-actions :wk "code actions")
       "cD" '(flymake-show-buffer-diagnostics :wk "show diagnostics")
-      "cn" '(consult-imenu :wk "navigate symbols")
-      "ce" '(consult-flymake :wk "show errors")))
+      "cn" '(consult-imenu :wk "navigate symbols")))
+      ;; "ce" '(consult-flymake :wk "show errors")))
     ;; ('(normal) 'eglot-mode-map
     ;;  "K" nil))
     ;; :config
     ;; (general-def 'normal eglot-mode-map "K" nil))
 
 #+end_src
+
 ** Flycheck
 
 #+begin_src elisp
@@ -791,6 +753,44 @@ Visualize the colors of color codes
     (defun my-org-mode-setup ()
       (setq-local flycheck-disabled-checkers '(emacs-lisp-checkdoc)))
     (add-hook 'emacs-lisp-mode-hook #'my-org-mode-setup))
+#+end_src
+
+Show error messages displayed on the sideline
+
+#+begin_src elisp
+  (use-package sideline
+    :hook (flycheck-mode . sideline-mode)
+    :custom
+    (sideline-delay 0.0)
+    (sideline-flycheck-max-lines 5)
+    (flycheck-display-errors-delay 0.01)
+    :init
+    (setq sideline-backends-right '(sideline-flycheck)))
+
+  (use-package sideline-flycheck
+    :hook (flycheck-mode . sideline-flycheck-setup))
+
+  ;; (use-package sideline-flymake
+  ;;   :after sideline)
+#+end_src
+
+Make flycheck and eglot work better together
+
+#+begin_src elisp
+  (use-package flycheck-eglot
+    :after (flycheck eglot)
+    :config
+    (global-flycheck-eglot-mode 1))
+#+end_src
+
+Consult
+
+#+begin_src elisp
+  (use-package consult-flycheck
+    :after (consult flycheck)
+    :general
+    (oskah/leader-keys
+      "ce" '(consult-flycheck :wk "show errors")))
 
 #+end_src
 
@@ -905,9 +905,6 @@ This requires some additional Racket packages to be installed. Once you have Rac
                    '((c-mode c++-mode c-ts-mode c++-ts-mode) .
                      ("clangd"
                       "-j=4"
-                      "-Werror"
-                      "-Wall"
-                      "-Wextra"
                       "--malloc-trim"
                       "--background-index"
                       "--clang-tidy"
@@ -916,7 +913,11 @@ This requires some additional Racket packages to be installed. Once you have Rac
                       "--header-insertion=never"
                       "--header-insertion-decorators"
                       "--suggest-missing-includes")))))
+#+end_src
 
+Easily lookup man pages for the word at point
+
+#+begin_src elisp
   (with-eval-after-load 'c
     (defun oh/consult-man-at-point ()
       "Search for the word at point using consult-man."
@@ -925,6 +926,14 @@ This requires some additional Racket packages to be installed. Once you have Rac
         (if word
             (consult-man word)
           (message "No word at point to search for")))))
+#+end_src
+
+Use clang-analyzer in order to get static analysis as you code
+
+#+begin_src elisp
+  (use-package flycheck-clang-analyzer
+    :after flycheck
+    :config (flycheck-clang-analyzer-setup))
 #+end_src
 
 *** Rust
