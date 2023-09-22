@@ -199,13 +199,15 @@ Yes, the package is called general. It's a keybinding framework.
     (evil-want-C-u-scroll t)
     (evil-want-C-i-jump t)
     (evil-undo-system 'undo-fu)
-    (evil-shift-width 2)
+    (evil-shift-width 4)
 
     :general
     ('(normal visual) "gr" 'eval-region)
     ('insert "S-<return>" 'newline-and-indent)  ; Make S-RET always do newline-and-indent
     (oskah/leader-keys
-      "we" '(evil-window-map :which-key "evil window map"))
+      "we" '(evil-window-map :wk "evil window map")
+      "[" '(evil-prev-buffer :wk "previous buffer")
+      "]" '(evil-next-buffer :wk "next buffer"))
     :config
     (evil-mode 1)
     (evil-global-set-key 'normal (kbd "C-g") 'evil-force-normal-state)
@@ -387,7 +389,8 @@ And these are some general keybindings I like
     "fc" '("open config" . (lambda ()
                              (interactive)
                              (find-file (locate-user-emacs-file "configuration.org"))))
-    "tv" '(visual-line-mode :wk "word wrap"))
+    "tv" '(visual-line-mode :wk "word wrap")
+    "X" '(scratch-buffer :wk "scratch buffer"))
 
   (general-def 'normal
     "C-=" 'text-scale-increase
@@ -881,6 +884,11 @@ This requires some additional Racket packages to be installed. Once you have Rac
 #+begin_src elisp
   (use-package c-mode
     :elpaca nil
+    :custom
+    (c-ts-mode-indent-offset 4)
+    :general
+    (oskah/leader-keys '(c-mode-map c-ts-mode-map)
+      "mc" 'project-compile)
     :hook
     ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
     ((c-mode c++-mode c-ts-mode c++-ts-mode) .
@@ -888,10 +896,35 @@ This requires some additional Racket packages to be installed. Once you have Rac
        (require 'woman)
        (setq-local oskah/evil-lookup-procs (copy-sequence
                                             oskah/evil-lookup-procs))
-       (add-to-list 'oskah/evil-lookup-procs 'woman-follow)))
+       (add-to-list 'oskah/evil-lookup-procs 'oh/consult-man-at-point))) ;'woman-follow)))
     :init
     (with-eval-after-load 'org
-      (add-to-list 'org-babel-load-languages '(C . t))))
+      (add-to-list 'org-babel-load-languages '(C . t)))
+    (with-eval-after-load 'eglot
+      (add-to-list 'eglot-server-programs
+                   '((c-mode c++-mode c-ts-mode c++-ts-mode) .
+                     ("clangd"
+                      "-j=4"
+                      "-Werror"
+                      "-Wall"
+                      "-Wextra"
+                      "--malloc-trim"
+                      "--background-index"
+                      "--clang-tidy"
+                      "--cross-file-rename"
+                      "--log=info"
+                      "--header-insertion=never"
+                      "--header-insertion-decorators"
+                      "--suggest-missing-includes")))))
+
+  (with-eval-after-load 'c
+    (defun oh/consult-man-at-point ()
+      "Search for the word at point using consult-man."
+      (interactive)
+      (let ((word (thing-at-point 'word)))
+        (if word
+            (consult-man word)
+          (message "No word at point to search for")))))
 #+end_src
 
 *** Rust
@@ -917,7 +950,7 @@ This requires some additional Racket packages to be installed. Once you have Rac
   (use-package cargo
     :hook (rust-mode . cargo-minor-mode)
     :general
-    (oskah/leader-keys rust-mode
+    (oskah/leader-keys rust-mode-map
       "mb" '(cargo-process-build :wk "cargo build")
       "mr" '(cargo-process-run :wk "cargo run")
       "mt" '(cargo-process-test :wk "cargo test")
@@ -1116,6 +1149,7 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
      ((t (:weight semi-bold
                   :inherit (nano-strong variable-pitch)))))
     :custom
+    (org-cycle-inline-images-display t)
     (org-pretty-entities t)
     (org-startup-indented t)
     (org-indent-indentation-per-level 2)
@@ -1749,11 +1783,13 @@ A minor mode which shows an automatically updated sidebar with the current buffe
 #+begin_src elisp
   (use-package fish-completion
     ;:hook (eshell-mode . fish-completion-mode)
+    :disabled
     :if (executable-find "fish")
     :after eshell
     :config
     (global-fish-completion-mode))
 #+end_src
+
 ** Vterm
 
 #+begin_src elisp :lexical no
