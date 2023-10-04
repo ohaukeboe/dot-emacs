@@ -887,51 +887,50 @@ This requires some additional Racket packages to be installed. Once you have Rac
     :custom
     (c-ts-mode-indent-offset 4)
     :general
-    (oskah/leader-keys '(c-mode-map c-ts-mode-map)
+    (oskah/leader-keys '(c-mode-map c-ts-mode-map makefile-mode-map makefile-ts-mode-map)
       "mc" 'project-compile)
     :hook
     ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
     ((c-mode c++-mode c-ts-mode c++-ts-mode) .
      (lambda ()
-       (require 'woman)
        (setq-local oskah/evil-lookup-procs (copy-sequence
                                             oskah/evil-lookup-procs))
        (add-to-list 'oskah/evil-lookup-procs 'oh/consult-man-at-point))) ;'woman-follow)))
     :init
     (with-eval-after-load 'org
-      (add-to-list 'org-babel-load-languages '(C . t)))
-    (with-eval-after-load 'eglot
-      (add-to-list 'eglot-server-programs
-                   '((c-mode c++-mode c-ts-mode c++-ts-mode) .
-                     ("clangd"
-                      "-j=4"
-                      "--malloc-trim"
-                      "--background-index"
-                      "--clang-tidy"
-                      "--cross-file-rename"
-                      "--log=info"
-                      "--header-insertion=never"
-                      "--header-insertion-decorators"
-                      "--suggest-missing-includes")))))
+      (add-to-list 'org-babel-load-languages '(C . t))))
+    ;; (with-eval-after-load 'eglot
+    ;;   (add-to-list 'eglot-server-programs
+    ;;                '((c-mode c++-mode c-ts-mode c++-ts-mode) .
+    ;;                  ("clangd"
+    ;;                   "-j=4"
+    ;;                   "--malloc-trim"
+    ;;                   "--background-index"
+    ;;                   "--clang-tidy"
+    ;;                   "--cross-file-rename"
+    ;;                   "--log=info"
+    ;;                   "--header-insertion=iwyu"
+    ;;                   "--header-insertion-decorators=0"
+    ;;                   "--suggest-missing-includes")))))
 #+end_src
 
 Easily lookup man pages for the word at point
 
 #+begin_src elisp
-  (with-eval-after-load 'c
-    (defun oh/consult-man-at-point ()
-      "Search for the word at point using consult-man."
-      (interactive)
-      (let ((word (thing-at-point 'word)))
-        (if word
-            (consult-man word)
-          (message "No word at point to search for")))))
+  (defun oh/consult-man-at-point ()
+    "Search for the word at point using consult-man."
+    (interactive)
+    (let ((word (thing-at-point 'word)))
+      (if word
+          (consult-man word)
+        (message "No word at point to search for"))))
 #+end_src
 
 Use clang-analyzer in order to get static analysis as you code
 
 #+begin_src elisp
   (use-package flycheck-clang-analyzer
+    :disabled
     :after flycheck
     :config (flycheck-clang-analyzer-setup))
 #+end_src
@@ -959,7 +958,7 @@ Use clang-analyzer in order to get static analysis as you code
   (use-package cargo
     :hook (rust-mode . cargo-minor-mode)
     :general
-    (oskah/leader-keys rust-mode-map
+    (oskah/leader-keys '(rust-mode-map rust-ts-mode-map)
       "mb" '(cargo-process-build :wk "cargo build")
       "mr" '(cargo-process-run :wk "cargo run")
       "mt" '(cargo-process-test :wk "cargo test")
@@ -976,16 +975,15 @@ Use clang-analyzer in order to get static analysis as you code
       "mF" '(cargo-process-fmt :wk "cargo fmt")
       "mC" '(cargo-process-clippy :wk "cargo clippy")
       "mB" '(cargo-process-bench :wk "cargo bench")))
-
-
 #+end_src
 
 *** Python
 
 #+begin_src elisp
-  (use-package python-ts-mode
-    :elpaca nil
-    :hook (python-ts-mode . eglot-ensure)
+  (use-package python-mode
+    :hook
+    (python-ts-mode . eglot-ensure)
+    (python-mode . eglot-ensure)
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(python . t)))
@@ -994,6 +992,16 @@ Use clang-analyzer in order to get static analysis as you code
                    '((python-mode python-ts-mode) . ("jedi-language-server")))))
       ;; (add-to-list 'eglot-server-programs
       ;;              '((python-mode python-ts-mode) . ("ruff")))))
+#+end_src
+
+*** Gnuplot
+
+#+begin_src elisp
+  (use-package gnuplot
+    :init
+    (with-eval-after-load 'org
+      ;; (org-babel-do-load-languages 'org-babel-load-languages '((gnuplot . t)))))
+      (add-to-list 'org-babel-load-languages '(gnuplot . t))))
 #+end_src
 
 *** Maude
@@ -1194,6 +1202,8 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
 
     :config
     (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
+    (add-to-list 'org-babel-load-languages '(latex . t))
+    (add-to-list 'org-latex-packages-alist '("" "tikz"))
     (add-to-list 'org-babel-load-languages '(shell . t))
     (org-babel-do-load-languages
      'org-babel-load-languages
@@ -1375,6 +1385,7 @@ Adds vertical lines next to src-blocks when org-indent is on
 =ob-async= enables asynchronous execution of org-babel src blocks.
 #+begin_src elisp
   (use-package ob-async
+    :disabled
     :after org)
 #+end_src
 
@@ -1383,7 +1394,7 @@ Adds vertical lines next to src-blocks when org-indent is on
 #+begin_src elisp
   (use-package org-roam
     :custom
-    (org-roam-complete-everywhere t)
+    (org-roam-completion-everywhere t)
     (org-roam-node-display-template "${title:*} ${tags:10}")
     (org-roam-directory (file-truename "~/Nextcloud/org_notes/roam"))
     (org-roam-capture-templates
@@ -1400,7 +1411,7 @@ Adds vertical lines next to src-blocks when org-indent is on
     (oskah/leader-keys
       "nf" '(org-roam-node-find :wk "find")
       "nc" '(org-roam-capture :wk "capture")
-      "ng" '(org-roam-graph :wk "graph")
+      ;; "ng" '(org-roam-graph :wk "graph")
       "ni" '(org-roam-node-insert :wk "insert")
       "nl" '(org-roam-buffer-toggle :wk "buffer")
       "nt" '(org-roam-tag-add :wk "tag-add")
@@ -1408,6 +1419,28 @@ Adds vertical lines next to src-blocks when org-indent is on
 
     :config
     (org-roam-db-autosync-mode 1))
+
+#+end_src
+
+*** org-roam-ui
+
+A wonderfull graph that is shown in the browser.
+
+#+begin_src elisp
+  (use-package org-roam-ui
+      ;; :after org-roam
+  ;;         normally we'd recommend hooking orui after org-roam, but since
+  ;;         org-roam does not have a hookable mode anymore, you're advised to
+  ;;         pick something yourself if you don't care about startup time, use
+  ;;  :hook (after-init . org-roam-ui-mode)
+    :general
+    (oskah/leader-keys
+      "ng" '(org-roam-ui-mode :which-key "org-roam-ui"))
+    :config
+    (setq org-roam-ui-sync-theme t
+          org-roam-ui-follow t
+          org-roam-ui-update-on-save t
+          org-roam-ui-open-on-start t))
 
 #+end_src
 
@@ -2031,6 +2064,7 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
   (use-package chatgpt-shell
     :commands (chatgpt-shell)
     :custom
+    (chatgpt-shell-model-version 2)
     (chatgpt-shell-openai-key
      (lambda ()
        (if openai-key-memo
@@ -2131,7 +2165,13 @@ No littering puts the files that packages places in the emacs directory into
     :elpaca (devilry-mode :type git :host github :repo
                           "MathiasCiarlo/devilry-mode")
     :config
-    (setq dm-java-compilation nil))
+    (setq dm-java-compilation nil)
+    :general
+    (oskah/leader-keys
+      "td" '(devilry-mode :wk "devilry"))
+    (oskah/leader-keys '(devilry-mode-map)
+      "md" '(dm-do-oblig :wk "do oblig")
+      "mc" '(desktop-hard-clear :wk "clear desktop")))
 #+end_src
 
 * Spell checker local stuff
