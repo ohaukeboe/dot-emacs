@@ -709,9 +709,46 @@ Visualize the colors of color codes
   (use-package rainbow-mode
     :hook prog-mode)
 #+end_src
-** Eglot
+** LSP-mode
 
 #+begin_src elisp
+  (use-package lsp-mode
+    :disabled
+    :diminish
+    :commands lsp-deferred
+    :custom
+    (lsp-keymap-prefix "C-c l")
+    (lsp-headerline-breadcrumb-enable nil))
+
+  (use-package lsp-ui
+    :after lsp-mode
+    :disabled
+    :custom
+    (lsp-uio-doc-show-with-cursor nil)
+    (lsp-uio-doc-show-with-mouse nil)
+    :hook (lsp-mode . lsp-ui-mode)
+    :general
+    (oskah/leader-keys
+      "cfr" 'lsp-ui-peek-find-references :wk "find references"
+      "cfd" 'lsp-ui-peek-find-definitions :wk "find definitions"
+      "cfi" 'lsp-ui-peek-find-implementation :wk "find implementations"
+      "cfs" 'lsp-ui-peek-find-workspace-symbol :wk "find workspace symbol"
+      "cdf" 'lsp-ui-doc-focus-frame :wk "focus frame"
+      "cdd" 'lsp-ui-doc-show :wk "show documentation"
+      "cdc" 'lsp-ui-doc-hide :wk "hide documentation"))
+
+    ;; ('normal 'lsp-ui-mode-map
+    ;;   "K" 'lsp-ui-doc-show :wk "show documentation"))
+
+
+  (use-package consult-lsp
+    :disabled
+    :after lsp-mode)
+#+end_src
+
+** Eglot
+
+#+begin_src elisp :lexical no
   (use-package eglot
     :elpaca nil
     :hook (eglot--managed-mode . (lambda ()
@@ -831,7 +868,7 @@ Consult
     (markdown-mode . (lambda () (visual-line-mode 1))))
 #+end_src
 
-*** Racket Scheme
+*** Racket
 This requires some additional Racket packages to be installed. Once you have Racket installed you can simply run
 #+begin_src sh
   raco pkg install --auto drracket sicp
@@ -851,6 +888,7 @@ This requires some additional Racket packages to be installed. Once you have Rac
 #+end_src
 
 *** Geiser
+
 #+begin_src elisp
   (use-package geiser-guile
     :hook (scheme-mode . parinfer-rust-mode)
@@ -1029,6 +1067,7 @@ Use clang-analyzer in order to get static analysis as you code
   (use-package fish-mode
     :mode "\\.fish\\'")
 #+end_src
+
 *** Yaml
 
 #+begin_src elisp :lexical no
