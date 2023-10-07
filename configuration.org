@@ -19,48 +19,48 @@ I would not recommend using this config /as-is/ since I probably have a lot of s
 These are the defaults that I deem sane, and that should set before anything else.
 
 #+begin_src elisp
-  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)   ;; esc quits the current action
+    (global-set-key (kbd "<escape>") 'keyboard-escape-quit)   ;; esc quits the current action
 
-  (setq auto-revert-interval 1              ; Refresh buffers fast
-        display-line-numbers-type 'relative ; Show relative line numbers
-        use-dialog-box nil                  ; No dialog boxes
-        default-input-method "TeX"          ; Use TeX when toggling input method
-        echo-keystrokes 0.1                 ; Show keystrokes asap
-        frame-inhibit-implied-resize 1      ; Don't resize frame implicitly
-        inhibit-startup-screen t            ; No splash screen please
-        initial-scratch-message nil         ; Clean scratch buffer
-        recentf-max-saved-items 10000       ; Show more recent files
-        ring-bell-function 'ignore          ; Quiet
-        scroll-margin 1                     ; Space between cursor and top/bottom
-        sentence-end-double-space nil       ; No double space
-        electric-pair-mode 1                ; Auto close ({[...
-        backup-directory-alist `(("." . ,(concat user-emacs-directory "var/backups"))))
+    (setq auto-revert-interval 1              ; Refresh buffers fast
+          display-line-numbers-type 'relative ; Show relative line numbers
+          use-dialog-box nil                  ; No dialog boxes
+          default-input-method "TeX"          ; Use TeX when toggling input method
+          echo-keystrokes 0.1                 ; Show keystrokes asap
+          frame-inhibit-implied-resize 1      ; Don't resize frame implicitly
+          inhibit-startup-screen t            ; No splash screen please
+          initial-scratch-message nil         ; Clean scratch buffer
+          recentf-max-saved-items 10000       ; Show more recent files
+          ring-bell-function 'ignore          ; Quiet
+          scroll-margin 1                     ; Space between cursor and top/bottom
+          sentence-end-double-space nil       ; No double space
+          backup-directory-alist `(("." . ,(concat user-emacs-directory "var/backups"))))
 
-  (dolist (mode '(tool-bar-mode
-                  scroll-bar-mode
-                  menu-bar-mode))
-    (funcall mode 0))
+    (dolist (mode '(tool-bar-mode
+                    scroll-bar-mode
+                    menu-bar-mode))
+      (funcall mode 0))
 
-  (dolist (mode '(global-auto-revert-mode
-                  global-display-line-numbers-mode))
-    (funcall mode t))
+    (dolist (mode '(global-auto-revert-mode
+                    electric-pair-mode               ; Auto close ({[...
+                    global-display-line-numbers-mode))
+      (funcall mode t))
 
-  (dolist (mode '(org-mode-hook
-                  Info-mode-hook
-                  special-mode-hook
-                  image-mode-hook
-                  pdf-view-mode-hook
-                  term-mode-hook
-                  vterm-mode-hook
-                  shell-mode-hook
-                  eshell-mode-hook))
-    (add-hook mode (lambda () (display-line-numbers-mode 0))))
+    (dolist (mode '(org-mode-hook
+                    Info-mode-hook
+                    special-mode-hook
+                    image-mode-hook
+                    pdf-view-mode-hook
+                    term-mode-hook
+                    vterm-mode-hook
+                    shell-mode-hook
+                    eshell-mode-hook))
+      (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-  (fset 'yes-or-no-p 'y-or-n-p)
-  (set-fringe-mode 0)
+    (fset 'yes-or-no-p 'y-or-n-p)
+    (set-fringe-mode 0)
 
-  (add-hook 'before-save-hook
-            'delete-trailing-whitespace)
+    (add-hook 'before-save-hook
+              'delete-trailing-whitespace)
 #+end_src
 
 Some variables are buffer-local, and should therefore be set using ~setq-default~ in order to set them globally.
@@ -88,8 +88,10 @@ clients, file templates and snippets. It is optional.
   (setq gc-cons-threshold 100000000)
 
   (add-hook 'after-init-hook
-            (lambda ()
-              (setq gc-cons-threshold 1000000)))
+              (lambda ()
+                (run-at-time "5 sec" nil
+                              (lambda ()
+                                (setq gc-cons-threshold 800000)))))
 #+end_src
 
 ** Startup performance message
@@ -168,6 +170,13 @@ Enable elpaca use-package support
    ;;(require 'bind-key)
  #+end_src
 
+** Diminish
+
+#+begin_src elisp
+  (use-package diminish)
+
+#+end_src
+
 * Keybinds
 ** General
 Yes, the package is called general. It's a keybinding framework.
@@ -192,7 +201,7 @@ Yes, the package is called general. It's a keybinding framework.
 #+begin_src elisp
   (use-package evil
     :diminish
-    :defer 0
+    ;; :defer 0
     :custom
     (evil-lookup-func 'oskah/evil-lookup-func)
     (evil-want-keybinding nil)
@@ -208,8 +217,9 @@ Yes, the package is called general. It's a keybinding framework.
       "we" '(evil-window-map :wk "evil window map")
       "[" '(evil-prev-buffer :wk "previous buffer")
       "]" '(evil-next-buffer :wk "next buffer"))
-    :config
+    :init
     (evil-mode 1)
+    :config
     (evil-global-set-key 'normal (kbd "C-g") 'evil-force-normal-state)
 
     (evil-global-set-key 'normal (kbd "j") 'evil-next-visual-line)
@@ -223,7 +233,10 @@ Yes, the package is called general. It's a keybinding framework.
 #+end_src
 
 #+begin_src elisp
-  (setq-default oskah/evil-lookup-procs '(eldoc))
+  (defvar-local oskah/evil-lookup-procs '(lsp-describe-thing-at-point))
+
+  (defun oskah/add-to-lookup-procs (proc)
+    (add-to-list 'oskah/evil-lookup-procs proc))
 
   (defun oskah/evil-lookup-func ()
     (interactive)
@@ -235,7 +248,6 @@ Yes, the package is called general. It's a keybinding framework.
                     (call-interactively proc)
                   (error nil)))))))
 
-        ;; (call-interactively 'woman-follow)))
 #+end_src
 
 #+begin_src elisp
@@ -356,7 +368,7 @@ keybindings in a logical way, and to describe them in the which-key popup.
                      "b" '(:ignore t :wk "buffer")
                      "h" '(:ignore t :wk "help")
                      "n" '(:ignore t :wk "notes")
-                     "p" '(:ignore t :wk "project")
+                     ;; "p" '(:ignore t :wk "project")
                      "o" '(:ignore t :wk "open")
                      "q" '(:ignore t :wk "quit"))
 #+end_src
@@ -525,6 +537,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 
 #+begin_src elisp
   (use-package nano-modeline
+    :demand
     :init
     (setq-default mode-line-format nil)  ; disable default mode-line
     :hook
@@ -713,36 +726,70 @@ Visualize the colors of color codes
 
 #+begin_src elisp
   (use-package lsp-mode
-    :disabled
-    :diminish
-    :commands lsp-deferred
+    :commands
+    (lsp-deferred lsp)
+
+    :hook
+    prog-mode
+    (lsp-completion-mode . my/lsp-mode-setup-completion)
+
+    :general
+    (oskah/leader-keys
+      "cr" '(lsp-rename :wk "rename")
+      "cn" '(consult-imenu :wk "navigate symbols")
+      "cd" '(consult-lsp-diagnostics :wk "diagnostics")
+      "ca" '(lsp-execute-code-action :wk "code action")
+      "cf" '(lsp-format-buffer :wk "format buffer")
+      "ch" '(lsp-describe-thing-at-point :wk "describe thing"))
+    ('normal
+      "gr" '(lsp-find-references :wk "find references"))
+
     :custom
-    (lsp-keymap-prefix "C-c l")
-    (lsp-headerline-breadcrumb-enable nil))
+    (lsp-completion-provider :none) ;; I use Corfu instead!
+    (lsp-keymap-prefix nil)
+    (lsp-headerline-breadcrumb-enable nil)
+    (lsp-ui-doc-show-with-mouse nil)
+    (eldoc-display-functions '(eldoc-display-in-buffer))
+
+    :init
+    ;; Performance
+    (setq read-process-output-max (* 1024 1024)) ;; 1mb
+
+    ;; Completion
+    (defun my/lsp-mode-setup-completion ()
+      (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+            '(orderless)))) ;; Configure orderless
+
 
   (use-package lsp-ui
     :after lsp-mode
-    :disabled
+
     :custom
+    (lsp-ui-doc-enable nil)
     (lsp-uio-doc-show-with-cursor nil)
     (lsp-uio-doc-show-with-mouse nil)
-    :hook (lsp-mode . lsp-ui-mode)
-    :general
-    (oskah/leader-keys
-      "cfr" 'lsp-ui-peek-find-references :wk "find references"
-      "cfd" 'lsp-ui-peek-find-definitions :wk "find definitions"
-      "cfi" 'lsp-ui-peek-find-implementation :wk "find implementations"
-      "cfs" 'lsp-ui-peek-find-workspace-symbol :wk "find workspace symbol"
-      "cdf" 'lsp-ui-doc-focus-frame :wk "focus frame"
-      "cdd" 'lsp-ui-doc-show :wk "show documentation"
-      "cdc" 'lsp-ui-doc-hide :wk "hide documentation"))
+
+    :hook
+    (lsp-mode . lsp-ui-mode)
+
+    :general)
+    ;; (oskah/leader-keys
+    ;;   "cdf" '(lsp-ui-doc-focus-frame :wk "focus frame")
+    ;;   "cdd" '(lsp-ui-doc-show :wk "show documentation")
+    ;;   "cdc" '(lsp-ui-doc-hide :wk "hide documentation")))
 
     ;; ('normal 'lsp-ui-mode-map
     ;;   "K" 'lsp-ui-doc-show :wk "show documentation"))
 
 
   (use-package consult-lsp
-    :disabled
+    :after lsp-mode)
+#+end_src
+
+** DAP-mode
+
+#+begin_src elisp
+  (use-package dap-mode
     :after lsp-mode)
 #+end_src
 
@@ -750,6 +797,7 @@ Visualize the colors of color codes
 
 #+begin_src elisp :lexical no
   (use-package eglot
+    :disabled
     :elpaca nil
     :hook (eglot--managed-mode . (lambda ()
                                    (general-def 'normal eglot-mode-map "K" nil)))
@@ -778,7 +826,7 @@ Visualize the colors of color codes
 
 #+begin_src elisp
   (use-package flycheck
-    :defer 1
+    :after prog-mode
     :custom
     (flycheck-emacs-lisp-initialize-packages t)
     :config
@@ -796,6 +844,7 @@ Show error messages displayed on the sideline
 
 #+begin_src elisp
   (use-package sideline
+    :disabled                             ; should be enabled when using eglot
     :hook (flycheck-mode . sideline-mode)
     :custom
     (sideline-delay 0.0)
@@ -805,6 +854,8 @@ Show error messages displayed on the sideline
     (setq sideline-backends-right '(sideline-flycheck)))
 
   (use-package sideline-flycheck
+    :disabled
+    :after sideline
     :hook (flycheck-mode . sideline-flycheck-setup))
 
   ;; (use-package sideline-flymake
@@ -815,20 +866,10 @@ Make flycheck and eglot work better together
 
 #+begin_src elisp
   (use-package flycheck-eglot
+    :disabled
     :after (flycheck eglot)
     :config
     (global-flycheck-eglot-mode 1))
-#+end_src
-
-Consult
-
-#+begin_src elisp
-  (use-package consult-flycheck
-    :after (consult flycheck)
-    :general
-    (oskah/leader-keys
-      "ce" '(consult-flycheck :wk "show errors")))
-
 #+end_src
 
 ** Make
@@ -905,12 +946,13 @@ This requires some additional Racket packages to be installed. Once you have Rac
   (use-package parinfer-rust-mode
     :diminish
     :commands parinfer-rust-mode
-    :hook emacs-lisp-mode
+    :hook
+    (parinfer-rust-mode . (lambda ()
+                            (electric-pair-local-mode -1)))
+    emacs-lisp-mode
     ((emacs-lisp-mode) .
      (lambda ()
-       (setq-local oskah/evil-lookup-procs (copy-sequence
-                                            oskah/evil-lookup-procs))
-       (add-to-list 'oskah/evil-lookup-procs 'helpful-at-point)
+       (oskah/add-to-lookup-procs 'helpful-at-point)
        (electric-pair-local-mode -1)))
 
     :init
@@ -924,16 +966,23 @@ This requires some additional Racket packages to be installed. Once you have Rac
     :elpaca nil
     :custom
     (c-ts-mode-indent-offset 4)
+    (lsp-clients-clangd-args '("-j=4"
+                               "--malloc-trim"
+                               "--background-index"
+                               "--clang-tidy"
+                               "--cross-file-rename"
+                               "--log=info"
+                               "--header-insertion=iwyu"
+                               "--header-insertion-decorators"
+                               "--suggest-missing-includes"))
     :general
     (oskah/leader-keys '(c-mode-map c-ts-mode-map makefile-mode-map makefile-ts-mode-map)
       "mc" 'project-compile)
     :hook
-    ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
+    ;; ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
     ((c-mode c++-mode c-ts-mode c++-ts-mode) .
      (lambda ()
-       (setq-local oskah/evil-lookup-procs (copy-sequence
-                                            oskah/evil-lookup-procs))
-       (add-to-list 'oskah/evil-lookup-procs 'oh/consult-man-at-point))) ;'woman-follow)))
+       (oskah/add-to-lookup-procs 'oh/consult-man-at-point)))
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(C . t))))
@@ -978,10 +1027,13 @@ Use clang-analyzer in order to get static analysis as you code
 #+begin_src elisp
   (use-package rust-mode
     :mode "\\.rs\\'"
-    :hook (rust-ts-mode . (lambda ()
-                            (flycheck-rust-setup)
-                            (eglot-ensure))))
+    ;; :hook (rust-ts-mode . (lambda ()
+    ;;                         (flycheck-rust-setup)
+    ;;                         (eglot-ensure))))
                             ;; (electric-pair-local-mode))))
+    :general
+    (oskah/leader-keys
+      "mt" '(lsp-rust-analyzer-run :wk "rust-analyzer-run")))
 #+end_src
 
 #+begin_src elisp
@@ -999,7 +1051,7 @@ Use clang-analyzer in order to get static analysis as you code
     (oskah/leader-keys '(rust-mode-map rust-ts-mode-map)
       "mb" '(cargo-process-build :wk "cargo build")
       "mr" '(cargo-process-run :wk "cargo run")
-      "mt" '(cargo-process-test :wk "cargo test")
+      ;; "mt" '(cargo-process-test :wk "cargo test")
       "mx" '(cargo-process-clean :wk "cargo clean")
       "mc" '(cargo-process-check :wk "cargo check")
       "mR" '(cargo-process-repeat :wk "cargo repeat")
@@ -1019,9 +1071,9 @@ Use clang-analyzer in order to get static analysis as you code
 
 #+begin_src elisp
   (use-package python-mode
-    :hook
-    (python-ts-mode . eglot-ensure)
-    (python-mode . eglot-ensure)
+    ;; :hook
+    ;; (python-ts-mode . eglot-ensure)
+    ;; (python-mode . eglot-ensure)
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(python . t)))
@@ -1055,9 +1107,9 @@ Use clang-analyzer in order to get static analysis as you code
 *** Java
 
 #+begin_src elisp
-  (use-package eglot-java
-    :hook
-    ((java-mode java-ts-mode) . eglot-java-mode))
+  ;; (use-package eglot-java
+  ;;   :hook
+  ;;   ((java-mode java-ts-mode) . eglot-java-mode))
     ;; ((java-mode java-ts-mode) . (lambda () (electric-pair-local-mode t))))
 #+end_src
 
@@ -1578,11 +1630,13 @@ Allow displaying the vertico completions in a grid
       (expand-file-name "vertico/extensions" elpaca-builds-directory))
     :after vertico)
 #+end_src
-
 ** Corfu
+
+A completion framework
 
 #+begin_src elisp :lexical no
   (use-package corfu
+    ;; :after vertico
     :defer 0
     :custom
     (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
@@ -1624,7 +1678,21 @@ Allow displaying the vertico completions in a grid
     (corfu-history-mode))
 #+end_src
 
+** Orderless
+
+Adds orderless completion style to vertico
+
+#+begin_src elisp :lexical no
+  (use-package orderless
+    :after vertico
+    :custom
+    (completion-styles '(orderless basic))
+    (completion-category-overrides '((file (styles basic partial-completion)))))
+#+end_src
+
 ** Cape
+
+Fancy addons for Corfu for better completions
 
 #+begin_src elisp :lexical no
   (use-package cape
@@ -1662,6 +1730,17 @@ Allow displaying the vertico completions in a grid
       "mh" '(consult-org-heading :wk "consult org heading"))
     :config
     (recentf-mode 1))
+
+#+end_src
+
+Consult
+
+#+begin_src elisp
+  (use-package consult-flycheck
+    :after (consult flycheck)
+    :general
+    (oskah/leader-keys
+      "ce" '(consult-flycheck :wk "show errors")))
 
 #+end_src
 
@@ -1727,19 +1806,19 @@ Allow displaying the vertico completions in a grid
 ** Citar
 
 #+begin_src elisp
-    (use-package citar
-      ;:after (org latex)
-     :general
-      (oskah/leader-keys '(org-mode-map latex-mode-map)
-        "mrc" '(citar-insert-citation :which-key "insert citation")
-        "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
-      (oskah/leader-keys
-        "nbo" '(citar-open :wk "open resource"))
-      :custom
-      (citar-bibliography oh/bib-files)
-      (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
-      (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
-      (citar-at-point-function 'embark-act))          ; Use `embark'
+  (use-package citar
+    ;:after (org latex)
+   :general
+    (oskah/leader-keys '(org-mode-map latex-mode-map)
+      "mrc" '(citar-insert-citation :which-key "insert citation")
+      "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
+    (oskah/leader-keys
+      "nbo" '(citar-open :wk "open resource"))
+    :custom
+    (citar-bibliography oh/bib-files)
+    (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
+    (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
+    (citar-at-point-function 'embark-act))          ; Use `embark'
 #+end_src
 
 #+begin_src elisp :lexical no
@@ -1803,21 +1882,19 @@ Allow displaying the vertico completions in a grid
 #+end_src
 
 * Misc
-** Orderless
-
-#+begin_src elisp :lexical no
-  (use-package orderless
-    :after vertico
-    :custom
-    (completion-styles '(orderless basic))
-    (completion-category-overrides '((file (styles basic partial-completion)))))
-#+end_src
 ** Direnv
 
 #+begin_src elisp
   (use-package direnv
    :config
    (direnv-mode))
+#+end_src
+** Yasnippet
+
+#+begin_src elisp
+  (use-package yasnippet
+    :ensure t
+    :hook ((lsp-mode . yas-minor-mode)))
 #+end_src
 
 ** SICP
@@ -1841,6 +1918,27 @@ Allow displaying the vertico completions in a grid
     ('normal 'dired-mode-map
       "h" 'dired-up-directory
       "l" 'dired-find-file))
+#+end_src
+
+** Esup
+
+An emacs profiler
+
+#+begin_src elisp
+  (use-package esup
+    :disabled
+    :ensure t)
+#+end_src
+
+** Benchmark
+
+#+begin_src elisp
+  (use-package benchmark-init
+    :disabled
+    :ensure t
+    :config
+    ;; To disable collection of benchmark data after init is done.
+    (add-hook 'after-init-hook 'benchmark-init/deactivate))
 #+end_src
 
 ** Imenu-list
@@ -2088,7 +2186,7 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
 #+begin_src elisp
   (add-hook 'elpaca-after-init-hook
             (lambda ()
-              (run-at-time "1 sec" nil
+              (run-at-time "5 sec" nil
                            (lambda ()
                              (add-hook 'prog-mode-hook 'copilot-mode)
                              (when (derived-mode-p 'prog-mode)
@@ -2215,5 +2313,5 @@ No littering puts the files that packages places in the emacs directory into
 
 * Spell checker local stuff
 # Local Variables:
-# jinx-local-words: "Direnv Flycheck Imenu Ripgrep Vundo eshell svg"
+# jinx-local-words: "Direnv Eglot Flycheck Imenu Orderless Ripgrep Vundo eshell svg"
 # End:
