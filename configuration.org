@@ -19,48 +19,48 @@ I would not recommend using this config /as-is/ since I probably have a lot of s
 These are the defaults that I deem sane, and that should set before anything else.
 
 #+begin_src elisp
-    (global-set-key (kbd "<escape>") 'keyboard-escape-quit)   ;; esc quits the current action
+  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)   ;; esc quits the current action
 
-    (setq auto-revert-interval 1              ; Refresh buffers fast
-          display-line-numbers-type 'relative ; Show relative line numbers
-          use-dialog-box nil                  ; No dialog boxes
-          default-input-method "TeX"          ; Use TeX when toggling input method
-          echo-keystrokes 0.1                 ; Show keystrokes asap
-          frame-inhibit-implied-resize 1      ; Don't resize frame implicitly
-          inhibit-startup-screen t            ; No splash screen please
-          initial-scratch-message nil         ; Clean scratch buffer
-          recentf-max-saved-items 10000       ; Show more recent files
-          ring-bell-function 'ignore          ; Quiet
-          scroll-margin 1                     ; Space between cursor and top/bottom
-          sentence-end-double-space nil       ; No double space
-          backup-directory-alist `(("." . ,(concat user-emacs-directory "var/backups"))))
+  (setq auto-revert-interval 1              ; Refresh buffers fast
+        display-line-numbers-type 'relative ; Show relative line numbers
+        use-dialog-box nil                  ; No dialog boxes
+        default-input-method "TeX"          ; Use TeX when toggling input method
+        echo-keystrokes 0.1                 ; Show keystrokes asap
+        frame-inhibit-implied-resize 1      ; Don't resize frame implicitly
+        inhibit-startup-screen t            ; No splash screen please
+        initial-scratch-message nil         ; Clean scratch buffer
+        recentf-max-saved-items 100         ; Show more recent files
+        ring-bell-function 'ignore          ; Quiet
+        scroll-margin 1                     ; Space between cursor and top/bottom
+        sentence-end-double-space nil       ; No double space
+        backup-directory-alist `(("." . ,(concat user-emacs-directory "var/backups"))))
 
-    (dolist (mode '(tool-bar-mode
-                    scroll-bar-mode
-                    menu-bar-mode))
-      (funcall mode 0))
+  (dolist (mode '(tool-bar-mode
+                  scroll-bar-mode
+                  menu-bar-mode))
+    (funcall mode 0))
 
-    (dolist (mode '(global-auto-revert-mode
-                    electric-pair-mode               ; Auto close ({[...
-                    global-display-line-numbers-mode))
-      (funcall mode t))
+  (dolist (mode '(global-auto-revert-mode
+                  electric-pair-mode               ; Auto close ({[...
+                  global-display-line-numbers-mode))
+    (funcall mode t))
 
-    (dolist (mode '(org-mode-hook
-                    Info-mode-hook
-                    special-mode-hook
-                    image-mode-hook
-                    pdf-view-mode-hook
-                    term-mode-hook
-                    vterm-mode-hook
-                    shell-mode-hook
-                    eshell-mode-hook))
-      (add-hook mode (lambda () (display-line-numbers-mode 0))))
+  (dolist (mode '(org-mode-hook
+                  Info-mode-hook
+                  special-mode-hook
+                  image-mode-hook
+                  pdf-view-mode-hook
+                  term-mode-hook
+                  vterm-mode-hook
+                  shell-mode-hook
+                  eshell-mode-hook))
+    (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-    (fset 'yes-or-no-p 'y-or-n-p)
-    (set-fringe-mode 0)
+  (fset 'yes-or-no-p 'y-or-n-p)
+  (set-fringe-mode 0)
 
-    (add-hook 'before-save-hook
-              'delete-trailing-whitespace)
+  (add-hook 'before-save-hook
+            'delete-trailing-whitespace)
 #+end_src
 
 Some variables are buffer-local, and should therefore be set using ~setq-default~ in order to set them globally.
@@ -92,22 +92,8 @@ clients, file templates and snippets. It is optional.
                 (run-at-time "5 sec" nil
                               (lambda ()
                                 (setq gc-cons-threshold 800000)))))
-#+end_src
 
-** Startup performance message
-A message which says how long it took to load emacs. It can be useful for
-knowing how much/if packages slow down the emacs startup.
-
-#+begin_src elisp
-   (defun oskah/display-startup-time ()
-       (message "Emacs loaded in %s with %d garbage collections."
-          (format "%.2f seconds"
-                  (float-time
-                     (time-subtract after-init-time before-init-time)))
-          gcs-done))
-
-   (add-hook 'emacs-startup-hook #'oskah/display-startup-time) ;
-  ;; (setq use-package-verbose t)
+  ;; (debug-on-entry 'require)
 #+end_src
 
 * Elpaca
@@ -169,6 +155,22 @@ Enable elpaca use-package support
 
    ;;(require 'bind-key)
  #+end_src
+
+** Benchmark
+
+#+begin_src elisp
+  (use-package benchmark-init
+    :demand t
+    :hook emacs-startup-hook
+    :init
+    ;; To disable collection of benchmark data after init is done.
+    ;; (add-hook 'after-init-hook 'benchmark-init/deactivate)
+    (add-hook 'after-init-hook
+              (lambda ()
+                (run-at-time 5 nil 'benchmark-init/deactivate)))
+    :config
+    (message "Started benchmark-init"))
+#+end_src
 
 ** Diminish
 
@@ -748,7 +750,7 @@ Visualize the colors of color codes
     (lsp-completion-provider :none) ;; I use Corfu instead!
     (lsp-keymap-prefix nil)
     (lsp-headerline-breadcrumb-enable nil)
-    (lsp-ui-doc-show-with-mouse nil)
+    (lsp-warn-no-matched-clients nil)
     (eldoc-display-functions '(eldoc-display-in-buffer))
 
     :init
@@ -766,8 +768,8 @@ Visualize the colors of color codes
 
     :custom
     (lsp-ui-doc-enable nil)
-    (lsp-uio-doc-show-with-cursor nil)
-    (lsp-uio-doc-show-with-mouse nil)
+    (lsp-ui-doc-show-with-cursor nil)
+    (lsp-ui-doc-show-with-mouse nil)
 
     :hook
     (lsp-mode . lsp-ui-mode)
@@ -890,6 +892,7 @@ Make flycheck and eglot work better together
     :mode "\\.nix\\'")
 
   (use-package company-nixos-options
+    :after nix
     :hook
     (nix-mode .
       (lambda ()
@@ -1071,6 +1074,7 @@ Use clang-analyzer in order to get static analysis as you code
 
 #+begin_src elisp
   (use-package python-mode
+    :defer t
     ;; :hook
     ;; (python-ts-mode . eglot-ensure)
     ;; (python-mode . eglot-ensure)
@@ -1292,6 +1296,8 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
       "me" '(org-export-dispatch :wk "export"))
 
     :config
+    (message "Loading org-mode")
+
     (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
     (add-to-list 'org-babel-load-languages '(latex . t))
     (add-to-list 'org-latex-packages-alist '("" "tikz"))
@@ -1539,6 +1545,7 @@ A wonderfull graph that is shown in the browser.
 
 #+begin_src elisp
   (use-package org-noter
+    :after org
     :general
     (oskah/leader-keys
       "ne" '(org-noter :which-key "org-noter"))
@@ -1555,6 +1562,7 @@ A wonderfull graph that is shown in the browser.
 
 #+begin_src elisp
   (use-package org-present
+    :after org
     :general
     (oskah/leader-keys 'org-mode-map
       "tp" '(org-present :wk "present"))
@@ -1581,6 +1589,7 @@ A wonderfull graph that is shown in the browser.
 
 #+begin_src elisp
   (use-package ox-reveal
+    :after org
     :custom
     (org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
     (org-reveal-theme "black")
@@ -1622,14 +1631,15 @@ Allow using different vertico configurations for different prompts.
 
 Allow displaying the vertico completions in a grid
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package vertico-grid
+    :after vertico
     :elpaca nil
     :load-path
     (lambda ()
-      (expand-file-name "vertico/extensions" elpaca-builds-directory))
-    :after vertico)
+      (expand-file-name "vertico/extensions" elpaca-builds-directory)))
 #+end_src
+
 ** Corfu
 
 A completion framework
@@ -1807,7 +1817,7 @@ Consult
 
 #+begin_src elisp
   (use-package citar
-    ;:after (org latex)
+    :after (org latex)
    :general
     (oskah/leader-keys '(org-mode-map latex-mode-map)
       "mrc" '(citar-insert-citation :which-key "insert citation")
@@ -1818,7 +1828,10 @@ Consult
     (citar-bibliography oh/bib-files)
     (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
     (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
-    (citar-at-point-function 'embark-act))          ; Use `embark'
+    (citar-at-point-function 'embark-act)          ; Use `embark'
+
+    :config
+    (message "citar loaded"))
 #+end_src
 
 #+begin_src elisp :lexical no
@@ -1928,17 +1941,6 @@ An emacs profiler
   (use-package esup
     :disabled
     :ensure t)
-#+end_src
-
-** Benchmark
-
-#+begin_src elisp
-  (use-package benchmark-init
-    :disabled
-    :ensure t
-    :config
-    ;; To disable collection of benchmark data after init is done.
-    (add-hook 'after-init-hook 'benchmark-init/deactivate))
 #+end_src
 
 ** Imenu-list
@@ -2200,6 +2202,7 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
 
   (use-package chatgpt-shell
     :commands (chatgpt-shell)
+    :diminish
     :custom
     (chatgpt-shell-model-version 2)
     (chatgpt-shell-openai-key
@@ -2210,11 +2213,14 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
 
     :general
     (oskah/leader-keys
-      "og" '("gpt" . chatgpt-shell)))
+      "og" '("gpt" . chatgpt-shell))
+    :config
+    (message "chatgpt-shell loaded"))
 
 
   (use-package dall-e-shell
     :commands (dall-e-shell)
+    :diminish
     :custom
     (dall-e-shell-openai-key
      (lambda ()
@@ -2223,10 +2229,14 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
          (setq openai-key-memo (auth-source-pass-get 'secret "openai-key")))))
     :general
     (oskah/leader-keys
-      "od" '("dall-e" . dall-e-shell)))
+      "od" '("dall-e" . dall-e-shell))
+    :config
+    (message "dall-e-shell loaded"))
 
   (use-package ob-chatgpt-shell
     :after org
+    :disabled
+    :diminish
     :config 'ob-chatgpt-shell-setup)
 #+end_src
 
@@ -2309,6 +2319,22 @@ No littering puts the files that packages places in the emacs directory into
     (oskah/leader-keys '(devilry-mode-map)
       "md" '(dm-do-oblig :wk "do oblig")
       "mc" '(desktop-hard-clear :wk "clear desktop")))
+#+end_src
+
+* Startup performance message
+A message which says how long it took to load emacs. It can be useful for
+knowing how much/if packages slow down the emacs startup.
+
+#+begin_src elisp
+   (defun oskah/display-startup-time ()
+       (message "Emacs loaded in %s with %d garbage collections."
+          (format "%.2f seconds"
+                  (float-time
+                     (time-subtract after-init-time before-init-time)))
+          gcs-done))
+
+   (add-hook 'emacs-startup-hook #'oskah/display-startup-time) ;
+  ;; (setq use-package-verbose t)
 #+end_src
 
 * Spell checker local stuff
