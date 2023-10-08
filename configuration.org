@@ -747,10 +747,10 @@ Visualize the colors of color codes
       "gr" '(lsp-find-references :wk "find references"))
 
     :custom
+    (lsp-warn-no-matched-clients nil)
     (lsp-completion-provider :none) ;; I use Corfu instead!
     (lsp-keymap-prefix nil)
     (lsp-headerline-breadcrumb-enable nil)
-    (lsp-warn-no-matched-clients nil)
     (eldoc-display-functions '(eldoc-display-in-buffer))
 
     :init
@@ -760,8 +760,20 @@ Visualize the colors of color codes
     ;; Completion
     (defun my/lsp-mode-setup-completion ()
       (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-            '(orderless)))) ;; Configure orderless
+            '(orderless))) ;; Configure orderless
 
+    :config
+    (progn
+      (lsp-register-client
+        (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
+                         :major-modes '(c-mode c++-mode c-ts-mode c++-ts-mode)
+                         :remote? t
+                         :server-id 'clangd-remote))
+      (lsp-register-client
+        (make-lsp-client :new-connection (lsp-tramp-connection "pylsp")
+                         :major-modes '(python-mode python-ts-mode)
+                         :remote? t
+                         :server-id 'pylsp-remote))))
 
   (use-package lsp-ui
     :after lsp-mode
@@ -969,23 +981,33 @@ This requires some additional Racket packages to be installed. Once you have Rac
     :elpaca nil
     :custom
     (c-ts-mode-indent-offset 4)
-    (lsp-clients-clangd-args '("-j=4"
-                               "--malloc-trim"
-                               "--background-index"
-                               "--clang-tidy"
-                               "--cross-file-rename"
-                               "--log=info"
-                               "--header-insertion=iwyu"
-                               "--header-insertion-decorators"
-                               "--suggest-missing-includes"))
+    (lsp-clients-clangd-args '("-j=3"
+          				     "--background-index"
+          				     "--clang-tidy"
+          				     "--completion-style=detailed"
+          				     "--header-insertion=never"
+          				     "--header-insertion-decorators=0"))
+    ;; (lsp-clients-clangd-args '("-j=4"
+    ;;                            "--malloc-trim"
+    ;;                            "--background-index"
+    ;;                            "--clang-tidy"
+    ;;                            "--cross-file-rename"
+    ;;                            "--log=info"
+    ;;                            ;; "--header-insertion=iwyu"
+    ;;                            "--header-insertion=never"
+    ;;                            "--header-insertion-decorators=0"
+    ;;                            "--suggest-missing-includes"))
+
     :general
     (oskah/leader-keys '(c-mode-map c-ts-mode-map makefile-mode-map makefile-ts-mode-map)
       "mc" 'project-compile)
+
     :hook
     ;; ((c-mode c++-mode c-ts-mode c++-ts-mode) . eglot-ensure)
     ((c-mode c++-mode c-ts-mode c++-ts-mode) .
      (lambda ()
        (oskah/add-to-lookup-procs 'oh/consult-man-at-point)))
+
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(C . t))))
@@ -1002,9 +1024,19 @@ This requires some additional Racket packages to be installed. Once you have Rac
     ;;                   "--header-insertion=iwyu"
     ;;                   "--header-insertion-decorators=0"
     ;;                   "--suggest-missing-includes")))))
+
+
+#+end_src
+
+ccls
+
+#+begin_src elisp
+  (use-package ccls
+    :after c-mode c++-mode c-ts-mode c++-ts-mode)
 #+end_src
 
 Easily lookup man pages for the word at point
+
 
 #+begin_src elisp
   (defun oh/consult-man-at-point ()
@@ -1080,10 +1112,10 @@ Use clang-analyzer in order to get static analysis as you code
     ;; (python-mode . eglot-ensure)
     :init
     (with-eval-after-load 'org
-      (add-to-list 'org-babel-load-languages '(python . t)))
-    (with-eval-after-load 'eglot
-      (add-to-list 'eglot-server-programs
-                   '((python-mode python-ts-mode) . ("jedi-language-server")))))
+      (add-to-list 'org-babel-load-languages '(python . t))))
+    ;; (with-eval-after-load 'eglot
+    ;;   (add-to-list 'eglot-server-programs
+    ;;                '((python-mode python-ts-mode) . ("jedi-language-server")))))
       ;; (add-to-list 'eglot-server-programs
       ;;              '((python-mode python-ts-mode) . ("ruff")))))
 #+end_src
@@ -1302,10 +1334,17 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     (add-to-list 'org-babel-load-languages '(latex . t))
     (add-to-list 'org-latex-packages-alist '("" "tikz"))
     (add-to-list 'org-babel-load-languages '(shell . t))
+    (add-to-list 'org-babel-load-languages '(ditaa . t))
+
+    ;; not sure I like this. But it's where nix puts it.
+    (setq org-ditaa-jar-path "~/.nix-profile/lib/ditaa.jar")
+
     (org-babel-do-load-languages
      'org-babel-load-languages
      org-babel-load-languages))
 #+end_src
+
+Unfold heading:
 
 #+begin_src elisp
   (defun oskah/org-unfold-heading ()
@@ -1318,7 +1357,7 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
 
 #+end_src
 
-When evaluating a source block which generates an image the image will usually not be rendered immediately. This fixes that
+When evaluating a source block which generates an image the image will usually not be rendered immediately. This fixes that.
 
 #+begin_src elisp
   (defun my/org-babel-after-execute-refresh-images ()
@@ -1330,7 +1369,7 @@ When evaluating a source block which generates an image the image will usually n
 
 #+end_src
 
-Make the configuration get tangled on save
+Make the configuration get tangled on save.
 
 #+begin_src elisp
   (with-eval-after-load 'org
@@ -1346,8 +1385,7 @@ Make the configuration get tangled on save
                                (add-hook 'after-save-hook #'oh/org-babel-tangle-config))))
 #+end_src
 
-The following is some code which allows for using the =:hidden= tag for src blocks
-to make them hidden.
+The following is some code which allows for using the =:hidden= tag for src blocks to make them hidden.
 
 #+begin_src elisp
   ;; (defun individual-visibility-source-blocks ()
@@ -1571,17 +1609,28 @@ A wonderfull graph that is shown in the browser.
     (setq org-present-startup-folded t)
     (add-hook 'org-present-mode-hook
               (lambda ()
+                ;; (focus-mode t)
                 (org-present-big)
                 (org-appear-mode -1)
                 (org-present-read-only)
                 (setq header-line-format " ")))
     (add-hook 'org-present-mode-quit-hook
               (lambda ()
+                ;; (focus-mode -1)
                 (org-present-small)
                 (org-appear-mode t)
                 (org-present-read-write)
                 (setq header-line-format nil)
                 (nano-modeline-org-mode))))
+#+end_src
+
+*** Focus
+
+Highlight the text in focus
+
+#+begin_src elisp
+  (use-package focus
+    :after org-present)
 #+end_src
 
 ** Reveal
@@ -1997,6 +2046,21 @@ This is the configuration that should be put in ~~/.config/fish/config.fish~. Th
       printf "%b" (string join "\n" (vterm_old_fish_prompt))
       vterm_prompt_end
   end
+#+end_src
+
+** ssh-deploy
+Deploy code to remote server via ssh
+
+#+begin_src elisp
+  (use-package ssh-deploy
+    :after hydra
+    :hook ((after-save . ssh-deploy-after-save)
+           (find-file . ssh-deploy-find-file))
+    :config
+    ;; (ssh-deploy-line-mode) ;; If you want mode-line feature
+    ;; (ssh-deploy-add-menu) ;; If you want menu-bar feature
+    (ssh-deploy-hydra "C-c C-z")) ;; If you want the hydra feature
+
 #+end_src
 
 ** PDF
