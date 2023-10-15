@@ -507,7 +507,8 @@ And these are some general keybindings I like
     "of" '(make-frame :which-key "new frame")
     "hc" '("describe char" . describe-char)
     "hB" '("describe keybindings" . describe-bindings)
-    "hM" '("show manual" . info-display-manual)
+    "hi" '("show manual" . info-display-manual)
+    "hI" '("show manual" . consult-info)
     "hm" '("describe mode" . describe-mode)
     "hr" '("rebuild config" . (lambda ()
                                 (interactive)
@@ -757,6 +758,7 @@ Visualize the colors of color codes
     (oskah/leader-keys
       "cr" '(lsp-rename :wk "rename")
       "cn" '(consult-imenu :wk "navigate symbols")
+      "cm" '(consult-imenu-multi :wk "navigate symbols (multi)")
       "cd" '(consult-lsp-diagnostics :wk "diagnostics")
       "ca" '(lsp-execute-code-action :wk "code action")
       "cf" '(lsp-format-buffer :wk "format buffer")
@@ -802,9 +804,9 @@ Visualize the colors of color codes
     (lsp-ui-doc-show-with-mouse nil)
 
     :hook
-    (lsp-mode . lsp-ui-mode)
+    (lsp-mode . lsp-ui-mode))
 
-    :general)
+    ;; :general)
     ;; (oskah/leader-keys
     ;;   "cdf" '(lsp-ui-doc-focus-frame :wk "focus frame")
     ;;   "cdd" '(lsp-ui-doc-show :wk "show documentation")
@@ -1084,7 +1086,7 @@ Inline docstrings in .c files
     ;;                         (eglot-ensure))))
                             ;; (electric-pair-local-mode))))
     :general
-    (oskah/leader-keys
+    (oskah/leader-keys '(rust-mode-map rust-ts-mode-map)
       "mt" '(lsp-rust-analyzer-run :wk "rust-analyzer-run")))
 #+end_src
 
@@ -1350,7 +1352,7 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     :config
     (message "Loading org-mode")
 
-    (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
+    (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.3))
     (add-to-list 'org-babel-load-languages '(latex . t))
     (add-to-list 'org-latex-packages-alist '("" "tikz"))
     (add-to-list 'org-babel-load-languages '(shell . t))
@@ -1503,7 +1505,6 @@ Adds vertical lines next to src-blocks when org-indent is on
 #+begin_src elisp
   (use-package org-inline-pdf
     :diminish
-    ;;:disabled ; TODO: fix. It doesn't work with org 9.5.5
     :after org
     :hook (org-mode . org-inline-pdf-mode))
 #+end_src
@@ -1597,6 +1598,36 @@ A wonderfull graph that is shown in the browser.
           org-roam-ui-update-on-save t
           org-roam-ui-open-on-start t))
 
+#+end_src
+
+*** Consult-org-roam
+org-roam integration for consult.
+
+#+begin_src elisp
+  (use-package consult-org-roam
+     :after org-roam
+     :init
+     ;; Activate the minor mode
+     (consult-org-roam-mode 1)
+     :custom
+     ;; Use `ripgrep' for searching with `consult-org-roam-search'
+     (consult-org-roam-grep-func #'consult-ripgrep)
+     ;; Configure a custom narrow key for `consult-buffer'
+     (consult-org-roam-buffer-narrow-key ?r)
+     ;; Display org-roam buffers right after non-org-roam buffers
+     ;; in consult-buffer (and not down at the bottom)
+     (consult-org-roam-buffer-after-buffers t)
+     :config
+     ;; Eventually suppress previewing for certain functions
+     (consult-customize
+      consult-org-roam-forward-links
+      :preview-key "M-."))
+     ;; :bind)
+     ;; Define some convenient keybindings as an addition
+     ;; ("C-c n e" . consult-org-roam-file-find)
+     ;; ("C-c n b" . consult-org-roam-backlinks)
+     ;; ("C-c n l" . consult-org-roam-forward-links)
+     ;; ("C-c n r" . consult-org-roam-search))
 #+end_src
 
 ** Noter
@@ -1804,7 +1835,8 @@ Fancy addons for Corfu for better completions
       "bB" '(consult-buffer-other-window :wk "consult buffer other window")
       "fr" '(consult-recent-file :wk "recent file")
       "sg" '(consult-ripgrep :wk "ripgrep")
-      "ss" '(consult-line :wk "consult line"))
+      "ss" '(consult-line :wk "consult line")
+      "sf" '(consult-fd :wk "find file"))
     (oskah/leader-keys org-mode-map
       "mh" '(consult-org-heading :wk "consult org heading"))
     :config
@@ -2321,6 +2353,10 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
       "ogg" '(chatgpt-shell :wk "gpt-shell")
       "ogd" '(oh/chatgpt-shell-generate-docstring :wk "generate docstring")
       "ogc" '(chatgpt-shell-prompt-compose :wk "prompt and compose"))
+
+    (oskah/leader-keys chatgpt-shell-mode-map
+      "ms" '(chatgpt-shell-save-session-transcript :wk "save session")
+      "ml" '(chatgpt-shell-restore-session-from-transcript :wk "load session"))
     :config
     (message "chatgpt-shell loaded"))
 
