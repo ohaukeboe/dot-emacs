@@ -112,190 +112,6 @@ Enable elpaca use-package support
 
 #+end_src
 
-* Look and feel
-** General
-
-#+begin_src elisp
-  (add-to-list 'default-frame-alist
-               '(internal-border-width . 10))
-
-  ;; add spacing between windows
-  (setq window-divider-default-right-width 10)
-  (setq window-divider-default-places 'right-only)
-  (window-divider-mode)
-#+end_src
-
-** Fonts
-
-#+begin_src elisp
-  (custom-theme-set-faces
-   'user
-   '(default ((t (:family "Roboto Mono" :height 130))))
-   '(fixed-pitch ((t (:family "Roboto Mono" :height 0.9))))
-   '(variable-pitch ((t (:family "Roboto Serif" :height 1.3))))
-   '(italic ((t (:slant italic :inherit nil)))))
-
-  ;; (with-eval-after-load 'nano-theme
-  ;;   (set-face-attribute 'nano-strong nil
-  ;;                       :weight 'semi-bold))
-#+end_src
-
-** NANO
-
-I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks very good. I have also installed the [[https://github.com/rougier/nano-theme][nano theme]] and then simply changed all the colors in order to have a properly dark theme. When finding these colors I found the [[https://www.colorhexa.com/][colorhexa]] website to be a great resource.
-
-#+begin_src elisp
-  (use-package nano-theme
-    :demand
-    :custom
-    (nano-dark-foreground "#e8d6c6")
-    (nano-dark-background "#171717")
-    (nano-dark-highlight  "#2b2b2b")
-    (nano-dark-critical   "#EBCB8B")
-    (nano-dark-salient    "#aac5dd")
-    (nano-dark-strong     "#e8dfc6")
-    (nano-dark-popout     "#d79ca3")
-    (nano-dark-subtle     "#212121")
-    (nano-dark-faded      "#c69a72")
-
-    ;; (nano-light-background "#fafafa")
-    :init
-    (load-theme 'nano-dark t)
-    ;; :commands (oh/cycle-themes)
-    ;; :general
-    ;; (oskah/leader-keys
-    ;;   "tt" (list (oh/cycle-themes) :wk "cycle themes"))
-    :config
-
-    (defun oh/set-org-faces ()
-      "Make org source blocks have the same background as the default face."
-      (with-eval-after-load 'org-faces
-       (set-face-attribute 'org-block nil :background (face-background 'default))))
-
-    (oh/set-org-faces))
-
-
-
-    ;; (defun oh/cycle-themes ()
-    ;;   "Returns a function that lets you cycle your themes."
-    ;;   (let ((themes '(nano-dark nano-light)))
-    ;;     (lambda ()
-    ;;       (interactive)
-    ;;       ;; Rotates the theme cycle and changes the current theme.
-    ;;       (let ((rotated (nconc (cdr themes) (list (car themes)))))
-    ;;         (load-theme (car (setq themes rotated)) t))
-    ;;       ;; (oh/set-org-faces)
-    ;;       (message (concat "Switched to " (symbol-name (car themes))))))))
-#+end_src
-
-#+begin_src elisp
-  (use-package nano-modeline
-    :demand
-    :init
-    (setq-default mode-line-format nil)  ; disable default mode-line
-    :hook
-    (prog-mode            . nano-modeline-prog-mode)
-    (text-mode            . nano-modeline-text-mode)
-    (org-mode             . nano-modeline-org-mode)
-    (pdf-view-mode        . nano-modeline-pdf-mode)
-    (mu4e-headers-mode    . nano-modeline-mu4e-headers-mode)
-    (mu4e-view-mode       . nano-modeline-mu4e-message-mode)
-    (elfeed-show-mode     . nano-modeline-elfeed-entry-mode)
-    (elfeed-search-mode   . nano-modeline-elfeed-search-mode)
-    (term-mode            . nano-modeline-term-mode)
-    (xwidget-webkit-mode  . nano-modeline-xwidget-mode)
-    (messages-buffer-mode . nano-modeline-message-mode)
-    (org-capture-mode     . nano-modeline-org-capture-mode)
-    (org-agenda-mode      . nano-modeline-org-agenda-mode))
-#+end_src
-
-#+begin_src elisp
-  (use-package nano-agenda
-    :disabled       ; It's probably gonna be useful when I start using org-agenda
-    :commands (nano-agenda))
-#+end_src
-
-** svg-lib
-
-#+begin_src elisp
-  (use-package svg-lib)
-  (use-package svg-tag-mode
-    :disabled
-    :hook (org-mode . svg-tag-mode)
-    :custom
-    (svg-tag-tags
-     '(
-       ;; Org tags
-       ("\\(:[A-Z]+:\\)" . ((lambda (tag)
-                              (svg-tag-make tag :beg 1 :end -1))))
-       (":TODO:" . ((lambda (tag) (svg-tag-make "TODO" :face 'org-todo :inverse t :margin 0))))
-       (":DONE:" . ((lambda (tag) (svg-tag-make "DONE" :face 'org-done :margin 0))))
-
-       ("\\(:#[A-Za-z0-9]+\\)" . ((lambda (tag)
-                                      (svg-tag-make tag :beg 2))))
-       ("\\(:#[A-Za-z0-9]+:\\)$" . ((lambda (tag)
-                                      (svg-tag-make tag :beg 2 :end -1))))
-
-       ;; This replaces any occurence of ":XXX|YYY:" with two adjacent
-       ;; dynamic SVG tags displaying "XXX" and "YYY"
-       ("\\(:[A-Z]+\\)\|[a-zA-Z#0-9]+:" .
-                ((lambda (tag) (svg-tag-make tag :beg 1
-                                                 :inverse t
-                                                 :margin 0
-                                                 :crop-right t))))
-       (":[A-Z]+\\(\|[a-zA-Z#0-9]+:\\)" .
-                ((lambda (tag) (svg-tag-make tag :beg 1
-                                                 :end -1
-                                                 :margin 0
-                                                 :crop-left t))))
-
-       ;; Progress
-       ("\\(\\[[0-9]\\{1,3\\}%\\]\\)" . ((lambda (tag)
-                                           (svg-progress-percent (substring tag 1 -2)))))
-       ("\\(\\[[0-9]+/[0-9]+\\]\\)" . ((lambda (tag)
-                                         (svg-progress-count (substring tag 1 -1)))))
-       ;; TODO / DONE
-       (" \\(TODO\\)" . ((lambda (tag) (svg-tag-make "TODO" :face 'org-todo :inverse t :margin 0))))
-       (" \\(DONE\\)" . ((lambda (tag) (svg-tag-make "DONE" :face 'org-done :margin 0))))))
-
-    :config
-    (defun svg-progress-percent (value)
-     (svg-image (svg-lib-concat
-                 (svg-lib-progress-bar (/ (string-to-number value) 100.0)
-                                   nil :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
-                 (svg-lib-tag (concat value "%")
-                              nil :stroke 0 :margin 0)) :ascent 'center))
-
-    (defun svg-progress-count (value)
-      (let* ((seq (mapcar #'string-to-number (split-string value "/")))
-             (count (float (car seq)))
-             (total (float (cadr seq))))
-       (svg-image (svg-lib-concat
-                   (svg-lib-progress-bar (/ count total) nil
-                                         :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
-                   (svg-lib-tag value nil
-                                :stroke 0 :margin 0)) :ascent 'center))))
-#+end_src
-
-** All the icons
-It is necessary to run ~M-x all-the-icons-install-fonts~ to set up icon fonts.
-
-#+begin_src elisp
-  (use-package all-the-icons
-    :defer t
-    :if (display-graphic-p))
-#+end_src
-
-** Olivetti
-#+begin_src elisp
-  (use-package olivetti
-    :diminish
-    :hook (org-mode . olivetti-mode)
-    :commands olivetti-mode
-    :general
-    (oskah/leader-keys "to" 'olivetti-mode))
-#+end_src
-
 * Keybinds
 ** General
 Yes, the package is called general. It's a keybinding framework.
@@ -582,6 +398,193 @@ And these are some general keybindings I like
       "qe" '(kill-emacs :wk "kill emacs")
       "qr" '(restart-emacs :wk "restart emacs")))
 
+#+end_src
+
+* Look and feel
+** General
+
+#+begin_src elisp
+  (add-to-list 'default-frame-alist
+               '(internal-border-width . 10))
+
+  ;; add spacing between windows
+  (setq window-divider-default-right-width 10)
+  (setq window-divider-default-places 'right-only)
+  (window-divider-mode)
+#+end_src
+
+** Fonts
+
+#+begin_src elisp
+  (custom-theme-set-faces
+   'user
+   '(default ((t (:family "Roboto Mono" :height 130))))
+   '(fixed-pitch ((t (:family "Roboto Mono" :height 0.9))))
+   '(variable-pitch ((t (:family "Roboto Serif" :height 1.3))))
+   '(italic ((t (:slant italic :inherit nil)))))
+
+  ;; (with-eval-after-load 'nano-theme
+  ;;   (set-face-attribute 'nano-strong nil
+  ;;                       :weight 'semi-bold))
+#+end_src
+
+** NANO
+
+I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks very good. I have also installed the [[https://github.com/rougier/nano-theme][nano theme]] and then simply changed all the colors in order to have a properly dark theme. When finding these colors I found the [[https://www.colorhexa.com/][colorhexa]] website to be a great resource.
+
+#+begin_src elisp
+  (use-package nano-theme
+    :demand
+    :custom
+    (nano-dark-foreground "#e8d6c6")
+    (nano-dark-background "#171717")
+    (nano-dark-highlight  "#2b2b2b")
+    (nano-dark-critical   "#EBCB8B")
+    (nano-dark-salient    "#aac5dd")
+    (nano-dark-strong     "#e8dfc6")
+    (nano-dark-popout     "#d79ca3")
+    (nano-dark-subtle     "#212121")
+    (nano-dark-faded      "#c69a72")
+
+    ;; (nano-light-background "#fafafa")
+    :init
+    (load-theme 'nano-dark t)
+    ;; :commands (oh/cycle-themes)
+    ;; :general
+    ;; (oskah/leader-keys
+    ;;   "tt" (list (oh/cycle-themes) :wk "cycle themes"))
+    :config
+
+    (defun oh/set-org-faces ()
+      "Make org source blocks have the same background as the default face."
+      (with-eval-after-load 'org-faces
+       (set-face-attribute 'org-block nil :background (face-background 'default))))
+
+    (oh/set-org-faces))
+
+
+
+    ;; (defun oh/cycle-themes ()
+    ;;   "Returns a function that lets you cycle your themes."
+    ;;   (let ((themes '(nano-dark nano-light)))
+    ;;     (lambda ()
+    ;;       (interactive)
+    ;;       ;; Rotates the theme cycle and changes the current theme.
+    ;;       (let ((rotated (nconc (cdr themes) (list (car themes)))))
+    ;;         (load-theme (car (setq themes rotated)) t))
+    ;;       ;; (oh/set-org-faces)
+    ;;       (message (concat "Switched to " (symbol-name (car themes))))))))
+#+end_src
+
+#+begin_src elisp
+  (use-package nano-modeline
+    :demand
+    :init
+    (setq-default mode-line-format nil)  ; disable default mode-line
+    :hook
+    (prog-mode            . nano-modeline-prog-mode)
+    (text-mode            . nano-modeline-text-mode)
+    (org-mode             . nano-modeline-org-mode)
+    (pdf-view-mode        . nano-modeline-pdf-mode)
+    (mu4e-headers-mode    . nano-modeline-mu4e-headers-mode)
+    (mu4e-view-mode       . nano-modeline-mu4e-message-mode)
+    (elfeed-show-mode     . nano-modeline-elfeed-entry-mode)
+    (elfeed-search-mode   . nano-modeline-elfeed-search-mode)
+    (term-mode            . nano-modeline-term-mode)
+    (xwidget-webkit-mode  . nano-modeline-xwidget-mode)
+    (messages-buffer-mode . nano-modeline-message-mode)
+    (org-capture-mode     . nano-modeline-org-capture-mode)
+    (org-agenda-mode      . nano-modeline-org-agenda-mode))
+#+end_src
+
+#+begin_src elisp
+  (use-package nano-agenda
+    :disabled       ; It's probably gonna be useful when I start using org-agenda
+    :commands (nano-agenda))
+#+end_src
+
+** svg-lib
+
+#+begin_src elisp
+  (use-package svg-lib)
+  (use-package svg-tag-mode
+    :disabled
+    :hook (org-mode . svg-tag-mode)
+    :custom
+    (svg-tag-tags
+     '(
+       ;; Org tags
+       ("\\(:[A-Z]+:\\)" . ((lambda (tag)
+                              (svg-tag-make tag :beg 1 :end -1))))
+       (":TODO:" . ((lambda (tag) (svg-tag-make "TODO" :face 'org-todo :inverse t :margin 0))))
+       (":DONE:" . ((lambda (tag) (svg-tag-make "DONE" :face 'org-done :margin 0))))
+
+       ("\\(:#[A-Za-z0-9]+\\)" . ((lambda (tag)
+                                      (svg-tag-make tag :beg 2))))
+       ("\\(:#[A-Za-z0-9]+:\\)$" . ((lambda (tag)
+                                      (svg-tag-make tag :beg 2 :end -1))))
+
+       ;; This replaces any occurence of ":XXX|YYY:" with two adjacent
+       ;; dynamic SVG tags displaying "XXX" and "YYY"
+       ("\\(:[A-Z]+\\)\|[a-zA-Z#0-9]+:" .
+                ((lambda (tag) (svg-tag-make tag :beg 1
+                                                 :inverse t
+                                                 :margin 0
+                                                 :crop-right t))))
+       (":[A-Z]+\\(\|[a-zA-Z#0-9]+:\\)" .
+                ((lambda (tag) (svg-tag-make tag :beg 1
+                                                 :end -1
+                                                 :margin 0
+                                                 :crop-left t))))
+
+       ;; Progress
+       ("\\(\\[[0-9]\\{1,3\\}%\\]\\)" . ((lambda (tag)
+                                           (svg-progress-percent (substring tag 1 -2)))))
+       ("\\(\\[[0-9]+/[0-9]+\\]\\)" . ((lambda (tag)
+                                         (svg-progress-count (substring tag 1 -1)))))
+       ;; TODO / DONE
+       (" \\(TODO\\)" . ((lambda (tag) (svg-tag-make "TODO" :face 'org-todo :inverse t :margin 0))))
+       (" \\(DONE\\)" . ((lambda (tag) (svg-tag-make "DONE" :face 'org-done :margin 0))))))
+
+    :config
+    (defun svg-progress-percent (value)
+     (svg-image (svg-lib-concat
+                 (svg-lib-progress-bar (/ (string-to-number value) 100.0)
+                                   nil :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                 (svg-lib-tag (concat value "%")
+                              nil :stroke 0 :margin 0)) :ascent 'center))
+
+    (defun svg-progress-count (value)
+      (let* ((seq (mapcar #'string-to-number (split-string value "/")))
+             (count (float (car seq)))
+             (total (float (cadr seq))))
+       (svg-image (svg-lib-concat
+                   (svg-lib-progress-bar (/ count total) nil
+                                         :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                   (svg-lib-tag value nil
+                                :stroke 0 :margin 0)) :ascent 'center))))
+#+end_src
+
+** All the icons
+It is necessary to run ~M-x all-the-icons-install-fonts~ to set up icon fonts.
+
+#+begin_src elisp
+  (use-package all-the-icons
+    :defer t
+    :if (display-graphic-p))
+#+end_src
+
+** Olivetti
+
+#+begin_src elisp
+  (use-package olivetti
+    :diminish
+    :hook (org-mode . olivetti-mode)
+    :commands olivetti-mode
+    :custom
+    (olivetti-body-width 90)
+    :general
+    (oskah/leader-keys "to" 'olivetti-mode))
 #+end_src
 
 * Sane defaults
@@ -1163,12 +1166,7 @@ Inline docstrings in .c files
 
 #+begin_src elisp
   (use-package lsp-java
-    :after java-mode java-ts-mode)
-
-  ;; (use-package eglot-java
-  ;;   :hook
-  ;;   ((java-mode java-ts-mode) . eglot-java-mode))
-    ;; ((java-mode java-ts-mode) . (lambda () (electric-pair-local-mode t))))
+    :after lsp)
 #+end_src
 
 *** Fish
@@ -1214,6 +1212,15 @@ Inline docstrings in .c files
     (flycheck-plantuml-executable "plantuml")
     :config
     (flycheck-plantuml-setup))
+#+end_src
+
+*** Dot
+
+#+begin_src elisp
+  (use-package graphviz-dot-mode
+    :mode "\\.dot\\'"
+    :config
+    (setq graphviz-dot-indent-width 4))
 #+end_src
 
 *** Latex
@@ -1357,6 +1364,7 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     (add-to-list 'org-latex-packages-alist '("" "tikz"))
     (add-to-list 'org-babel-load-languages '(shell . t))
     (add-to-list 'org-babel-load-languages '(ditaa . t))
+    (add-to-list 'org-babel-load-languages '(dot . t))
 
     ;; not sure I like this. But it's where nix puts it.
     (setq org-ditaa-jar-path "~/.nix-profile/lib/ditaa.jar")
@@ -1712,6 +1720,7 @@ Highlight the text in focus
 * Completion frameworks
 ** Vertico
 
+Vertico provides a performant and minimalistic vertical completion UI based on the default completion system.
 #+begin_src elisp
   (use-package vertico
     :defer 0
@@ -1739,12 +1748,11 @@ Allow displaying the vertico completions in a grid
     (lambda ()
       (expand-file-name "vertico/extensions" elpaca-builds-directory)))
 #+end_src
-
 ** Corfu
 
-A completion framework
+Corfu enhances in-buffer completion with a small completion popup.
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package corfu
     ;; :after vertico
     :defer 0
@@ -1792,7 +1800,7 @@ A completion framework
 
 Adds Orderless completion style to Vertico
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package orderless
     :after vertico
     :custom
@@ -1804,7 +1812,7 @@ Adds Orderless completion style to Vertico
 
 Fancy addons for Corfu for better completions
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package cape
     :after corfu
     :init
@@ -1840,7 +1848,22 @@ Fancy addons for Corfu for better completions
     (oskah/leader-keys org-mode-map
       "mh" '(consult-org-heading :wk "consult org heading"))
     :config
-    (recentf-mode 1))
+    (recentf-mode 1)
+    (dolist (buffer '("\\`\\*scratch\\*\\'"
+                      "\\`\\*Messages\\*\\'"
+                      "\\`\\*Ibuffer\\*\\'"
+                      "\\`\\*direnv\\*\\'"
+                      "\\`\\*clangd\\*\\'"
+                      "\\`\\*copilot-balancer\\*\\'"
+                      "\\`\\*copilot events\\*\\'"
+                      "\\`\\*Racket Logger </>\\*\\'"
+                      "\\`\\*lsp-log\\*\\'"
+                      "\\`\\*grammarly-ls\\*\\'"
+                      "\\`\\*grammarly-ls::stderr\\*\\'"
+                      "\\`\\*Async-native-compile-log\\*\\'"
+                      "\\`\\*helpful"))
+      (add-to-list 'consult-buffer-filter buffer)))
+
 
 #+end_src
 
@@ -1874,6 +1897,8 @@ Consult
 
 ** Marginalia
 
+Description of commands and stuff in the Vertico buffer
+
 #+begin_src elisp
   (use-package marginalia
     :after vertico
@@ -1882,6 +1907,16 @@ Consult
     :config
     (marginalia-mode)
     (savehist-mode))
+#+end_src
+
+And some icons for the minibuffer as well:
+
+#+begin_src elisp
+  (use-package nerd-icons-completion
+    :after marginalia
+    :config
+    (nerd-icons-completion-mode)
+    (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
 #+end_src
 
 * Bibilo
@@ -2003,6 +2038,39 @@ Consult
    :config
    (direnv-mode))
 #+end_src
+** Treemacs
+
+A filetree viewer
+
+#+begin_src elisp
+  (use-package treemacs
+      :ensure t
+      :defer t
+      :custom
+      (treemacs-width 25)
+      :general
+      (oskah/leader-keys
+        "ot" '(treemacs :wk "treemacs"))
+
+      :config
+      (treemacs-follow-mode t)
+      (treemacs-project-follow-mode t)
+      (treemacs-filewatch-mode t)
+      (treemacs-fringe-indicator-mode t))
+
+  (use-package treemacs-magit
+      :after treemacs)
+
+  (use-package treemacs-nerd-icons
+    :after treemacs
+    :config
+    (treemacs-load-theme "nerd-icons")
+    :custom-face
+    (treemacs-nerd-icons-root-face ((t (:inherit nil))))
+    (treemacs-nerd-icons-folder-face ((t (:inherit nil))))
+    (treemacs-nerd-icons-file-face ((t (:inherit nil)))))
+#+end_src
+
 ** Yasnippet
 
 #+begin_src elisp
@@ -2352,7 +2420,8 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
     (oskah/leader-keys
       "ogg" '(chatgpt-shell :wk "gpt-shell")
       "ogd" '(oh/chatgpt-shell-generate-docstring :wk "generate docstring")
-      "ogc" '(chatgpt-shell-prompt-compose :wk "prompt and compose"))
+      "ogc" '(chatgpt-shell-prompt-compose :wk "prompt and compose")
+      "ogr" '(chatgpt-shell-refactor-code :wk "refactor code"))
 
     (oskah/leader-keys chatgpt-shell-mode-map
       "ms" '(chatgpt-shell-save-session-transcript :wk "save session")
