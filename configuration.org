@@ -827,7 +827,9 @@ Visualize the colors of color codes
 
 #+begin_src elisp
   (use-package dap-mode
-    :after lsp-mode)
+    :after lsp-mode
+    :config
+    (dap-auto-configure-mode))
 #+end_src
 
 ** Eglot
@@ -1356,6 +1358,11 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
       "mao" '(org-attach-open :wk "open attachment")
       "me" '(org-export-dispatch :wk "export"))
 
+    (oskah/leader-keys
+      "aa" '(org-agenda :wk "agenda")
+      "ac" '(org-capture :wk "capture")
+      "al" '(org-store-link :wk "store link"))
+
     :config
     (message "Loading org-mode")
 
@@ -1561,6 +1568,7 @@ Adds vertical lines next to src-blocks when org-indent is on
     (org-roam-completion-everywhere t)
     (org-roam-node-display-template "${title:*} ${tags:10}")
     (org-roam-directory (file-truename "~/Nextcloud/org_notes/roam"))
+    (org-roam-dailies-directory (file-truename "~/Nextcloud/org_notes/daily"))
     (org-roam-capture-templates
               '(("d" "default" plain "%?"
                    :target
@@ -1881,12 +1889,12 @@ Consult
 ** Embark
 
 #+begin_src elisp
-    (use-package embark
-      :general
-      (oskah/leader-keys
-        "hb" '(embark-bindings :wk "describe bindings")
-        "aa" '(embark-act :wk "embark act")
-        "ad" '(embark-dwim :wk "default action")))
+  (use-package embark
+    :general
+    (oskah/leader-keys
+      "hb" '(embark-bindings :wk "describe bindings")
+      "ea" '(embark-act :wk "embark act")
+      "ed" '(embark-dwim :wk "default action")))
 #+end_src
 
 #+begin_src elisp
@@ -2342,14 +2350,6 @@ Grammarly:
     :custom
     (lsp-grammarly-suggestions-oxford-comma t)
     (lsp-grammarly-modes '(text-mode latex-mode org-mode))) ;; markdown-mode)))
-#+end_src
-
-LanuageTool:
-
-#+begin_src elisp
-  (use-package langtool
-    :custom
-    (langtool-language-tool-jar "/home/oskar/.nix-profile/share/languagetool-commandline.jar"))
 #+end_src
 
 ** Ripgrep
