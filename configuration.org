@@ -605,6 +605,7 @@ These are the defaults that I deem sane, and that should set before anything els
         ring-bell-function 'ignore          ; Quiet
         scroll-margin 1                     ; Space between cursor and top/bottom
         sentence-end-double-space nil       ; No double space
+        save-silently t                     ; Don't show message when saving
         backup-directory-alist `(("." . ,(concat user-emacs-directory "var/backups"))))
 
   (dolist (mode '(tool-bar-mode
@@ -776,6 +777,7 @@ Visualize the colors of color codes
     (lsp-headerline-breadcrumb-enable nil)
     (eldoc-display-functions '(eldoc-display-in-buffer))
 
+    (lsp-inlay-hint-enable t)
     :init
     ;; Performance
     (setq read-process-output-max (* 1024 1024)) ;; 1mb
@@ -1092,7 +1094,20 @@ Inline docstrings in .c files
                             ;; (electric-pair-local-mode))))
     :general
     (oskah/leader-keys '(rust-mode-map rust-ts-mode-map)
-      "mt" '(lsp-rust-analyzer-run :wk "rust-analyzer-run")))
+      "mt" '(lsp-rust-analyzer-run :wk "rust-analyzer-run"))
+    :init
+    (with-eval-after-load "lsp-rust"
+      (lsp-register-client
+       (make-lsp-client
+        :new-connection (lsp-tramp-connection "rust-analyzer")
+        :remote? t
+        :major-modes '(rust-mode rustic-mode rust-ts-mode)
+        :initialization-options 'lsp-rust-analyzer--make-init-options
+        :notification-handlers (ht<-alist lsp-rust-notification-handlers)
+        :action-handlers (ht ("rust-analyzer.runSingle" #'lsp-rust--analyzer-run-single))
+        :library-folders-fn (lambda (_workspace) lsp-rust-analyzer-library-directories)
+        :ignore-messages nil
+        :server-id 'rust-analyzer-remote))))
 #+end_src
 
 #+begin_src elisp
@@ -1130,18 +1145,23 @@ Inline docstrings in .c files
 
 #+begin_src elisp
   (use-package python-mode
-    :defer t
-    ;; :hook
-    ;; (python-ts-mode . eglot-ensure)
-    ;; (python-mode . eglot-ensure)
+    :mode
+    ("\\.py\\'" . python-mode)
+
     :init
     (with-eval-after-load 'org
-      (add-to-list 'org-babel-load-languages '(python . t))))
-    ;; (with-eval-after-load 'eglot
-    ;;   (add-to-list 'eglot-server-programs
-    ;;                '((python-mode python-ts-mode) . ("jedi-language-server")))))
-      ;; (add-to-list 'eglot-server-programs
-      ;;              '((python-mode python-ts-mode) . ("ruff")))))
+      (add-to-list 'org-babel-load-languages '(python . t)))
+
+    :config
+    (lsp-register-custom-settings
+     '(("pyls.plugins.pyls_mypy.enabled" t t)
+       ("pyls.plugins.pyls_mypy.live_mode" nil t)
+       ("pyls.plugins.pyls_black.enabled" t t)
+       ("pyls.plugins.pyls_isort.enabled" t t)))
+
+    :custom
+    (lsp-pylsp-plugins-flake8-max-line-length 80)
+    (lsp-pylsp-plugins-pycodestyle-max-line-length 80))
 #+end_src
 
 *** Gnuplot
@@ -1216,6 +1236,13 @@ Inline docstrings in .c files
     (flycheck-plantuml-setup))
 #+end_src
 
+*** Just
+
+#+begin_src elisp
+  (use-package just-mode
+    :mode "\\.just\\'")
+#+end_src
+
 *** Dot
 
 #+begin_src elisp
@@ -1223,6 +1250,16 @@ Inline docstrings in .c files
     :mode "\\.dot\\'"
     :config
     (setq graphviz-dot-indent-width 4))
+#+end_src
+
+*** Dockerfile
+
+#+begin_src elisp
+  (use-package dockerfile-mode
+    :mode
+    "Dockerfile\\'"
+    "Containerfile\\'")
+
 #+end_src
 
 *** Latex
@@ -1329,6 +1366,7 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     (org-startup-indented t)
     (org-indent-indentation-per-level 2)
     (org-default-notes-file "~/Nextcloud/org_notes/notes.org")
+    (org-agenda-files `(,org-default-notes-file))
     ;; (org-attach-use-inheritance t)   ; Make sure attachments are
                                      ; inherited throuch headings
     (org-hide-emphasis-markers t)
@@ -1415,11 +1453,15 @@ Make the configuration get tangled on save.
                           (expand-file-name
                            (locate-user-emacs-file "configuration.org")))
         ;; Dynamic scoping to the rescue
-        (let ((org-confirm-babel-evaluate nil))
-          (org-babel-tangle))))
+        (let ((org-confirm-babel-evaluate nil)
+              (path-prefix (expand-file-name user-emacs-directory))
+              (prog-mode-hook nil))
+          (org-babel-tangle)
+          (byte-recompile-file (concat path-prefix "configuration.el")))))
 
-    (add-hook 'org-mode-hook (lambda ()
-                               (add-hook 'after-save-hook #'oh/org-babel-tangle-config))))
+    (add-hook 'org-mode-hook
+              (lambda ()
+                (add-hook 'after-save-hook #'oh/org-babel-tangle-config t t))))
 #+end_src
 
 The following is some code which allows for using the =:hidden= tag for src blocks to make them hidden.
@@ -1804,6 +1846,24 @@ Corfu enhances in-buffer completion with a small completion popup.
     (corfu-history-mode))
 #+end_src
 
+ This snippet enables Corfu in =eval-expression=, and is stolen from [[https://codeberg.org/mjeu/dotemacs#user-content-headline-27][mjeu.]]
+
+#+begin_src elisp
+  (with-eval-after-load 'corfu
+    (defun corfu-enable-always-in-minibuffer ()
+      "Enable Corfu in the minibuffer if Vertico/Mct are not active."
+      (unless (or (bound-and-true-p mct--active)
+                  (bound-and-true-p vertico--input)
+                  (eq (current-local-map) read-passwd-map))
+        (setq-local corfu-echo-delay nil ; Disable automatic echo
+                    corfu-popupinfo-delay 0.0)
+        (corfu-mode 1)))
+
+    (add-hook 'minibuffer-setup-hook #'corfu-enable-always-in-minibuffer))
+
+
+#+end_src
+
 ** Orderless
 
 Adds Orderless completion style to Vertico
@@ -1868,6 +1928,14 @@ Fancy addons for Corfu for better completions
                       "\\`\\*lsp-log\\*\\'"
                       "\\`\\*grammarly-ls\\*\\'"
                       "\\`\\*grammarly-ls::stderr\\*\\'"
+                      "\\`\\*rust-analyzer\\*\\'"
+                      "\\`\\*rust-analyzer::stderr\\*\\'"
+                      "\\`\\*rnix-lsp\\*\\'"
+                      "\\`\\*rnix-lsp::stderr\\*\\'"
+                      "\\`\\*chatgpt\\*"
+                      "\\`ChatGPT> compose\\'"
+                      "\\`magit"
+                      "\\`\\*Quail Completions\\*\\'"
                       "\\`\\*Async-native-compile-log\\*\\'"
                       "\\`\\*helpful"))
       (add-to-list 'consult-buffer-filter buffer)))
@@ -1961,18 +2029,19 @@ And some icons for the minibuffer as well:
 
 #+begin_src elisp
   (use-package citar
-    :after (org latex)
-   :general
+    :general
     (oskah/leader-keys '(org-mode-map latex-mode-map)
       "mrc" '(citar-insert-citation :which-key "insert citation")
       "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
+
     (oskah/leader-keys
       "nbo" '(citar-open :wk "open resource"))
+
     :custom
     (citar-bibliography oh/bib-files)
     (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
     (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
-    (citar-at-point-function 'embark-act)          ; Use `embark'
+    (citar-at-point-function 'embark-act)           ; Use `embark'
 
     :config
     (message "citar loaded"))
@@ -2196,9 +2265,10 @@ Deploy code to remote server via ssh
 
 #+begin_src elisp
   (use-package pdf-tools
+    :elpaca nil
     :hook
     (pdf-view-mode-hook . evil-normal-state)
-    :elpaca nil
+    ;; :elpaca nil
     :mode ("\\.pdf\\'" . pdf-view-mode))
     ;; :custom
     ;; (pdf-view-midnight-colors (cons (face-foreground 'default)
@@ -2206,6 +2276,7 @@ Deploy code to remote server via ssh
     ;; :config
     ;; (pdf-tools-install))
 #+end_src
+
 ** Mail
 To use =mbsync= over a secure connection add
 #+begin_example
@@ -2409,7 +2480,8 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
     :commands (chatgpt-shell)
     :diminish
     :custom
-    (chatgpt-shell-model-version 2)
+    (chatgpt-shell-model-versions '("gpt-4-1106-preview"))
+    ;; (chatgpt-shell-model-version)
     (chatgpt-shell-openai-key
      (lambda ()
        (if openai-key-memo
@@ -2434,6 +2506,7 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
     :commands (dall-e-shell)
     :diminish
     :custom
+    (dall-e-shell-model-version "dall-e-3")
     (dall-e-shell-openai-key
      (lambda ()
        (if openai-key-memo

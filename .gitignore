@@ -29,3 +29,4 @@ var/
 /eglot-java-eclipse-jdt-cache/
 /share/
 /minimal.el
+*.elc
