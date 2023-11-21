@@ -33,13 +33,13 @@ I would not recommend using this config /as-is/ since I probably have a lot of s
 Install elpaca
 
  #+begin_src elisp
-   (defvar elpaca-installer-version 0.5)
+   (defvar elpaca-installer-version 0.6)
    (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
    (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
    (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
    (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
                                  :ref nil
-                                 :files (:defaults (:exclude "extensions"))
+                                 :files (:defaults "elpaca-test.el" (:exclude "extensions"))
                                  :build (:not elpaca--activate-package)))
    (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
           (build (expand-file-name "elpaca/" elpaca-builds-directory))
@@ -660,15 +660,16 @@ clients, file templates and snippets. It is optional.
 
 #+begin_src elisp
   (use-package magit
-    :general
-    ('magit-mode-map
-     "w" 'magit-worktree
-     "h" 'magit-patch)
+    :defer t
     :custom
     (magit-display-buffer-function
      #'magit-display-buffer-same-window-except-diff-v1)
+
     :general
-    (oskah/leader-keys "gg" 'magit-status))
+    (oskah/leader-keys "gg" 'magit-status)
+    ('magit-mode-map
+     "w" 'magit-worktree
+     "h" 'magit-patch))
 #+end_src
 
 Magit-todos for integrating TODO keywords with magit's overview screen
@@ -958,10 +959,14 @@ This requires some additional Racket packages to be installed. Once you have Rac
 #+end_src
 
 #+begin_src elisp
-   (use-package racket-mode
-     :hook (racket-mode . parinfer-rust-mode)
-     :mode "\\.rkt\\'"
-           "\\.scm\\'")
+  (use-package racket-mode
+    :hook (racket-mode . parinfer-rust-mode)
+    :mode "\\.rkt\\'"
+          "\\.scm\\'"
+    :config
+    ((racket-mode) .
+     (lambda ()
+       (oskah/add-to-lookup-procs 'helpful-at-point))))
 
   (use-package ob-racket
     :after org
@@ -969,6 +974,7 @@ This requires some additional Racket packages to be installed. Once you have Rac
     :init
     (with-eval-after-load 'org
       (add-to-list 'org-babel-load-languages '(racket . t))))
+
 #+end_src
 
 *** Geiser
@@ -1919,6 +1925,8 @@ Fancy addons for Corfu for better completions
     (recentf-mode 1)
     (dolist (buffer '("\\`\\*scratch\\*\\'"
                       "\\`\\*Messages\\*\\'"
+                      "\\`\\*Warnings\\*\\'"
+                      "\\`\\*racket-langserver::stderr\\*\\'"
                       "\\`\\*Ibuffer\\*\\'"
                       "\\`\\*direnv\\*\\'"
                       "\\`\\*clangd\\*\\'"
