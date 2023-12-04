@@ -219,6 +219,36 @@ Enables pressing =%= to jump between matching pairs. Despite the name, It does n
     :config
     (global-evil-matchit-mode 1))
 #+end_src
+*** Fold
+Improve text folding
+
+#+begin_src elisp
+  (use-package vimish-fold
+    :after evil)
+
+  (use-package evil-vimish-fold
+    :after vimish-fold
+    :general
+    ('(vimish-fold-folded-keymap vimish-fold-unfolded-keymap)
+     "TAB" 'vimish-fold-toggle)
+    :init
+    (setq evil-vimish-fold-mode-lighter " ⮒")
+    (setq evil-vimish-fold-target-modes '(prog-mode conf-mode text-mode))
+    :config
+    (global-evil-vimish-fold-mode))
+#+end_src
+
+Enable =hs-minor-mode= for easily fold based on indentation levels
+
+#+begin_src elisp
+  (use-package hs-minor-mode
+    :elpaca nil
+    :hook prog-mode
+    :general
+    ('normal
+     "TAB" 'hs-toggle-hiding))
+#+end_src
+
 *** Surround
 
 #+begin_src elisp
@@ -508,34 +538,21 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 #+begin_src elisp
   (use-package svg-lib)
   (use-package svg-tag-mode
-    :disabled
     :hook (org-mode . svg-tag-mode)
+    :disabled
     :custom
     (svg-tag-tags
      '(
        ;; Org tags
-       ("\\(:[A-Z]+:\\)" . ((lambda (tag)
-                              (svg-tag-make tag :beg 1 :end -1))))
-       (":TODO:" . ((lambda (tag) (svg-tag-make "TODO" :face 'org-todo :inverse t :margin 0))))
-       (":DONE:" . ((lambda (tag) (svg-tag-make "DONE" :face 'org-done :margin 0))))
+       ;; ("\\(:[A-Z]+:\\)" . ((lambda (tag)
+       ;;                        (svg-tag-make tag :beg 1 :end -1))))
+       ;; (":TODO:" . ((lambda (tag) (svg-tag-make "TODO" :face 'org-todo :inverse t :margin 0))))
+       ;; (":DONE:" . ((lambda (tag) (svg-tag-make "DONE" :face 'org-done :margin 0))))
 
-       ("\\(:#[A-Za-z0-9]+\\)" . ((lambda (tag)
-                                      (svg-tag-make tag :beg 2))))
-       ("\\(:#[A-Za-z0-9]+:\\)$" . ((lambda (tag)
-                                      (svg-tag-make tag :beg 2 :end -1))))
-
-       ;; This replaces any occurence of ":XXX|YYY:" with two adjacent
-       ;; dynamic SVG tags displaying "XXX" and "YYY"
-       ("\\(:[A-Z]+\\)\|[a-zA-Z#0-9]+:" .
-                ((lambda (tag) (svg-tag-make tag :beg 1
-                                                 :inverse t
-                                                 :margin 0
-                                                 :crop-right t))))
-       (":[A-Z]+\\(\|[a-zA-Z#0-9]+:\\)" .
-                ((lambda (tag) (svg-tag-make tag :beg 1
-                                                 :end -1
-                                                 :margin 0
-                                                 :crop-left t))))
+       ;; ("\\(:#[A-Za-z0-9]+\\)" . ((lambda (tag)
+       ;;                                (svg-tag-make tag :beg 2))))
+       ;; ("\\(:#[A-Za-z0-9]+:\\)$" . ((lambda (tag)
+       ;;                                (svg-tag-make tag :beg 2 :end -1))))
 
        ;; Progress
        ("\\(\\[[0-9]\\{1,3\\}%\\]\\)" . ((lambda (tag)
@@ -572,6 +589,49 @@ It is necessary to run ~M-x all-the-icons-install-fonts~ to set up icon fonts.
   (use-package all-the-icons
     :defer t
     :if (display-graphic-p))
+#+end_src
+
+** Nerd icons
+
+#+begin_src elisp
+  (use-package nerd-icons
+    :after dashboard
+    :custom
+    ;; The Nerd Font you want to use in GUI
+    ;; "Symbols Nerd Font Mono" is the default and is recommended
+    ;; but you can use any other Nerd Font if you want
+    (nerd-icons-font-family "Symbols Nerd Font Mono"))
+
+#+end_src
+
+** Dashboard
+A prettier startup screen
+
+#+begin_src elisp
+  (use-package dashboard
+    :config
+    (add-hook 'elpaca-after-init-hook #'dashboard-insert-startupify-lists)
+    (add-hook 'elpaca-after-init-hook #'dashboard-initialize)
+    (dashboard-setup-startup-hook)
+
+    (add-to-list 'dashboard-items '(projects . 5))
+
+    :custom
+    (dashboard-projejects-backend 'projectile)
+    (dashboard-set-heading-icons t)
+    (dashboard-set-file-icons t)
+    (initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+    (dashboard-display-icons-p t) ;; display icons on both GUI and terminal
+    (dashboard-icon-type 'all-the-icons) ;; use `nerd-icons' package
+    (dashboard-week-agenda nil)          ; nil for only current day
+                                         ; and t for the whole week
+    (dashboard-center-content t)
+    ;; (dashboard-startup-banner 2)
+    (dashboard-items '((recents  . 5)
+                       (bookmarks . 5)
+                       (projects . 5)
+                       (agenda . 5)
+                       (registers . 5))))
 #+end_src
 
 ** Olivetti
@@ -660,7 +720,6 @@ clients, file templates and snippets. It is optional.
 
 #+begin_src elisp
   (use-package magit
-    :defer t
     :custom
     (magit-display-buffer-function
      #'magit-display-buffer-same-window-except-diff-v1)
@@ -722,10 +781,12 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 #+end_src
 * Programming
 ** Rainbow delimiters
+
 #+begin_src elisp
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 #+end_src
+
 ** Tree-sitter
 Automatically install and use tree-sitter major modes in Emacs 29+. If the tree-sitter version can’t be used, fall back to the original major mode.
 
@@ -746,6 +807,7 @@ Visualize the colors of color codes
   (use-package rainbow-mode
     :hook prog-mode)
 #+end_src
+
 ** LSP-mode
 
 #+begin_src elisp
@@ -963,7 +1025,7 @@ This requires some additional Racket packages to be installed. Once you have Rac
     :hook (racket-mode . parinfer-rust-mode)
     :mode "\\.rkt\\'"
           "\\.scm\\'"
-    :config
+    :hook
     ((racket-mode) .
      (lambda ()
        (oskah/add-to-lookup-procs 'helpful-at-point))))
@@ -1345,8 +1407,10 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     (org-meta-line
      ((t (:inherit (font-lock-comment-face fixed-pitch)))))
     (org-checkbox
-     ((t (:inherit fixed-pitch))))
+     ((t (:inherit (fixed-pitch)))))
     (org-table
+     ((t (:inherit (nano-faded fixed-pitch)))))
+    (org-formula
      ((t (:inherit (nano-faded fixed-pitch)))))
     (org-level-1
      ((t (:weight semi-bold
@@ -1367,6 +1431,8 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
      ((t (:weight semi-bold
                   :inherit (nano-strong variable-pitch)))))
     :custom
+    (org-todo-keywords
+     '((sequence "TODO(t)" "IN-PROGRESS(i)" "WAITING(w)" "|" "DONE(d)" "CANCELED(c)")))
     (org-cycle-inline-images-display t)
     (org-pretty-entities t)
     (org-startup-indented t)
@@ -1384,6 +1450,8 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     (org-attach-id-dir "~/Nextcloud/org_notes/.attach/")
     ;; (plist-put org-format-latex-options :scale 2.0) ; Set scale
                                                     ; of preview images
+    (org-attach-archive-delete 'query) ; ask to delete attachments
+                                       ; when deleting a heading
     (org-export-with-tags nil)
     (org-startup-with-inline-images t)
     (org-startup-with-latex-preview t)
@@ -1412,17 +1480,33 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
 
     (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.3))
     (add-to-list 'org-babel-load-languages '(latex . t))
-    (add-to-list 'org-latex-packages-alist '("" "tikz"))
     (add-to-list 'org-babel-load-languages '(shell . t))
     (add-to-list 'org-babel-load-languages '(ditaa . t))
     (add-to-list 'org-babel-load-languages '(dot . t))
+    ;; (add-to-list 'org-latex-packages-alist '("" "tikz"))
+    ;; (add-to-list 'org-latex-packages-alist '("" "minted"))
+    (add-to-list 'org-latex-packages-alist '("" "listings"))
+    (with-eval-after-load 'ox-latex
+      (setq org-latex-listings 'listings)
+      (setq org-latex-listings-options
+            '(("basicstyle" "\\ttfamily\\footnotesize")
+              ("breaklines" "true")
+              ("postbreak" "\\mbox{$\\hookrightarrow$\\space}")
+              ("tabsize" "2"))))
 
-    ;; not sure I like this. But it's where nix puts it.
+      ;; not sure I like this. But it's where nix puts it.
     (setq org-ditaa-jar-path "~/.nix-profile/lib/ditaa.jar")
 
     (org-babel-do-load-languages
      'org-babel-load-languages
-     org-babel-load-languages))
+     org-babel-load-languages)
+
+
+    ;; Load extra export backends
+    (require 'ox-beamer)
+    (require 'ox-man)
+    (require 'ox-texinfo))
+
 #+end_src
 
 Unfold heading:
@@ -1501,8 +1585,10 @@ The following is some code which allows for using the =:hidden= tag for src bloc
   (use-package evil-org
     :diminish
     :after org
-    :hook (org-mode .  evil-org-mode)
-    :config
+    :hook
+    (org-mode .  evil-org-mode)
+    ;; (org-agenda . evil-org-mode)
+    :init
     (require 'evil-org-agenda)
     (evil-org-agenda-set-keys))
 #+end_src
@@ -1513,11 +1599,12 @@ The following is some code which allows for using the =:hidden= tag for src bloc
   (use-package org-modern
     :hook (org-mode . org-modern-mode)
     :custom
-    (org-modern-statistics nil)
+    ;; (org-modern-statistics nil)
     (org-modern-todo nil)
-    (org-modern-progress nil)
+    ;; (org-modern-checkbox nil)
+    ;; (org-modern-progress nil)
     ;; (org-modern-tag nil)
-    (org-modern-priority nil)
+    ;; (org-modern-priority nil)
     (org-modern-table nil)
     (org-modern-list
        '((?- . "•")
@@ -1631,15 +1718,16 @@ Adds vertical lines next to src-blocks when org-indent is on
     (oskah/leader-keys
       "nf" '(org-roam-node-find :wk "find")
       "nc" '(org-roam-capture :wk "capture")
-      ;; "ng" '(org-roam-graph :wk "graph")
       "ni" '(org-roam-node-insert :wk "insert")
-      "nl" '(org-roam-buffer-toggle :wk "buffer")
-      "nt" '(org-roam-tag-add :wk "tag-add")
-      "nr" '(org-roam-refile :wk "refile"))
+      "nb" '(org-roam-buffer-toggle :wk "buffer")
+      "nt" '(org-roam-tag-add :wk "add tag")
+      "nl" '(consult-org-roam-backlinks :wk "backlinks")
+      "nrr" '(org-roam-ref-find :wk "find ref")
+      "nR" '(org-roam-refile :wk "refile")
+      "na" '(org-roam-alias-add :wk "add alias"))
 
     :config
     (org-roam-db-autosync-mode 1))
-
 #+end_src
 
 *** org-roam-ui
@@ -2039,13 +2127,16 @@ And some icons for the minibuffer as well:
   (use-package citar
     :general
     (oskah/leader-keys '(org-mode-map latex-mode-map)
+      "mr" '(:ignore t :which-key "references")
       "mrc" '(citar-insert-citation :which-key "insert citation")
       "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
 
     (oskah/leader-keys
-      "nbo" '(citar-open :wk "open resource"))
+      "nr" '(:ignore t :wk "references")
+      "nro" '(citar-open :wk "open resource"))
 
     :custom
+    (bibtex-dialect 'biblatex)
     (citar-bibliography oh/bib-files)
     (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
     (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
@@ -2055,7 +2146,7 @@ And some icons for the minibuffer as well:
     (message "citar loaded"))
 #+end_src
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package citar-embark
     :after citar embark
     :no-require
@@ -2074,7 +2165,7 @@ And some icons for the minibuffer as well:
 
 ** Citation rendering
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package oc-csl-activate
     :after org
     :hook
@@ -2102,6 +2193,9 @@ And some icons for the minibuffer as well:
   (use-package citar-org-roam
     :after (citar org-roam)
     :config (citar-org-roam-mode)
+    :general
+    (oskah/leader-keys
+      "nrc" '(citar-org-roam-ref-add :wk "add ref"))
     :custom
     (citar-org-roam-capture-template-key "n")
     :config
@@ -2160,9 +2254,11 @@ A filetree viewer
 
 #+begin_src elisp
   (use-package yasnippet
-    :ensure t
-    :hook ((lsp-mode . yas-minor-mode)))
+      :ensure t
+      :config
+      (yas-global-mode 1))
 #+end_src
+
 ** SICP
 
 #+begin_src elisp
@@ -2175,17 +2271,36 @@ A filetree viewer
   (use-package dired
     :elpaca nil
     :commands (dired dired-jump)
+
     :custom
     (dired-listing-switches "-agho --group-directories-first")
     (dired-kill-when-opening-new-dired-buffer t)
+
     :general
     (oskah/leader-keys
       "fd" '(dired-jump :which-key "dired jump")
       "fD" '(dired-jump-other-window :which-key "dired"))
-    :general
+
     ('normal 'dired-mode-map
       "h" 'dired-up-directory
-      "l" 'dired-find-file))
+      "l" 'dired-find-file)
+
+    (oskah/leader-keys 'dired-mode-map
+      "mo" '(oh/dired-xdg-open :which-key "open externally")))
+
+#+end_src
+
+Make it easy to open files using xdg from dired
+
+#+begin_src elisp
+  (with-eval-after-load 'dired
+    (defun oh/dired-xdg-open ()
+      "Open the file at point in Dired with xdg-open."
+      (interactive)
+      (let ((file (dired-get-file-for-visit)))
+        (when file
+          (let ((process-connection-type nil))
+            (start-process "" nil "xdg-open" file))))))
 #+end_src
 
 ** Esup
@@ -2288,27 +2403,84 @@ Deploy code to remote server via ssh
 ** Mail
 To use =mbsync= over a secure connection add
 #+begin_example
-SSLType STARTTLS
-SSLVersions TLSv1.2
-CertificateFile ~/.cert/protonmail.crt
+  SSLType STARTTLS
+  SSLVersions TLSv1.2
+  CertificateFile ~/.cert/protonmail.crt
 #+end_example
-to =.mbsyncrc= and put the certificate generated by ~openssl s_client -starttls imap -connect 127.0.0.1:1143 -showcerts~ in =~/.cert/protonmail.crt=, i.e. the lines between (and incluying) /-----BEGIN CERTIFICATE-----/ and /-----END CERTIFICATE-----/
+to =.mbsyncrc= and put the certificate generated by ~openssl s_client -starttls imap -connect 127.0.0.1:1143 -showcerts~ in =~/.cert/protonmail.crt=, i.e. the lines between (and incluying) =-----BEGIN CERTIFICATE-----= and =-----END CERTIFICATE-----=
+
+Just to make it complete my =.mbsyncrc= file looks as follows
+#+begin_src conf
+IMAPAccount proton
+Host 127.0.0.1
+Port 1143
+User ohaukeboe@pm.me
+SSLType STARTTLS
+Pass *****
+# CertificateFile /etc/ssl/certs/ca-certificates.crt
+CertificateFile ~/.mail/.cert/protonmail.crt
+
+IMAPStore proton-remote
+Account proton
+
+MaildirStore proton-local
+Subfolders Verbatim
+Path ~/.mail/proton/
+Inbox ~/.mail/proton/Inbox
+Trash ~/.mail/proton/Trash
+
+Channel proton
+Far :proton-remote:
+Near :proton-local:
+Patterns *
+Expunge None
+CopyArrivalDate yes
+Sync All
+Create Both
+SyncState *
+#+end_src
+and my =.msmtprc= file looks like:
+#+begin_src conf
+  # Set default values for all following accounts.
+  defaults
+  auth           on
+  tls            on
+  tls_trust_file ~/.mail/.cert/protonmail.crt
+  logfile        ~/.msmtp.log
+
+  # Proton
+  account        proton
+  host           127.0.0.1
+  port           1025
+  tls_starttls   on
+  from           ohaukeboe@pm.me
+  user           ohaukeboe@pm.me
+  password       *****
+
+  # Set a default account
+  account default: proton
+#+end_src
 
 #+begin_src elisp
   (use-package mu4e
     :elpaca nil
     :defer t
-    :if (and (file-exists-p "~/mail")
+    :if (and (file-exists-p "~/.mail")
              (executable-find "mbsync")
              (executable-find "msmtp")
              (executable-find "mu"))
     :general
     (oskah/leader-keys
       "om" '(mu4e :which-key "mu4e"))
+
+    :custom
+    (mu4e-split-view 'vertical)
+    (mail-user-agent 'mu4e-user-agent)
+
     :config
     (setq sendmail-program (executable-find "msmtp")
           send-mail-function 'smtpmail-send-it
-          mu4e-maildir "~/mail"
+          mu4e-root-maildir "~/.mail"
 
           message-sendmail-f-is-evil t
           message-sendmail-extra-arguments '("--read-envelope-from")
@@ -2322,19 +2494,19 @@ to =.mbsyncrc= and put the certificate generated by ~openssl s_client -starttls 
 
     (setq mu4e-contexts
           (list
-           (make-mu4e-context
-            :name "ifi"
-            :match-func
-            (lambda (msg)
-              (when msg
-                (string-prefix-p "/ifi" (mu4e-message-field msg :maildir))))
-            :vars '((user-mail-address . "oskah@ifi.uio.no")
-                    (user-full-name . "Oskar Haukebøe")
-                    (mu4e-sent-folder . "/ifi/Sent Items")
-                    (mu4e-trash-folder . "/ifi/Deleted Items")
-                    (mu4e-drafts-folder . "/ifi/Drafts")
-                    (mu4e-refile-folder . "/ifi/Archive")
-                    (smtpmail-smtp-user .)))
+           ;; (make-mu4e-context
+           ;;  :name "ifi"
+           ;;  :match-func
+           ;;  (lambda (msg)
+           ;;    (when msg
+           ;;      (string-prefix-p "/ifi" (mu4e-message-field msg :maildir))))
+           ;;  :vars '((user-mail-address . "oskah@ifi.uio.no")
+           ;;          (user-full-name . "Oskar Haukebøe")
+           ;;          (mu4e-sent-folder . "/ifi/Sent Items")
+           ;;          (mu4e-trash-folder . "/ifi/Deleted Items")
+           ;;          (mu4e-drafts-folder . "/ifi/Drafts")
+           ;;          (mu4e-refile-folder . "/ifi/Archive")
+           ;;          (smtpmail-smtp-user .)))
            (make-mu4e-context
             :name "proton"
             :match-func
@@ -2343,24 +2515,38 @@ to =.mbsyncrc= and put the certificate generated by ~openssl s_client -starttls 
                 (string-prefix-p "/proton" (mu4e-message-field msg :maildir))))
             :vars '((user-mail-address . "ohaukeboe@pm.me")
                     (user-full-name . "Oskar Haukebøe")
-                    (mu4e-sent-folder . "/proton/Sent")
-                    (mu4e-trash-folder . "/proton/Trash")
-                    (mu4e-drafts-folder . "/proton/Drafts")
-                    (mu4e-refile-folder . "/proton/All Mail")
+                    (mu4e-sent-folder . "/Sent")
+                    (mu4e-trash-folder . "/Trash")
+                    (mu4e-drafts-folder . "/Drafts")
+                    (mu4e-refile-folder . "/Archive")
                     (smtpmail-smtp-user . "ohaukeboe@pm.me")
-                    (mu4e-compose-signature . "---\nRegards\nOskar"))))))
+                    (mu4e-compose-signature . "Cheers,\nOskar"))))))
 
-
-  ;; (after! mu4e
-  ;;   (setq! mu4e-split-view 'vertical))
 #+end_src
 
-This requires the =mu= program.
+Org-msg allows for composing the mail using orgmode, and then send it as beautifull html.
 
 #+begin_src elisp
-  (use-package mu4e
-    :disabled
-    :elpaca nil)
+  (use-package org-msg
+      :ensure t
+      :config
+      (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
+            org-msg-startup "hidestars indent inlineimages"
+            org-msg-greeting-fmt "\nHi *%s*,\n\n"
+
+            org-msg-recipient-names '(("ohaukeboe@pm.me" . "Oskar"))
+            org-msg-greeting-name-limit 3
+            org-msg-default-alternatives '((new		. (text html))
+                                           (reply-to-html	. (text html))
+                                           (reply-to-text	. (text)))
+            org-msg-convert-citation t
+            org-msg-signature "
+
+  Regards,
+  ,#+begin_signature
+  Oskar
+  ,#+end_signature")
+      (org-msg-mode))
 #+end_src
 
 ** Vundo
