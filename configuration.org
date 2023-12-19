@@ -123,6 +123,7 @@ Yes, the package is called general. It's a keybinding framework.
     :init
     (general-create-definer oskah/leader-keys
       :states '(normal insert visual emacs)
+      :keymaps 'override
       :prefix "SPC"
       :global-prefix "C-SPC"))
 
@@ -155,8 +156,10 @@ Yes, the package is called general. It's a keybinding framework.
       "we" '(evil-window-map :wk "evil window map")
       "[" '(evil-prev-buffer :wk "previous buffer")
       "]" '(evil-next-buffer :wk "next buffer"))
+
     :init
     (evil-mode 1)
+
     :config
     (evil-global-set-key 'normal (kbd "C-g") 'evil-force-normal-state)
 
@@ -168,7 +171,9 @@ Yes, the package is called general. It's a keybinding framework.
                     git-rebase-mode
                     artist-mode
                     term-mode))
-            (add-to-list 'evil-emacs-state-modes mode)))
+            (add-to-list 'evil-emacs-state-modes mode))
+
+    (add-to-list 'evil-intercept-maps '(eww-mode-map)))
 #+end_src
 
 #+begin_src elisp
@@ -587,6 +592,7 @@ It is necessary to run ~M-x all-the-icons-install-fonts~ to set up icon fonts.
 
 #+begin_src elisp
   (use-package all-the-icons
+    :disabled
     :defer t
     :if (display-graphic-p))
 #+end_src
@@ -1433,6 +1439,14 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
     :custom
     (org-todo-keywords
      '((sequence "TODO(t)" "IN-PROGRESS(i)" "WAITING(w)" "|" "DONE(d)" "CANCELED(c)")))
+    (org-capture-templates
+      '(("t" "Todo" entry (file+headline org-default-notes-file "Tasks")
+           "* TODO %?\n  %i\n  %a")
+        ("n" "Note" entry (file+headline org-default-notes-file "Notes")
+         "* %? :NOTE:\n %U\n  %i\n  %a \n  %:url")))
+    (org-agenda-custom-commands
+     '(("N" "Notes" tags "NOTE")
+       ("A" "All todo" tags-todo nil)))
     (org-cycle-inline-images-display t)
     (org-pretty-entities t)
     (org-startup-indented t)
@@ -1460,7 +1474,10 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
                                      ; folded
     (shr-max-image-proportion 0.6)   ; Smaller max image size
     (org-export-with-smart-quotes t) ; Use smart quotes on export
-    (org-latex-pdf-process '("latexmk -f -pdf -%latex -interaction=nonstopmode -output-directory=%o %f"))
+    ;; (org-latex-pdf-process
+    ;;  '("latexmk -f -pdf -%latex -interaction=nonstopmode -output-directory=%o %f"
+    ;;    "latexmk -f -pdf -%latex -interaction=nonstopmode -output-directory=%o %f"))
+
     :general
     (oskah/leader-keys org-mode-map
       "ma" '(:ignore t :wk "attachments")
@@ -1477,20 +1494,20 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
 
     :config
     (message "Loading org-mode")
-
     (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.3))
     (add-to-list 'org-babel-load-languages '(latex . t))
     (add-to-list 'org-babel-load-languages '(shell . t))
     (add-to-list 'org-babel-load-languages '(ditaa . t))
     (add-to-list 'org-babel-load-languages '(dot . t))
-    ;; (add-to-list 'org-latex-packages-alist '("" "tikz"))
-    ;; (add-to-list 'org-latex-packages-alist '("" "minted"))
+     ;; (add-to-list 'org-latex-packages-alist '("" "tikz"))
+     ;; (add-to-list 'org-latex-packages-alist '("" "minted"))
     (add-to-list 'org-latex-packages-alist '("" "listings"))
     (with-eval-after-load 'ox-latex
       (setq org-latex-listings 'listings)
       (setq org-latex-listings-options
             '(("basicstyle" "\\ttfamily\\footnotesize")
               ("breaklines" "true")
+              ("showstringspaces" "false")
               ("postbreak" "\\mbox{$\\hookrightarrow$\\space}")
               ("tabsize" "2"))))
 
@@ -1502,11 +1519,10 @@ Minted needs to be installed on the system for pretty src-blocks in latex export
      org-babel-load-languages)
 
 
-    ;; Load extra export backends
+     ;; Load extra export backends
     (require 'ox-beamer)
     (require 'ox-man)
     (require 'ox-texinfo))
-
 #+end_src
 
 Unfold heading:
@@ -1983,13 +1999,13 @@ Fancy addons for Corfu for better completions
     (add-to-list 'completion-at-point-functions #'cape-elisp-block)
     (add-to-list 'completion-at-point-functions #'cape-dabbrev)
     (add-to-list 'completion-at-point-functions #'cape-file)
-    (add-to-list 'completion-at-point-functions #'cape-history)
+    (add-to-list 'completion-at-point-functions #'cape-history))
     ;;(add-to-list 'completion-at-point-functions #'cape-keyword)
     ;;(add-to-list 'completion-at-point-functions #'cape-tex)
     ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
     ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
     ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-    (add-to-list 'completion-at-point-functions #'cape-dict))
+    ;; (add-to-list 'completion-at-point-functions #'cape-dict))
     ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
     ;;(add-to-list 'completion-at-point-functions #'cape-line)
 #+end_src
@@ -2125,6 +2141,9 @@ And some icons for the minibuffer as well:
 
 #+begin_src elisp
   (use-package citar
+    :hook
+    (org-mode . citar-capf-setup)
+    (latex-mode . citar-capf-setup)
     :general
     (oskah/leader-keys '(org-mode-map latex-mode-map)
       "mr" '(:ignore t :which-key "references")
@@ -2136,19 +2155,64 @@ And some icons for the minibuffer as well:
       "nro" '(citar-open :wk "open resource"))
 
     :custom
+    (citar-citeproc-csl-styles-dir "~/Zotero/styles/")
+    (citar-citeproc-csl-style "apa.csl")
     (bibtex-dialect 'biblatex)
     (citar-bibliography oh/bib-files)
     (citar-notes-paths (list oh/roam-dir))          ; List of directories for reference nodes
     (citar-open-note-function 'orb-citar-edit-note) ; Open notes in `org-roam'
     (citar-at-point-function 'embark-act)           ; Use `embark'
+    (org-cite-insert-processor 'citar)
+    (org-cite-follow-processor 'citar)
+    (org-cite-activate-processor 'citar)
 
     :config
-    (message "citar loaded"))
+    (defvar citar-indicator-files-icons
+      (citar-indicator-create
+       :symbol (nerd-icons-faicon
+                "nf-fa-file_o"
+                :face 'nerd-icons-green
+                :v-adjust -0.1)
+       :function #'citar-has-files
+       :padding "  " ; need this because the default padding is too low for these icons
+       :tag "has:files"))
+    (defvar citar-indicator-links-icons
+      (citar-indicator-create
+       :symbol (nerd-icons-codicon
+                "nf-cod-link"
+                :face 'nerd-icons-orange
+                :v-adjust 0.01)
+       :function #'citar-has-links
+       :padding "  "
+       :tag "has:links"))
+    (defvar citar-indicator-notes-icons
+      (citar-indicator-create
+       :symbol (nerd-icons-codicon
+                "nf-cod-note"
+                :face 'nerd-icons-blue
+                :v-adjust -0.3)
+       :function #'citar-has-notes
+       :padding "    "
+       :tag "has:notes"))
+    (defvar citar-indicator-cited-icons
+      (citar-indicator-create
+       :symbol (nerd-icons-faicon
+                "nf-fa-circle_o"
+                :face 'nerd-icon-green)
+       :function #'citar-is-cited
+       :padding "  "
+       :tag "is:cited"))
+
+    (setq citar-indicators
+      (list citar-indicator-files-icons
+            citar-indicator-links-icons
+            citar-indicator-notes-icons
+            citar-indicator-cited-icons)))
 #+end_src
 
 #+begin_src elisp
   (use-package citar-embark
-    :after citar embark
+    :after citar
     :no-require
     :config (citar-embark-mode))
 #+end_src
@@ -2167,6 +2231,7 @@ And some icons for the minibuffer as well:
 
 #+begin_src elisp
   (use-package oc-csl-activate
+    :disabled
     :after org
     :hook
     (org-mode . (lambda () (cursor-sensor-mode 1)))
@@ -2184,12 +2249,14 @@ And some icons for the minibuffer as well:
     :custom
     (org-cite-csl-activate-use-citar-cache t)
     :config
-    (setq org-cite-activate-processor 'csl-activate))
+    ;; (setq org-cite-activate-processor 'csl-activate))
+    (add-to-list 'citar-org-activation-functions
+                 'org-cite-csl-activate))
 #+end_src
 
 ** Citar-org-roam
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package citar-org-roam
     :after (citar org-roam)
     :config (citar-org-roam-mode)
@@ -2275,6 +2342,7 @@ A filetree viewer
     :custom
     (dired-listing-switches "-agho --group-directories-first")
     (dired-kill-when-opening-new-dired-buffer t)
+    (dired-async-mode t)
 
     :general
     (oskah/leader-keys
@@ -2287,6 +2355,8 @@ A filetree viewer
 
     (oskah/leader-keys 'dired-mode-map
       "mo" '(oh/dired-xdg-open :which-key "open externally")))
+
+
 
 #+end_src
 
@@ -2367,6 +2437,34 @@ This is the configuration that should be put in ~~/.config/fish/config.fish~. Th
       printf "%b" (string join "\n" (vterm_old_fish_prompt))
       vterm_prompt_end
   end
+#+end_src
+
+** Eww
+
+The emacs web browser
+
+#+begin_src elisp
+  (use-package eww
+   :elpaca nil
+   :commands (oh/switch-to-eww-buffer)
+   ;; :custom
+   ;; (shr-use-fonts nil)
+   :general
+   (oskah/leader-keys
+     "ow" '(oh/switch-to-eww-buffer :wk "eww"))
+
+   :config
+   (defun oh/switch-to-eww-buffer ()
+     "Switches to an existing EWW buffer, if one exists."
+     (interactive)
+     (let ((eww-buf (catch 'found
+                      (dolist (buf (buffer-list))
+                        (when (with-current-buffer buf
+                                (eq major-mode 'eww-mode))
+                          (throw 'found buf))))))
+       (if eww-buf
+           (switch-to-buffer eww-buf)
+         (call-interactively 'eww)))))
 #+end_src
 
 ** ssh-deploy
@@ -2474,8 +2572,9 @@ and my =.msmtprc= file looks like:
       "om" '(mu4e :which-key "mu4e"))
 
     :custom
-    (mu4e-split-view 'vertical)
+    (mu4e-split-view nil)
     (mail-user-agent 'mu4e-user-agent)
+    (shr-use-colors nil)
 
     :config
     (setq sendmail-program (executable-find "msmtp")
@@ -2520,8 +2619,7 @@ and my =.msmtprc= file looks like:
                     (mu4e-drafts-folder . "/Drafts")
                     (mu4e-refile-folder . "/Archive")
                     (smtpmail-smtp-user . "ohaukeboe@pm.me")
-                    (mu4e-compose-signature . "Cheers,\nOskar"))))))
-
+                    (mu4e-compose-signature . nil))))))
 #+end_src
 
 Org-msg allows for composing the mail using orgmode, and then send it as beautifull html.
@@ -2532,7 +2630,7 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
       :config
       (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
             org-msg-startup "hidestars indent inlineimages"
-            org-msg-greeting-fmt "\nHi *%s*,\n\n"
+            org-msg-greeting-fmt "\nHi%s,\n\n"
 
             org-msg-recipient-names '(("ohaukeboe@pm.me" . "Oskar"))
             org-msg-greeting-name-limit 3
@@ -2542,11 +2640,17 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
             org-msg-convert-citation t
             org-msg-signature "
 
-  Regards,
+  Cheers,
   ,#+begin_signature
   Oskar
   ,#+end_signature")
       (org-msg-mode))
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package mu4e-marker-icons
+  :ensure t
+  :init (mu4e-marker-icons-mode 1))
 #+end_src
 
 ** Vundo
@@ -2615,6 +2719,31 @@ Grammarly:
     :custom
     (lsp-grammarly-suggestions-oxford-comma t)
     (lsp-grammarly-modes '(text-mode latex-mode org-mode))) ;; markdown-mode)))
+#+end_src
+
+Languagetool:
+
+#+begin_src elisp
+  (use-package languagetool
+    :commands (languagetool-check
+               languagetool-clear-suggestions
+               languagetool-correct-at-point
+               languagetool-correct-buffer
+               languagetool-set-language
+               languagetool-server-mode
+               languagetool-server-start
+               languagetool-server-stop)
+    :general
+    (oskah/leader-keys
+      "sl" '(languagetool-correct-at-point :wk "languagetool correct"))
+
+    :config
+    (setq languagetool-java-arguments '("-Dfile.encoding=UTF-8"
+                                        "-cp" "/usr/share/languagetool:/usr/share/java/languagetool/*")
+          languagetool-console-command "~/.nix-profile/share/languagetool-commandline.jar"
+          languagetool-server-command "~/.nix-profile/share/languagetool-server.jar")
+
+    (add-to-list 'languagetool-disabled-rules "misspelling"))
 #+end_src
 
 ** Ripgrep
@@ -2687,7 +2816,8 @@ I don't want copilot to start on emacs startup, but I also want it to be hooked 
       "ogg" '(chatgpt-shell :wk "gpt-shell")
       "ogd" '(oh/chatgpt-shell-generate-docstring :wk "generate docstring")
       "ogc" '(chatgpt-shell-prompt-compose :wk "prompt and compose")
-      "ogr" '(chatgpt-shell-refactor-code :wk "refactor code"))
+      "ogr" '(chatgpt-shell-refactor-code :wk "refactor code")
+      "ogp" '(chatgpt-shell-proofread-region :wk "proofread region"))
 
     (oskah/leader-keys chatgpt-shell-mode-map
       "ms" '(chatgpt-shell-save-session-transcript :wk "save session")
