@@ -356,12 +356,18 @@ Add visual hints to ceirtain evil opperations such as yank.
                  "." '(find-file :wk "Find file")
 
                  ;; Buffers
+                 "b" '(nil :wk "Buffer")
                  "br" '(revert-buffer :wk "Revert buffer")
                  "bk" '(kill-current-buffer :wk "Kill buffer")
 
                  "X" '(scratch-buffer :wk "Scratch buffer")
+               
+                 ;; Toggle
+                 "t" '(nil :wk "Toggle")
+                 "tv" '(visual-line-mode :wk "Visual line mode")
 
                  ;; help
+                 "h" '(nil :wk "Help")
                  "hv" '(describe-variable :wk "Describe variable")
                  "hf" '(describe-function :wk "Describe function")
                  "hk" '(describe-key :wk "Describe key")
@@ -584,6 +590,13 @@ Consult is a package that provides a set of commands for searching and navigatin
      "h" 'magit-patch))
 #+end_src
 
+#+begin_src elisp
+  (use-package seq
+    :init
+    (unload-feature 'seq 'force))
+#+end_src
+
+
 Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
@@ -613,6 +626,7 @@ Projectile is a project management package. It provides a set of commands for fi
 
 #+begin_src elisp
   (use-package projectile
+    :after seq
     :general
     (oh/leader-key
       "p" 'projectile-command-map
@@ -923,6 +937,19 @@ Export dispatcher using pandoc
     :after org)
 #+end_src
 
+** Markdown
+
+#+begin_src elisp
+  (use-package markdown-mode
+    :elpaca nil
+    :mode "\\.md\\'"
+    :hook (markdown-mode . olivetti-mode)
+    :custom
+    (markdown-hide-markup t))
+
+
+#+end_src
+
 ** Dired
 
 #+begin_src elisp
@@ -1051,7 +1078,7 @@ Use any LLM in Emacs.
 
 #+begin_src elisp
   (use-package gptel
-    :requires seq
+    ;;:requires seq
     :custom
     (gptel-api-key
      (lambda () (auth-source-pass-get 'secret "openai-key")))
@@ -1337,7 +1364,7 @@ Make text more readable by narrowing the text at the center of the screen. This 
     :custom (olivetti-body-width 90)
     :general
     (oh/leader-key
-      "to" '(olivetti-mode :which-key "olivetti")))
+      "to" '(olivetti-mode :wk "olivetti")))
 #+end_src
 
 ** Dashboard
