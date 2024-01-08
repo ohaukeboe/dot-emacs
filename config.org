@@ -739,6 +739,16 @@ For editing =.tsx= files, we'll use =jtsx=.
     :mode "\\.cs\\'")
 #+end_src
 
+** dotnet
+
+#+begin_src elisp
+  (use-package sharper
+    ;; :after '(csharp-mode csharp-ts-mode)
+    :general
+    (oh/leader-key csharp-ts-mode-map
+     "m d" 'sharper-main-transient))
+#+end_src
+
 ** Json
 
 #+begin_src elisp
@@ -1025,8 +1035,13 @@ The emacs web browser
 Integrate [[https://direnv.net/][direnv]] in emacs.
 
 #+begin_src elisp
+  ;; (use-package direnv
+  ;;  :init
+  ;;  (direnv-mode))
   (use-package direnv
-   :init
+   :after (prog-mode)
+   :demand t
+   :config
    (direnv-mode))
 #+end_src
 
@@ -1060,26 +1075,18 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
       :init
       (global-wakatime-mode))
 #+end_src
-
 ** Copilot
 
 #+begin_src elisp
+  ;; accept completion from copilot and fallback to company
   (use-package copilot
-    :defer 1
-    :elpaca (:host github :repo "zerolfx/copilot.el" :files ("dist" "*.el"))
-
-    :general
-    (oh/leader-key "ta" '(copilot-mode :wk "copilot"))
-
+    :hook (prog-mode . copilot-mode)
+    :elpaca (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
     :bind (:map copilot-completion-map
                 ("<tab>" . 'copilot-accept-completion)
                 ("TAB" . 'copilot-accept-completion)
                 ("C-TAB" . 'copilot-accept-completion-by-word)
-                ("C-<tab>" . 'copilot-accept-completion-by-word))
-    :config
-    ;; Copilot is a bit too noisy for my liking
-    (add-to-list 'warning-suppress-types '(copilot))
-    (add-hook 'prog-mode-hook #'copilot-mode))
+                ("C-<tab>" . 'copilot-accept-completion-by-word)))
 #+end_src
 
 ** gptel
