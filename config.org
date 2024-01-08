@@ -135,7 +135,7 @@ This is a handy package which helps showing what packages are slowing down the E
     (window-divider-mode t)                     ; Add spacing between windows
     (global-display-line-numbers-mode t)        ; Show line numbers
     (global-auto-revert-mode t)                 ; Auto refresh buffers
-    (electric-pair-mode t)                      ; Auto close brackets
+    ;; (electric-pair-mode t)                      ; Auto close brackets
     (set-fringe-mode 0)                         ; Disable fringe
 
     (dolist (mode '(org-mode-hook
@@ -772,9 +772,10 @@ For editing =.tsx= files, we'll use =jtsx=.
 #+begin_src elisp
   (use-package parinfer-rust-mode
     :hook
-    (emacs-lisp-mode . (lambda ()
-                        (electric-pair-local-mode -1)
-                        (parinfer-rust-mode)))
+    (emacs-lisp-mode . parinfer-rust-mode)
+    ;; (emacs-lisp-mode . (lambda ()
+    ;;                     (electric-pair-local-mode -1)
+    ;;                     (parinfer-rust-mode)))
 
     :general
     (:keymaps 'emacs-lisp-mode-map
@@ -1079,6 +1080,8 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 
 #+begin_src elisp
   ;; accept completion from copilot and fallback to company
+  (use-package jsonrpc)
+
   (use-package copilot
     :hook (prog-mode . copilot-mode)
     :elpaca (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
