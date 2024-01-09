@@ -574,7 +574,54 @@ Consult is a package that provides a set of commands for searching and navigatin
       "mh" '(consult-org-heading :wk "consult org heading"))
 
     :config
-    (recentf-mode 1))
+    (recentf-mode 1)
+
+
+    (defvar +consult-special-filter "\\`\\*dashboard\\*\\'")
+    (add-to-list 'consult-buffer-filter +consult-special-filter)
+
+    (defvar +consult-source-special
+      `(:name      "Special"
+        :narrow    ?x
+        ;; :hidden t
+        :category  buffer
+        :face      consult-buffer
+        :history   buffer-name-history
+        ;; Specify either :action or :state
+        ;; :action    ,#'consult--buffer-action ;; No preview
+        :state  ,#'consult--buffer-state  ;; Preview
+        :items
+        ,(lambda () (consult--buffer-query
+                     :sort 'visibility
+                     :as #'buffer-name
+                     :exclude (remq +consult-special-filter consult-buffer-filter)
+                     :mode 'special-mode)))
+      "special buffer source.")
+
+    (defun oh/insert-into-list (list el n)
+      "Insert into list LIST an element EL at index N.
+
+      If N is 0, EL is inserted before the first element.
+
+      The resulting list is returned.  As the list contents is
+  mutated in-place, the old list reference does not remain valid."
+      (let* ((padded-list (cons nil list))
+             (c (nthcdr n padded-list)))
+        (setcdr c (cons el (cdr c)))
+        (cdr padded-list)))
+
+    (oh/insert-into-list 'consult-buffer-sources 4 '+consult-source-special))
+    ;; (defun oh/add-element-after (list element new-element)
+    ;;  "Add NEW-ELEMENT after ELEMENT in the LIST."
+    ;;  (when-let ((pos (seq-position list element)))
+    ;;    (setcdr (nthcdr pos list) (cons new-element (nthcdr (1+ pos) list)))))
+
+    ;; (oh/add-element-after 'consult-buffer-sources 'consult--source-buffer '+consult-source-special))
+
+
+
+
+    ;; (add-to-list 'consult-buffer-sources '+consult-source-special))
 #+end_src
 
 * Project management
@@ -662,7 +709,7 @@ Eglot is a client for Language Server Protocol (LSP). It is a protocol that allo
 
 #+end_src
 ** LSP-mode
-LSP-mode is another lsp implementation for emacs
+LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/lsp-mode/page/languages/][Here]] is some instructions for each language. There is also some information about different language-server [[https://langserver.org/][here]].
 
 #+begin_src elisp
   (use-package lsp-mode
@@ -735,6 +782,15 @@ LSP-mode is another lsp implementation for emacs
 
   (use-package consult-lsp
     :after lsp-mode)
+#+end_src
+*** DAP-mode
+The debug component for LSP
+
+#+begin_src elisp
+  (use-package dap-mode
+    :after lsp-mode
+    :config
+    (dap-auto-configure-mode))
 #+end_src
 
 ** Eldoc
@@ -1106,6 +1162,7 @@ The emacs web browser
   (use-package vterm
     :hook
     (vterm-mode . oh/vterm-start-tmux)
+
     :general
     (oh/leader-key
       "pv" '(projectile-run-vterm :wk "projectile vterm")
@@ -1116,8 +1173,10 @@ The emacs web browser
     :config
     (defun oh/vterm-start-tmux ()
       (interactive)
-      (vterm-send-string "tmux new")
-      (vterm-send-return)))
+      (run-at-time "0.2" nil
+                   (lambda ()
+                     (vterm-send-string "tmux new")
+                     (vterm-send-return)))))
 #+end_src
 
 ** Direnv
@@ -1198,6 +1257,31 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
                    (electric-pair-mode 1)))
        (progn (copilot-mode 1)
                (electric-pair-mode -1))))
+#+end_src
+** Eww
+
+#+begin_src elisp
+  (use-package eww
+   :elpaca nil
+   :commands (oh/switch-to-eww-buffer)
+   ;; :custom
+   ;; (shr-use-fonts nil)
+   :general
+   (oh/leader-key
+     "ow" '(oh/switch-to-eww-buffer :wk "eww"))
+
+   :config
+   (defun oh/switch-to-eww-buffer ()
+     "Switches to an existing EWW buffer, if one exists."
+     (interactive)
+     (let ((eww-buf (catch 'found
+                      (dolist (buf (buffer-list))
+                        (when (with-current-buffer buf
+                                (eq major-mode 'eww-mode))
+                          (throw 'found buf))))))
+       (if eww-buf
+           (switch-to-buffer eww-buf)
+         (call-interactively 'eww)))))
 #+end_src
 
 ** gptel
