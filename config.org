@@ -122,6 +122,9 @@ This is a handy package which helps showing what packages are slowing down the E
 #+begin_src elisp
   (use-package emacs
     :elpaca nil
+    :hook
+    (before-save . delete-trailing-whitespace)
+
     :init
     (load-theme 'wombat)
 
@@ -157,13 +160,13 @@ This is a handy package which helps showing what packages are slowing down the E
     (initial-scratch-message nil)               ; Clean scratch buffer
 
     (auto-revert-interval 1)                    ; Refresh buffers every second
-    (display-line-numbers-type 'relative)       ; Show relative line numbers
+    ;; (display-line-numbers-type 'relative)       ; Show relative line numbers
     (use-dialog-box nil)                        ; Disable dialog boxes
     (inhibit-startup-screen t)                  ; Disable startup screen
     (recentf-max-saved-items 100)               ; Show more recent files
     (scroll-margin 1)                           ; Add margin when scrolling
     (backup-directory-alist                     ; Put backups in var/backups
-     `(("." . ,(concat user-emacs-directory "var/backups")))) 
+     `(("." . ,(concat user-emacs-directory "var/backups"))))
     (indent-tabs-mode nil)                      ; Use spaces instead of tabs
     (tab-width 2)                               ; Set tab width to 2 spaces
 
@@ -192,28 +195,28 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 #+begin_src elisp
   (use-package nano-theme
     :disabled
-    :custom
-    (nano-dark-foreground "#e8d6c6")
-    (nano-dark-background "#171717")
-    (nano-dark-highlight  "#2b2b2b")
-    (nano-dark-critical   "#EBCB8B")
-    (nano-dark-salient    "#aac5dd")
-    (nano-dark-strong     "#e8dfc6")
-    (nano-dark-popout     "#d79ca3")
-    (nano-dark-subtle     "#212121")
-    (nano-dark-faded      "#c69a72")
+    ;; :custom
+    ;; (nano-dark-foreground "#e8d6c6")
+    ;; (nano-dark-background "#171717")
+    ;; (nano-dark-highlight  "#2b2b2b")
+    ;; (nano-dark-critical   "#EBCB8B")
+    ;; (nano-dark-salient    "#aac5dd")
+    ;; (nano-dark-strong     "#e8dfc6")
+    ;; (nano-dark-popout     "#d79ca3")
+    ;; (nano-dark-subtle     "#212121")
+    ;; (nano-dark-faded      "#c69a72")
 
     ;; (nano-light-background "#fafafa")
     :init
-    (load-theme 'nano-dark t)
-    :config
+    (load-theme 'nano-dark t))
+    ;; :config)
 
-    (defun oh/set-org-faces ()
-      "Make org source blocks have the same background as the default face."
-      (with-eval-after-load 'org-faces
-       (set-face-attribute 'org-block nil :background (face-background 'default))))
+    ;; (defun oh/set-org-faces ()
+    ;;   "Make org source blocks have the same background as the default face."
+    ;;   (with-eval-after-load 'org-faces
+    ;;    (set-face-attribute 'org-block nil :background (face-background 'default))))
 
-    (oh/set-org-faces))
+    ;; (oh/set-org-faces))
 
 
 
@@ -361,7 +364,7 @@ Add visual hints to ceirtain evil opperations such as yank.
                  "bk" '(kill-current-buffer :wk "Kill buffer")
 
                  "X" '(scratch-buffer :wk "Scratch buffer")
-               
+
                  ;; Toggle
                  "t" '(nil :wk "Toggle")
                  "tv" '(visual-line-mode :wk "Visual line mode")
@@ -658,6 +661,81 @@ Eglot is a client for Language Server Protocol (LSP). It is a protocol that allo
      "cf" '(eglot-format :wk "format")))
 
 #+end_src
+** LSP-mode
+LSP-mode is another lsp implementation for emacs
+
+#+begin_src elisp
+  (use-package lsp-mode
+    :commands
+    (lsp-deferred lsp)
+
+    :general
+    (oh/leader-key
+      "cr" '(lsp-rename :wk "rename")
+      "cn" '(consult-imenu :wk "navigate symbols")
+      "cm" '(consult-imenu-multi :wk "navigate symbols (multi)")
+      "cd" '(consult-lsp-diagnostics :wk "diagnostics")
+      "ca" '(lsp-execute-code-action :wk "code action")
+      "cf" '(lsp-format-buffer :wk "format buffer")
+      "ch" '(lsp-describe-thing-at-point :wk "describe thing"))
+    ('normal
+      "gr" '(lsp-find-references :wk "find references"))
+
+    :custom
+    (lsp-warn-no-matched-clients nil)
+    (lsp-completion-provider :none) ;; I use Corfu instead!
+    (lsp-keymap-prefix nil)
+    (lsp-headerline-breadcrumb-enable nil)
+    (eldoc-display-functions '(eldoc-display-in-buffer))
+    (lsp-idle-delay 0)
+
+    (lsp-inlay-hint-enable t)
+    :init
+    ;; Performance
+    (setq read-process-output-max (* 1024 1024)) ;; 1mb
+
+    ;; Completion
+    (defun my/lsp-mode-setup-completion ()
+      (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+            '(orderless)))) ;; Configure orderless
+
+    ;; :config
+    ;; (progn
+    ;;   (lsp-register-client
+    ;;     (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
+    ;;                      :major-modes '(c-mode c++-mode c-ts-mode c++-ts-mode)
+    ;;                      :remote? t
+    ;;                      :server-id 'clangd-remote))
+    ;;   (lsp-register-client
+    ;;     (make-lsp-client :new-connection (lsp-tramp-connection "pylsp")
+    ;;                      :major-modes '(python-mode python-ts-mode)
+    ;;                      :remote? t
+    ;;                      :server-id 'pylsp-remote))))
+
+  (use-package lsp-ui
+    :after lsp-mode
+
+    :custom
+    (lsp-ui-doc-enable nil)
+    (lsp-ui-doc-show-with-cursor nil)
+    (lsp-ui-doc-show-with-mouse nil)
+
+    :hook
+    (lsp-mode . lsp-ui-mode))
+
+    ;; :general)
+    ;; (oskah/leader-keys
+    ;;   "cdf" '(lsp-ui-doc-focus-frame :wk "focus frame")
+    ;;   "cdd" '(lsp-ui-doc-show :wk "show documentation")
+    ;;   "cdc" '(lsp-ui-doc-hide :wk "hide documentation")))
+
+    ;; ('normal 'lsp-ui-mode-map
+    ;;   "K" 'lsp-ui-doc-show :wk "show documentation"))
+
+
+  (use-package consult-lsp
+    :after lsp-mode)
+#+end_src
 
 ** Eldoc
 Eldoc is a minor mode that shows documentation in the echo area. It is enabled by default in =prog-mode=.
@@ -733,9 +811,9 @@ For editing =.tsx= files, we'll use =jtsx=.
 ** C#
 
 #+begin_src elisp
-  (use-package csharp-ts-mode
+  (use-package csharp-mode
     :elpaca nil
-    :hook (charpts-mode . eglot-ensure)
+    :hook (csharp-ts-mode . lsp)
     :mode "\\.cs\\'")
 #+end_src
 
@@ -783,12 +861,14 @@ For editing =.tsx= files, we'll use =jtsx=.
        "K" #'helpful-at-point)
 
     :init
-    (setq parinfer-rust-auto-download t))
+    (setq parinfer-rust-auto-download t)
+    :config
+    (add-to-list 'oh/electric-pair-mode-blacklist-modes 'parinfer-rust-mode))
 
 #+end_src
 
 ** Nix
-  
+
 #+begin_src elisp
   (use-package nix-mode
     :hook (nix-mode . eglot-ensure)
@@ -1024,12 +1104,20 @@ The emacs web browser
 
 #+begin_src elisp
   (use-package vterm
+    :hook
+    (vterm-mode . oh/vterm-start-tmux)
     :general
     (oh/leader-key
       "pv" '(projectile-run-vterm :wk "projectile vterm")
       "pV" '(projectile-run-vterm-other-window :wk "projectile vterm other window")
       "ov" '(vterm :wk "vterm")
-      "oV" '(vterm-other-window :wk "vterm other window")))
+      "oV" '(vterm-other-window :wk "vterm other window"))
+
+    :config
+    (defun oh/vterm-start-tmux ()
+      (interactive)
+      (vterm-send-string "tmux new")
+      (vterm-send-return)))
 #+end_src
 
 ** Direnv
@@ -1085,11 +1173,31 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
   (use-package copilot
     :hook (prog-mode . copilot-mode)
     :elpaca (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
+    :general
+    (oh/leader-key
+      "ta" '(oh/toggle-copilot-mode :wk "copilot"))
     :bind (:map copilot-completion-map
                 ("<tab>" . 'copilot-accept-completion)
                 ("TAB" . 'copilot-accept-completion)
                 ("C-TAB" . 'copilot-accept-completion-by-word)
                 ("C-<tab>" . 'copilot-accept-completion-by-word)))
+
+
+  (defvar oh/electric-pair-mode-blacklist-modes '()
+    "Modes where electric-pair-mode should not be enabled")
+
+
+  (defun oh/toggle-copilot-mode ()
+    "Toggle copilot mode."
+    (interactive)
+    (if (bound-and-true-p copilot-mode)
+        (progn (copilot-mode -1)
+               (if (not (cl-some (lambda (mode)
+                                   (derived-mode-p mode))
+                                 oh/electric-pair-mode-blacklist-modes))
+                   (electric-pair-mode 1)))
+       (progn (copilot-mode 1)
+               (electric-pair-mode -1))))
 #+end_src
 
 ** gptel
