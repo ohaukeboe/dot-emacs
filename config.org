@@ -565,6 +565,18 @@ Consult is a package that provides a set of commands for searching and navigatin
 #+begin_src elisp
   (use-package consult
     :requires recentf
+    :custom
+    (consult-buffer-sources
+     '(consult--source-hidden-buffer
+       consult--source-modified-buffer
+       consult--source-buffer
+       +consult-source-special
+       consult--source-recent-file
+       consult--source-file-register
+       consult--source-bookmark
+       consult--source-project-buffer-hidden
+       consult--source-project-recent-file-hidden))
+
     :general
     (oh/leader-key
       "SPC" '(consult-buffer :wk "buffer")
@@ -583,8 +595,7 @@ Consult is a package that provides a set of commands for searching and navigatin
     (recentf-mode 1)
 
 
-    (defvar +consult-special-filter "\\`\\*dashboard\\*\\'")
-    (add-to-list 'consult-buffer-filter +consult-special-filter)
+    (defvar +consult-special-filter "\\`\\*.*\\*\\'")
 
     (defvar +consult-source-special
       `(:name      "Special"
@@ -601,33 +612,12 @@ Consult is a package that provides a set of commands for searching and navigatin
                      :sort 'visibility
                      :as #'buffer-name
                      :exclude (remq +consult-special-filter consult-buffer-filter)
+                     ;; :include '(+consult-special-filter)
                      :mode 'special-mode)))
       "special buffer source.")
 
-    (defun oh/insert-into-list (list el n)
-      "Insert into list LIST an element EL at index N.
+    (add-to-list 'consult-buffer-filter +consult-special-filter))
 
-      If N is 0, EL is inserted before the first element.
-
-      The resulting list is returned.  As the list contents is
-  mutated in-place, the old list reference does not remain valid."
-      (let* ((padded-list (cons nil list))
-             (c (nthcdr n padded-list)))
-        (setcdr c (cons el (cdr c)))
-        (cdr padded-list)))
-
-    (oh/insert-into-list 'consult-buffer-sources 4 '+consult-source-special))
-    ;; (defun oh/add-element-after (list element new-element)
-    ;;  "Add NEW-ELEMENT after ELEMENT in the LIST."
-    ;;  (when-let ((pos (seq-position list element)))
-    ;;    (setcdr (nthcdr pos list) (cons new-element (nthcdr (1+ pos) list)))))
-
-    ;; (oh/add-element-after 'consult-buffer-sources 'consult--source-buffer '+consult-source-special))
-
-
-
-
-    ;; (add-to-list 'consult-buffer-sources '+consult-source-special))
 #+end_src
 
 * Project management
