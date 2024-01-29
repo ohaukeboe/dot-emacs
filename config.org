@@ -390,6 +390,11 @@ Add visual hints to ceirtain evil opperations such as yank.
                                       "config.org")))
                         :wk "Open config"))
 
+
+  (general-define-key
+   "C-=" '(text-scale-increase :wk "Increase text size")
+   "C--" '(text-scale-decrease :wk "Decrease text size"))
+
 #+end_src
 
 ** Which-key
