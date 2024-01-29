@@ -1287,13 +1287,16 @@ Use any LLM in Emacs.
   (use-package gptel
     ;;:requires seq
     :custom
+    ;; (gptel-api-key
+    ;;  (lambda () (auth-source-pass-get 'secret "openai-key")))
     (gptel-api-key
-     (lambda () (auth-source-pass-get 'secret "openai-key")))
-    (gptel-model "gpt-4-1106-preview")
-    :general
-    (oh/leader-key
-      "ogg" '(gptel :wk "gptel")
-      "ogm" '(gptel-menu :wk "gptel menu")))
+          (auth-source-pick-first-password :host "api.openai.com"))
+
+    (gptel-model "gpt-4-1106-preview"
+     :general
+     (oh/leader-key
+       "ogg" '(gptel :wk "gptel")
+       "ogm" '(gptel-menu :wk "gptel menu"))))
 #+end_src
 
 ** SICP
