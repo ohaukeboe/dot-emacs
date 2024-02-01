@@ -165,7 +165,8 @@ This is a handy package which helps showing what packages are slowing down the E
     (use-short-answers t)                       ; y/n instead of yes/no
     (initial-scratch-message nil)               ; Clean scratch buffer
     (auto-revert-interval 1)                    ; Refresh buffers every second
-    (split-width-threshold 1)                   ; Split vertically by default
+    (split-width-threshold 80)                  ; Split vertically by default
+    (split-height-threshold nil)                ; Split vertically by default
     ;; (display-line-numbers-type 'relative)       ; Show relative line numbers
     (use-dialog-box nil)                        ; Disable dialog boxes
     (inhibit-startup-screen t)                  ; Disable startup screen
@@ -180,7 +181,11 @@ This is a handy package which helps showing what packages are slowing down the E
 
     ;; Add spacing between windows
     (window-divider-default-right-width 10)
-    (window-divider-default-places 'right-only))
+    (window-divider-default-places 'right-only)
+
+
+    ;; Allow undo/redo window configuration with C-c <left>/<right>
+    (winner-mode 1))
 #+end_src
 
 ** Nerd icons
@@ -394,7 +399,6 @@ Add visual hints to ceirtain evil opperations such as yank.
   (general-define-key
    "C-=" '(text-scale-increase :wk "Increase text size")
    "C--" '(text-scale-decrease :wk "Decrease text size"))
-
 #+end_src
 
 ** Which-key
@@ -584,14 +588,14 @@ Consult is a package that provides a set of commands for searching and navigatin
 
     :general
     (oh/leader-key
-      "SPC" '(consult-buffer :wk "buffer")
       "bb" '(consult-buffer :wk "buffer")
       "bB" '(consult-buffer-other :wk "buffer")
       "sg" '(consult-ripgrep :wk "ripgrep")
       "ss" '(consult-line :wk "consult-line")
       "fr" '(consult-recent-file :wk "consult-recent-file")
       "yy" '(consult-yank-pop :wk "consult-yank-pop")
-      "ce" '(consult-flymake :wk "consult-flymake"))
+      "ce" '(consult-flymake :wk "consult-flymake")
+      "hi" '(consult-info :wk "info"))
 
     (oh/leader-key org-mode-map
       "mh" '(consult-org-heading :wk "consult org heading"))
@@ -843,6 +847,24 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     :mode "\\.rs\\'")
 #+end_src
 
+** C
+
+#+begin_src elisp
+  (use-package c-ts-mode
+    :hook (c-ts-mode . eglot-ensure)
+    :elpaca nil
+    :mode "\\.c\\'")
+#+end_src
+
+** Assembly
+
+#+begin_src elisp
+  (use-package asm-mode
+    :hook (asm-mode . lsp-deferred)
+    :elpaca nil
+    :mode "\\.s\\'")
+#+end_src
+
 ** Typescript
 
 #+begin_src elisp
@@ -939,8 +961,17 @@ For editing =.tsx= files, we'll use =jtsx=.
     :elpaca nil
     :mode ("\\.tex\\'" . TeX-latex-mode)
     :hook (TeX-mode . eglot-ensure)
+    :custom
+    (LaTeX-electric-left-right-brace t)
     :init
-    (load "auctex.el" nil t t))
+    (load "auctex.el" nil t t)
+    ;; Use pdf-tools to open PDF files
+    (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
+          TeX-source-correlate-start-server t)
+
+    ;; Update PDF buffers after successful LaTeX runs
+    (add-hook 'TeX-after-compilation-finished-functions
+               #'TeX-revert-document-buffer))
 #+end_src
 
 #+begin_src elisp
@@ -1465,6 +1496,17 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
       :init
       (global-wakatime-mode))
 #+end_src
+** Make
+
+#+begin_src elisp
+  (use-package makefile-executor
+    :hook
+    ('makefile-mode-hook 'makefile-executor-mode)
+    :general
+    (oh/leader-key
+      "cb" '(makefile-executor-execute-project-target :wk "Run make command")))
+#+end_src
+
 ** Copilot
 
 #+begin_src elisp
