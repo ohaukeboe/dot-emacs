@@ -163,9 +163,11 @@ This is a handy package which helps showing what packages are slowing down the E
     :custom
     ;; Sane defaults
     (use-short-answers t)                       ; y/n instead of yes/no
+    (word-wrap t)                               ; Wrap lines at space between words
+    (truncate-lines t)                          ; Truncate lines instead of wrapping
     (initial-scratch-message nil)               ; Clean scratch buffer
     (auto-revert-interval 1)                    ; Refresh buffers every second
-    (split-width-threshold 80)                  ; Split vertically by default
+    (split-width-threshold 120)                  ; Split vertically by default
     (split-height-threshold nil)                ; Split vertically by default
     ;; (display-line-numbers-type 'relative)       ; Show relative line numbers
     (use-dialog-box nil)                        ; Disable dialog boxes
@@ -185,7 +187,9 @@ This is a handy package which helps showing what packages are slowing down the E
 
 
     ;; Allow undo/redo window configuration with C-c <left>/<right>
-    (winner-mode 1))
+    (winner-mode 1)
+
+    (editorconfig-mode 1))
 #+end_src
 
 ** Nerd icons
@@ -301,7 +305,11 @@ Evil is an extensible vi layer for Emacs. It is a very powerful package that all
     (evil-undo-system 'undo-fu)
 
     :init
-    (evil-mode 1))
+    (evil-mode 1)
+
+    :config
+    (evil-global-set-key 'normal (kbd "j") 'evil-next-visual-line)
+    (evil-global-set-key 'normal (kbd "k") 'evil-previous-visual-line))
 #+end_src
 
 =evil-collection= is a collection of Evil keybindings for many Emacs packages.
@@ -960,32 +968,57 @@ For editing =.tsx= files, we'll use =jtsx=.
   (use-package TeX-latex-mode
     :elpaca nil
     :mode ("\\.tex\\'" . TeX-latex-mode)
-    :hook (TeX-mode . eglot-ensure)
+    :hook
+    (TeX-mode . eglot-ensure)
+    (TeX-mode . (lambda () (auto-fill-mode)))
+    (TeX-mode . (lambda () (truncate-lines nil)))
+    (TeX-mode . (lambda () (reftex-mode 1)))
     :custom
     (LaTeX-electric-left-right-brace t)
+    (TeX-view-program-selection '((output-pdf "PDF Tools")))
+    (TeX-source-correlate-start-server t)
+    (TeX-auto-save t)
+    (TeX-parse-self t)
+    (TeX-master nil)
     :init
     (load "auctex.el" nil t t)
     ;; Use pdf-tools to open PDF files
-    (setq TeX-view-program-selection '((output-pdf "PDF Tools"))
-          TeX-source-correlate-start-server t)
 
     ;; Update PDF buffers after successful LaTeX runs
     (add-hook 'TeX-after-compilation-finished-functions
                #'TeX-revert-document-buffer))
 #+end_src
 
+CDLatex makes writing math a pleasure.
+
 #+begin_src elisp
   (use-package cdlatex
     :hook (LaTeX-mode . cdlatex-mode))
+#+end_src
 
+** biblatex
+
+#+begin_src elisp
+  (use-package bibtex
+    :elpaca nil
+    :hook (bibtex-mode . eglot-ensure)
+    :general
+    (oh/leader-key bibtex-mode-map
+      "mri" '(citar-insert-bibtex :wk "Insert bibtex")))
 #+end_src
 
 * Biblio
+To manage my bibliography entries, I use [[https:zotero.org/][zotero]] which allows me to easily use their browser extension to add the bibliography entries to the database. It also automatically downloads the PDF, belonging to the entry. I also use [[https://github.com/jlegewie/zotfile][zotfile]] to automatically rename the downloaded PDFs, and to place them in the ~library-path~ which is in a cloud folder and which =citar= can look through to find the files belonging to the bibliography entries. I also use [[https://github.com/retorquere/zotero-better-bibtex][better-bibtex]] which automatically exports my bibliography to a BibLatex file every time the bibliography is updated, which =citar= then looks through. =better-bibtex= also takes care of the cite-keys, which allows me to set the naming scheme in =zotfile= to ~{%b}~ which makes it use the cite-key as filename. This step is crucial, as =citar= finds the matching file for an entry, by matching the filename with the cite-key.
+
+Some other zotero plugins I use are:
+- [[https://github.com/scitedotai/scite-zotero-plugin/][scite]] is also a very nice site, for finding relevant papers as well as to check how trustworthy an article is. Its =zotero= plugin makes it easy to get this information for your entire bibliography database.
+- [[https://github.com/PubPeerFoundation/pubpeer_zotero_plugin][PubPeer]] which is a cite for sharing comments about publications.
 
 #+begin_src elisp
   (defvar oh/bib-files
      '("~/Nextcloud/.org/references.bib"
        "~/Nextcloud/.org/bibliography/zotero.bib"
+       "~/Nextcloud/.org/bibliography/uni/IN3000.bib"
        "~/Nextcloud/.org/bibliography/uni/IN2000 gang.bib"
        "~/Nextcloud/.org/bibliography/uni/IN2120_gang-midterm.bib"))
 
@@ -1018,7 +1051,7 @@ For editing =.tsx= files, we'll use =jtsx=.
     (org-mode . citar-capf-setup)
     (latex-mode . citar-capf-setup)
     :general
-    (oh/leader-key '(org-mode-map latex-mode-map)
+    (oh/leader-key '(org-mode-map LaTeX-mode-map)
       "mr" '(:ignore t :which-key "references")
       "mrc" '(citar-insert-citation :which-key "insert citation")
       "mre" '(citar-export-local-bib-file :which-key "export local bib file"))
