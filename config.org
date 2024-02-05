@@ -647,7 +647,9 @@ Consult is a package that provides a set of commands for searching and navigatin
      #'magit-display-buffer-same-window-except-diff-v1)
 
     :general
-    (oh/leader-key "gg" 'magit-status)
+    (oh/leader-key
+      "gg" '(magit-status :wk "magit")
+      "gb" '(magit-blame-addition :wk "blame"))
     ('magit-mode-map
      "w" 'magit-worktree
      "h" 'magit-patch))
@@ -862,15 +864,6 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     :hook (c-ts-mode . eglot-ensure)
     :elpaca nil
     :mode "\\.c\\'")
-#+end_src
-
-** Assembly
-
-#+begin_src elisp
-  (use-package asm-mode
-    :hook (asm-mode . lsp-deferred)
-    :elpaca nil
-    :mode "\\.s\\'")
 #+end_src
 
 ** Typescript
@@ -1504,15 +1497,14 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
 #+begin_src elisp
   (use-package pdf-tools
     :elpaca nil
+    :mode ("\\.pdf\\'" . pdf-view-mode)
+    ;; :requires pdf-outline
+    :commands (pdf-view-mode)
     :hook
     (pdf-view-mode-hook . evil-normal-state)
-    ;; :elpaca nil
-    :mode ("\\.pdf\\'" . pdf-view-mode)
-    ;; :custom
-    ;; (pdf-view-midnight-colors (cons (face-foreground 'default)
-    ;;                                 (face-background 'default)))
     :config
-    (pdf-tools-install))
+    (require 'pdf-outline))
+    ;; (pdf-tools-install))
 #+end_src
 
 * Misc
