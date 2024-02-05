@@ -897,11 +897,17 @@ For editing =.tsx= files, we'll use =jtsx=.
 
 ** C#
 
+When in a C# project, it is important to set the variable =lsp-csharp-solution-file= to point to the project solution file (.sln). It is recommended to set this in a =.dir-locals.el= file for the project.
+
 #+begin_src elisp
   (use-package csharp-mode
     :elpaca nil
     :hook (csharp-ts-mode . lsp)
-    :mode "\\.cs\\'")
+    :mode "\\.cs\\'"
+    :general
+    (:keymaps 'csharp-ts-mode-map
+              :states 'normal
+              "K" 'lsp-describe-thing-at-point))
 #+end_src
 
 ** dotnet
