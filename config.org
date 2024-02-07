@@ -926,9 +926,23 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package python-ts-mode
-    :hook (python-ts-mode . eglot-ensure)
+    ;; :hook (python-ts-mode . eglot-ensure)
+    :hook (python-ts-mode . lsp)
     :elpaca nil
-    :mode "\\.py\\'")
+    :mode "\\.py\\'"
+
+    :config
+    (lsp-register-custom-settings
+     '(("pyls.plugins.pyls_mypy.enabled" t t)
+       ("pyls.plugins.pyls_mypy.live_mode" nil t)))
+       ;; ("pyls.plugins.pyls_black.enabled" t t)
+       ;; ("pyls.plugins.pyls_isort.enabled" t t)))
+
+    :custom
+    (lsp-pylsp-plugins-yapf-enabled t)
+    (lsp-pylsp-plugins-flake8-enabled nil))
+    ;; (lsp-pylsp-plugins-flake8-max-line-length 80)
+    ;; (lsp-pylsp-plugins-pycodestyle-max-line-length 80))
 #+end_src
 
 ** Elisp
@@ -1190,6 +1204,18 @@ rather than files.  These modes usually use read-only buffers.
     (font-lock-add-keywords 'org-mode
                             '(("^ *\\([-]\\) "
                                (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+    (add-to-list 'org-latex-packages-alist '("" "listings"))
+    (with-eval-after-load 'ox-latex
+      (setq org-latex-listings 'listings)
+      (setq org-latex-listings-options
+            '(("basicstyle" "\\ttfamily\\footnotesize")
+              ("breaklines" "true")
+              ("showstringspaces" "false")
+              ("postbreak" "\\mbox{$\\hookrightarrow$\\space}")
+              ("xleftmargin" "2.8em")
+              ("framexleftmargin" "2.8em")
+              ("numbers" "left")
+              ("tabsize" "2"))))
 
     :custom-face
     (org-level-1 ((t (:inherit outline-1 :height 1.5))))
@@ -1204,8 +1230,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-block ((t (:inherit fixed-pitch))))
     (org-code ((t (:inherit (shadow fixed-pitch)))))
 
-    (org-table ((t (:inherit fixed-pitch))))
-    )
+    (org-table ((t (:inherit fixed-pitch)))))
 #+end_src
 
 *** Org-appear
