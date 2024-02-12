@@ -1338,7 +1338,8 @@ Export dispatcher using pandoc
   (use-package org-roam
     :custom
     (org-roam-completion-everywhere t)
-    (org-roam-node-display-template "${title:*} ${tags:10}")
+    ;; (org-roam-node-display-template "${title:*} ${tags:10}")
+    (org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
     (org-roam-directory (file-truename "~/Nextcloud/org_notes/roam"))
     (org-roam-dailies-directory (file-truename "~/Nextcloud/org_notes/daily"))
     :general
@@ -1444,7 +1445,7 @@ Export dispatcher using pandoc
     :commands (dired dired-jump)
 
     :custom
-    (dired-listing-switches "-agho --group-directories-first")
+    (dired-listing-switches "-agohv --group-directories-first")
     (dired-kill-when-opening-new-dired-buffer t)
     (dired-async-mode t)
 
