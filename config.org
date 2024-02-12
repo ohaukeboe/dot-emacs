@@ -397,6 +397,7 @@ Add visual hints to ceirtain evil opperations such as yank.
                  "hp" '(describe-package :wk "Describe package")
                  "hm" '(describe-mode :wk "Describe mode")
                  "hc" '(describe-char :wk "Describe char")
+                 "hb" '(describe-bindings :wk "Describe keybindings")
 
                  "fc" '((lambda () (interactive)
                           (find-file (locate-user-emacs-file
