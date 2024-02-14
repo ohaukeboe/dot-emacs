@@ -721,7 +721,10 @@ Eglot is a client for Language Server Protocol (LSP). It is a protocol that allo
     (oh/leader-key eglot-mode-map
      "ca" '(eglot-code-actions :wk "code actions")
      "cr" '(eglot-rename :wk "rename")
-     "cf" '(eglot-format :wk "format")))
+     "cf" '(eglot-format :wk "format")
+     "cn" '(consult-imenu :wk "navigate symbols")
+     "cm" '(consult-imenu-multi :wk "navigate symbols (multi)")
+     "cd" '(consult-lsp-diagnostics :wk "diagnostics")))
 
 #+end_src
 ** LSP-mode
@@ -733,7 +736,7 @@ LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/
     (lsp-deferred lsp)
 
     :general
-    (oh/leader-key
+    (oh/leader-key lsp-mode-map
       "cr" '(lsp-rename :wk "rename")
       "cn" '(consult-imenu :wk "navigate symbols")
       "cm" '(consult-imenu-multi :wk "navigate symbols (multi)")
@@ -741,7 +744,7 @@ LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/
       "ca" '(lsp-execute-code-action :wk "code action")
       "cf" '(lsp-format-buffer :wk "format buffer")
       "ch" '(lsp-describe-thing-at-point :wk "describe thing"))
-    ('normal
+    ('normal lsp-mode-map
       "gr" '(lsp-find-references :wk "find references"))
 
     :custom
