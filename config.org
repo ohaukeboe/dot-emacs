@@ -167,7 +167,7 @@ This is a handy package which helps showing what packages are slowing down the E
     (truncate-lines t)                          ; Truncate lines instead of wrapping
     (initial-scratch-message nil)               ; Clean scratch buffer
     (auto-revert-interval 1)                    ; Refresh buffers every second
-    (split-width-threshold 120)                  ; Split vertically by default
+    (split-width-threshold 160)                  ; Split vertically by default
     (split-height-threshold nil)                ; Split vertically by default
     ;; (display-line-numbers-type 'relative)       ; Show relative line numbers
     (use-dialog-box nil)                        ; Disable dialog boxes
@@ -745,7 +745,8 @@ LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/
       "cf" '(lsp-format-buffer :wk "format buffer")
       "ch" '(lsp-describe-thing-at-point :wk "describe thing"))
     ('normal lsp-mode-map
-      "gr" '(lsp-find-references :wk "find references"))
+      "gr" '(lsp-find-references :wk "find references")
+      "gd" '(lsp-find-definition :wk "find definition"))
 
     :custom
     (lsp-warn-no-matched-clients nil)
