@@ -766,19 +766,6 @@ LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/
       (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
             '(orderless)))) ;; Configure orderless
 
-    ;; :config
-    ;; (progn
-    ;;   (lsp-register-client
-    ;;     (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
-    ;;                      :major-modes '(c-mode c++-mode c-ts-mode c++-ts-mode)
-    ;;                      :remote? t
-    ;;                      :server-id 'clangd-remote))
-    ;;   (lsp-register-client
-    ;;     (make-lsp-client :new-connection (lsp-tramp-connection "pylsp")
-    ;;                      :major-modes '(python-mode python-ts-mode)
-    ;;                      :remote? t
-    ;;                      :server-id 'pylsp-remote))))
-
   (use-package lsp-ui
     :after lsp-mode
 
@@ -799,10 +786,10 @@ LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/
     ;; ('normal 'lsp-ui-mode-map
     ;;   "K" 'lsp-ui-doc-show :wk "show documentation"))
 
-
   (use-package consult-lsp
     :after lsp-mode)
 #+end_src
+
 *** DAP-mode
 The debug component for LSP
 
@@ -935,6 +922,10 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     :hook (python-ts-mode . lsp)
     :elpaca nil
     :mode "\\.py\\'"
+    :general
+    (:keymaps 'python-ts-mode-map
+     :states '(normal visual)
+     "K" 'lsp-describe-thing-at-point)
 
     :config
     (lsp-register-custom-settings
@@ -1012,6 +1003,37 @@ CDLatex makes writing math a pleasure.
 #+begin_src elisp
   (use-package cdlatex
     :hook (LaTeX-mode . cdlatex-mode))
+#+end_src
+
+** Dot
+
+#+begin_src elisp
+  (use-package graphviz-dot-mode
+    :mode "\\.dot\\'"
+    :config
+    (setq graphviz-dot-indent-width 4))
+#+end_src
+
+** PlantUML
+
+#+begin_src elisp
+  (use-package plantuml-mode
+    :mode
+    ("\\.plantuml\\'" . plantuml-mode)
+    ("\\.puml\\'" . plantuml-mode)
+    :init
+    (with-eval-after-load 'org
+      (add-to-list 'org-src-lang-modes
+                   '("plantuml" . plantuml))
+      (add-to-list 'org-babel-load-languages
+                   '(plantuml . t)))
+
+    :custom
+    (plantuml-default-exec-mode 'executable)
+    (org-plantuml-exec-mode 'plantuml)
+    (plantuml-indent-level 4)
+    :config
+    (setq plantuml-output-type "png"))
 #+end_src
 
 ** biblatex
