@@ -187,9 +187,7 @@ This is a handy package which helps showing what packages are slowing down the E
 
 
     ;; Allow undo/redo window configuration with C-c <left>/<right>
-    (winner-mode 1)
-
-    (editorconfig-mode 1))
+    (winner-mode 1))
 #+end_src
 
 ** Nerd icons
@@ -710,6 +708,15 @@ Projectile is a project management package. It provides a set of commands for fi
 #+end_src
 
 * Programming
+** Progmode
+
+#+begin_src elisp
+  (use-package prog-mode
+    :elpaca nil
+    :hook (prog-mode . (lambda ()
+                         (editorconfig-mode 1))))
+#+end_src
+
 ** Eglot
 Eglot is a client for Language Server Protocol (LSP). It is a protocol that allows for IDE-like features such as code completion, code navigation, etc. It is supported by many programming languages.
 
@@ -855,7 +862,9 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
   (use-package c-ts-mode
     :hook (c-ts-mode . eglot-ensure)
     :elpaca nil
-    :mode "\\.c\\'")
+    :mode
+    "\\.c\\'"
+    "\\.h\\'")
 #+end_src
 
 ** Typescript
