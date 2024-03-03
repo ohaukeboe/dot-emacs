@@ -40,12 +40,12 @@ I use [[https://github.com/progfolio/elpaca][elpaca]] to manage my packages. It 
 Installing elpaca requires this snippet to be added to the Emacs configuration file.
 
 #+begin_src elisp
-  (defvar elpaca-installer-version 0.6)
+  (defvar elpaca-installer-version 0.7)
   (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
   (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
   (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
   (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                                :ref nil
+                                :ref nil :depth 1
                                 :files (:defaults "elpaca-test.el" (:exclude "extensions"))
                                 :build (:not elpaca--activate-package)))
   (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
@@ -58,8 +58,10 @@ Installing elpaca requires this snippet to be added to the Emacs configuration f
       (when (< emacs-major-version 28) (require 'subr-x))
       (condition-case-unless-debug err
           (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-                   ((zerop (call-process "git" nil buffer t "clone"
-                                         (plist-get order :repo) repo)))
+                   ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                   ,@(when-let ((depth (plist-get order :depth)))
+                                                       (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                   ,(plist-get order :repo) ,repo))))
                    ((zerop (call-process "git" nil buffer t "checkout"
                                          (or (plist-get order :ref) "--"))))
                    (emacs (concat invocation-directory invocation-name))
@@ -144,7 +146,7 @@ This is a handy package which helps showing what packages are slowing down the E
     (window-divider-mode t)                     ; Add spacing between windows
     (global-display-line-numbers-mode t)        ; Show line numbers
     (global-auto-revert-mode t)                 ; Auto refresh buffers
-    ;; (electric-pair-mode t)                      ; Auto close brackets
+    (electric-pair-mode t)                      ; Auto close brackets
     (set-fringe-mode 0)                         ; Disable fringe
 
     (dolist (mode '(org-mode-hook
@@ -580,7 +582,7 @@ Consult is a package that provides a set of commands for searching and navigatin
 
 #+begin_src elisp
   (use-package consult
-    :requires recentf
+    ;; :requires recentf
     :custom
     (consult-buffer-sources
      '(consult--source-hidden-buffer
@@ -610,9 +612,7 @@ Consult is a package that provides a set of commands for searching and navigatin
     :config
     (recentf-mode 1)
 
-
     (defvar +consult-special-filter "\\`\\*.*\\*\\'")
-
     (defvar +consult-source-special
       `(:name      "Special"
         :narrow    ?x
@@ -665,12 +665,12 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
   (use-package magit-todos
-      :disabled ; TODO: fix this
-      :after magit
-      :config
-      (magit-todos-mode)
-      :init
-      (global-hl-todo-mode))
+    :demand t
+    :elpaca nil
+    :after magit
+    :config
+    (magit-todos-mode 1)
+    (global-hl-todo-mode 1))
 #+end_src
 ** Forge
 Make magit integrate with github and other git hosting services.
@@ -850,10 +850,17 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 ** Rust
 
 #+begin_src elisp
-  (use-package rust-ts-mode
+  (use-package rust-mode
     :hook (rust-ts-mode . eglot-ensure)
-    :elpaca nil
-    :mode "\\.rs\\'")
+    :mode "\\.rs\\'"
+    :general
+    (oh/leader-key
+      "mr" 'rust-run
+      "mC" 'rust-run-clippy
+      "mt" 'rust-test
+      "mc" 'rust-check)
+    :custom
+    (rust-mode-treesitter-derive t))
 #+end_src
 
 ** C
@@ -955,10 +962,10 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 #+begin_src elisp
   (use-package parinfer-rust-mode
     :hook
-    (emacs-lisp-mode . parinfer-rust-mode)
-    ;; (emacs-lisp-mode . (lambda ()
-    ;;                     (electric-pair-local-mode -1)
-    ;;                     (parinfer-rust-mode)))
+    ;; (emacs-lisp-mode . parinfer-rust-mode)
+    (emacs-lisp-mode . (lambda ()
+                        (electric-pair-local-mode -1)
+                        (parinfer-rust-mode 1)))
 
     :general
     (:keymaps 'emacs-lisp-mode-map
