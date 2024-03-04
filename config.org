@@ -700,7 +700,11 @@ Projectile is a project management package. It provides a set of commands for fi
     (projectile-mode 1)
 
     :config
-    (let ((project-dirs '("~/projects" "~/knowit")))
+    (let ((project-dirs '("~/projects"
+                          "~/knowit"
+                          "~/Nextcloud/projects/personal"
+                          "~/Nextcloud/projects/knowit"
+                          "~/Nextcloud/projects/uio")))
       (setq projectile-project-search-path
             (seq-filter 'file-directory-p project-dirs)))
 
