@@ -588,7 +588,7 @@ Consult is a package that provides a set of commands for searching and navigatin
      '(consult--source-hidden-buffer
        consult--source-modified-buffer
        consult--source-buffer
-       +consult-source-special
+       ;; +consult-source-special
        consult--source-recent-file
        consult--source-file-register
        consult--source-bookmark
@@ -610,29 +610,29 @@ Consult is a package that provides a set of commands for searching and navigatin
       "mh" '(consult-org-heading :wk "consult org heading"))
 
     :config
-    (recentf-mode 1)
+    (recentf-mode 1))
 
-    (defvar +consult-special-filter "\\`\\*.*\\*\\'")
-    (defvar +consult-source-special
-      `(:name      "Special"
-        :narrow    ?x
-        ;; :hidden t
-        :category  buffer
-        :face      consult-buffer
-        :history   buffer-name-history
-        ;; Specify either :action or :state
-        ;; :action    ,#'consult--buffer-action ;; No preview
-        :state  ,#'consult--buffer-state  ;; Preview
-        :items
-        ,(lambda () (consult--buffer-query
-                     :sort 'visibility
-                     :as #'buffer-name
-                     :exclude (remq +consult-special-filter consult-buffer-filter)
-                     ;; :include '(+consult-special-filter)
-                     :mode 'special-mode)))
-      "special buffer source.")
+    ;; (defvar +consult-special-filter "\\`\\*.*\\*\\'")
+    ;; (defvar +consult-source-special
+    ;;   `(:name      "Special"
+    ;;     :narrow    ?x
+    ;;     ;; :hidden t
+    ;;     :category  buffer
+    ;;     :face      consult-buffer
+    ;;     :history   buffer-name-history
+    ;;     ;; Specify either :action or :state
+    ;;     ;; :action    ,#'consult--buffer-action ;; No preview
+    ;;     :state  ,#'consult--buffer-state  ;; Preview
+    ;;     :items
+    ;;     ,(lambda () (consult--buffer-query
+    ;;                  :sort 'visibility
+    ;;                  :as #'buffer-name
+    ;;                  :exclude (remq +consult-special-filter consult-buffer-filter)
+    ;;                  ;; :include '(+consult-special-filter)
+    ;;                  :mode 'special-mode)))
+    ;;   "special buffer source.")
 
-    (add-to-list 'consult-buffer-filter +consult-special-filter))
+    ;; (add-to-list 'consult-buffer-filter +consult-special-filter))
 
 #+end_src
 
