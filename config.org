@@ -938,25 +938,25 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package python-ts-mode
-    ;; :hook (python-ts-mode . eglot-ensure)
-    :hook (python-ts-mode . lsp)
+    :hook (python-ts-mode . eglot-ensure)
+    ;; :hook (python-ts-mode . lsp)
     :elpaca nil
-    :mode "\\.py\\'"
-    :general
-    (:keymaps 'python-ts-mode-map
-     :states '(normal visual)
-     "K" 'lsp-describe-thing-at-point)
+    :mode "\\.py\\'")
+    ;; :general)
+    ;; (:keymaps 'python-ts-mode-map
+    ;;  :states '(normal visual)
+    ;;  "K" 'lsp-describe-thing-at-point))
 
-    :config
-    (lsp-register-custom-settings
-     '(("pyls.plugins.pyls_mypy.enabled" t t)
-       ("pyls.plugins.pyls_mypy.live_mode" nil t)))
-       ;; ("pyls.plugins.pyls_black.enabled" t t)
-       ;; ("pyls.plugins.pyls_isort.enabled" t t)))
+    ;; :config
+    ;; (lsp-register-custom-settings
+    ;;  '(("pyls.plugins.pyls_mypy.enabled" t t)
+    ;;    ("pyls.plugins.pyls_mypy.live_mode" nil t)))
+    ;;    ;; ("pyls.plugins.pyls_black.enabled" t t)
+    ;;    ;; ("pyls.plugins.pyls_isort.enabled" t t)))
 
-    :custom
-    (lsp-pylsp-plugins-yapf-enabled t)
-    (lsp-pylsp-plugins-flake8-enabled nil))
+    ;; :custom
+    ;; (lsp-pylsp-plugins-yapf-enabled t)
+    ;; (lsp-pylsp-plugins-flake8-enabled nil))
     ;; (lsp-pylsp-plugins-flake8-max-line-length 80)
     ;; (lsp-pylsp-plugins-pycodestyle-max-line-length 80))
 #+end_src

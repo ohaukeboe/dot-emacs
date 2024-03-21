@@ -42,3 +42,5 @@ var/
 /url/
 /.dap-breakpoints
 /session.*
+/bookmarks
+/.org-id-locations
