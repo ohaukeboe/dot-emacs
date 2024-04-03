@@ -133,10 +133,9 @@ This is a handy package which helps showing what packages are slowing down the E
     ;; Set font
     (custom-theme-set-faces
      'user
-     '(default ((t (:family "Roboto Mono" :height 130))))
+     '(default ((t (:family "Roboto Mono" :height 110))))
      '(fixed-pitch ((t (:family "Roboto Mono" :height 0.9))))
      '(variable-pitch ((t (:family "Roboto Serif" :height 1.3)))))
-    (set-face-attribute 'default nil :font "Roboto Mono" :height 140)
     (set-frame-font "Roboto Mono" nil t)
 
     ;; Disable menu bar, tool bar, scroll bar
@@ -506,7 +505,7 @@ Save history across Emacs sessions. Vertico sorts by history position.
 
 #+begin_src elisp
   (use-package savehist
-    :elpaca nil
+    ;; :elpaca nil
     :init
     (savehist-mode))
 #+end_src
@@ -1376,6 +1375,7 @@ Export dispatcher using pandoc
 
 #+begin_src elisp
   (use-package ox-pandoc
+    :demand t
     :after org)
 #+end_src
 
