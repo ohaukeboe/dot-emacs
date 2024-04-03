@@ -123,7 +123,7 @@ This is a handy package which helps showing what packages are slowing down the E
 
 #+begin_src elisp
   (use-package emacs
-    :elpaca nil
+    :ensure nil
     :hook
     (before-save . delete-trailing-whitespace)
 
@@ -455,7 +455,7 @@ Make Corfu sort by last selected candidates.
 #+begin_src elisp
   (use-package corfu-history
     :after corfu
-    :elpaca nil
+    :ensure nil
     :init
     (corfu-history-mode t))
 #+end_src
@@ -505,7 +505,7 @@ Save history across Emacs sessions. Vertico sorts by history position.
 
 #+begin_src elisp
   (use-package savehist
-    ;; :elpaca nil
+    :ensure nil
     :init
     (savehist-mode))
 #+end_src
@@ -514,7 +514,7 @@ Allow using different vertico configurations for different prompts.
 
 #+begin_src elisp
   (use-package vertico-multiform
-    :elpaca nil
+    :ensure nil
     :demand t
     :load-path
     (lambda () (expand-file-name "vertico/extensions" elpaca-builds-directory))
@@ -526,7 +526,7 @@ Allow displaying the vertico completions in a grid
 #+begin_src elisp
   (use-package vertico-grid
     :after vertico
-    :elpaca nil
+    :ensure nil
     :load-path
     (lambda ()
       (expand-file-name "vertico/extensions" elpaca-builds-directory)))
@@ -640,6 +640,7 @@ Consult is a package that provides a set of commands for searching and navigatin
 
 #+begin_src elisp
   (use-package magit
+    :ensure nil
     :custom
     (magit-display-buffer-function
      #'magit-display-buffer-same-window-except-diff-v1)
@@ -659,14 +660,13 @@ Consult is a package that provides a set of commands for searching and navigatin
     (unload-feature 'seq 'force))
 #+end_src
 
-
 Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
   (use-package magit-todos
-    :demand t
-    :elpaca nil
-    :after magit
+    ;; :demand t
+    :ensure nil
+    ;; :after magit
     :config
     (magit-todos-mode 1)
     (global-hl-todo-mode 1))
@@ -676,6 +676,7 @@ Make magit integrate with github and other git hosting services.
 
 #+begin_src elisp
   (use-package forge
+    :ensure nil
     :after magit
     :demand t
     :custom
@@ -715,7 +716,7 @@ Projectile is a project management package. It provides a set of commands for fi
 
 #+begin_src elisp
   (use-package prog-mode
-    :elpaca nil
+    :ensure nil
     :hook (prog-mode . (lambda ()
                          (editorconfig-mode 1))))
 #+end_src
@@ -725,7 +726,7 @@ Eglot is a client for Language Server Protocol (LSP). It is a protocol that allo
 
 #+begin_src elisp
   (use-package eglot
-    :elpaca nil
+    :ensure nil
     ;; :hook (prog-mode . eglot-ensure)
     :general
     (oh/leader-key eglot-mode-map
@@ -815,7 +816,7 @@ Eldoc is a minor mode that shows documentation in the echo area. It is enabled b
 
 #+begin_src elisp
   (use-package eldoc
-    :elpaca nil
+    :ensure nil
     :custom
     (eldoc-echo-area-use-multiline-p nil)
     (eldoc-idle-delay 0)
@@ -828,7 +829,7 @@ Flymake is a minor mode that performs on-the-fly syntax checking. It is enabled 
 
 #+begin_src elisp
   (use-package flymake
-    :elpaca nil
+    :ensure nil
     :general
     (oh/leader-key
      "ce" '(flymake-show-diagnostic :wk "show diagnostic")))
@@ -871,7 +872,7 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 #+begin_src elisp
   (use-package c-ts-mode
     :hook (c-ts-mode . eglot-ensure)
-    :elpaca nil
+    :ensure nil
     :mode
     "\\.c\\'"
     "\\.h\\'")
@@ -882,7 +883,7 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 #+begin_src elisp
   (use-package typescript-ts-mode
     :hook (typescript-ts-mode . eglot-ensure)
-    :elpaca nil
+    :ensure nil
     :mode "\\.ts\\'")
 #+end_src
 
@@ -905,7 +906,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package csharp-mode
-    :elpaca nil
+    :ensure nil
     :hook (csharp-ts-mode . lsp)
     :mode "\\.cs\\'"
     :general
@@ -919,6 +920,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 #+begin_src elisp
   (use-package sharper
     ;; :after '(csharp-mode csharp-ts-mode)
+    :ensure nil
     :general
     (oh/leader-key csharp-ts-mode-map
      "m d" 'sharper-main-transient))
@@ -929,7 +931,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 #+begin_src elisp
   (use-package json-ts-mode
     :hook (json-ts-mode . eglot-ensure)
-    :elpaca nil
+    :ensure nil
     :mode "\\.json\\'")
 #+end_src
 
@@ -939,7 +941,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
   (use-package python-ts-mode
     :hook (python-ts-mode . eglot-ensure)
     ;; :hook (python-ts-mode . lsp)
-    :elpaca nil
+    :ensure nil
     :mode "\\.py\\'")
     ;; :general)
     ;; (:keymaps 'python-ts-mode-map
@@ -986,7 +988,8 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package nix-mode
-    :hook (nix-mode . eglot-ensure)
+    :ensure nil
+    ;; :hook (nix-mode . eglot-ensure)
     :mode "\\.nix\\'")
 #+end_src
 
@@ -994,7 +997,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package TeX-latex-mode
-    :elpaca nil
+    :ensure nil
     :mode ("\\.tex\\'" . TeX-latex-mode)
     :hook
     (TeX-mode . eglot-ensure)
@@ -1059,7 +1062,7 @@ CDLatex makes writing math a pleasure.
 
 #+begin_src elisp
   (use-package bibtex
-    :elpaca nil
+    :ensure nil
     :hook (bibtex-mode . eglot-ensure)
     :general
     (oh/leader-key bibtex-mode-map
@@ -1092,7 +1095,7 @@ Some other zotero plugins I use are:
 
 #+begin_src elisp
   (use-package oc
-    :elpaca nil
+    :ensure nil
     :after org
     :custom
     (org-cite-csl-styles-dir "~/Zotero/styles")
@@ -1180,7 +1183,7 @@ Some other zotero plugins I use are:
     :config (citar-embark-mode))
 
   (use-package citar-org
-    :elpaca nil
+    :ensure nil
     :after (oc citar)
     :custom
     (org-cite-insert-processor 'citar)
@@ -1217,7 +1220,7 @@ rather than files.  These modes usually use read-only buffers.
 
 #+begin_src elisp
   (use-package special
-    :elpaca nil
+    :ensure nil
     :hook (special-mode . visual-line-mode))
 #+end_src
 
@@ -1226,7 +1229,7 @@ rather than files.  These modes usually use read-only buffers.
 
 #+begin_src elisp
   (use-package org
-    :elpaca nil
+    :ensure nil
     :hook
     (org-mode . variable-pitch-mode)
     (org-mode . (lambda () (visual-line-mode 1)))
@@ -1309,7 +1312,7 @@ Provides a clean look for org-mode.
 
 #+begin_src elisp
   (use-package org-block-capf
-    :elpaca
+    :ensure
     (org-block-capf :type git :host github :repo "xenodium/org-block-capf")
     :custom
     (org-block-capf-explicit-lang-defaults nil)
@@ -1375,7 +1378,6 @@ Export dispatcher using pandoc
 
 #+begin_src elisp
   (use-package ox-pandoc
-    :demand t
     :after org)
 #+end_src
 
@@ -1475,7 +1477,7 @@ Export dispatcher using pandoc
 
 #+begin_src elisp
   (use-package markdown-mode
-    :elpaca nil
+    :ensure nil
     :mode "\\.md\\'"
     :hook (markdown-mode . olivetti-mode)
     :custom
@@ -1488,7 +1490,7 @@ Export dispatcher using pandoc
 
 #+begin_src elisp
   (use-package dired
-    :elpaca nil
+    :ensure nil
     :commands (dired dired-jump)
 
     :custom
@@ -1512,7 +1514,7 @@ The emacs web browser
 
 #+begin_src elisp
   (use-package eww
-   :elpaca nil
+   :ensure nil
    :commands (oh/switch-to-eww-buffer)
    ;; :custom
    ;; (shr-use-fonts nil)
@@ -1575,7 +1577,7 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
 
 #+begin_src elisp
   (use-package pdf-tools
-    :elpaca nil
+    :ensure nil
     :mode ("\\.pdf\\'" . pdf-view-mode)
     ;; :requires pdf-outline
     :commands (pdf-view-mode)
@@ -1619,7 +1621,7 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 
   (use-package copilot
     :hook (prog-mode . copilot-mode)
-    :elpaca (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
+    :ensure (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
     :general
     (oh/leader-key
       "ta" '(oh/toggle-copilot-mode :wk "copilot"))
@@ -1652,6 +1654,7 @@ Use any LLM in Emacs.
 #+begin_src elisp
   (use-package gptel
     ;;:requires seq
+    :ensure nil
     :custom
     ;; (gptel-api-key
     ;;  (lambda () (auth-source-pass-get 'secret "openai-key")))
@@ -1736,7 +1739,7 @@ and my =.msmtprc= file looks like:
 
 #+begin_src elisp
   (use-package mu4e
-    :elpaca nil
+    :ensure nil
     :defer t
     :if (and (file-exists-p "~/.mail")
              (executable-find "mbsync")
@@ -1862,7 +1865,7 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 #+begin_src elisp
   (use-package jinx
     :hook (elpaca-after-init . global-jinx-mode)
-    :elpaca nil
+    :ensure nil
     :custom
     (jinx-languages "en_US nb_NO")
 
@@ -1918,7 +1921,7 @@ A better help buffer
 ** Devilry
 #+begin_src elisp
   (use-package devilry-mode
-    :elpaca (devilry-mode :type git :host github :repo
+    :ensure (devilry-mode :type git :host github :repo
                           "ohaukeboe/devilry-mode")
     :config
     (setq dm-java-compilation nil)
