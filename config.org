@@ -654,23 +654,18 @@ Consult is a package that provides a set of commands for searching and navigatin
      "h" 'magit-patch))
 #+end_src
 
-#+begin_src elisp
-  (use-package seq
-    :init
-    (unload-feature 'seq 'force))
-#+end_src
-
 Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
   (use-package magit-todos
-    ;; :demand t
     :ensure nil
-    ;; :after magit
+    :after magit
+    :demand
     :config
     (magit-todos-mode 1)
     (global-hl-todo-mode 1))
 #+end_src
+
 ** Forge
 Make magit integrate with github and other git hosting services.
 
