@@ -696,10 +696,7 @@ Projectile is a project management package. It provides a set of commands for fi
 
     :config
     (let ((project-dirs '("~/projects"
-                          "~/knowit"
-                          "~/Nextcloud/projects/personal"
-                          "~/Nextcloud/projects/knowit"
-                          "~/Nextcloud/projects/uio")))
+                          "~/knowit")))
       (setq projectile-project-search-path
             (seq-filter 'file-directory-p project-dirs)))
 
@@ -859,7 +856,11 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
       "mt" 'rust-test
       "mc" 'rust-check)
     :custom
-    (rust-mode-treesitter-derive t))
+    (rust-mode-treesitter-derive t)
+    :config
+    (add-to-list 'eglot-server-programs
+                 '((rust-ts-mode rust-mode) .
+                   ("rust-analyzer" :initializationOptions (:check (:command "clippy"))))))
 #+end_src
 
 ** C
