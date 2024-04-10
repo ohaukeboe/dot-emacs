@@ -725,8 +725,8 @@ Eglot is a client for Language Server Protocol (LSP). It is a protocol that allo
      "ca" '(eglot-code-actions :wk "code actions")
      "cr" '(eglot-rename :wk "rename")
      "cf" '(eglot-format :wk "format")
-     "cn" '(consult-imenu :wk "navigate symbols")
-     "cm" '(consult-imenu-multi :wk "navigate symbols (multi)")
+     "cm" '(consult-imenu :wk "navigate symbols")
+     "cM" '(consult-imenu-multi :wk "navigate symbols (multi)")
      "cd" '(consult-lsp-diagnostics :wk "diagnostics")))
 
 #+end_src
