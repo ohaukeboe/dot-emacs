@@ -516,7 +516,7 @@ Save history across Emacs sessions. Vertico sorts by history position.
 
 #+begin_src elisp
   (use-package savehist
-    :ensure nil
+    ;; :ensure nil
     :init
     (savehist-mode))
 #+end_src
@@ -613,7 +613,8 @@ Consult is a package that provides a set of commands for searching and navigatin
       "ss" '(consult-line :wk "consult-line")
       "fr" '(consult-recent-file :wk "consult-recent-file")
       "yy" '(consult-yank-pop :wk "consult-yank-pop")
-      "ce" '(consult-flymake :wk "consult-flymake")
+      "ce" '(consult-flymake :wk "consult-flymake buffer")
+      "cE" (lambda () (interactive) (consult-flymake t)) :wk "consult-flymake project"
       "hi" '(consult-info :wk "info"))
 
     (oh/leader-key org-mode-map
