@@ -863,10 +863,10 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     :mode "\\.rs\\'"
     :general
     (oh/leader-key
-      "mr" 'rust-run
-      "mC" 'rust-run-clippy
-      "mt" 'rust-test
-      "mc" 'rust-check)
+      "mr" '(rust-run :wk "run")
+      "mC" '(rust-run-clippy :wk "clippy")
+      "mt" '(rust-test :wk "test")
+      "mc" '(rust-check :wk "check"))
     :custom
     (rust-mode-treesitter-derive t)
     :config
@@ -974,11 +974,11 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package parinfer-rust-mode
-    :hook
+    ;; :hook
     ;; (emacs-lisp-mode . parinfer-rust-mode)
-    (emacs-lisp-mode . (lambda ()
-                        (electric-pair-local-mode -1)
-                        (parinfer-rust-mode 1)))
+    ;; (emacs-lisp-mode . (lambda ()
+    ;;                     (electric-pair-local-mode -1)
+    ;;                     (parinfer-rust-mode 1)))
 
     :general
     (:keymaps 'emacs-lisp-mode-map
