@@ -308,7 +308,12 @@ Evil is an extensible vi layer for Emacs. It is a very powerful package that all
 
     :config
     (evil-global-set-key 'normal (kbd "j") 'evil-next-visual-line)
-    (evil-global-set-key 'normal (kbd "k") 'evil-previous-visual-line))
+    (evil-global-set-key 'normal (kbd "k") 'evil-previous-visual-line)
+
+    :general
+    ('evil-window-map
+     "u" '(winner-undo :which-key "winner undo")
+     "U" '(winner-redo :which-key "winner redo")))
 #+end_src
 
 =evil-collection= is a collection of Evil keybindings for many Emacs packages.
