@@ -521,7 +521,7 @@ Save history across Emacs sessions. Vertico sorts by history position.
 
 #+begin_src elisp
   (use-package savehist
-    ;; :ensure nil
+    :ensure nil
     :init
     (savehist-mode))
 #+end_src
@@ -657,7 +657,7 @@ Consult is a package that provides a set of commands for searching and navigatin
 
 #+begin_src elisp
   (use-package magit
-    :ensure nil
+    ;; :ensure nil
     :custom
     (magit-display-buffer-function
      #'magit-display-buffer-same-window-except-diff-v1)
@@ -669,13 +669,16 @@ Consult is a package that provides a set of commands for searching and navigatin
     ('magit-mode-map
      "w" 'magit-worktree
      "h" 'magit-patch))
+
+
+  (use-package transient)
 #+end_src
 
 Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
   (use-package magit-todos
-    :ensure nil
+    ;; :ensure nil
     :after magit
     :demand
     :config
@@ -688,7 +691,7 @@ Make magit integrate with github and other git hosting services.
 
 #+begin_src elisp
   (use-package forge
-    :ensure nil
+    ;; :ensure nil
     :after magit
     :demand t
     :custom
