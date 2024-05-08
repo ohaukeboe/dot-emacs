@@ -146,7 +146,7 @@ This is a handy package which helps showing what packages are slowing down the E
     (global-display-line-numbers-mode t)        ; Show line numbers
     (global-auto-revert-mode t)                 ; Auto refresh buffers
     (electric-pair-mode t)                      ; Auto close brackets
-    (set-fringe-mode 0)                         ; Disable fringe
+    (set-fringe-mode '(4 . 0))                         ; Disable fringe
 
     (dolist (mode '(org-mode-hook
                     Info-mode-hook
@@ -257,6 +257,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 
 #+begin_src elisp
   (use-package nano-modeline
+    :disabled
     :demand
     :init
     (setq-default mode-line-format nil)  ; disable default mode-line
@@ -280,6 +281,81 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
   (use-package nano-agenda
     :disabled       ; It's probably gonna be useful when I start using org-agenda
     :commands (nano-agenda))
+#+end_src
+
+** DOOM modeline
+
+#+begin_src elisp
+  (use-package doom-modeline
+    :ensure t
+    :hook (after-init . doom-modeline-mode)
+    :custom
+    (doom-modeline-buffer-file-name-style 'auto)
+    (doom-modeline-modal nil)
+    (doom-modeline-buffer-encoding nil)
+    (doom-modeline-percent-position nil)
+    (column-number-mode t)
+
+    :config
+    (doom-modeline-def-modeline 'main
+    '(eldoc bar workspace-name window-number modals matches follow buffer-info remote-host word-count parrot selection-info)
+    '(compilation objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding process check vcs time buffer-position))
+
+  (doom-modeline-def-modeline 'minimal
+    '(bar window-number modals matches buffer-info-simple)
+    '(media-info time))
+
+  (doom-modeline-def-modeline 'special
+    '(eldoc bar window-number modals matches buffer-info remote-host word-count parrot selection-info)
+    '(compilation objed-state misc-info battery irc-buffers debug minor-modes input-method indent-info buffer-encoding process time buffer-position))
+
+  (doom-modeline-def-modeline 'project
+    '(bar window-number modals buffer-default-directory remote-host)
+    '(compilation misc-info battery irc mu4e gnus github debug minor-modes input-method process time buffer-position))
+
+  (doom-modeline-def-modeline 'dashboard
+    '(bar window-number modals buffer-default-directory-simple remote-host)
+    '(compilation misc-info battery irc mu4e gnus github debug minor-modes input-method process time))
+
+  (doom-modeline-def-modeline 'vcs
+    '(bar window-number modals matches buffer-info remote-host parrot selection-info)
+    '(compilation misc-info battery irc mu4e gnus github debug minor-modes buffer-encoding process time buffer-position))
+
+  (doom-modeline-def-modeline 'package
+    '(bar window-number modals package)
+    '(compilation misc-info process time))
+
+  (doom-modeline-def-modeline 'info
+    '(bar window-number modals buffer-info info-nodes parrot selection-info)
+    '(compilation misc-info buffer-encoding time buffer-position))
+
+  (doom-modeline-def-modeline 'media
+    '(bar window-number modals buffer-size buffer-info)
+    '(compilation misc-info media-info process vcs time))
+
+  (doom-modeline-def-modeline 'message
+    '(eldoc bar window-number modals matches buffer-info-simple word-count parrot selection-info)
+    '(compilation objed-state misc-info battery debug minor-modes input-method indent-info buffer-encoding time buffer-position))
+
+  (doom-modeline-def-modeline 'pdf
+    '(bar window-number modals matches buffer-info pdf-pages)
+    '(compilation misc-info process vcs time))
+
+  (doom-modeline-def-modeline 'org-src
+    '(eldoc bar window-number modals matches buffer-info word-count parrot selection-info)
+    '(compilation objed-state misc-info debug lsp minor-modes input-method indent-info buffer-encoding process check time buffer-position))
+
+  (doom-modeline-def-modeline 'helm
+    '(bar helm-buffer-id helm-number helm-follow helm-prefix-argument)
+    '(helm-help time))
+
+  (doom-modeline-def-modeline 'timemachine
+    '(eldoc bar window-number modals matches git-timemachine word-count parrot selection-info)
+    '(misc-info minor-modes indent-info buffer-encoding time buffer-position))
+
+  (doom-modeline-def-modeline 'calculator
+    '(window-number modals matches calc)
+    '(misc-info minor-modes process buffer-position)))
 #+end_src
 
 * Keybinds
@@ -693,6 +769,15 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     :config
     (magit-todos-mode 1)
     (global-hl-todo-mode 1))
+#+end_src
+** diff-hl
+
+#+begin_src elisp
+  (use-package diff-hl
+    :hook (prog-mode . diff-hl-mode)
+    :custom
+    (diff-hl-flydiff-mode t)
+    (diff-hl-flydiff-delay 0))
 #+end_src
 
 ** Forge
