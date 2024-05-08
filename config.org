@@ -299,7 +299,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
     :config
     (doom-modeline-def-modeline 'main
     '(eldoc bar workspace-name window-number modals matches follow buffer-info remote-host word-count parrot selection-info)
-    '(compilation objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl lsp minor-modes input-method indent-info buffer-encoding process check vcs time buffer-position))
+    '(compilation objed-state misc-info persp-name battery grip irc mu4e gnus github debug repl minor-modes input-method indent-info buffer-encoding process check lsp vcs time buffer-position))
 
   (doom-modeline-def-modeline 'minimal
     '(bar window-number modals matches buffer-info-simple)
@@ -343,7 +343,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 
   (doom-modeline-def-modeline 'org-src
     '(eldoc bar window-number modals matches buffer-info word-count parrot selection-info)
-    '(compilation objed-state misc-info debug lsp minor-modes input-method indent-info buffer-encoding process check time buffer-position))
+    '(compilation objed-state misc-info debug minor-modes input-method indent-info buffer-encoding process check lsp time buffer-position))
 
   (doom-modeline-def-modeline 'helm
     '(bar helm-buffer-id helm-number helm-follow helm-prefix-argument)
