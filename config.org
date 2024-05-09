@@ -737,6 +737,16 @@ Consult is a package that provides a set of commands for searching and navigatin
 
 #+end_src
 
+*** consult-eglot
+
+#+begin_src elisp
+  (use-package consult-eglot
+    :after (consult eglot)
+    :general
+    (oh/leader-key eglot-mode-map
+      "cm" '(consult-eglot-symbols :wk "consult symbols")))
+#+end_src
+
 * Project management
 ** Magit
 
@@ -764,20 +774,38 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 #+begin_src elisp
   (use-package magit-todos
     ;; :ensure nil
-    :after magit
+    ;; :elpaca (magit-todos :type git :host github :repo "alphapapa/magit-todos")
+    :after (magit)
     :demand
     :config
-    (magit-todos-mode 1)
+    (magit-todos-mode 1))
+
+  (use-package hl-todo
+    :demand
+    :config
     (global-hl-todo-mode 1))
+#+end_src
+
+** Conventional commits
+
+#+begin_src elisp
+  (use-package conventional-commit
+    :elpaca (conventional-commit :type git :host github :repo "akirak/conventional-commit.el")
+    :hook
+    (git-commit-mode . conventional-commit-setup))
 #+end_src
 ** diff-hl
 
 #+begin_src elisp
   (use-package diff-hl
-    :hook (prog-mode . diff-hl-mode)
+    :hook
+    (prog-mode . diff-hl-mode)
+    (dired-mode . diff-hl-dired-mode)
     :custom
     (diff-hl-flydiff-mode t)
-    (diff-hl-flydiff-delay 0))
+    (diff-hl-flydiff-delay 0)
+    (diff-hl-update-async t)
+    (diff-hl-dired-extra-indicators nil))
 #+end_src
 
 ** Forge
