@@ -858,6 +858,8 @@ Projectile is a project management package. It provides a set of commands for fi
 ** Eglot
 Eglot is a client for Language Server Protocol (LSP). It is a protocol that allows for IDE-like features such as code completion, code navigation, etc. It is supported by many programming languages.
 
+For information about setting up a new lsp server, see [[https://joaotavora.github.io/eglot/][Link]].
+
 #+begin_src elisp
   (use-package eglot
     :ensure nil
@@ -871,7 +873,14 @@ Eglot is a client for Language Server Protocol (LSP). It is a protocol that allo
      "cM" '(consult-imenu-multi :wk "navigate symbols (multi)")
      "cd" '(consult-lsp-diagnostics :wk "diagnostics")))
 
+
+  (use-package eglot-x
+    :ensure nil
+    :after eglot
+    :config
+    (eglot-x-setup))
 #+end_src
+
 ** LSP-mode
 LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/lsp-mode/page/languages/][Here]] is some instructions for each language. There is also some information about different language-server [[https://langserver.org/][here]].
 
@@ -1052,12 +1061,17 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 #+begin_src elisp
   (use-package csharp-mode
     :ensure nil
-    :hook (csharp-ts-mode . lsp)
+    ;; :hook (csharp-ts-mode . lsp)
+    :hook (csharp-ts-mode . eglot-ensure)
     :mode "\\.cs\\'"
-    :general
-    (:keymaps 'csharp-ts-mode-map
-              :states 'normal
-              "K" 'lsp-describe-thing-at-point))
+    :config
+    (with-eval-after-load 'eglot
+      (add-to-list 'eglot-server-programs
+                   '(csharp-ts-mode . ("OmniSharp" "-lsp")))))
+    ;; :general
+    ;; (:keymaps 'csharp-ts-mode-map
+    ;;           :states 'normal
+    ;;           "K" 'lsp-describe-thing-at-point))
 #+end_src
 
 ** dotnet
