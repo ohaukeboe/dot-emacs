@@ -146,7 +146,7 @@ This is a handy package which helps showing what packages are slowing down the E
     (global-display-line-numbers-mode t)        ; Show line numbers
     (global-auto-revert-mode t)                 ; Auto refresh buffers
     (electric-pair-mode t)                      ; Auto close brackets
-    (set-fringe-mode '(4 . 0))                         ; Disable fringe
+    (set-fringe-mode '(8 . 0))                         ; Disable fringe
 
     (dolist (mode '(org-mode-hook
                     Info-mode-hook
@@ -790,7 +790,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
   (use-package conventional-commit
-    :elpaca (conventional-commit :type git :host github :repo "akirak/conventional-commit.el")
+    :ensure (conventional-commit :type git :host github :repo "akirak/conventional-commit.el")
     :hook
     (git-commit-mode . conventional-commit-setup))
 #+end_src
@@ -875,7 +875,9 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
 
 
   (use-package eglot-x
-    :ensure nil
+    :ensure (eglot-x :type git :host github :repo "nemethf/eglot-x")
+    :disabled
+    :demand
     :after eglot
     :config
     (eglot-x-setup))
