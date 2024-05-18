@@ -367,10 +367,10 @@ General is a package that provides a keybinding framework. It integrates nicely 
   (use-package general
     :init
     (general-create-definer oh/leader-key
-      :states '(normal insert visual emacs)
+      ;:states '(normal insert visual emacs)
       :keymaps 'override
-      :prefix "SPC"
-      :global-prefix "C-SPC"))
+      :prefix "C-c"))
+      ;; :global-prefix "C-SPC"))
 
   ;; Wait until this is setup before loading the rest of the config.
   ;; This is needed for the =:general= flag to work.
@@ -382,6 +382,7 @@ Evil is an extensible vi layer for Emacs. It is a very powerful package that all
 
 #+begin_src elisp
   (use-package evil
+    :disabled
     :custom
     (evil-want-keybinding nil)
     (evil-want-C-u-scroll t)
@@ -459,10 +460,11 @@ Add visual hints to ceirtain evil opperations such as yank.
     (evil-lion-mode))
 #+end_src
 
-** evil-numbers
+*** evil-numbers
 
 #+begin_src elisp
   (use-package evil-numbers
+    :disabled
     :ensure t
     :general
     (:keymaps 'evil-normal-state-map
@@ -760,10 +762,10 @@ Consult is a package that provides a set of commands for searching and navigatin
     :general
     (oh/leader-key
       "gg" '(magit-status :wk "magit")
-      "gb" '(magit-blame-addition :wk "blame"))
-    ('magit-mode-map
-     "w" 'magit-worktree
-     "h" 'magit-patch))
+      "gb" '(magit-blame-addition :wk "blame")))
+    ;; ('magitgmode-map
+    ;;  "w" 'magit-worktree
+    ;;  "h" 'magit-patch))
 
 
   (use-package transient)
@@ -1742,8 +1744,8 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
     :mode ("\\.pdf\\'" . pdf-view-mode)
     ;; :requires pdf-outline
     :commands (pdf-view-mode)
-    :hook
-    (pdf-view-mode-hook . evil-normal-state)
+    ;:hook
+    ;(pdf-view-mode-hook . evil-normal-state)
     :config
     (require 'pdf-outline))
     ;; (pdf-tools-install))
