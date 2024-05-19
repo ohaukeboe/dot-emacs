@@ -44,3 +44,4 @@ var/
 /session.*
 /bookmarks
 /.org-id-locations
+/tutorial/

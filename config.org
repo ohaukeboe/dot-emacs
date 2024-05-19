@@ -697,20 +697,70 @@ Consult is a package that provides a set of commands for searching and navigatin
        consult--source-project-buffer-hidden
        consult--source-project-recent-file-hidden))
 
-    :general
-    (oh/leader-key
-      "bb" '(consult-buffer :wk "buffer")
-      "bB" '(consult-buffer-other :wk "buffer")
-      "sg" '(consult-ripgrep :wk "ripgrep")
-      "ss" '(consult-line :wk "consult-line")
-      "fr" '(consult-recent-file :wk "consult-recent-file")
-      "yy" '(consult-yank-pop :wk "consult-yank-pop")
-      "ce" '(consult-flymake :wk "consult-flymake buffer")
-      "cE" (lambda () (interactive) (consult-flymake t)) :wk "consult-flymake project"
-      "hi" '(consult-info :wk "info"))
+    ;; :general
+    ;; (oh/leader-key
+    ;;   "bb" '(consult-buffer :wk "buffer")
+    ;;   "bB" '(consult-buffer-other :wk "buffer")
+    ;;   "sg" '(consult-ripgrep :wk "ripgrep")
+    ;;   "ss" '(consult-line :wk "consult-line")
+    ;;   "fr" '(consult-recent-file :wk "consult-recent-file")
+    ;;   "yy" '(consult-yank-pop :wk "consult-yank-pop")
+    ;;   "ce" '(consult-flymake :wk "consult-flymake buffer")
+    ;;   "cE" (lambda () (interactive) (consult-flymake t)) :wk "consult-flymake project"
+    ;;   "hi" '(consult-info :wk "info"))
 
-    (oh/leader-key org-mode-map
-      "mh" '(consult-org-heading :wk "consult org heading"))
+    ;; (oh/leader-key org-mode-map
+    ;;   "mh" '(consult-org-heading :wk "consult org heading"))
+
+    :bind
+    (;; C-c bindings in `mode-specific-map'
+     ("C-c M-x" . consult-mode-command)
+     ("C-c h" . consult-history)
+     ("C-c k" . consult-kmacro)
+     ("C-c m" . consult-man)
+     ("C-c i" . consult-info)
+     ([remap Info-search] . consult-info)
+     ;; C-x bindings in `ctl-x-map'
+     ("C-x M-:" . consult-complex-command)     ;; orig. repeat-complex-command
+     ("C-x b" . consult-buffer)                ;; orig. switch-to-buffer
+     ("C-x 4 b" . consult-buffer-other-window) ;; orig. switch-to-buffer-other-window
+     ("C-x 5 b" . consult-buffer-other-frame)  ;; orig. switch-to-buffer-other-frame
+     ;; ("C-x t b" . consult-buffer-other-tab)    ;; orig. switch-to-buffer-other-tab
+     ("C-x r b" . consult-bookmark)            ;; orig. bookmark-jump
+     ("C-x p b" . consult-project-buffer)      ;; orig. project-switch-to-buffer
+     ;; Other custom bindings
+     ("M-y" . consult-yank-pop)                ;; orig. yank-pop
+                                          ; M-g bindings in `goto-map'
+     ("M-g e" . consult-compile-error)
+     ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
+     ("M-g g" . consult-goto-line)             ;; orig. goto-line
+     ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
+     ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
+     ("M-g m" . consult-mark)
+     ("M-g k" . consult-global-mark)
+     ("M-g i" . consult-imenu)
+     ("M-g I" . consult-imenu-multi)
+     ;; M-s bindings in `search-map'
+     ("M-s d" . consult-find)                  ;; Alternative: consult-fd
+     ("M-s c" . consult-locate)
+     ("M-s g" . consult-grep)
+     ("M-s G" . consult-git-grep)
+     ("M-s r" . consult-ripgrep)
+     ("M-s l" . consult-line)
+     ("M-s L" . consult-line-multi)
+     ("M-s k" . consult-keep-lines)
+     ("M-s u" . consult-focus-lines)
+     ;; Isearch integration
+     ("M-s e" . consult-isearch-history)
+     :map isearch-mode-map
+     ("M-e" . consult-isearch-history)         ;; orig. isearch-edit-string
+     ("M-s e" . consult-isearch-history)       ;; orig. isearch-edit-string
+     ("M-s l" . consult-line)                  ;; needed by consult-line to detect isearch
+     ("M-s L" . consult-line-multi)            ;; needed by consult-line to detect isearch
+     ;; Minibuffer history
+     :map minibuffer-local-map
+     ("M-s" . consult-history)                 ;; orig. next-matching-history-element
+     ("M-r" . consult-history))                ;; orig. previous-matching-history-element
 
     :config
     (recentf-mode 1))
@@ -737,16 +787,6 @@ Consult is a package that provides a set of commands for searching and navigatin
 
     ;; (add-to-list 'consult-buffer-filter +consult-special-filter))
 
-#+end_src
-
-*** consult-eglot
-
-#+begin_src elisp
-  (use-package consult-eglot
-    :after (consult eglot)
-    :general
-    (oh/leader-key eglot-mode-map
-      "cm" '(consult-eglot-symbols :wk "consult symbols")))
 #+end_src
 
 * Project management
@@ -830,10 +870,13 @@ Projectile is a project management package. It provides a set of commands for fi
 #+begin_src elisp
   (use-package projectile
     :after seq
-    :general
-    (oh/leader-key
-      "p" 'projectile-command-map
-      "SPC" 'projectile-find-file)
+    ;; :general
+    ;; (oh/leader-key
+    ;;   "p" 'projectile-command-map
+    ;;   "SPC" 'projectile-find-file)
+
+    :bind-keymap
+    ("C-c p" . projectile-command-map)
 
     :init
     (projectile-mode 1)
@@ -893,18 +936,18 @@ LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/
     :commands
     (lsp-deferred lsp)
 
-    :general
-    (oh/leader-key lsp-mode-map
-      "cr" '(lsp-rename :wk "rename")
-      "cn" '(consult-imenu :wk "navigate symbols")
-      "cm" '(consult-imenu-multi :wk "navigate symbols (multi)")
-      "cd" '(consult-lsp-diagnostics :wk "diagnostics")
-      "ca" '(lsp-execute-code-action :wk "code action")
-      "cf" '(lsp-format-buffer :wk "format buffer")
-      "ch" '(lsp-describe-thing-at-point :wk "describe thing"))
-    ('normal lsp-mode-map
-      "gr" '(lsp-find-references :wk "find references")
-      "gd" '(lsp-find-definition :wk "find definition"))
+    ;; :general
+    ;; (oh/leader-key lsp-mode-map
+    ;;   "cr" '(lsp-rename :wk "rename")
+    ;;   "cn" '(consult-imenu :wk "navigate symbols")
+    ;;   "cm" '(consult-imenu-multi :wk "navigate symbols (multi)")
+    ;;   "cd" '(consult-lsp-diagnostics :wk "diagnostics")
+    ;;   "ca" '(lsp-execute-code-action :wk "code action")
+    ;;   "cf" '(lsp-format-buffer :wk "format buffer")
+    ;;   "ch" '(lsp-describe-thing-at-point :wk "describe thing"))
+    ;; ('normal lsp-mode-map
+    ;;   "gr" '(lsp-find-references :wk "find references")
+    ;;   "gd" '(lsp-find-definition :wk "find definition"))
 
     :custom
     (lsp-warn-no-matched-clients nil)
@@ -1659,16 +1702,16 @@ Export dispatcher using pandoc
     :custom
     (dired-listing-switches "-agohv --group-directories-first")
     (dired-kill-when-opening-new-dired-buffer t)
-    (dired-async-mode t)
+    (dired-async-mode t))
 
-    :general
-    (oh/leader-key
-      "fd" '(dired-jump :which-key "dired jump")
-      "fD" '(dired-jump-other-window :which-key "dired"))
+    ;; :general
+    ;; (oh/leader-key
+    ;;   "fd" '(dired-jump :which-key "dired jump")
+    ;;   "fD" '(dired-jump-other-window :which-key "dired"))
 
-    ('normal 'dired-mode-map
-      "h" 'dired-up-directory
-      "l" 'dired-find-file))
+    ;; ('normal 'dired-mode-map
+    ;;   "h" 'dired-up-directory
+    ;;   "l" 'dired-find-file))
 #+end_src
 
 ** Eww
@@ -1708,8 +1751,8 @@ The emacs web browser
 
     :general
     (oh/leader-key
-      "pv" '(projectile-run-vterm :wk "projectile vterm")
-      "pV" '(projectile-run-vterm-other-window :wk "projectile vterm other window")
+      ;"pv" '(projectile-run-vterm :wk "projectile vterm")
+      ;"pV" '(projectile-run-vterm-other-window :wk "projectile vterm other window")
       "ov" '(vterm :wk "vterm")
       "oV" '(vterm-other-window :wk "vterm other window"))
 
