@@ -1453,6 +1453,8 @@ rather than files.  These modes usually use read-only buffers.
     (org-tags-column 0)
     (org-fold-catch-invisible-edits 'show)
     (org-elipsis "…")
+    (org-default-notes-file "~/Nextcloud/org_notes/notes.org")
+    (org-agenda-files `(,org-default-notes-file))
 
     :config
     ;; Pretty bullets
