@@ -1841,7 +1841,7 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 
 #+begin_src elisp
   ;; accept completion from copilot and fallback to company
-  (use-package jsonrpc)
+  ;; (use-package jsonrpc)
 
   (use-package copilot
     :hook (prog-mode . copilot-mode)
