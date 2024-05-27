@@ -179,7 +179,8 @@ This is a handy package which helps showing what packages are slowing down the E
      `(("." . ,(concat user-emacs-directory "var/backups"))))
     (indent-tabs-mode nil)                      ; Use spaces instead of tabs
     (tab-width 2)                               ; Set tab width to 2 spaces
-
+    (isearch-allow-motion t)                    ; Allow movement during search
+    (repeat-mode t)                             ; Enable repeat mode
 
 
     ;; Add spacing between windows
@@ -521,6 +522,21 @@ Add visual hints to ceirtain evil opperations such as yank.
     (which-key-mode))
 #+end_src
 
+** Misc movement/edit keybinds
+A minor mode which makes ~C-w~ and ~M-w~ act on the current line if no region is active.
+
+#+begin_src elisp
+  (use-package whole-line-or-region
+    :disabled
+    :demand
+    :config
+    (whole-line-or-region-global-mode 1))
+#+end_src
+
+#+begin_src elisp
+  (global-set-key [remap just-one-space]
+                  'cycle-spacing)
+#+end_src
 * Completion and navigation
 ** Corfu
 Corfu is a completion framework that provides a horizontal completion UI. It is a very simple package that does not provide any completion backends.
