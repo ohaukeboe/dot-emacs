@@ -207,10 +207,15 @@ This package provides a set of icons for Emacs.
 ** Themes
 
 #+begin_src elisp
-  (use-package doom-themes
-    :demand t
-    :config
-    (load-theme 'doom-tomorrow-night t))
+        (use-package doom-themes
+          :demand t
+          :custom-face
+          (default ((t (:background "#1b1b1b"))))
+          (ansi-color-bright-black ((nil (:inherit font-lock-comment-face
+                                          :foreground nil
+                                          :background nil))))
+          :config
+          (load-theme 'doom-tomorrow-night t))
 #+end_src
 
 ** NANO
@@ -1764,6 +1769,7 @@ The emacs web browser
 
 #+begin_src elisp
   (use-package vterm
+    :disabled
     ;; :hook
     ;; (vterm-mode . oh/vterm-start-tmux)
 
@@ -1781,6 +1787,15 @@ The emacs web browser
                    (lambda ()
                      (vterm-send-string "tmux new")
                      (vterm-send-return)))))
+#+end_src
+
+** Eat
+A terminal emulator
+
+#+begin_src elisp
+  (use-package eat
+    :bind
+    ("C-c e" . eat))
 #+end_src
 
 ** Direnv
