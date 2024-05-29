@@ -34,72 +34,10 @@ I don't particularly enjoy getting warnings stemming from third-party packages. 
 #+end_src
 
 * Package management
-** Elpaca
-I use [[https://github.com/progfolio/elpaca][elpaca]] to manage my packages. It is a simple package manager that allows users to find, install, update, and remove third-party packages for Emacs. It is a replacement for the built-in Emacs package manager, =package.el=.
-
-Installing elpaca requires this snippet to be added to the Emacs configuration file.
-
-#+begin_src elisp
-  (defvar elpaca-installer-version 0.7)
-  (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
-  (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
-  (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
-  (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                                :ref nil :depth 1
-                                :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                                :build (:not elpaca--activate-package)))
-  (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
-         (build (expand-file-name "elpaca/" elpaca-builds-directory))
-         (order (cdr elpaca-order))
-         (default-directory repo))
-    (add-to-list 'load-path (if (file-exists-p build) build repo))
-    (unless (file-exists-p repo)
-      (make-directory repo t)
-      (when (< emacs-major-version 28) (require 'subr-x))
-      (condition-case-unless-debug err
-          (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-                   ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-                                                   ,@(when-let ((depth (plist-get order :depth)))
-                                                       (list (format "--depth=%d" depth) "--no-single-branch"))
-                                                   ,(plist-get order :repo) ,repo))))
-                   ((zerop (call-process "git" nil buffer t "checkout"
-                                         (or (plist-get order :ref) "--"))))
-                   (emacs (concat invocation-directory invocation-name))
-                   ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
-                                         "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-                   ((require 'elpaca))
-                   ((elpaca-generate-autoloads "elpaca" repo)))
-              (progn (message "%s" (buffer-string)) (kill-buffer buffer))
-            (error "%s" (with-current-buffer buffer (buffer-string))))
-        ((error) (warn "%s" err) (delete-directory repo 'recursive))))
-    (unless (require 'elpaca-autoloads nil t)
-      (require 'elpaca)
-      (elpaca-generate-autoloads "elpaca" repo)
-      (load "./elpaca-autoloads")))
-  (add-hook 'after-init-hook #'elpaca-process-queues)
-  (elpaca `(,@elpaca-order))
-#+end_src
-
-Elpaca requires =package.el= to be disabled.
-
-#+begin_src elisp :tangle early-init.el
-  (setq package-enable-at-startup nil)
-#+end_src
-
-It also integrates nicely with =use-package=.
-
-#+begin_src elisp
-  (elpaca elpaca-use-package
-    (elpaca-use-package-mode)
-    (setq elpaca-use-package-by-default t))
-
-  ;; Block untill current queue processed.
-  (elpaca-wait)
-#+end_src
-
 ** use-package
 
 #+begin_src elisp
+  (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
   (setq use-package-always-defer t)
   (setq use-package-always-ensure nil)
 #+end_src
@@ -387,7 +325,7 @@ General is a package that provides a keybinding framework. It integrates nicely 
 
   ;; Wait until this is setup before loading the rest of the config.
   ;; This is needed for the =:general= flag to work.
-  (elpaca-wait)
+  ;; (elpaca-wait)
 #+end_src
 
 ** evil
@@ -667,8 +605,8 @@ Allow using different vertico configurations for different prompts.
   (use-package vertico-multiform
     :ensure nil
     :demand t
-    :load-path
-    (lambda () (expand-file-name "vertico/extensions" elpaca-builds-directory))
+    ;; :load-path
+    ;; (lambda () (expand-file-name "vertico/extensions" elpaca-builds-directory))
     :after vertico)
 #+end_src
 
@@ -677,10 +615,10 @@ Allow displaying the vertico completions in a grid
 #+begin_src elisp
   (use-package vertico-grid
     :after vertico
-    :ensure nil
-    :load-path
-    (lambda ()
-      (expand-file-name "vertico/extensions" elpaca-builds-directory)))
+    :ensure nil)
+    ;; :load-path
+    ;; (lambda ()
+    ;;   (expand-file-name "vertico/extensions" elpaca-builds-directory)))
 #+end_src
 
 ** Orderless
@@ -888,7 +826,8 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
   (use-package conventional-commit
-    :ensure (conventional-commit :type git :host github :repo "akirak/conventional-commit.el")
+    :ensure t
+    :vc (:url "https://github.com/akirak/conventional-commit.el")
     :hook
     (git-commit-mode . conventional-commit-setup))
 #+end_src
@@ -1593,8 +1532,8 @@ Provides a clean look for org-mode.
 
 #+begin_src elisp
   (use-package org-block-capf
-    :ensure
-    (org-block-capf :type git :host github :repo "xenodium/org-block-capf")
+    :ensure t
+    :vc (:url "https://github.com/xenodium/org-block-capf")
     :custom
     (org-block-capf-explicit-lang-defaults nil)
 
@@ -1926,7 +1865,8 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 
   (use-package copilot
     :hook (prog-mode . copilot-mode)
-    :ensure (:host github :repo "copilot-emacs/copilot.el" :files ("dist" "*.el"))
+    :ensure t
+    :vc (:url "https://github.com/copilot-emacs/copilot.el")
     :general
     (oh/leader-key
       "ta" '(oh/toggle-copilot-mode :wk "copilot"))
@@ -1953,6 +1893,7 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
        (progn (copilot-mode 1)
                (electric-pair-mode -1))))
 #+end_src
+
 ** gptel
 Use any LLM in Emacs.
 
@@ -2176,8 +2117,9 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 
 #+begin_src elisp
   (use-package jinx
-    :hook (elpaca-after-init . global-jinx-mode)
+    ;; :hook (elpaca-after-init . global-jinx-mode)
     :ensure nil
+    :demand
     :custom
     (jinx-languages "en_US nb_NO")
 
@@ -2233,10 +2175,11 @@ A better help buffer
 #+end_src
 
 ** Devilry
+
 #+begin_src elisp
   (use-package devilry-mode
-    :ensure (devilry-mode :type git :host github :repo
-                          "ohaukeboe/devilry-mode")
+    :ensure t
+    :vc (:url "https://github.com/ohaukeboe/devilry-mode")
     :config
     (setq dm-java-compilation nil)
     :general
@@ -2268,9 +2211,9 @@ A prettier startup screen
   (use-package dashboard
     :ensure t
     :demand
-    :hook
-    ('elpaca-after-init-hook #'dashboard-insert-startupify-lists)
-    ('elpaca-after-init-hook #'dashboard-initialize)
+    ;; :hook
+    ;; ('elpaca-after-init-hook #'dashboard-insert-startupify-lists)
+    ;; ('elpaca-after-init-hook #'dashboard-initialize)
 
     :custom
     ;; (dashboard-projects-backend 'projectile)
