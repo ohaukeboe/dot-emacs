@@ -86,7 +86,6 @@ Elpaca requires =package.el= to be disabled.
   (setq package-enable-at-startup nil)
 #+end_src
 
-
 It also integrates nicely with =use-package=.
 
 #+begin_src elisp
@@ -102,6 +101,7 @@ It also integrates nicely with =use-package=.
 
 #+begin_src elisp
   (setq use-package-always-defer t)
+  (setq use-package-always-ensure nil)
 #+end_src
 
 ** Benchmark
@@ -110,7 +110,8 @@ This is a handy package which helps showing what packages are slowing down the E
 #+begin_src elisp
   (use-package benchmark-init
     :ensure t
-    :init
+    :demand
+    :config
     ;; To disable collection of benchmark data after init is done.
     (benchmark-init/activate)
     ;; (add-hook 'after-init-hook 'benchmark-init/deactivate)
@@ -207,15 +208,16 @@ This package provides a set of icons for Emacs.
 ** Themes
 
 #+begin_src elisp
-        (use-package doom-themes
-          :demand t
-          :custom-face
-          (default ((t (:background "#1b1b1b"))))
-          (ansi-color-bright-black ((nil (:inherit font-lock-comment-face
-                                          :foreground nil
-                                          :background nil))))
-          :config
-          (load-theme 'doom-tomorrow-night t))
+  (use-package doom-themes
+    :ensure t
+    :demand t
+    :custom-face
+    (default ((t (:background "#1b1b1b"))))
+    (ansi-color-bright-black ((nil (:inherit font-lock-comment-face
+                                    :foreground nil
+                                    :background nil))))
+    :config
+    (load-theme 'doom-tomorrow-night t))
 #+end_src
 
 ** NANO
@@ -223,6 +225,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 
 #+begin_src elisp
   (use-package nano-theme
+    :ensure t
     :disabled
     ;; :custom
     ;; (nano-dark-foreground "#e8d6c6")
@@ -263,6 +266,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 
 #+begin_src elisp
   (use-package nano-modeline
+    :ensure t
     :disabled
     :demand
     :init
@@ -285,6 +289,7 @@ I find that [[https://github.com/rougier/nano-modeline][nano modeline]] looks ve
 
 #+begin_src elisp
   (use-package nano-agenda
+    :ensure t
     :disabled       ; It's probably gonna be useful when I start using org-agenda
     :commands (nano-agenda))
 #+end_src
@@ -371,7 +376,9 @@ General is a package that provides a keybinding framework. It integrates nicely 
 
 #+begin_src elisp
   (use-package general
-    :init
+    :ensure t
+    :demand
+    :config
     (general-create-definer oh/leader-key
       ;:states '(normal insert visual emacs)
       :keymaps 'override
@@ -388,6 +395,7 @@ Evil is an extensible vi layer for Emacs. It is a very powerful package that all
 
 #+begin_src elisp
   (use-package evil
+    :ensure t
     :disabled
     :custom
     (evil-want-keybinding nil)
@@ -412,6 +420,8 @@ Evil is an extensible vi layer for Emacs. It is a very powerful package that all
 
 #+begin_src elisp
   (use-package evil-collection
+    :ensure t
+    :disabled
     :after evil
     :init
     (evil-collection-init))
@@ -422,6 +432,8 @@ Evil is an extensible vi layer for Emacs. It is a very powerful package that all
 
 #+begin_src elisp
   (use-package evil-nerd-commenter
+    :ensure t
+    :disabled
     :after evil
     :general
     ('(normal visual)
@@ -436,6 +448,8 @@ Evil is an extensible vi layer for Emacs. It is a very powerful package that all
 
 #+begin_src elisp
   (use-package evil-surround
+    :ensure t
+    :disabled
     :after evil
     :init
     (global-evil-surround-mode))
@@ -446,6 +460,8 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-goggles
+    :ensure t
+    :disabled
     :after evil
     :custom
     (evil-goggles-enable-delete nil)
@@ -458,6 +474,8 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package evil-lion
+    :ensure t
+    :disabled
     :after evil
     :general
     ('(normal visual) "g l" 'evil-lion-left
@@ -523,7 +541,9 @@ Add visual hints to ceirtain evil opperations such as yank.
 
 #+begin_src elisp
   (use-package which-key
-    :init
+    :ensure t
+    :demand
+    :config
     (which-key-mode))
 #+end_src
 
@@ -532,6 +552,7 @@ A minor mode which makes ~C-w~ and ~M-w~ act on the current line if no region is
 
 #+begin_src elisp
   (use-package whole-line-or-region
+    :ensure t
     :disabled
     :demand
     :config
@@ -548,6 +569,8 @@ Corfu is a completion framework that provides a horizontal completion UI. It is 
 
 #+begin_src elisp
   (use-package corfu
+    :ensure t
+    :demand
     ;; Optional customizations
     :custom
     ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
@@ -560,7 +583,7 @@ Corfu is a completion framework that provides a horizontal completion UI. It is 
     ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
     ;; (corfu-scroll-margin 5)        ;; Use scroll margin
 
-    :init
+    :config
     (global-corfu-mode))
 #+end_src
 
@@ -568,8 +591,9 @@ It is also possible to use Corfu in the terminal. This requires the =corfu-termi
 
 #+begin_src elisp
   (use-package corfu-terminal
+    :ensure t
     :after corfu
-    :init
+    :config
     (unless (display-graphic-p)
       (corfu-terminal-mode +1)))
 #+end_src
@@ -580,7 +604,7 @@ Make Corfu sort by last selected candidates.
   (use-package corfu-history
     :after corfu
     :ensure nil
-    :init
+    :config
     (corfu-history-mode t))
 #+end_src
 
@@ -606,10 +630,12 @@ Vertico is a completion framework that provides a vertical completion UI. It is 
 #+begin_src elisp
   ;; Enable vertico
   (use-package vertico
-    :init
+    :ensure t
+    :demand
+    :custom
     ;; Enable recursive minibuffers
-    (setq enable-recursive-minibuffers t)
-
+    (enable-recursive-minibuffers t)
+    :config
     (vertico-mode))
 
     ;; Different scroll margin
@@ -630,7 +656,8 @@ Save history across Emacs sessions. Vertico sorts by history position.
 #+begin_src elisp
   (use-package savehist
     :ensure nil
-    :init
+    :demand
+    :config
     (savehist-mode))
 #+end_src
 
@@ -661,6 +688,7 @@ Orderless is a completion style that allows matching candidates in any order. It
 
 #+begin_src elisp
   (use-package orderless
+    :ensure t
     :init
     ;; Configure a custom style dispatcher (see the Consult wiki)
     ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
@@ -675,6 +703,7 @@ Marginalia is a package that displays additional information about the candidate
 
 #+begin_src elisp
   (use-package marginalia
+    :ensure t
     :after vertico
     ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
     ;; available in the *Completions* buffer, add it to the
@@ -682,7 +711,7 @@ Marginalia is a package that displays additional information about the candidate
     :bind (:map minibuffer-local-map
            ("M-A" . marginalia-cycle))
 
-    :init
+    :config
 
     ;; Marginalia must be activated in the :init section of use-package such that
     ;; the mode gets enabled right away. Note that this forces loading the
@@ -694,8 +723,9 @@ It's also nice to have some nice looking icons for the completion candidates. Th
 
 #+begin_src elisp
   (use-package nerd-icons-completion
+    :ensure t
     :after marginalia
-    :init
+    :config
     (nerd-icons-completion-mode)
     (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
 #+end_src
@@ -705,6 +735,7 @@ Consult is a package that provides a set of commands for searching and navigatin
 
 #+begin_src elisp
   (use-package consult
+    :ensure t
     ;; :requires recentf
     :custom
     (consult-buffer-sources
@@ -814,28 +845,31 @@ Consult is a package that provides a set of commands for searching and navigatin
 ** Magit
 
 #+begin_src elisp
-  (use-package magit
-    ;; :ensure nil
-    :custom
-    (magit-display-buffer-function
-     #'magit-display-buffer-same-window-except-diff-v1)
+    (use-package magit
+      :ensure t
+      ;; :ensure nil
+      :custom
+      (magit-display-buffer-function
+       #'magit-display-buffer-same-window-except-diff-v1)
 
-    :general
-    (oh/leader-key
-      "gg" '(magit-status :wk "magit")
-      "gb" '(magit-blame-addition :wk "blame")))
-    ;; ('magitgmode-map
-    ;;  "w" 'magit-worktree
-    ;;  "h" 'magit-patch))
+      :general
+      (oh/leader-key
+        "gg" '(magit-status :wk "magit")
+        "gb" '(magit-blame-addition :wk "blame")))
+      ;; ('magitgmode-map
+      ;;  "w" 'magit-worktree
+      ;;  "h" 'magit-patch))
 
 
-  (use-package transient)
+    (use-package transient
+      :ensure t)
 #+end_src
 
 Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
   (use-package magit-todos
+    :ensure t
     ;; :ensure nil
     ;; :elpaca (magit-todos :type git :host github :repo "alphapapa/magit-todos")
     :after (magit)
@@ -844,6 +878,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     (magit-todos-mode 1))
 
   (use-package hl-todo
+    :ensure t
     :demand
     :config
     (global-hl-todo-mode 1))
@@ -861,6 +896,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
   (use-package diff-hl
+    :ensure t
     :hook
     (prog-mode . diff-hl-mode)
     (dired-mode . diff-hl-dired-mode)
@@ -876,6 +912,7 @@ Make magit integrate with github and other git hosting services.
 
 #+begin_src elisp
   (use-package forge
+    :ensure t
     ;; :ensure nil
     :after magit
     :demand t
@@ -890,6 +927,8 @@ Projectile is a project management package. It provides a set of commands for fi
 
 #+begin_src elisp
   (use-package projectile
+    :ensure t
+    :disabled
     :after seq
     ;; :general
     ;; (oh/leader-key
@@ -912,15 +951,6 @@ Projectile is a project management package. It provides a set of commands for fi
 #+end_src
 
 * Programming
-** Progmode
-
-#+begin_src elisp
-  (use-package prog-mode
-    :ensure nil
-    :hook (prog-mode . (lambda ()
-                         (editorconfig-mode 1))))
-#+end_src
-
 ** Eglot
 Eglot is a client for Language Server Protocol (LSP). It is a protocol that allows for IDE-like features such as code completion, code navigation, etc. It is supported by many programming languages.
 
@@ -954,6 +984,7 @@ LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/
 
 #+begin_src elisp
   (use-package lsp-mode
+    :ensure t
     :commands
     (lsp-deferred lsp)
 
@@ -989,6 +1020,7 @@ LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/
             '(orderless)))) ;; Configure orderless
 
   (use-package lsp-ui
+    :ensure t
     :after lsp-mode
 
     :custom
@@ -1009,6 +1041,7 @@ LSP-mode is another lsp implementation for emacs. [[https://emacs-lsp.github.io/
     ;;   "K" 'lsp-ui-doc-show :wk "show documentation"))
 
   (use-package consult-lsp
+    :ensure t
     :after lsp-mode)
 #+end_src
 
@@ -1017,6 +1050,7 @@ The debug component for LSP
 
 #+begin_src elisp
   (use-package dap-mode
+    :ensure t
     :after lsp-mode
     :config
     (dap-auto-configure-mode))
@@ -1052,8 +1086,18 @@ Flymake is a minor mode that performs on-the-fly syntax checking. It is enabled 
 Visualize the colors of color codes
 
 #+begin_src elisp
-    (use-package rainbow-mode
-      :hook prog-mode)
+  (use-package rainbow-mode
+    :ensure t
+    :hook prog-mode)
+#+end_src
+
+** Editorconfig
+
+#+begin_src elisp
+  (use-package editorconfig
+    :ensure t
+    :config
+    (editorconfig-mode 1))
 #+end_src
 * Languages
 Emacs 29 has built-in support for =tree-sitter=, which is a parser generator tool and an incremental parsing library. It is used to create a syntax highlighting engine that is faster and more accurate than the built-in one. However, Emacs does not ship with any language support for =tree-sitter=, so we'll have to install it ourselves... or have =treesit-auto= to do it for us.
@@ -1062,6 +1106,7 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 
 #+begin_src elisp
   (use-package treesit-auto
+    :ensure t
     :demand t
     :custom
     (treesit-auto-install 'prompt)
@@ -1240,7 +1285,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     (TeX-parse-self t)
     (TeX-master nil)
     :init
-    (load "auctex.el" nil t t)
+    ;; (load "auctex.el" nil t t)
     ;; Use pdf-tools to open PDF files
 
     ;; Update PDF buffers after successful LaTeX runs
@@ -1337,6 +1382,7 @@ Some other zotero plugins I use are:
 
 #+begin_src elisp
   (use-package citar
+    :ensure t
     :hook
     (org-mode . citar-capf-setup)
     (latex-mode . citar-capf-setup)
@@ -1406,6 +1452,7 @@ Some other zotero plugins I use are:
             citar-indicator-cited-icons)))
 
   (use-package citar-embark
+    :ensure t
     :after citar
     :no-require
     :config (citar-embark-mode))
@@ -1423,6 +1470,7 @@ Some other zotero plugins I use are:
 
 #+begin_src elisp
   (use-package citar-org-roam
+    :ensure t
     :after (citar org-roam)
     :config (citar-org-roam-mode)
     :general
@@ -1515,8 +1563,9 @@ rather than files.  These modes usually use read-only buffers.
 *** Org-appear
 Toggle the visibility of emphasis markers when the cursor is on the line.
 
-#+begin_src elisp :lexical no
+#+begin_src elisp
   (use-package org-appear
+    :ensure t
     :hook (org-mode . org-appear-mode))
 #+end_src
 
@@ -1525,6 +1574,7 @@ Automatically toggle =org-preview-latex-fragment= when the cursor is on the line
 
 #+begin_src elisp
   (use-package org-fragtog
+    :ensure t
     :hook (org-mode . org-fragtog-mode))
 #+end_src
 
@@ -1533,6 +1583,7 @@ Provides a clean look for org-mode.
 
 #+begin_src elisp
   (use-package org-modern
+    :ensure t
     :hook (org-mode . org-modern-mode)
     :custom
     (org-modern-table nil))
@@ -1556,6 +1607,7 @@ Show pdf previews as inline images.
 
 #+begin_src elisp
   (use-package org-inline-pdf
+    :ensure t
     :after org
     :hook (org-mode . org-inline-pdf-mode))
 #+end_src
@@ -1564,6 +1616,7 @@ Show pdf previews as inline images.
 
 #+begin_src elisp
   (use-package org-download
+    :ensure t
     :after org
     :custom
     (org-download-method 'attach)
@@ -1579,6 +1632,7 @@ It is nice sometimes to use org for presentations.
 
 #+begin_src elisp
   (use-package org-present
+    :ensure t
     :after org
     :general
     (oh/leader-key 'org-mode-map
@@ -1608,6 +1662,7 @@ Export dispatcher using pandoc
 
 #+begin_src elisp
   (use-package ox-pandoc
+    :ensure t
     :after org)
 #+end_src
 
@@ -1615,6 +1670,7 @@ Export dispatcher using pandoc
 
 #+begin_src elisp
   (use-package org-roam
+    :ensure t
     :custom
     (org-roam-completion-everywhere t)
     ;; (org-roam-node-display-template "${title:*} ${tags:10}")
@@ -1641,6 +1697,7 @@ Export dispatcher using pandoc
 
 #+begin_src elisp
   (use-package org-roam-ui
+    :ensure t
       ;; :after org-roam
   ;;         normally we'd recommend hooking orui after org-roam, but since
   ;;         org-roam does not have a hookable mode anymore, you're advised to
@@ -1661,6 +1718,7 @@ Export dispatcher using pandoc
 
 #+begin_src elisp
   (use-package consult-org-roam
+    :ensure t
      :after org-roam
      :init
      ;; Activate the minor mode
@@ -1690,6 +1748,7 @@ Export dispatcher using pandoc
 
 #+begin_src elisp
   (use-package org-noter
+    :ensure t
     :after org
     :general
     (oh/leader-key
@@ -1770,6 +1829,7 @@ The emacs web browser
 
 #+begin_src elisp
   (use-package vterm
+    :ensure t
     :disabled
     ;; :hook
     ;; (vterm-mode . oh/vterm-start-tmux)
@@ -1795,6 +1855,7 @@ A terminal emulator
 
 #+begin_src elisp
   (use-package eat
+    :ensure t
     :bind
     ("C-c e" . eat))
 #+end_src
@@ -1807,6 +1868,7 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
   ;;  :init
   ;;  (direnv-mode))
   (use-package direnv
+    :ensure t
    :after (prog-mode)
    :demand t
    :config
@@ -1836,16 +1898,19 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 
 #+begin_src elisp
   (use-package wakatime-mode
-      :custom
-      (wakatime-disable-on-error t)
-      (wakatime-cli-path "~/.wakatime/wakatime-cli")
-      :init
-      (global-wakatime-mode))
+    :ensure t
+    :demand
+    :custom
+    (wakatime-disable-on-error t)
+    (wakatime-cli-path "~/.wakatime/wakatime-cli")
+    :config
+    (global-wakatime-mode))
 #+end_src
 ** Make
 
 #+begin_src elisp
   (use-package makefile-executor
+    :ensure t
     :hook
     ('makefile-mode-hook 'makefile-executor-mode)
     :general
@@ -1913,6 +1978,7 @@ Of course I need to have the wizard book as info pages :)
 
 #+begin_src elisp
   (use-package sicp
+    :ensure t
     :after info)
 #+end_src
 
@@ -2044,6 +2110,7 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
 
 #+begin_src elisp
   (use-package org-msg
+    :ensure t
       :after mu4e
       :config
       (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
@@ -2067,6 +2134,7 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
 
 #+begin_src elisp
   (use-package mu4e-marker-icons
+    :ensure t
     :after mu4e
     :init (mu4e-marker-icons-mode 1))
 #+end_src
@@ -2076,6 +2144,7 @@ Not undo-tree
 
 #+begin_src elisp
   (use-package vundo
+    :ensure t
     :custom
     (vundo-glyph-alist vundo-unicode-symbols)
     (vundo-window-max-height 10)
@@ -2089,13 +2158,16 @@ Save & recover undo steps between Emacs sessions.
 
 #+begin_src elisp
   (use-package undo-fu
+    :ensure t
     :custom
     (undo-limit (* 64 1024 1024))               ; 64mB.
     (undo-strong-limit (* 96 1024 1024))        ; 96mB.
     (undo-outer-limit (* 10 undo-strong-limit))) ; 960mB.
 
   (use-package undo-fu-session
-    :init
+    :ensure t
+    :demand
+    :config
     (undo-fu-session-global-mode))
 #+end_src
 
@@ -2128,6 +2200,7 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 
 #+begin_src elisp
   (use-package powerthesaurus
+    :ensure t
     :general
     (oh/leader-key
       "st" '(powerthesaurus-transient :wk "thesaurus")))
@@ -2137,6 +2210,7 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 A better help buffer
 #+begin_src elisp
   (use-package helpful
+    :ensure t
     :diminish
     ;; :custom
     ;; (counsel-describe-function-function #'helpful-callable)
@@ -2178,6 +2252,7 @@ Make text more readable by narrowing the text at the center of the screen. This 
 
 #+begin_src elisp
   (use-package olivetti
+    :ensure t
     :commands olivetti-mode
     :hook (org-mode . olivetti-mode)
     :custom (olivetti-body-width 90)
@@ -2191,13 +2266,14 @@ A prettier startup screen
 
 #+begin_src elisp
   (use-package dashboard
-    :init
-    (add-hook 'elpaca-after-init-hook #'dashboard-insert-startupify-lists)
-    (add-hook 'elpaca-after-init-hook #'dashboard-initialize)
-    (dashboard-setup-startup-hook)
+    :ensure t
+    :demand
+    :hook
+    ('elpaca-after-init-hook #'dashboard-insert-startupify-lists)
+    ('elpaca-after-init-hook #'dashboard-initialize)
 
     :custom
-    (dashboard-projects-backend 'projectile)
+    ;; (dashboard-projects-backend 'projectile)
     (dashboard-set-heading-icons t)
     (dashboard-set-file-icons t)
     (dashboard-display-icons-p t)     ; display icons on both GUI and terminal
@@ -2210,8 +2286,10 @@ A prettier startup screen
                        (bookmarks . 5)
                        (projects . 5)
                        (agenda . 5)
-                       (registers . 5))))
+                       (registers . 5)))
 
+    :config
+    (dashboard-setup-startup-hook))
 #+end_src
 
 * Post Init

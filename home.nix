@@ -19,12 +19,13 @@
 
   programs.emacs = {
     enable = true;
-    package = (pkgs.emacsWithPackagesFromUsePackage {
-      package = pkgs.emacs-pgtk;
-      config = ./config.org;
-      alwaysEnsure = true;
-      alwaysTangle = true;
-    });
+    package = pkgs.emacs-pgtk;
+    # package = (pkgs.emacsWithPackagesFromUsePackage {
+    #   package = pkgs.emacs-pgtk;
+    #   config = ./config.org;
+    #   alwaysEnsure = true;
+    #   alwaysTangle = true;
+    # });
     extraPackages = epkgs: with epkgs; [
       ## jinx usually needs an extra header file. It is therefore easier to add
       ## jinx as an extra package for emacs.
@@ -166,8 +167,8 @@
     # sqlite3
     sqlite
     ## jinx (spell check)
-    emacsPackages.jinx
-    emacsPackages.pdf-tools
+    # emacsPackages.jinx
+    # emacsPackages.pdf-tools
 
     # autoconf
     # automake
