@@ -1,0 +1,282 @@
+{ config, lib, pkgs, ... }:
+
+{
+  # Home Manager needs a bit of information about you and the paths it should
+  # manage.
+  home.username = "oskar";
+  home.homeDirectory = "/home/oskar";
+
+  manual.manpages.enable = false;
+
+  # This value determines the Home Manager release that your configuration is
+  # compatible with. This helps avoid breakage when a new Home Manager release
+  # introduces backwards incompatible changes.
+  #
+  # You should not change this value, even if you update Home Manager. If you do
+  # want to update the value, then make sure to first check the Home Manager
+  # release notes.
+  home.stateVersion = "23.05"; # Please read the comment before changing.
+
+  programs.emacs = {
+    enable = true;
+    package = (pkgs.emacsWithPackagesFromUsePackage {
+      package = pkgs.emacs-pgtk;
+      config = ./config.org;
+      alwaysEnsure = true;
+      alwaysTangle = true;
+    });
+    extraPackages = epkgs: with epkgs; [
+      ## jinx usually needs an extra header file. It is therefore easier to add
+      ## jinx as an extra package for emacs.
+      # jinx
+      auctex
+      pdf-tools
+      # magit-todos
+      # magit
+      sharper
+      gptel
+      nix-mode
+      # forge
+      # git-commit
+      # org-pdftools
+    ];
+  };
+
+  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+    "1password"
+  ];
+
+  home.packages = with pkgs; [
+    _1password-gui
+
+    ### fish ###
+    babelfish
+
+    ### misc ###
+    zotero_7
+    sshfs
+    devbox
+
+    ### reMarkable ###
+    rmapi
+
+    ### android ###
+    android-tools
+
+    ### C# ###
+    omnisharp-roslyn
+
+    gh                          # github cli
+    awscli2
+
+    ### Assembly ###
+    asm-lsp
+
+    languagetool
+    zoxide
+    gnuplot
+
+    ditaa
+
+    vlc
+
+    pkg-config
+    gnumake
+
+    # gui-lib
+    racket
+    guile
+    mitscheme
+    neofetch
+    tldr
+    # emacs29-pgtk
+    roboto-mono
+    roboto
+    roboto-serif
+
+    ### emacs packages ###
+    nerdfonts
+    # magit
+    git
+    # projectile
+    ripgrep
+    fd
+
+    ### C ###
+    man-pages
+    man-pages-posix
+    valgrind
+    gdb
+    # clang
+    clang-tools
+    clang
+    clang-analyzer
+    (hiPrio gcc) # Needed hiPrio to resolve conflict as both
+    # clang and gcc provide C++ binary
+    ccls
+    bear
+
+    ### .net ###
+    dotnet-sdk_7
+    mono
+
+    # semgrep
+
+    ### rust ###
+    rustup
+
+    ### maude ###
+    maude
+
+    ### plantuml ###
+    plantuml
+    graphviz
+
+    ### python ###
+    #python312
+    #mypy
+    ## nodePackages_latest.pyright
+    #python312Packages.numpy
+    #python312Packages.packaging
+    #python312Packages.matplotlib
+    # python312Packages.jedi-language-server
+
+    ### Java ###
+    jdk
+    jdt-language-server
+    java-language-server
+    maven
+    gradle
+    # latex org
+    texlive.combined.scheme-full
+    python311Packages.pygments
+
+    # org-inline-pdf
+    pdf2svg
+    imagemagick
+    # org-download
+    wl-clipboard
+    # pandoc
+    pandoc
+    marksman
+    # vterm
+    cmake
+    libtool
+    inetutils
+    # sqlite3
+    sqlite
+    ## jinx (spell check)
+    emacsPackages.jinx
+    emacsPackages.pdf-tools
+
+    # autoconf
+    # automake
+    # # libpng-devel
+    # poppler-devel
+    # poppler-glib-devel
+    # zlib-devel pkgconf
+
+    enchant
+    hunspellDicts.en_US
+    hunspellDicts.nb_NO
+
+    nodePackages_latest.vscode-json-languageserver-bin
+
+    nodejs
+    nodePackages.typescript-language-server
+    nodePackages.eslint
+    ## chatgpt-shell
+    pass
+    ## mu4e (email)
+    mu
+    # mbsync
+    msmtp
+    isync
+
+
+    # # It is sometimes useful to fine-tune packages, for example, by applying
+    # # overrides. You can do that directly here, just don't forget the
+    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
+    # # fonts?
+    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
+
+    # # You can also create simple shell scripts directly inside your
+    # # configuration. For example, this adds a command 'my-hello' to your
+    # # environment:
+    # (pkgs.writeShellScriptBin "my-hello" ''
+    #   echo "Hello, ${config.home.username}!"
+    # '')
+  ];
+
+  programs.starship.enable = true;
+  programs.fish = {
+    enable = true;
+    interactiveShellInit = ''
+      set fish_greeting # Disable greeting
+    '';
+    shellInit=''
+      if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish' ]
+        . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
+      end
+
+      fish_add_path ~/.dotnet/tools/
+      fish_add_path ~/.local/bin/
+      fish_add_path ~/.cargo/bin/
+
+      alias git-del-merged='git branch --merged origin | grep -v -E " main\$| master\$" | xargs -pr git branch -d'
+    '';
+  };
+
+  programs.direnv.enable = true;
+
+  programs.git = {
+    enable = true;
+    userName = "Oskar Haukbøe";
+    userEmail = "ohaukeboe@pm.me";
+  };
+
+
+  # Allow home-manager to install fonts
+  fonts.fontconfig.enable = true;
+
+  # Home Manager is pretty good at managing dotfiles. The primary way to manage
+  # plain files is through 'home.file'.
+  home.file = {
+    # # Building this configuration will create a copy of 'dotfiles/screenrc' in
+    # # the Nix store. Activating the configuration will then make '~/.screenrc' a
+    # # symlink to the Nix store copy.
+    # ".screenrc".source = dotfiles/screenrc;
+
+    # # You can also set the file content immediately.
+    # ".gradle/gradle.properties".text = ''
+    #   org.gradle.console=verbose
+    #   org.gradle.daemon.idletimeout=3600000
+    # '';
+  };
+
+  # You can also manage environment variables but you will have to manually
+  # source
+  #
+  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
+  #
+  # or
+  #
+  #  /etc/profiles/per-user/oskar/etc/profile.d/hm-session-vars.sh
+  #
+  # if you don't want to manage your shell through Home Manager.
+  home.sessionVariables = {
+    EDITOR = "vim";
+    DOTNET_ROOT = "${pkgs.dotnet-sdk}";
+  };
+
+  # Enable lorri for easy development environment
+  services.lorri.enable = true;
+
+  # Let Home Manager install and manage itself.
+  programs.home-manager.enable = true;
+
+  # Enable man cache. -- Needed for consult-man
+  programs.man.generateCaches = true;
+
+  # nixpkgs.config.allowUnfree = true;
+}
