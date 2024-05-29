@@ -1043,8 +1043,9 @@ Flymake is a minor mode that performs on-the-fly syntax checking. It is enabled 
     :ensure nil
     :general
     (oh/leader-key
-     "ce" '(flymake-show-diagnostic :wk "show diagnostic")))
-
+     "ce" '(flymake-show-diagnostic :wk "show diagnostic"))
+    :custom
+    (flymake-show-diagnostic-at-end-of-line t))
 #+end_src
 
 ** Rainbow mode
