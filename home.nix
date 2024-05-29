@@ -29,7 +29,7 @@
     extraPackages = epkgs: with epkgs; [
       ## jinx usually needs an extra header file. It is therefore easier to add
       ## jinx as an extra package for emacs.
-      jinx
+      # jinx
       auctex
       pdf-tools
       # magit-todos
