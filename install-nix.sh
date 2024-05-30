@@ -17,3 +17,10 @@ mkdir -p ~/.config/nix
 
 ln -sf $DIR/nix.conf ~/.config/nix/nix.conf
 ln -sg $DIR ~/.config/home-manager
+
+# Setup cachix
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+echo "trusted-users = root oskar" | sudo tee -a /etc/nix/nix.conf && sudo pkill nix-daemon
+cachix use nix-community
+
+home-manager switch

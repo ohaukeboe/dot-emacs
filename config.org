@@ -704,6 +704,7 @@ Marginalia is a package that displays additional information about the candidate
 #+begin_src elisp
   (use-package marginalia
     :ensure t
+    :demand
     :after vertico
     ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
     ;; available in the *Completions* buffer, add it to the
@@ -1857,7 +1858,9 @@ A terminal emulator
   (use-package eat
     :ensure t
     :bind
-    ("C-c e" . eat))
+    ("C-c e" . eat)
+    :hook
+    (eat-mode . (lambda () (display-line-numbers-mode -1))))
 #+end_src
 
 ** Direnv
