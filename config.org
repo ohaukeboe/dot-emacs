@@ -1157,7 +1157,7 @@ Export dispatcher using pandoc
 #+begin_src elisp
   (use-package ox-pandoc
     :ensure t
-    :after org)
+    :after ox)
 #+end_src
 
 *** org-roam
@@ -1243,7 +1243,7 @@ Export dispatcher using pandoc
 #+begin_src elisp
   (use-package org-noter
     :ensure t
-    :after org
+    :defer
     ;; :general
     ;; (oh/leader-key
     ;;   "ne" '(org-noter :which-key "org-noter"))
