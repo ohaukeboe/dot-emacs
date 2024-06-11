@@ -618,11 +618,13 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 #+begin_src elisp
   (use-package treesit-auto
     :ensure t
+    :disabled
     :after prog-mode
     :custom
     (treesit-auto-install 'prompt)
     :config
     (treesit-auto-add-to-auto-mode-alist 'all)
+    (delete 'c-sharp treesit-auto-langs)
     (global-treesit-auto-mode))
 #+end_src
 
@@ -641,9 +643,10 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     :custom
     (rust-mode-treesitter-derive t)
     :config
-    (add-to-list 'eglot-server-programs
-                 '((rust-ts-mode rust-mode) .
-                   ("rust-analyzer" :initializationOptions (:check (:command "clippy"))))))
+    (with-eval-after-load 'eglot
+      (add-to-list 'eglot-server-programs
+                   '((rust-ts-mode rust-mode) .
+                     ("rust-analyzer" :initializationOptions (:check (:command "clippy")))))))
 #+end_src
 
 ** C
@@ -685,12 +688,17 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 #+begin_src elisp
   (use-package csharp-mode
        ;; :hook (csharp-ts-mode . lsp)
-    :hook (csharp-ts-mode . eglot-ensure)
+    :hook (csharp-mode . eglot-ensure)
     :mode "\\.cs\\'"
+    ;; (add-to-list 'treesit-language-source-alist
+    ;;              '(csharp . ("https://github.com/tree-sitter/tree-sitter-c-sharp" Latest)))
     :config
+    ;; (add-to-list 'treesit-language-source-alist
+    ;;              '(csharp . "https://github.com/tree-sitter/tree-sitter-c-sharp"))
     (with-eval-after-load 'eglot
       (add-to-list 'eglot-server-programs
-                   '(csharp-ts-mode . ("OmniSharp" "-lsp")))))
+                   '(csharp-mode . ("OmniSharp" "-lsp")))))
+
     ;; :general
     ;; (:keymaps 'csharp-ts-mode-map
     ;;           :states 'normal
@@ -701,8 +709,9 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package sharper
-    :disabled)
-    ;; :after '(csharp-mode csharp-ts-mode)
+    ;; :disabled)
+    :ensure t
+    :after '(csharp-mode csharp-ts-mode))
     ;; :general
     ;; (oh/leader-key csharp-ts-mode-map
     ;;   "m d" 'sharper-main-transient))
