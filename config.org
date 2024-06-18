@@ -686,18 +686,20 @@ For editing =.tsx= files, we'll use =jtsx=.
 When in a C# project, it is important to set the variable =lsp-csharp-solution-file= to point to the project solution file (.sln). It is recommended to set this in a =.dir-locals.el= file for the project.
 
 #+begin_src elisp
-  (use-package csharp-mode
-       ;; :hook (csharp-ts-mode . lsp)
-    :hook (csharp-mode . eglot-ensure)
+  (use-package csharp-ts-mode
+    ;; :hook (csharp-ts-mode . lsp)
+    :hook (csharp-ts-mode . eglot-ensure)
     :mode "\\.cs\\'"
     ;; (add-to-list 'treesit-language-source-alist
     ;;              '(csharp . ("https://github.com/tree-sitter/tree-sitter-c-sharp" Latest)))
-    :config
-    ;; (add-to-list 'treesit-language-source-alist
-    ;;              '(csharp . "https://github.com/tree-sitter/tree-sitter-c-sharp"))
+    :init
+    (with-eval-after-load 'treesit
+      (add-to-list 'treesit-language-source-alist
+                   '(c-sharp "https://github.com/tree-sitter/tree-sitter-c-sharp"
+                             "v0.20.0")))
     (with-eval-after-load 'eglot
       (add-to-list 'eglot-server-programs
-                   '(csharp-mode . ("OmniSharp" "-lsp")))))
+                   '(csharp-ts-mode . ("OmniSharp" "-lsp")))))
 
     ;; :general
     ;; (:keymaps 'csharp-ts-mode-map
