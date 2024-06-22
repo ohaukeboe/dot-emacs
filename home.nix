@@ -229,7 +229,11 @@
     '';
   };
 
-  programs.direnv.enable = true;
+  programs.direnv = {
+    enable = true;
+    # enableFishIntegration = true;
+    nix-direnv.enable = true;
+  };
 
   programs.git = {
     enable = true;
@@ -271,8 +275,8 @@
     DOTNET_ROOT = "${pkgs.dotnet-sdk}";
   };
 
-  # Enable lorri for easy development environment
-  services.lorri.enable = true;
+  # # Enable lorri for easy development environment
+  # services.lorri.enable = true;
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
