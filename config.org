@@ -512,6 +512,14 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     :config
     (global-hl-todo-mode 1))
 #+end_src
+** Gitignore
+
+#+begin_src elisp
+  (use-package gitignore-templates
+    :ensure t
+    :commands
+    'gitignore-templates-insert)
+#+end_src
 
 ** diff-hl
 
@@ -610,7 +618,7 @@ Visualize the colors of color codes
     (editorconfig-mode 1))
 #+end_src
 
-* Languages
+* Languanges
 Emacs 29 has built-in support for =tree-sitter=, which is a parser generator tool and an incremental parsing library. It is used to create a syntax highlighting engine that is faster and more accurate than the built-in one. However, Emacs does not ship with any language support for =tree-sitter=, so we'll have to install it ourselves... or have =treesit-auto= to do it for us.
 
 According to the =treesit-auto= documentation, Emacs 30 will ship with better defaults for =tree-sitter=, so hopefully we won't need =treesit-auto= anymore.
@@ -777,6 +785,13 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
   (use-package nix-mode
       ;; :hook (nix-mode . eglot-ensure)
     :mode "\\.nix\\'")
+#+end_src
+
+** Git
+
+#+begin_src elisp
+  (use-package git-modes
+    :ensure t)
 #+end_src
 
 ** LaTex
@@ -1332,6 +1347,7 @@ A terminal emulator
     :ensure t
     :bind
     ("C-c e" . eat)
+    ("C-x p t" . eat-project)
     :hook
     (eat-mode . (lambda () (display-line-numbers-mode -1))))
 #+end_src
