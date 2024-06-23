@@ -555,17 +555,16 @@ Eglot is a client for Language Server Protocol (LSP). It is a protocol that allo
 For information about setting up a new lsp server, see [[https://joaotavora.github.io/eglot/][Link]].
 
 #+begin_src elisp
-  ;; (use-package eglot
-  ;;   ;; :hook (prog-mode . eglot-ensure)
-  ;;   :general
-  ;;   (oh/leader-key eglot-mode-map
-  ;;    "ca" '(eglot-code-actions :wk "code actions")
-  ;;    "cr" '(eglot-rename :wk "rename")
-  ;;    "cf" '(eglot-format :wk "format")
-  ;;    "cm" '(consult-imenu :wk "navigate symbols")
-  ;;    "cM" '(consult-imenu-multi :wk "navigate symbols (multi)")
-  ;;    "cd" '(consult-lsp-diagnostics :wk "diagnostics")))
-
+  (use-package eglot
+    :defer t
+    :bind
+    (:map eglot-mode-map
+          ("C-c a" . eglot-code-actions)
+          ("C-c r" . eglot-rename)
+          ("C-c f" . eglot-format)
+          ("C-c m" . consult-imenu)
+          ("C-c M" . consult-imenu-multi)
+          ("C-c d" . consult-lsp-diagnostics)))
 
   ;; (use-package eglot-x
   ;;   :ensure (eglot-x :type git :host github :repo "nemethf/eglot-x")
@@ -639,22 +638,27 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 ** Rust
 
 #+begin_src elisp
-  (use-package rust-mode
-    :ensure t
+  (use-package rust-ts-mode
+    ;; :ensure t
     :hook (rust-ts-mode . eglot-ensure)
     :mode "\\.rs\\'"
-    :bind
-    ("C-c C-c C-r" . rust-run)
-    ("C-c C-c C-c" . rust-run-clippy)
-    ("C-c C-c C-t" . rust-test)
-    ("C-c C-c C-k" . rust-check)
+    ;; :bind
+    ;; (:map rust-ts-mode-map
+    ;;  ("C-c C-c C-b" . rust-compile)
+    ;;  ("C-c C-c C-r" . rust-run)
+    ;;  ("C-c C-c C-c" . rust-run-clippy)
+    ;;  ("C-c C-c C-t" . rust-test)
+    ;;  ("C-c C-c C-k" . rust-check))
     :custom
     (rust-mode-treesitter-derive t)
     :config
     (with-eval-after-load 'eglot
       (add-to-list 'eglot-server-programs
                    '((rust-ts-mode rust-mode) .
-                     ("rust-analyzer" :initializationOptions (:check (:command "clippy")))))))
+                     ("rust-analyzer"
+                      :initializationOptions
+                      (:check (:command "clippy")
+                       :cargo (:targetDir t)))))))
 #+end_src
 
 ** C

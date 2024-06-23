@@ -14,14 +14,17 @@
       url = "github:nix-community/emacs-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Add nixGL for better OpenGL and vulkan support
+    nixgl.url = "github:nix-community/nixGL";
   };
 
-  outputs = { nixpkgs, home-manager, emacs-overlay, ... }:
+  outputs = { nixpkgs, home-manager, emacs-overlay, nixgl, ... }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [ emacs-overlay.overlay ];
+        overlays = [ emacs-overlay.overlay nixgl.overlay ];
       };
     in {
       homeConfigurations."oskar" = home-manager.lib.homeManagerConfiguration {
@@ -38,4 +41,3 @@
       };
     };
 }
-
