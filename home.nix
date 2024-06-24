@@ -119,7 +119,7 @@
     bear
 
     ### .net ###
-    dotnet-sdk_7
+    dotnet-sdk_8
     mono
 
     # semgrep
