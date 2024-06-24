@@ -669,7 +669,6 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     :mode
     "\\.c\\'"
     "\\.h\\'")
-
 #+end_src
 
 ** Typescript
@@ -737,6 +736,15 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
   (use-package json-ts-mode
     :hook (json-ts-mode . eglot-ensure)
     :mode "\\.json\\'")
+#+end_src
+
+** YAML
+
+#+begin_src elisp
+  (use-package yaml-ts-mode
+    :mode
+    "\\.yml\\'")
+
 #+end_src
 
 ** Python
