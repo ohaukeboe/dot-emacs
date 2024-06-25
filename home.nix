@@ -276,7 +276,7 @@
   # if you don't want to manage your shell through Home Manager.
   home.sessionVariables = {
     EDITOR = "vim";
-    DOTNET_ROOT = "${pkgs.dotnet-sdk}";
+    DOTNET_ROOT = "${pkgs.dotnet-sdk_8}";
   };
 
   # # Enable lorri for easy development environment
