@@ -35,6 +35,11 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
     (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
     (warning-minimum-level :error)
 
+    ;; gc settings ++ to improve performance
+    (gc-cons-threshold (* 256 1024 1024))  ; 256mb
+    (gc-cons-percentage 0.3)
+    (read-process-output-max (* 1024 1024)) ;
+
     ;; UI settings
     (scroll-bar-mode nil)
     (tool-bar-mode nil)
