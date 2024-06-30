@@ -45,6 +45,7 @@
 
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
     "1password"
+    "keymapp"
   ];
 
   home.packages = with pkgs; [
@@ -53,6 +54,10 @@
 
     ### fish ###
     babelfish
+
+    ### zsa keyboard ###
+    zsa-udev-rules
+    keymapp
 
     ### misc ###
     zotero_7
