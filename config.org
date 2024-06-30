@@ -73,6 +73,7 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
     (tab-width 2)                               ; Set tab width to 2 spaces
     (isearch-allow-motion t)                    ; Allow movement during search
     (repeat-mode t)                             ; Enable repeat mode
+    (mouse-drag-copy-region t)                  ; Enable mouse drag copy
 
     ;; Allow undo/redo window configuration with C-c <left>/<right>
     (winner-mode 1)
