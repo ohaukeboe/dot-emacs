@@ -44,12 +44,10 @@
   };
 
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
-    "1password"
     "keymapp"
   ];
 
   home.packages = with pkgs; [
-    _1password-gui
     postgresql_16
 
     ### fish ###

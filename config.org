@@ -8,7 +8,17 @@
 # End:
 :END:
 
-Welcome to my literate Emacs configuration. It is written in org-mode as I find that it helps keeping things tidy.
+Welcome to my literate Emacs configuration. It is written in org-mode as I find that it helps keeping things tidy. I also use nix home-manager and flakes in order to maintain dependencies.
+
+* Install 1password
+
+I use universal-blue as my distro of choice and prefer to install 1password as ~rpm-ostree~ overlay instead of through nix. For this the following commands needs to be run to install it.
+
+#+begin_src sh
+  curl https://downloads.1password.com/linux/keys/1password.asc | sudo tee /etc/pki/rpm-gpg/RPM-GPG-KEY-1password
+  sudo sh -c 'echo -e "[1password]\nname=1Password Stable Channel\nbaseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=0\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-1password" > /etc/yum.repos.d/1password.repo'
+  rpm-ostree install 1password 1password-cli
+#+end_src
 
 * Personal information
 
@@ -601,7 +611,7 @@ Flymake is a minor mode that performs on-the-fly syntax checking. It is enabled 
   (use-package flymake
     :after prog-mode
     :custom
-    (flymake-show-diagnostics-at-end-of-line t))
+    (flymake-show-diagnostics-at-end-of-line nil))
 #+end_src
 
 ** Rainbow mode
