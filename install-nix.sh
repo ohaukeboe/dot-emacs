@@ -11,6 +11,7 @@ source /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
 #nix-channel --add https://github.com/nix-community/home-manager/archive/master.tar.gz home-manager
 nix-channel --update
+nix run home-manager -- switch --flake .
 
 DIR="$(readlink -f "$(dirname "$0")")"
 mkdir -p ~/.config/nix
