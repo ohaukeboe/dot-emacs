@@ -517,6 +517,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 #+begin_src elisp
   (use-package magit-todos
     :ensure t
+    :disabled
     ;; :ensure nil
     ;; :elpaca (magit-todos :type git :host github :repo "alphapapa/magit-todos")
     :after magit

@@ -185,7 +185,7 @@
     hunspellDicts.en_US
     hunspellDicts.nb_NO
 
-    nodePackages_latest.vscode-json-languageserver-bin
+    nodePackages_latest.vscode-langservers-extracted
 
     nodejs
     nodePackages.typescript-language-server
