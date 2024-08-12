@@ -45,6 +45,7 @@
 
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
     "keymapp"
+    "terraform"
   ];
 
   home.packages = with pkgs; [
@@ -61,6 +62,10 @@
     zotero_7
     sshfs
     devbox
+
+    ### terraform ###
+    terraform
+    terraform-ls
 
     ### reMarkable ###
     rmapi

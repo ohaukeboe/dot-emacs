@@ -764,6 +764,14 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+end_src
 
+** Terraform
+#+begin_src elisp
+  (use-package terraform-mode
+    :ensure t
+    :hook (terraform-mode . eglot-ensure)
+    :mode "\\.tf")
+#+end_src
+
 ** Python
 
 #+begin_src elisp
