@@ -820,6 +820,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package nix-mode
+    :ensure t
       ;; :hook (nix-mode . eglot-ensure)
     :mode "\\.nix\\'")
 #+end_src
@@ -1154,6 +1155,7 @@ Provides a clean look for org-mode.
 #+begin_src elisp
   (use-package org-block-capf
     :vc (:url "https://github.com/xenodium/org-block-capf")
+    :disabled
     :custom
     (org-block-capf-explicit-lang-defaults nil)
     :hook (org-mode . org-block-capf-add-to-completion-at-point-functions))
@@ -1450,7 +1452,7 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 #+begin_src elisp
   (use-package copilot
     :hook (prog-mode . copilot-mode)
-    :vc (:url "https://github.com/copilot-emacs/copilot.el")
+    ;; :vc (:url "https://github.com/copilot-emacs/copilot.el")
     ;; :general
     ;; (oh/leader-key
     ;;   "ta" '(oh/toggle-copilot-mode :wk "copilot"))
@@ -1756,10 +1758,11 @@ A better help buffer
     ([remap describe-command] . helpful-command))
 #+end_src
 
-** Devilry
+** `Devilry
 #+begin_src elisp
   (use-package devilry-mode
     :vc (:url "https://github.com/ohaukeboe/devilry-mode")
+    :disabled
     :defer
     :custom
     (dm-java-compilation nil))

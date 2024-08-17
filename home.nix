@@ -19,28 +19,17 @@
 
   programs.emacs = {
     enable = true;
-    package = pkgs.emacs-pgtk;
-    # package = (pkgs.emacsWithPackagesFromUsePackage {
-    #   package = pkgs.emacs-pgtk;
-    #   config = ./config.org;
-    #   alwaysEnsure = true;
-    #   alwaysTangle = true;
-    # });
-    extraPackages = epkgs: with epkgs; [
-      ## jinx usually needs an extra header file. It is therefore easier to add
-      ## jinx as an extra package for emacs.
-      jinx
-      auctex
-      pdf-tools
-      # magit-todos
-      # magit
-      sharper
-      gptel
-      nix-mode
-      # forge
-      # git-commit
-      # org-pdftools
-    ];
+    # package = pkgs.emacs-pgtk;
+    package = (pkgs.emacsWithPackagesFromUsePackage {
+      package = pkgs.emacs-pgtk;
+      config = ./config.org;
+      alwaysEnsure = false;
+      alwaysTangle = true;
+      extraEmacsPackages = epkgs: with epkgs; [
+        copilot
+        jinx
+      ];
+    });
   };
 
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
