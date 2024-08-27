@@ -388,8 +388,7 @@ Marginalia is a package that displays additional information about the candidate
     ;; `completion-list-mode-map'.
     :bind (:map minibuffer-local-map
            ("M-A" . marginalia-cycle))
-
-    :config
+    :init
     (marginalia-mode))
 #+end_src
 
@@ -398,7 +397,7 @@ It's also nice to have some nice looking icons for the completion candidates. Th
 #+begin_src elisp
   (use-package nerd-icons-completion
     :ensure t
-    ;; :after marginalia
+    :after marginalia
     :hook
     (marginalia-mode . nerd-icons-completion-marginalia-setup)
     :config
@@ -950,6 +949,7 @@ Some other zotero plugins I use are:
     :hook
     (org-mode . citar-capf-setup)
     (latex-mode . citar-capf-setup)
+    (LaTeX-mode . citar-capf-setup)
     ;; :general
     ;; (oh/leader-key '(org-mode-map LaTeX-mode-map)
     ;;   "mr" '(:ignore t :which-key "references")
@@ -959,6 +959,9 @@ Some other zotero plugins I use are:
     ;; (oh/leader-key
     ;;   "nr" '(:ignore t :wk "references")
     ;;   "nro" '(citar-open :wk "open resource"))
+
+    :bind
+    ("C-c n o" ("citar open" . citar-open))
 
     :custom
     (citar-citeproc-csl-styles-dir "~/Zotero/styles/")
@@ -1147,7 +1150,11 @@ Provides a clean look for org-mode.
     :ensure t
     :hook (org-mode . org-modern-mode)
     :custom
-    (org-modern-table nil))
+    (org-modern-table nil)
+    (org-modern-list
+       '((?- . "•")
+         ;;(?* . "•")
+         (?+ . "‣"))))
 #+end_src
 
 *** src-block completion
@@ -1233,7 +1240,7 @@ Export dispatcher using pandoc
     :defer
     :custom
     (org-roam-completion-everywhere t)
-    ;; (org-roam-node-display-template "${title:*} ${tags:10}")
+    (org-roam-node-display-template "${title:*} ${tags:10}")
     (org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
     (org-roam-directory (file-truename "~/Nextcloud/org_notes/roam"))
     (org-roam-dailies-directory (file-truename "~/Nextcloud/org_notes/daily"))
@@ -1294,13 +1301,13 @@ Export dispatcher using pandoc
     ;; Eventually suppress previewing for certain functions
     (consult-customize
      consult-org-roam-forward-links
-     :preview-key "M-."))
-     ;; :bind)
-     ;; Define some convenient keybindings as an addition
-     ;; ("C-c n e" . consult-org-roam-file-find)
-     ;; ("C-c n b" . consult-org-roam-backlinks)
-     ;; ("C-c n l" . consult-org-roam-forward-links)
-     ;; ("C-c n r" . consult-org-roam-search))
+     :preview-key "M-.")
+    :bind
+    ;; Define some convenient keybindings as an addition
+    ("C-c n e" ("roam find node" . consult-org-roam-file-find))
+    ("C-c n b" ("roam backlinks" . consult-org-roam-backlinks))
+    ("C-c n l" ("roam forward links" . consult-org-roam-forward-links))
+    ("C-c n r" ("roam search" . consult-org-roam-search)))
 #+end_src
 
 *** org-noter
