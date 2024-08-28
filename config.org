@@ -40,6 +40,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     ("C-=" . text-scale-increase)
     ("C--" . text-scale-decrease)
     ("C-0" . text-scale-adjust)
+    ("C-x c" . window-swap-states)
 
     :custom
     (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
