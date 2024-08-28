@@ -146,7 +146,9 @@
     java-language-server
     maven
     gradle
-    # latex org
+
+
+    ### latex org ###
     texlive.combined.scheme-full
     python311Packages.pygments
 

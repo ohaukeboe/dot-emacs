@@ -1334,7 +1334,7 @@ Export dispatcher using pandoc
 #+begin_src elisp
   (use-package markdown-mode
     :mode "\\.md\\'"
-    ;; :hook (markdown-mode . olivetti-mode)
+    :hook (markdown-mode . olivetti-mode)
     :custom
     (markdown-hide-markup t))
 #+end_src
@@ -1790,7 +1790,9 @@ Make text more readable by narrowing the text at the center of the screen. This 
     :ensure t
     ;; :commands olivetti-mode
     :hook (org-mode . olivetti-mode)
-    :custom (olivetti-body-width 90))
+    :custom (olivetti-body-width 90)
+    :bind
+    ("C-c t o" ("toggle olivetti" . olivetti-mode)))
     ;; :general
     ;; (oh/leader-key
     ;;   "to" '(olivetti-mode :wk "olivetti")))
