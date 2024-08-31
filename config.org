@@ -1417,6 +1417,7 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
 
 #+begin_src elisp
   (use-package pdf-tools
+    :ensure t
     :mode ("\\.pdf\\'" . pdf-view-mode)
     ;; :requires pdf-outline
     :commands (pdf-view-mode)

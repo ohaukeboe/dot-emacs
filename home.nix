@@ -49,8 +49,10 @@
 
     ### misc ###
     zotero_7
+    firefox
     sshfs
     devbox
+    phoronix-test-suite
 
     ### terraform ###
     terraform
