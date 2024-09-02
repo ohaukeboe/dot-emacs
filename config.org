@@ -1467,16 +1467,18 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 
 #+begin_src elisp
   (use-package copilot
-    :hook (prog-mode . copilot-mode)
+    ;; :hook (prog-mode . copilot-mode)
     ;; :vc (:url "https://github.com/copilot-emacs/copilot.el")
     ;; :general
     ;; (oh/leader-key
     ;;   "ta" '(oh/toggle-copilot-mode :wk "copilot"))
-    :bind (:map copilot-completion-map
-                ("<tab>" . 'copilot-accept-completion)
-                ("TAB" . 'copilot-accept-completion)
-                ("C-TAB" . 'copilot-accept-completion-by-word)
-                ("C-<tab>" . 'copilot-accept-completion-by-word)))
+    :bind
+    ("C-c t c" ("copilot" . copilot-mode))
+    (:map copilot-completion-map
+          ("<tab>" . 'copilot-accept-completion)
+          ("TAB" . 'copilot-accept-completion)
+          ("C-TAB" . 'copilot-accept-completion-by-word)
+          ("C-<tab>" . 'copilot-accept-completion-by-word)))
 
   ;; (defvar oh/electric-pair-mode-blacklist-modes '()
   ;;   "Modes where electric-pair-mode should not be enabled")
