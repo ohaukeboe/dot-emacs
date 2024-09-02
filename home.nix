@@ -183,11 +183,12 @@
     hunspellDicts.en_US
     hunspellDicts.nb_NO
 
-    nodePackages_latest.vscode-langservers-extracted
 
+    ### node ###
+    nodePackages_latest.vscode-langservers-extracted
     nodejs
     nodePackages.typescript-language-server
-    nodePackages.eslint
+    eslint
     ## chatgpt-shell
     pass
     ## mu4e (email)
