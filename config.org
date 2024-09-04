@@ -1088,6 +1088,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-auto-align-tags nil)
     (org-tags-column 0)
     (org-fold-catch-invisible-edits 'show)
+    (org-startup-folded 'content)
     (org-elipsis "…")
     (org-default-notes-file "~/Nextcloud/org_notes/notes.org")
     (org-agenda-files `(,org-default-notes-file))
@@ -1122,6 +1123,11 @@ rather than files.  These modes usually use read-only buffers.
 
     (org-block ((t (:inherit fixed-pitch))))
     (org-code ((t (:inherit (shadow fixed-pitch)))))
+
+    (org-drawer ((t (:height 0.8))))
+    (org-document-info-keyword ((t (:height 0.9))))
+    (org-meta-line ((t (:height 0.9))))
+    (org-document-title ((t (:height 1.5))))
 
     (org-table ((t (:inherit fixed-pitch)))))
 #+end_src
