@@ -1083,7 +1083,8 @@ rather than files.  These modes usually use read-only buffers.
     (org-use-sub-superscripts "{}")
     (org-hide-emphasis-markers t)
     (org-startup-with-inline-images t)
-    (org-image-actual-width '(300))
+    (org-image-actual-width '(700))
+    (org-image-align 'center)
     (org-auto-align-tags nil)
     (org-tags-column 0)
     (org-fold-catch-invisible-edits 'show)
@@ -1288,7 +1289,6 @@ Export dispatcher using pandoc
 #+begin_src elisp
   (use-package consult-org-roam
     :ensure t
-    :after org-roam
     :custom
     (consult-org-roam-mode 1)
     ;; Use `ripgrep' for searching with `consult-org-roam-search'
