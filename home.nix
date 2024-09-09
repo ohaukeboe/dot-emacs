@@ -40,6 +40,8 @@
   home.packages = with pkgs; [
     postgresql_16
 
+    tailscale
+
     ### fish ###
     babelfish
 
