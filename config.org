@@ -1455,7 +1455,7 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     :ensure t
     :custom
     (wakatime-disable-on-error t)
-    (wakatime-cli-path "~/.wakatime/wakatime-cli")
+    ;; (wakatime-cli-path "~/.wakatime/wakatime-cli")
     :config
     (global-wakatime-mode))
 #+end_src

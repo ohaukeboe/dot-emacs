@@ -41,6 +41,7 @@
     postgresql_16
 
     tailscale
+    wakatime
 
     ### fish ###
     babelfish
