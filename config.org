@@ -562,7 +562,13 @@ Make magit integrate with github and other git hosting services.
     :after magit
     :custom
     (forge-add-default-bindings nil)
-    (auth-sources '("~/.authinfo")))
+    (auth-sources '("~/.authinfo"))
+    :config
+    (push '("github.uio.no"               ; GITHOST
+            "api.github.uio.no"           ; APIHOST
+            "github.uio.no"               ; WEBHOST and INSTANCE-ID
+            forge-github-repository)    ; CLASS
+          forge-alist))
 #+end_src
 
 * Programming
