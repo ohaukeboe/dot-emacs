@@ -698,7 +698,10 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 
 #+begin_src elisp
   (use-package java-ts-mode
-    :hook (java-ts-mode . eglot-ensure)
+    :hook
+    (java-ts-mode . eglot-ensure)
+    (java-ts-mode . (lambda ()
+                      (setq-local tab-width java-ts-mode-indent-offset)))
     :mode
     "\\.java\\'")
 #+end_src
