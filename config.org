@@ -1110,6 +1110,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-elipsis "…")
     (org-default-notes-file "~/Nextcloud/org_notes/notes.org")
     (org-agenda-files `(,org-default-notes-file))
+    (org-attach-archive-delete 'query)
 
     :config
     ;; Pretty bullets
@@ -1128,6 +1129,14 @@ rather than files.  These modes usually use read-only buffers.
               ("framexleftmargin" "2.8em")
               ("numbers" "left")
               ("tabsize" "2"))))
+
+    (org-babel-do-load-languages 'org-babel-load-languages
+                                 org-babel-load-languages)
+
+    ;; Load extra export backends
+    (require 'ox-beamer)
+    (require 'ox-man)
+    (require 'ox-texinfo)
 
     :custom-face
     (org-level-1 ((t (:inherit outline-1 :height 1.5))))
