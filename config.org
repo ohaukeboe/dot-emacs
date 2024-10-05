@@ -1757,6 +1757,10 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
     :custom
     (jinx-languages "en_US nb_NO")
 
+    :bind
+    ("M-$" ("jinx correct" . jinx-correct))
+    ("C-M-$" ("jinx languages" . jinx-languages))
+
     ;; :general
     ;; (oh/leader-key
     ;;   "sc" '(jinx-correct :wk "correct previous")
