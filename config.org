@@ -854,7 +854,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package TeX-latex-mode
-    :mode ("\\.tex\\'" . TeX-latex-mode)
+    :mode ("\\.tex\\'" . LaTex-mode)
     :hook
     (TeX-mode . eglot-ensure)
     (TeX-mode . (lambda () (auto-fill-mode)))
