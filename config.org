@@ -866,8 +866,8 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 ** LaTex
 
 #+begin_src elisp
-  (use-package TeX-latex-mode
-    :mode ("\\.tex\\'" . LaTex-mode)
+  (use-package LaTex-mode
+    :mode ("\\.tex\\'" . tex-mode)
     :hook
     (TeX-mode . eglot-ensure)
     (TeX-mode . (lambda () (auto-fill-mode)))
@@ -1124,6 +1124,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-default-notes-file "~/Nextcloud/org_notes/notes.org")
     (org-agenda-files `(,org-default-notes-file))
     (org-attach-archive-delete 'query)
+    (org-attach-preferred-new-method 'dir)
 
     :config
     ;; Pretty bullets
