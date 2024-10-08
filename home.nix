@@ -42,6 +42,7 @@
 
     tailscale
     wakatime
+    pympress # pdf presenter
 
     ### fish ###
     babelfish
