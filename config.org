@@ -850,6 +850,14 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     :ensure t)
 #+end_src
 
+** CSV
+
+#+begin_src elisp
+  (use-package csv-mode
+    :ensure t
+    :mode "\\.csv\\'")
+#+end_src
+
 ** LaTex
 
 #+begin_src elisp
