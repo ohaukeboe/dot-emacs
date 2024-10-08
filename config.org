@@ -41,6 +41,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     ("C--" . text-scale-decrease)
     ("C-0" . text-scale-adjust)
     ("C-x c" . window-swap-states)
+    ("C-c d" . delete-pair)
 
     :custom
     (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
@@ -72,7 +73,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (truncate-lines t)                          ; Truncate lines instead of wrapping
     (initial-scratch-message nil)               ; Clean scratch buffer
     (auto-revert-interval 1)                    ; Refresh buffers every second
-    (split-width-threshold 180)                  ; Split vertically by default
+    (split-width-threshold 180)                 ; Split vertically by default
     (split-height-threshold nil)                ; Split vertically by default
     (use-dialog-box nil)                        ; Disable dialog boxes
     (inhibit-startup-screen t)                  ; Disable startup screen
@@ -85,6 +86,10 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (isearch-allow-motion t)                    ; Allow movement during search
     (repeat-mode t)                             ; Enable repeat mode
     (mouse-drag-copy-region t)                  ; Enable mouse drag copy
+    (sentence-end-double-space nil)             ; single space end sentence
+    (delete-selection-mode t)                   ; auto delete selection on insert
+    (delete-pair-blink-delay 0)
+    (delete-pair-push-mark t)
 
     ;; Allow undo/redo window configuration with C-c <left>/<right>
     (winner-mode 1)
