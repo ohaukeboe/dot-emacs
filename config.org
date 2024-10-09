@@ -758,6 +758,18 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     ;;           "K" 'lsp-describe-thing-at-point))
 #+end_src
 
+** Kotlin
+
+#+begin_src elisp
+  (use-package kotlin-ts-mode
+    :ensure t
+    :hook
+    (kotlin-ts-mode . eglot-ensure)
+    (kotlin-ts-mode . (lambda ()
+                        (setq-local tab-width kotlin-ts-mode-indent-offset)))
+    :mode "\\.kt\\'")
+#+end_src
+
 ** dotnet
 
 #+begin_src elisp

@@ -68,6 +68,11 @@
     ### android ###
     android-tools
 
+
+    ### Kotlin ###
+    kotlin
+    kotlin-language-server
+
     ### C# ###
     omnisharp-roslyn
 
