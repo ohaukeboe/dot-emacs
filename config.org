@@ -767,7 +767,11 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     (kotlin-ts-mode . eglot-ensure)
     (kotlin-ts-mode . (lambda ()
                         (setq-local tab-width kotlin-ts-mode-indent-offset)))
-    :mode "\\.kt\\'")
+    :mode "\\.kt\\'"
+    :init
+    (with-eval-after-load 'treesit
+        (add-to-list 'treesit-language-source-alist
+                     '(kotlin "https://github.com/fwcd/tree-sitter-kotlin"))))
 #+end_src
 
 ** dotnet
