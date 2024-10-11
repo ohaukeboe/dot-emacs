@@ -1424,6 +1424,15 @@ Export dispatcher using pandoc
     ;;   "l" 'dired-find-file))
 #+end_src
 
+#+begin_src elisp
+  (use-package dired-preview
+    :ensure t
+    :after dired
+    :custom
+    (dired-preview-delay 0.0)
+    (dired-preview-ignored-extensions-regexp "\\.\\(mkv\\|webm\\|mp4\\|mp3\\|ogg\\|m4a\\|flac\\|wav\\|gz\\|zst\\|tar\\|xz\\|rar\\|zip\\|iso\\|epub\\)"))
+#+end_src
+
 ** Eww
 The emacs web browser
 
