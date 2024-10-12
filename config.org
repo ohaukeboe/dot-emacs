@@ -883,7 +883,11 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 #+begin_src elisp
   (use-package csv-mode
     :ensure t
-    :mode "\\.csv\\'")
+    :mode "\\.csv\\'"
+    :hook
+    (csv-mode . (lambda ()
+                  (csv-align-mode t)
+                  (csv-header-line t))))
 #+end_src
 
 ** LaTex
