@@ -73,42 +73,28 @@
     kotlin
     kotlin-language-server
 
-    ### C# ###
-    omnisharp-roslyn
-
-    gh                          # github cli
-    awscli2
-
     ### Assembly ###
     asm-lsp
 
+    ### misc ###
     languagetool
     zoxide
     gnuplot
-
     ditaa
-
     vlc
-
     pkg-config
-    gnumake
-
-    # gui-lib
-    racket
-    guile
-    mitscheme
     neofetch
-    tldr
-    # emacs29-pgtk
+    gh                          # github cli
+    awscli2
+    tealdeer
+
+    ### fonts ###
     roboto-mono
     roboto
     roboto-serif
 
-    ### emacs packages ###
     nerdfonts
-    # magit
     git
-    # projectile
     ripgrep
     fd
 
@@ -117,7 +103,8 @@
     man-pages-posix
     valgrind
     gdb
-    # clang
+    gnumake
+
     clang-tools
     clang
     clang-analyzer
@@ -126,11 +113,12 @@
     ccls
     bear
 
+    ### C# ###
+    omnisharp-roslyn
+
     ### .net ###
     dotnet-sdk_8
     mono
-
-    # semgrep
 
     ### rust ###
     rustup
@@ -161,7 +149,7 @@
 
     ### latex org ###
     texlive.combined.scheme-full
-    python311Packages.pygments
+    python312Packages.pygments
 
     # org-inline-pdf
     pdf2svg
@@ -171,22 +159,8 @@
     # pandoc
     pandoc
     marksman
-    # vterm
-    cmake
-    libtool
-    inetutils
-    # sqlite3
+        # sqlite3
     sqlite
-    ## jinx (spell check)
-    # emacsPackages.jinx
-    # emacsPackages.pdf-tools
-
-    # autoconf
-    # automake
-    # # libpng-devel
-    # poppler-devel
-    # poppler-glib-devel
-    # zlib-devel pkgconf
 
     enchant
     hunspellDicts.en_US
@@ -198,6 +172,7 @@
     nodejs
     nodePackages.typescript-language-server
     eslint
+
     ## chatgpt-shell
     pass
     ## mu4e (email)
