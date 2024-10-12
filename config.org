@@ -803,6 +803,13 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+end_src
 
+** Dockerfile
+
+#+begin_src elisp
+  (use-package dockerfile-ts-mode
+    :mode "dockerfile")
+#+end_src
+
 ** Terraform
 #+begin_src elisp
   (use-package terraform-mode
