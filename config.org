@@ -628,6 +628,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-keymap-prefix nil)
     (lsp-headerline-breadcrumb-enable nil)
     (eldoc-display-functions '(eldoc-display-in-buffer))
+    (lsp-idle-delay 0)
 
     (lsp-inlay-hint-enable t)
     :init
@@ -650,7 +651,9 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
         (make-lsp-client :new-connection (lsp-tramp-connection "pylsp")
                          :major-modes '(python-mode python-ts-mode)
                          :remote? t
-                         :server-id 'pylsp-remote))))
+                         :server-id 'pylsp-remote)))
+    :custom-face
+    (lsp-face-highlight-textual ((t (:background nil :foreground nil :weight ultra-bold :distant-foreground nil)))))
 
   (use-package lsp-ui
     :ensure t
