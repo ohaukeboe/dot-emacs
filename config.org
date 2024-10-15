@@ -610,20 +610,19 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     :commands
     (lsp-deferred lsp)
 
-    :hook
-    prog-mode
-    markdown-mode
-    latex-mode
-    ;; (lsp-completion-mode . my/lsp-mode-setup-completion)
-
     :bind
     (:map lsp-mode-map
           ("C-h ." . lsp-describe-thing-at-point)
           ("C-c a" . lsp-execute-code-action)
+          ("C-c f" . lsp-format-buffer)
+          ("C-c F" . lsp-format-region)
+          ("C-c r" . lsp-rename)
+          ("C-c m" . consult-imenu)
+          ("C-c M" . consult-imenu-multi)
           ("M-?" . lsp-find-references))
 
     :custom
-    (lsp-warn-no-matched-clients nil)
+    ;; (lsp-warn-no-matched-clients nil)
     (lsp-completion-provider :none) ;; I use Corfu instead!
     (lsp-keymap-prefix nil)
     (lsp-headerline-breadcrumb-enable nil)
@@ -631,27 +630,11 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-idle-delay 0)
 
     (lsp-inlay-hint-enable t)
+
     :init
     ;; Performance
     (setq read-process-output-max (* 1024 1024)) ;; 1mb
 
-    ;; Completion
-    (defun my/lsp-mode-setup-completion ()
-      (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-            '(orderless))) ;; Configure orderless
-
-    :config
-    (progn
-      (lsp-register-client
-        (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
-                         :major-modes '(c-mode c++-mode c-ts-mode c++-ts-mode)
-                         :remote? t
-                         :server-id 'clangd-remote))
-      (lsp-register-client
-        (make-lsp-client :new-connection (lsp-tramp-connection "pylsp")
-                         :major-modes '(python-mode python-ts-mode)
-                         :remote? t
-                         :server-id 'pylsp-remote)))
     :custom-face
     (lsp-face-highlight-textual ((t (:background nil :foreground nil :weight ultra-bold :distant-foreground nil)))))
 
