@@ -45,3 +45,5 @@ var/
 /.org-id-locations
 /tutorial/
 /multisession/
+/eclipse.jdt.ls/
+/workspace/

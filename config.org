@@ -523,7 +523,6 @@ Magit-todos for integrating TODO keywords with magit's overview screen
   (use-package magit-todos
     :ensure t
     :disabled
-    ;; :ensure nil
     ;; :elpaca (magit-todos :type git :host github :repo "alphapapa/magit-todos")
     :after magit
     :config
@@ -601,6 +600,83 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
   ;;   :after eglot
   ;;   :config
   ;;   (eglot-x-setup))
+#+end_src
+** lsp-mode
+
+#+begin_src elisp
+
+  (use-package lsp-mode
+    :ensure t
+    :commands
+    (lsp-deferred lsp)
+
+    :hook
+    prog-mode
+    markdown-mode
+    latex-mode
+    ;; (lsp-completion-mode . my/lsp-mode-setup-completion)
+
+    :bind
+    (:map lsp-mode-map
+          ("C-h ." . lsp-describe-thing-at-point)
+          ("C-c a" . lsp-execute-code-action)
+          ("M-?" . lsp-find-references))
+
+    :custom
+    (lsp-warn-no-matched-clients nil)
+    (lsp-completion-provider :none) ;; I use Corfu instead!
+    (lsp-keymap-prefix nil)
+    (lsp-headerline-breadcrumb-enable nil)
+    (eldoc-display-functions '(eldoc-display-in-buffer))
+
+    (lsp-inlay-hint-enable t)
+    :init
+    ;; Performance
+    (setq read-process-output-max (* 1024 1024)) ;; 1mb
+
+    ;; Completion
+    (defun my/lsp-mode-setup-completion ()
+      (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+            '(orderless))) ;; Configure orderless
+
+    :config
+    (progn
+      (lsp-register-client
+        (make-lsp-client :new-connection (lsp-tramp-connection "clangd")
+                         :major-modes '(c-mode c++-mode c-ts-mode c++-ts-mode)
+                         :remote? t
+                         :server-id 'clangd-remote))
+      (lsp-register-client
+        (make-lsp-client :new-connection (lsp-tramp-connection "pylsp")
+                         :major-modes '(python-mode python-ts-mode)
+                         :remote? t
+                         :server-id 'pylsp-remote))))
+
+  (use-package lsp-ui
+    :ensure t
+    :after lsp-mode
+
+    :custom
+    (lsp-ui-doc-enable nil)
+    (lsp-ui-doc-show-with-cursor nil)
+    (lsp-ui-doc-show-with-mouse nil)
+
+    :hook
+    (lsp-mode . lsp-ui-mode))
+
+    ;; :general)
+    ;; (oskah/leader-keys
+    ;;   "cdf" '(lsp-ui-doc-focus-frame :wk "focus frame")
+    ;;   "cdd" '(lsp-ui-doc-show :wk "show documentation")
+    ;;   "cdc" '(lsp-ui-doc-hide :wk "hide documentation")))
+
+    ;; ('normal 'lsp-ui-mode-map
+    ;;   "K" 'lsp-ui-doc-show :wk "show documentation"))
+
+
+  (use-package consult-lsp
+    :ensure t
+    :after lsp-mode)
 #+end_src
 
 ** Eldoc
@@ -704,11 +780,16 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 #+begin_src elisp
   (use-package java-ts-mode
     :hook
-    (java-ts-mode . eglot-ensure)
+    (java-ts-mode . lsp-deferred)
     (java-ts-mode . (lambda ()
                       (setq-local tab-width java-ts-mode-indent-offset)))
     :mode
     "\\.java\\'")
+
+  (use-package lsp-java
+    :ensure t
+    :config
+    (add-hook 'java-mode-hook 'lsp))
 #+end_src
 
 ** Typescript

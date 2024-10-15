@@ -141,8 +141,8 @@
 
     ### Java ###
     jdk
-    jdt-language-server
-    java-language-server
+    # jdt-language-server
+    # java-language-server
     maven
     gradle
 
