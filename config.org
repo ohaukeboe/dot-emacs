@@ -90,6 +90,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (delete-selection-mode t)                   ; auto delete selection on insert
     (delete-pair-blink-delay 0)
     (delete-pair-push-mark t)
+    (blink-matching-delay 0)
 
     ;; Allow undo/redo window configuration with C-c <left>/<right>
     (winner-mode 1)
@@ -934,7 +935,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 #+begin_src elisp
   (use-package nix-mode
     :ensure t
-      ;; :hook (nix-mode . eglot-ensure)
+    :hook (nix-mode . lsp-deferred)
     :mode "\\.nix\\'")
 #+end_src
 

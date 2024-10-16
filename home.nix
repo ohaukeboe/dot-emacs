@@ -146,6 +146,8 @@
     maven
     gradle
 
+    ### nix ###
+    nil # lsp
 
     ### latex org ###
     texlive.combined.scheme-full
@@ -165,7 +167,6 @@
     enchant
     hunspellDicts.en_US
     hunspellDicts.nb_NO
-
 
     ### node ###
     nodePackages_latest.vscode-langservers-extracted
@@ -229,6 +230,9 @@
     enable = true;
     userName = "Oskar Haukbøe";
     userEmail = "ohaukeboe@pm.me";
+    extraConfig = {
+      log.decorate = "full";
+    };
   };
 
 
