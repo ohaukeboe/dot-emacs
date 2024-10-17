@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ lib, pkgs, ... }:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
@@ -111,7 +111,7 @@
     (hiPrio gcc) # Needed hiPrio to resolve conflict as both
     # clang and gcc provide C++ binary
     ccls
-    bear
+    # bear # usefull for using lsp
 
     ### C# ###
     omnisharp-roslyn
