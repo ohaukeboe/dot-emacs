@@ -832,9 +832,9 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
   (use-package kotlin-ts-mode
     :ensure t
     :hook
-    (kotlin-ts-mode . eglot-ensure)
-    (kotlin-ts-mode . (lambda ()
-                        (setq-local tab-width kotlin-ts-mode-indent-offset)))
+    (kotlin-ts-mode . lsp-deferred)
+    ;; (kotlin-ts-mode . (lambda ()
+    ;;                     (setq-local tab-width kotlin-ts-mode-indent-offset)))
     :mode "\\.kt\\'"
     :init
     (with-eval-after-load 'treesit
