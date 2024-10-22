@@ -57,6 +57,7 @@
     sshfs
     devbox
     phoronix-test-suite
+    ltex-ls # languagetool lsp
 
     ### terraform ###
     terraform
