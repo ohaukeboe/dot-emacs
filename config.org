@@ -449,7 +449,7 @@ Consult is a package that provides a set of commands for searching and navigatin
      ("M-y" . consult-yank-pop)                ;; orig. yank-pop
                                           ; M-g bindings in `goto-map'
      ("M-g e" . consult-compile-error)
-     ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
+     ;; ("M-g f" . consult-flymake)               ;; Alternative: consult-flycheck
      ("M-g g" . consult-goto-line)             ;; orig. goto-line
      ("M-g M-g" . consult-goto-line)           ;; orig. goto-line
      ("M-g o" . consult-outline)               ;; Alternative: consult-org-heading
@@ -647,6 +647,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-ui-doc-enable nil)
     (lsp-ui-doc-show-with-cursor nil)
     (lsp-ui-doc-show-with-mouse nil)
+    (lsp-ui-sideline-enable nil)
 
     :hook
     (lsp-mode . lsp-ui-mode))
@@ -685,8 +686,26 @@ Flymake is a minor mode that performs on-the-fly syntax checking. It is enabled 
 #+begin_src elisp
   (use-package flymake
     :after prog-mode
+    :disabled
     :custom
     (flymake-show-diagnostics-at-end-of-line nil))
+#+end_src
+
+** Flycheck
+
+#+begin_src elisp
+  (use-package flycheck
+    :ensure t
+    :custom
+    (flycheck-display-errors-function #'flycheck-display-error-messages)
+    (flycheck-display-errors-delay 0.0)
+    :config
+    (add-hook 'after-init-hook #'global-flycheck-mode))
+
+  (use-package consult-flycheck
+    :ensure t
+    :bind
+    ("M-g f" . consult-flycheck))
 #+end_src
 
 ** Rainbow mode
