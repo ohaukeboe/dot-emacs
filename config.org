@@ -802,7 +802,7 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 
 #+begin_src elisp
   (use-package typescript-ts-mode
-    :hook (typescript-ts-mode . eglot-ensure)
+    :hook (typescript-ts-mode . lsp-deferred)
     :mode "\\.ts\\'")
 #+end_src
 
@@ -816,8 +816,8 @@ For editing =.tsx= files, we'll use =jtsx=.
     :commands jtsx-install-treesit-language
     :hook ((jtsx-jsx-mode . hs-minor-mode)
            (jtsx-tsx-mode . hs-minor-mode)
-           (jtsx-jsx-mode . eglot-ensure)
-           (jtsx-tsx-mode . eglot-ensure)))
+           (jtsx-jsx-mode . lsp-deferred)
+           (jtsx-tsx-mode . lsp-deferred)))
 #+end_src
 
 ** C#
