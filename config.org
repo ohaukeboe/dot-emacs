@@ -916,26 +916,15 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package python-ts-mode
-    :hook (python-ts-mode . eglot-ensure)
-    ;; :hook (python-ts-mode . lsp)
-    :mode "\\.py\\'")
-    ;; :general)
-    ;; (:keymaps 'python-ts-mode-map
-    ;;  :states '(normal visual)
-    ;;  "K" 'lsp-describe-thing-at-point))
-
-    ;; :config
-    ;; (lsp-register-custom-settings
-    ;;  '(("pyls.plugins.pyls_mypy.enabled" t t)
-    ;;    ("pyls.plugins.pyls_mypy.live_mode" nil t)))
-    ;;    ;; ("pyls.plugins.pyls_black.enabled" t t)
-    ;;    ;; ("pyls.plugins.pyls_isort.enabled" t t)))
-
-    ;; :custom
-    ;; (lsp-pylsp-plugins-yapf-enabled t)
-    ;; (lsp-pylsp-plugins-flake8-enabled nil))
-    ;; (lsp-pylsp-plugins-flake8-max-line-length 80)
-    ;; (lsp-pylsp-plugins-pycodestyle-max-line-length 80))
+    ;; :hook (python-ts-mode . eglot-ensure)
+    :hook (python-ts-mode . lsp)
+    :mode "\\.py\\'"
+    :custom
+    (lsp-pylsp-plugins-pydocstyle-enabled nil)
+    (lsp-pylsp-plugins-pycodestyle-enabled t)
+    (lsp-pylsp-plugins-flake8-enabled nil)
+    ;; (lsp-pylsp-plugins-pylint-enabled t) ;; should look at virtualenvwrapper.el or conda.el to get this to work with pyvenv
+    (lsp-pylsp-plugins-autopep8-enabled t))
 #+end_src
 
 ** Elisp
