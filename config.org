@@ -820,6 +820,13 @@ For editing =.tsx= files, we'll use =jtsx=.
            (jtsx-tsx-mode . lsp-deferred)))
 #+end_src
 
+** HTML
+
+#+begin_src elisp
+  (use-package mhtml-mode
+    :mode "\\.html\\'")
+#+end_src
+
 ** C#
 When in a C# project, it is important to set the variable =lsp-csharp-solution-file= to point to the project solution file (.sln). It is recommended to set this in a =.dir-locals.el= file for the project.
 
