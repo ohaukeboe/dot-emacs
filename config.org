@@ -526,6 +526,8 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     ;; :disabled
     ;; :elpaca (magit-todos :type git :host github :repo "alphapapa/magit-todos")
     :after magit
+    :custom
+    (magit-todos-filename-filter 'file-name-nondirectory)
     :config
     (magit-todos-mode 1))
 
@@ -554,8 +556,8 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     :custom
     (diff-hl-flydiff-mode t)
     (diff-hl-flydiff-delay 0)
-    (diff-hl-update-async t)
-    (diff-hl-dired-extra-indicators nil))
+    (diff-hl-update-async t))
+    ;; (diff-hl-dired-extra-indicators nil))
 #+end_src
 
 ** Forge
@@ -803,7 +805,11 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 #+begin_src elisp
   (use-package typescript-ts-mode
     :hook (typescript-ts-mode . lsp-deferred)
-    :mode "\\.ts\\'")
+    :mode "\\.ts\\'"
+    :custom
+    (tab-width 4)
+    (typescript-ts-mode-indent-offset 4))
+
 #+end_src
 
 For editing =.tsx= files, we'll use =jtsx=.
@@ -861,7 +867,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     (kotlin-ts-mode . lsp-deferred)
     ;; (kotlin-ts-mode . (lambda ()
     ;;                     (setq-local tab-width kotlin-ts-mode-indent-offset)))
-    :mode "\\.kt\\'"
+    :mode ("\\.kt\\'" "\\.kts\\'")
     :init
     (with-eval-after-load 'treesit
         (add-to-list 'treesit-language-source-alist
@@ -922,6 +928,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     :custom
     (lsp-pylsp-plugins-pydocstyle-enabled nil)
     (lsp-pylsp-plugins-pycodestyle-enabled t)
+    (lsp-pylsp-plugins-pyflakes-enabled t)
     (lsp-pylsp-plugins-flake8-enabled nil)
     ;; (lsp-pylsp-plugins-pylint-enabled t) ;; should look at virtualenvwrapper.el or conda.el to get this to work with pyvenv
     (lsp-pylsp-plugins-autopep8-enabled t))
