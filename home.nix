@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ lib, pkgs, system, zen-browser, ... }:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
@@ -54,6 +54,7 @@
     ### misc ###
     zotero_7
     firefox
+    zen-browser.packages."${system}".specific # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
     sshfs
     devbox
     phoronix-test-suite
