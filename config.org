@@ -134,7 +134,7 @@ This is a handy package which helps to show what packages are slowing down the E
   (use-package doom-themes
     :ensure t
     :custom-face
-    (default ((t (:background "#1b1b1b"))))
+    (default ((t (:background "#171717"))))
     (ansi-color-bright-black ((nil (:inherit font-lock-comment-face
                                              :foreground nil
                                              :background nil))))
@@ -337,7 +337,7 @@ Vertico is a completion framework that provides a vertical completion UI. It is 
     ;; Enable recursive minibuffers
     (enable-recursive-minibuffers t)
     :config
-    (vertico-mode))
+    (vertico-mode)
 
     ;; Different scroll margin
     ;; (setq vertico-scroll-margin 0)
@@ -349,7 +349,7 @@ Vertico is a completion framework that provides a vertical completion UI. It is 
     ;; (setq vertico-resize t)
 
     ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
-    ;; (setq vertico-cycle t)
+    (setq vertico-cycle t))
 #+end_src
 
 Allow using different vertico configurations for different prompts.
@@ -666,7 +666,11 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
 
   (use-package consult-lsp
     :ensure t
-    :after lsp-mode)
+    :after lsp-mode
+    :bind
+    (:map lsp-mode-map
+          ("M-g M-f" . consult-lsp-diagnostics)
+          ("M-g M-s" . consult-lsp-file-symbols)))
 #+end_src
 
 ** Eldoc
@@ -1222,7 +1226,7 @@ rather than files.  These modes usually use read-only buffers.
 #+begin_src elisp
   (use-package org
     :hook
-    (org-mode . variable-pitch-mode)
+    ;; (org-mode . variable-pitch-mode)
     (org-mode . (lambda () (visual-line-mode 1)))
 
     :custom
@@ -1282,15 +1286,15 @@ rather than files.  These modes usually use read-only buffers.
     (org-level-7 ((t (:inherit outline-7 :height 1.0))))
     (org-level-8 ((t (:inherit outline-8 :height 1.0))))
 
-    (org-block ((t (:inherit fixed-pitch))))
-    (org-code ((t (:inherit (shadow fixed-pitch)))))
+    ;; (org-block ((t (:inherit fixed-pitch))))
+    ;; (org-code ((t (:inherit (shadow fixed-pitch)))))
 
-    (org-drawer ((t (:height 0.8))))
-    (org-document-info-keyword ((t (:height 0.9))))
-    (org-meta-line ((t (:height 0.9))))
-    (org-document-title ((t (:height 1.5))))
+    ;; (org-drawer ((t (:height 0.8))))
+    ;; (org-document-info-keyword ((t (:height 0.9))))
+    ;; (org-meta-line ((t (:height 0.9))))
+    (org-document-title ((t (:height 1.5)))))
 
-    (org-table ((t (:inherit fixed-pitch)))))
+    ;; (org-table ((t (:inherit fixed-pitch)))))
 #+end_src
 
 *** Org-appear
@@ -1414,6 +1418,8 @@ Export dispatcher using pandoc
     (org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
     (org-roam-directory (file-truename "~/Nextcloud/org_notes/roam"))
     (org-roam-dailies-directory (file-truename "~/Nextcloud/org_notes/daily"))
+    :bind
+    ("C-c n j" ("capture daily" . org-roam-dailies-capture-today))
     ;; :general
     ;; (oh/leader-key
     ;;   "nf" '(org-roam-node-find :wk "find")
@@ -1495,6 +1501,14 @@ Export dispatcher using pandoc
     (org-noter-auto-save-last-location t)
     (org-noter-notes-search-path
      '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
+#+end_src
+
+*** org-sidetree
+
+#+begin_src elisp
+  (use-package org-side-tree
+    :ensure t
+    :bind ("C-c t w" . org-side-tree))
 #+end_src
 
 ** Markdown
@@ -1933,9 +1947,12 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 #+begin_src elisp
   (use-package lsp-ltex
     :ensure t
-    :hook (text-mode . (lambda ()
-                         (require 'lsp-ltex)
-                         (lsp)))  ; or lsp-deferred
+    ;; :hook (text-mode . (lambda ()
+    ;;                      (require 'lsp-ltex)
+    ;;                      (lsp)))  ; or lsp-deferred
+    :bind
+    (:map text-mode-map
+          ("C-c t l" ("enable lsp" . lsp-deferred)))
     :init
     (setq lsp-ltex-version "15.2.0"))  ; make sure you have set this, see below
 #+end_src

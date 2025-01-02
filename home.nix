@@ -17,19 +17,30 @@
   # release notes.
   home.stateVersion = "23.05"; # Please read the comment before changing.
 
-  programs.emacs = {
-    enable = true;
-    # package = pkgs.emacs-pgtk;
-    package = (pkgs.emacsWithPackagesFromUsePackage {
-      package = pkgs.emacs-unstable-pgtk;
-      config = ./config.org;
-      alwaysEnsure = false;
-      alwaysTangle = true;
-      extraEmacsPackages = epkgs: with epkgs; [
-        copilot
-        jinx
+  programs = {
+  	emacs = {
+  	  enable = true;
+  	  # package = pkgs.emacs-pgtk;
+  	  package = (pkgs.emacsWithPackagesFromUsePackage {
+  	    package = pkgs.emacs-unstable-pgtk;
+  	    config = ./config.org;
+  	    alwaysEnsure = false;
+  	    alwaysTangle = true;
+  	    extraEmacsPackages = epkgs: with epkgs; [
+  	      copilot
+  	      jinx
+  	    ];
+  	  });
+  	};
+
+    chromium = {
+      enable = true;
+      extensions = [
+        "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock origin
+        "aeblfdkhhhdcdjpifhhbdiojplfjncoa" # 1password
+        "akahnknmcbmgodngfjcflnaljdbhnlfo" # vertical tabs
       ];
-    });
+    };
   };
 
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
@@ -59,6 +70,7 @@
     devbox
     phoronix-test-suite
     ltex-ls # languagetool lsp
+    packwiz
 
     ### terraform ###
     terraform
