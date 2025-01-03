@@ -65,7 +65,7 @@
     ### misc ###
     zotero_7
     firefox
-    zen-browser.packages."${system}".specific # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
+    zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
     sshfs
     devbox
     phoronix-test-suite
