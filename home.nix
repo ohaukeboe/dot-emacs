@@ -101,6 +101,7 @@
     neofetch
     gh                          # github cli
     awscli2
+    aws-nuke
     tealdeer
 
     ### fonts ###
