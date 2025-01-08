@@ -1116,7 +1116,7 @@ Some other zotero plugins I use are:
     ;;   "nro" '(citar-open :wk "open resource"))
 
     :bind
-    ("C-c n o" ("citar open" . citar-open))
+    ("C-c n o"  . citar-open)
 
     :custom
     (citar-citeproc-csl-styles-dir "~/Zotero/styles/")
@@ -1419,7 +1419,7 @@ Export dispatcher using pandoc
     (org-roam-directory (file-truename "~/Nextcloud/org_notes/roam"))
     (org-roam-dailies-directory (file-truename "~/Nextcloud/org_notes/daily"))
     :bind
-    ("C-c n j" ("capture daily" . org-roam-dailies-capture-today))
+    ("C-c n j"  . org-roam-dailies-capture-today)
     ;; :general
     ;; (oh/leader-key
     ;;   "nf" '(org-roam-node-find :wk "find")
@@ -1479,10 +1479,10 @@ Export dispatcher using pandoc
      :preview-key "M-.")
     :bind
     ;; Define some convenient keybindings as an addition
-    ("C-c n e" ("roam find node" . consult-org-roam-file-find))
-    ("C-c n b" ("roam backlinks" . consult-org-roam-backlinks))
-    ("C-c n l" ("roam forward links" . consult-org-roam-forward-links))
-    ("C-c n r" ("roam search" . consult-org-roam-search)))
+    ("C-c n e" . consult-org-roam-file-find)
+    ("C-c n b" . consult-org-roam-backlinks)
+    ("C-c n l" . consult-org-roam-forward-links)
+    ("C-c n r" . consult-org-roam-search))
 #+end_src
 
 *** org-noter
@@ -1657,7 +1657,7 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     ;; (oh/leader-key
     ;;   "ta" '(oh/toggle-copilot-mode :wk "copilot"))
     :bind
-    ("C-c t c" ("copilot" . copilot-mode))
+    ("C-c t c" . copilot-mode)
     (:map copilot-completion-map
           ("<tab>" . 'copilot-accept-completion)
           ("TAB" . 'copilot-accept-completion)
@@ -1688,8 +1688,8 @@ Use any LLM in Emacs.
   (use-package gptel
     :ensure t
     :bind
-    ("C-c g g" ("gptel" . gptel))
-    ("C-c g s" ("send" . gptel-send))
+    ("C-c g g" . gptel)
+    ("C-c g s" . gptel-send)
 
     :init
     (which-key-add-key-based-replacements "C-c g" "gptel")
@@ -1924,8 +1924,8 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
     (jinx-languages "en_US nb_NO")
 
     :bind
-    ("M-$" ("jinx correct" . jinx-correct))
-    ("C-M-$" ("jinx languages" . jinx-languages))
+    ("M-$" . jinx-correct)
+    ("C-M-$" . jinx-languages)
 
     ;; :general
     ;; (oh/leader-key
@@ -1952,7 +1952,7 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
     ;;                      (lsp)))  ; or lsp-deferred
     :bind
     (:map text-mode-map
-          ("C-c t l" ("enable lsp" . lsp-deferred)))
+          ("C-c t l" . lsp-deferred))
     :init
     (setq lsp-ltex-version "15.2.0"))  ; make sure you have set this, see below
 #+end_src
@@ -2019,7 +2019,7 @@ Make text more readable by narrowing the text at the center of the screen. This 
     :hook (org-mode . olivetti-mode)
     :custom (olivetti-body-width 90)
     :bind
-    ("C-c t o" ("toggle olivetti" . olivetti-mode)))
+    ("C-c t o" . olivetti-mode))
     ;; :general
     ;; (oh/leader-key
     ;;   "to" '(olivetti-mode :wk "olivetti")))

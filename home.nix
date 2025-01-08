@@ -46,6 +46,7 @@
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
     "keymapp"
     "terraform"
+    "copilot-node-server"
   ];
 
   home.packages = with pkgs; [
@@ -107,7 +108,7 @@
     roboto
     roboto-serif
 
-    nerdfonts
+
     git
     ripgrep
     fd
@@ -213,7 +214,7 @@
     # (pkgs.writeShellScriptBin "my-hello" ''
     #   echo "Hello, ${config.home.username}!"
     # '')
-  ];
+  ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts); # all nerd-fonts
 
   programs.starship.enable = true;
   programs.fish = {
