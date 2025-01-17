@@ -46,7 +46,7 @@
   };
 
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
-    "keymapp"
+    # "keymapp"
     "terraform"
     "copilot-node-server"
   ];
@@ -63,7 +63,7 @@
 
     ### zsa keyboard ###
     zsa-udev-rules
-    keymapp
+    # keymapp
 
     ### misc ###
     zotero_7
