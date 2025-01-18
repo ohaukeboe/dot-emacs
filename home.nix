@@ -79,7 +79,7 @@
     terraform-ls
 
     ### reMarkable ###
-    # rmapi
+    rmapi
 
     ### android ###
     android-tools
