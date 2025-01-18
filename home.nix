@@ -284,7 +284,7 @@
   home.sessionVariables = {
     EDITOR = "vim";
     DOTNET_ROOT = "${pkgs.dotnet-sdk_8}";
-    # LSP_USE_PLISTS= "true";
+    LSP_USE_PLISTS= "true";
   };
 
   # # Enable lorri for easy development environment
