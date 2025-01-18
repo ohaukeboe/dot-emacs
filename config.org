@@ -756,7 +756,8 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 #+begin_src elisp
   (use-package rust-ts-mode
     ;; :ensure t
-    :hook (rust-ts-mode . eglot-ensure)
+    ;; :hook (rust-ts-mode . eglot-ensure)
+    :hook (rust-ts-mode . lsp-deferred)
     :mode "\\.rs\\'"
     ;; :bind
     ;; (:map rust-ts-mode-map
@@ -766,15 +767,16 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     ;;  ("C-c C-c C-t" . rust-test)
     ;;  ("C-c C-c C-k" . rust-check))
     :custom
-    (rust-mode-treesitter-derive t)
-    :config
-    (with-eval-after-load 'eglot
-      (add-to-list 'eglot-server-programs
-                   '((rust-ts-mode rust-mode) .
-                     ("rust-analyzer"
-                      :initializationOptions
-                      (:check (:command "clippy")
-                       :cargo (:targetDir t)))))))
+    (rust-mode-treesitter-derive t))
+
+    ;; :config
+    ;; (with-eval-after-load 'eglot
+    ;;   (add-to-list 'eglot-server-programs
+    ;;                '((rust-ts-mode rust-mode) .
+    ;;                  ("rust-analyzer"
+    ;;                   :initializationOptions
+    ;;                   (:check (:command "clippy")
+    ;;                    :cargo (:targetDir t)))))))
 #+end_src
 
 ** C
