@@ -31,7 +31,6 @@ var/
 *.elc
 /elpy/
 /config.el
-/early-init.el
 /undo-fu-session/
 /recentf
 /history
