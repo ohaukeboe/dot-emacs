@@ -40,7 +40,6 @@
       extensions = [
         "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock origin
         "aeblfdkhhhdcdjpifhhbdiojplfjncoa" # 1password
-        "akahnknmcbmgodngfjcflnaljdbhnlfo" # vertical tabs
       ];
     };
   };
