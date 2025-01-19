@@ -48,7 +48,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (warning-minimum-level :error)
 
     ;; gc settings ++ to improve performance
-    (gc-cons-threshold (* 256 1024 1024))  ; 256mb
+    (gc-cons-threshold (* 512 1024 1024))  ; 512mb
     (gc-cons-percentage 0.3)
     (read-process-output-max (* 1024 1024)) ;
 
@@ -636,7 +636,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
 
     :init
     ;; Performance
-    (setq read-process-output-max (* 1024 1024)) ;; 1mb
+    (setq read-process-output-max (* 3 1024 1024)) ;; 3mb
 
     :custom-face
     (lsp-face-highlight-textual ((t (:background nil :foreground nil :weight ultra-bold :distant-foreground nil)))))
@@ -1636,7 +1636,13 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     :config
     (global-wakatime-mode))
 #+end_src
-
+** Yasnippet
+#+begin_src elisp
+  (use-package yasnippet
+    :ensure t
+    :init
+    (yas-global-mode 1))
+#+end_src
 ** Make
 
 #+begin_src elisp
