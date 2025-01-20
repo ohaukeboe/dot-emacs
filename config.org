@@ -50,7 +50,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     ;; gc settings ++ to improve performance
     (gc-cons-threshold (* 512 1024 1024))  ; 512mb
     (gc-cons-percentage 0.3)
-    (read-process-output-max (* 1024 1024)) ;
+    (read-process-output-max (* 3 1024 1024)) ;
 
     ;; UI settings
     (scroll-bar-mode nil)
@@ -630,7 +630,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-keymap-prefix nil)
     (lsp-headerline-breadcrumb-enable nil)
     (eldoc-display-functions '(eldoc-display-in-buffer))
-    (lsp-idle-delay 0)
+    (lsp-idle-delay 0.5)
 
     (lsp-inlay-hint-enable t)
 
