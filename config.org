@@ -648,7 +648,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
 #+begin_src elisp
 
   (use-package lsp-mode
-    :ensure t
+    ;; :ensure t
     :commands
     (lsp-deferred lsp)
 
@@ -681,7 +681,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-face-highlight-textual ((t (:background nil :foreground nil :weight ultra-bold :distant-foreground nil)))))
 
   (use-package lsp-ui
-    :ensure t
+    ;; :ensure t
     :after lsp-mode
 
     :custom
@@ -704,7 +704,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
 
 
   (use-package consult-lsp
-    :ensure t
+    ;; :ensure t
     :after lsp-mode
     :bind
     (:map lsp-mode-map
@@ -840,7 +840,7 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     "\\.java\\'")
 
   (use-package lsp-java
-    :ensure t
+    ;; :ensure t
     :config
     (add-hook 'java-mode-hook 'lsp))
 #+end_src
@@ -1993,7 +1993,7 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 
 #+begin_src elisp
   (use-package lsp-ltex
-    :ensure t
+    ;; :ensure t
     ;; :hook (text-mode . (lambda ()
     ;;                      (require 'lsp-ltex)
     ;;                      (lsp)))  ; or lsp-deferred

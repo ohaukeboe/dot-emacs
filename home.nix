@@ -29,9 +29,47 @@
   	    extraEmacsPackages = epkgs: with epkgs; [
   	      copilot
   	      jinx
+          (lsp-mode.overrideAttrs (p: {
+            buildPhase = ''
+              export LSP_USE_PLISTS=true;
+            '' + p.buildPhase;
+          }))
+          (lsp-ui.overrideAttrs (p: {
+            buildPhase = ''
+              export LSP_USE_PLISTS=true;
+            '' + p.buildPhase;
+          }))
+          (dap-mode.overrideAttrs (p: {
+            buildPhase = ''
+              export LSP_USE_PLISTS=true;
+            '' + p.buildPhase;
+          }))
+          (consult-lsp.overrideAttrs (p: {
+            buildPhase = ''
+              export LSP_USE_PLISTS=true;
+            '' + p.buildPhase;
+          }))
+          (lsp-treemacs.overrideAttrs (p: {
+            buildPhase = ''
+              export LSP_USE_PLISTS=true;
+            '' + p.buildPhase;
+          }))
+          (lsp-ltex.overrideAttrs (p: {
+            buildPhase = ''
+              export LSP_USE_PLISTS=true;
+            '' + p.buildPhase;
+          }))
+          (lsp-java.overrideAttrs (p: {
+            buildPhase = ''
+              export LSP_USE_PLISTS=true;
+            '' + p.buildPhase;
+          }))
+          (lsp-docker.overrideAttrs (p: {
+            buildPhase = ''
+              export LSP_USE_PLISTS=true;
+            '' + p.buildPhase;
+          }))
   	    ];
-      }).overrideAttrs (oldAttrs: {
-          LSP_USE_PLISTS = "true";
       });
   	};
 
