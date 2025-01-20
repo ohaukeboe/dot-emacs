@@ -153,6 +153,28 @@ This package provides a set of icons for Emacs.
     (nerd-icons-install-font t))
 #+end_src
 
+Adds nerd-icons to completion menus. It works well with Marginalia
+
+#+begin_src elisp
+  (use-package nerd-icons-completion
+    :ensure t
+    :after marginalia
+    :config
+    (nerd-icons-completion-mode)
+    (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
+#+end_src
+
+And to add them to corfu:
+
+#+begin_src elisp
+  (use-package nerd-icons-corfu
+    :ensure t
+    :after corfu
+    :config
+    (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
+
+#+end_src
+
 ** Doom modeline
 
 #+begin_src elisp
@@ -276,7 +298,7 @@ Corfu is a completion framework that provides a horizontal completion UI. It is 
   (use-package corfu
     :ensure t
     :custom
-    ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
+    (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
     (corfu-auto t)                 ;; Enable auto completion
     ;; (corfu-separator ?\s)          ;; Orderless field separator
     ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
@@ -285,6 +307,8 @@ Corfu is a completion framework that provides a horizontal completion UI. It is 
     ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
     ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
     ;; (corfu-scroll-margin 5)        ;; Use scroll margin
+
+    (text-mode-ispell-word-completion nil)
 
     :config
     (global-corfu-mode))
@@ -364,6 +388,21 @@ Allow displaying the vertico completions in a grid
 #+begin_src elisp
   (use-package vertico-grid
     :after vertico)
+#+end_src
+
+Add completion for directories
+
+#+begin_src elisp
+  ;; Configure directory extension.
+  (use-package vertico-directory
+    :after vertico
+    ;; More convenient directory navigation commands
+    ;; :bind (:map vertico-map
+    ;;             ("RET" . vertico-directory-enter)
+    ;;             ("DEL" . vertico-directory-delete-char)
+    ;;             ("M-DEL" . vertico-directory-delete-word))
+    ;; Tidy shadowed file names
+    :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 #+end_src
 
 ** Orderless
