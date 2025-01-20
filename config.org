@@ -310,8 +310,11 @@ Corfu is a completion framework that provides a horizontal completion UI. It is 
 
     (text-mode-ispell-word-completion nil)
 
+    (corfu-popupinfo-delay '(nil . 0.0))
+
     :config
-    (global-corfu-mode))
+    (global-corfu-mode 1)
+    (corfu-popupinfo-mode 1))
 #+end_src
 
 It is also possible to use Corfu in the terminal. This requires the =corfu-terminal= package to be installed.
