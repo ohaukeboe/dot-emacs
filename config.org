@@ -1272,6 +1272,8 @@ rather than files.  These modes usually use read-only buffers.
     :hook
     ;; (org-mode . variable-pitch-mode)
     (org-mode . (lambda () (visual-line-mode 1)))
+    (org-mode . turn-on-org-cdlatex)
+    (org-mode . (lambda () (electric-pair-mode 0)))
 
     :custom
     (org-export-with-smart-quotes t)

@@ -29,6 +29,8 @@
   	    extraEmacsPackages = epkgs: with epkgs; [
   	      copilot
   	      jinx
+          cdlatex
+          auctex
           (lsp-mode.overrideAttrs (p: {
             buildPhase = ''
               export LSP_USE_PLISTS=true;
