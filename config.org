@@ -96,8 +96,8 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (winner-mode 1)
 
     :custom-face
-    (default ((t :family "Roboto Mono" :height 120)))
-    (fixed-pitch ((t :family "Roboto Mono" :height 0.9)))
+    (default ((t :family "Roboto Mono" :height 140)))
+    (fixed-pitch ((t :family "Roboto Mono" :height 1.1)))
     (variable-pitch ((t :family "Roboto Serif" :height 1.3))))
 #+end_src
 
@@ -1293,6 +1293,9 @@ rather than files.  These modes usually use read-only buffers.
     (org-attach-archive-delete 'query)
     (org-attach-preferred-new-method 'dir)
     (org-attach-dir-relative t)
+    (org-startup-with-latex-preview t)
+    (org-format-latex-options
+      (plist-put org-format-latex-options :scale 2.3))
 
     :config
     ;; Pretty bullets
