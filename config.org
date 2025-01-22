@@ -1254,6 +1254,22 @@ Some other zotero plugins I use are:
                :unnarrowed t)))
 #+end_src
 
+** org-ref
+Org-ref handles crossreferences pretty well.
+
+#+begin_src elisp
+  (use-package org-ref
+    :ensure t
+    :after org
+    :bind
+    (:map org-mode-map
+          ("C-c r" . org-ref-insert-ref-link))
+    :custom
+    (org-ref-insert-cite-function
+     (lambda ()
+  	 (org-cite-insert nil))))
+#+end_src
+
 * Major Modes
 ** Special
 A special major mode is intended to view specially formatted data
