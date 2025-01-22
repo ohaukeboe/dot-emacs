@@ -1313,7 +1313,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-attach-dir-relative t)
     (org-startup-with-latex-preview t)
     (org-format-latex-options
-      (plist-put org-format-latex-options :scale 2.3))
+      (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
 
     :config
     ;; Pretty bullets
@@ -1321,6 +1321,7 @@ rather than files.  These modes usually use read-only buffers.
                             '(("^ *\\([-]\\) "
                                (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
     (add-to-list 'org-latex-packages-alist '("" "listings"))
+    (add-to-list 'org-latex-packages-alist '("" "amsmath"))
     (with-eval-after-load 'ox-latex
       (setq org-latex-listings 'listings)
       (setq org-latex-listings-options
