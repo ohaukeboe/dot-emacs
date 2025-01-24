@@ -1649,11 +1649,41 @@ A terminal emulator
 #+begin_src elisp
   (use-package eat
     :ensure t
+    :disabled
     :bind
     ("C-c e" . eat)
     ("C-x p t" . eat-project)
     :hook
     (eat-mode . (lambda () (display-line-numbers-mode -1))))
+#+end_src
+
+** vterm
+#+begin_src elisp
+  (use-package vterm
+    :ensure t
+    :bind
+    ("C-c v" . 'vterm)
+    (:map project-prefix-map
+          ("t" . project-vterm))
+    :custom
+    (vterm-max-scrollback 100000)
+    (vterm-tramp-shells '(("ssh" "/bin/bash")
+                          ("podman" "/bin/bash")))
+    :preface
+    (defun project-vterm ()
+      (interactive)
+      (defvar vterm-buffer-name)
+      (let* ((default-directory (project-root     (project-current t)))
+             (vterm-buffer-name (project-prefixed-buffer-name "vterm"))
+             (vterm-buffer (get-buffer vterm-buffer-name)))
+        (if (and vterm-buffer (not current-prefix-arg))
+            (pop-to-buffer vterm-buffer  (bound-and-true-p display-comint-buffer-action))
+          (vterm))))
+    :init
+    :init
+    (add-to-list 'project-switch-commands     '(project-vterm "Vterm") t)
+    (add-to-list 'project-kill-buffer-conditions  '(major-mode . vterm-mode)))
+
 #+end_src
 
 ** Direnv

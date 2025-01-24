@@ -275,6 +275,12 @@
       fish_add_path ~/.cargo/bin/
 
       alias git-del-merged='git branch --merged origin | grep -v -E " main\$| master\$" | xargs -pr git branch -d'
+
+      alias edit='emacsclient -r -n'
+
+      if test "$INSIDE_EMACS" = 'vterm'; and test -n "$EMACS_VTERM_PATH"; and test -f "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
+        source "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
+      end
     '';
   };
 
