@@ -98,18 +98,10 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     :custom-face
     (default ((t :family "Roboto Mono" :height 140)))
     (fixed-pitch ((t :family "Roboto Mono" :height 1.1)))
-    (variable-pitch ((t :family "Roboto Serif" :height 1.3))))
-#+end_src
+    (variable-pitch ((t :family "Roboto Serif" :height 1.3)))
 
-** Package
-
-Most packages are available on Melpa.
-
-#+begin_src elisp
-  (use-package package
     :config
-    (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t))
-
+    (server-start))
 #+end_src
 
 ** Benchmark
@@ -1387,6 +1379,7 @@ Provides a clean look for org-mode.
 #+begin_src elisp
   (use-package org-modern
     :ensure t
+    :disabled
     :hook (org-mode . org-modern-mode)
     :custom
     (org-modern-table nil)
@@ -2019,9 +2012,6 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 
 #+begin_src elisp
   (use-package jinx
-    ;; :hook (elpaca-after-init . global-jinx-mode)
-    ;;:ensure t
-    :after (text-mode prog-mode)
     :custom
     (jinx-languages "en_US nb_NO")
 
@@ -2034,8 +2024,9 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
     ;;   "sc" '(jinx-correct :wk "correct previous")
     ;;   "ts" '(jinx-mode :wk "toggle spellcheck"))
 
-    :config
+    :init
     (global-jinx-mode 1)
+    :config
     (with-eval-after-load 'vertico
       (add-to-list 'vertico-multiform-categories
                    '(jinx grid
