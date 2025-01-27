@@ -292,7 +292,7 @@
 
   programs.git = {
     enable = true;
-    userName = "Oskar Haukbøe";
+    userName = "Oskar Haukebøe";
     userEmail = "ohaukeboe@pm.me";
     extraConfig = {
       log.decorate = "full";
