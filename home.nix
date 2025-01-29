@@ -169,7 +169,7 @@
     (hiPrio gcc) # Needed hiPrio to resolve conflict as both
     # clang and gcc provide C++ binary
     ccls
-    # bear # usefull for using lsp
+    bear # usefull for using lsp
 
     ### C# ###
     omnisharp-roslyn

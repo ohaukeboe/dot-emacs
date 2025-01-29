@@ -652,7 +652,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
           ("C-h ." . lsp-describe-thing-at-point)
           ("C-c a" . lsp-execute-code-action)
           ("C-c f" . lsp-format-buffer)
-          ("C-c F" . lsp-format-region)
+          ("C-c C-f" . lsp-format-region)
           ("C-c r" . lsp-rename)
           ("C-c m" . consult-imenu)
           ("C-c M" . consult-imenu-multi)
@@ -817,7 +817,7 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 
 #+begin_src elisp
   (use-package c-ts-mode
-    :hook (c-ts-mode . eglot-ensure)
+    :hook (c-ts-mode . lsp-deferred)
     :mode
     "\\.c\\'"
     "\\.h\\'")
@@ -1672,7 +1672,6 @@ A terminal emulator
         (if (and vterm-buffer (not current-prefix-arg))
             (pop-to-buffer vterm-buffer  (bound-and-true-p display-comint-buffer-action))
           (vterm))))
-    :init
     :init
     (add-to-list 'project-switch-commands     '(project-vterm "Vterm") t)
     (add-to-list 'project-kill-buffer-conditions  '(major-mode . vterm-mode)))
