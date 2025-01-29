@@ -101,7 +101,9 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (variable-pitch ((t :family "Roboto Serif" :height 1.3)))
 
     :config
-    (server-start))
+    (server-start)
+    (add-to-list 'load-path
+                 (concat user-emacs-directory "packages")))
 #+end_src
 
 ** Benchmark
@@ -557,8 +559,6 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 #+begin_src elisp
   (use-package magit-todos
     :ensure t
-    ;; :disabled
-    ;; :elpaca (magit-todos :type git :host github :repo "alphapapa/magit-todos")
     :after magit
     :custom
     (magit-todos-filename-filter 'file-name-nondirectory)
@@ -1774,6 +1774,13 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
   ;;                  (electric-pair-mode 1)))
   ;;      (progn (copilot-mode 1)
   ;;              (electric-pair-mode -1))))
+#+end_src
+
+** nix-init
+Some utilities for using nix-shell together with direnv for projects
+
+#+begin_src elisp
+  (use-package nix-init)
 #+end_src
 
 ** gptel
