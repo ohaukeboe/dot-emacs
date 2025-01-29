@@ -549,9 +549,22 @@ Consult is a package that provides a set of commands for searching and navigatin
   (use-package magit
     :ensure t
     :defer t
+    :commands magit-status
+    :bind
+    (:map project-prefix-map
+          ("m" . my/magit-project-status))
     :custom
     (magit-display-buffer-function
-     #'magit-display-buffer-same-window-except-diff-v1))
+     #'magit-display-buffer-same-window-except-diff-v1)
+    :preface
+    (defun my/magit-project-status ()
+        "Run magit-status in the current project's root directory."
+        (interactive)
+        (let ((dir (project-root (project-current t))))
+          (magit-status dir)))
+    :init
+    (with-eval-after-load 'project
+      (add-to-list 'project-switch-commands '(my/magit-project-status "Magit") t)))
 #+end_src
 
 Magit-todos for integrating TODO keywords with magit's overview screen
