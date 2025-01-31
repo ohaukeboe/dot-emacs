@@ -105,6 +105,19 @@
     phoronix-test-suite
     ltex-ls # languagetool lsp
     packwiz
+    languagetool
+    zoxide
+    gnuplot
+    ditaa
+    vlc
+    pkg-config
+    neofetch
+    gh                          # github cli
+    awscli2
+    aws-nuke
+    tealdeer # tldr
+    protonmail-bridge
+
 
     ### terraform ###
     terraform
@@ -123,19 +136,6 @@
 
     ### Assembly ###
     asm-lsp
-
-    ### misc ###
-    languagetool
-    zoxide
-    gnuplot
-    ditaa
-    vlc
-    pkg-config
-    neofetch
-    gh                          # github cli
-    awscli2
-    aws-nuke
-    tealdeer
 
     ### fonts ###
     roboto-mono
@@ -225,9 +225,9 @@
 
     ## chatgpt-shell
     pass
+
     ## mu4e (email)
     mu
-    # mbsync
     msmtp
     isync
 
@@ -298,7 +298,26 @@
         "aeblfdkhhhdcdjpifhhbdiojplfjncoa" # 1password
       ];
     };
+  };
 
+  systemd.user.services = {
+    protonmail-bridge = {
+      Unit = {
+        Description = "ProtonMail Bridge";
+        After = [ "network.target" ];
+      };
+
+      Service = {
+        ExecStart = "${pkgs.protonmail-bridge}/bin/protonmail-bridge --noninteractive";
+        Restart = "on-failure";
+        Environment = "PATH=${pkgs.pass}/bin:${pkgs.gnupg}/bin:$PATH";
+      };
+
+      Install = {
+        WantedBy = [ "default.target" ];
+      };
+
+    };
   };
 
   # Allow home-manager to install fonts
@@ -307,6 +326,9 @@
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
   home.file = {
+    ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
+    ".msmtprc".source = ./dotfiles/msmtprc.conf;
+
     # # Building this configuration will create a copy of 'dotfiles/screenrc' in
     # # the Nix store. Activating the configuration will then make '~/.screenrc' a
     # # symlink to the Nix store copy.
