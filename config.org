@@ -1960,7 +1960,7 @@ and my =.msmtprc= file looks like:
                     (mu4e-compose-signature . nil))))))
 #+end_src
 
-Org-msg allows for composing the mail using orgmode, and then send it as beautifull html.
+Org-msg allows for composing the mail using orgmode, and then send it as beautiful html.
 
 #+begin_src elisp
   (use-package org-msg
@@ -2104,7 +2104,7 @@ A better help buffer
     ([remap describe-command] . helpful-command))
 #+end_src
 
-** `Devilry
+** Devilry
 #+begin_src elisp
   (use-package devilry-mode
     :vc (:url "https://github.com/ohaukeboe/devilry-mode")
@@ -2131,7 +2131,4 @@ Make text more readable by narrowing the text at the center of the screen. This 
     :custom (olivetti-body-width 90)
     :bind
     ("C-c t o" . olivetti-mode))
-    ;; :general
-    ;; (oh/leader-key
-    ;;   "to" '(olivetti-mode :wk "olivetti")))
 #+end_src

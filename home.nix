@@ -17,72 +17,63 @@
   # release notes.
   home.stateVersion = "23.05"; # Please read the comment before changing.
 
-  programs = {
-  	emacs = {
-  	  enable = true;
-  	  # package = pkgs.emacs-pgtk;
-  	  package = (pkgs.emacsWithPackagesFromUsePackage {
-  	    package = pkgs.emacs-unstable-pgtk;
-  	    config = ./config.org;
-  	    alwaysEnsure = false;
-  	    alwaysTangle = true;
-  	    extraEmacsPackages = epkgs: with epkgs; [
-  	      copilot
-  	      jinx
-          cdlatex
-          auctex
-          (lsp-mode.overrideAttrs (p: {
-            buildPhase = ''
+  programs.emacs = {
+  	enable = true;
+  	# package = pkgs.emacs-pgtk;
+  	package = (pkgs.emacsWithPackagesFromUsePackage {
+  	  package = pkgs.emacs-unstable-pgtk;
+  	  config = ./config.org;
+  	  alwaysEnsure = false;
+  	  alwaysTangle = true;
+  	  extraEmacsPackages = epkgs: with epkgs; [
+  	    copilot
+  	    jinx
+        cdlatex
+        auctex
+        (lsp-mode.overrideAttrs (p: {
+          buildPhase = ''
               export LSP_USE_PLISTS=true;
             '' + p.buildPhase;
-          }))
-          (lsp-ui.overrideAttrs (p: {
-            buildPhase = ''
+        }))
+        (lsp-ui.overrideAttrs (p: {
+          buildPhase = ''
               export LSP_USE_PLISTS=true;
             '' + p.buildPhase;
-          }))
-          (dap-mode.overrideAttrs (p: {
-            buildPhase = ''
+        }))
+        (dap-mode.overrideAttrs (p: {
+          buildPhase = ''
               export LSP_USE_PLISTS=true;
             '' + p.buildPhase;
-          }))
-          (consult-lsp.overrideAttrs (p: {
-            buildPhase = ''
+        }))
+        (consult-lsp.overrideAttrs (p: {
+          buildPhase = ''
               export LSP_USE_PLISTS=true;
             '' + p.buildPhase;
-          }))
-          (lsp-treemacs.overrideAttrs (p: {
-            buildPhase = ''
+        }))
+        (lsp-treemacs.overrideAttrs (p: {
+          buildPhase = ''
               export LSP_USE_PLISTS=true;
             '' + p.buildPhase;
-          }))
-          (lsp-ltex.overrideAttrs (p: {
-            buildPhase = ''
+        }))
+        (lsp-ltex.overrideAttrs (p: {
+          buildPhase = ''
               export LSP_USE_PLISTS=true;
             '' + p.buildPhase;
-          }))
-          (lsp-java.overrideAttrs (p: {
-            buildPhase = ''
+        }))
+        (lsp-java.overrideAttrs (p: {
+          buildPhase = ''
               export LSP_USE_PLISTS=true;
             '' + p.buildPhase;
-          }))
-          (lsp-docker.overrideAttrs (p: {
-            buildPhase = ''
+        }))
+        (lsp-docker.overrideAttrs (p: {
+          buildPhase = ''
               export LSP_USE_PLISTS=true;
             '' + p.buildPhase;
-          }))
-  	    ];
-      });
-  	};
-
-    chromium = {
-      enable = true;
-      extensions = [
-        "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock origin
-        "aeblfdkhhhdcdjpifhhbdiojplfjncoa" # 1password
-      ];
-    };
+        }))
+  	  ];
+    });
   };
+
 
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
     # "keymapp"
@@ -219,7 +210,7 @@
     # pandoc
     pandoc
     marksman
-        # sqlite3
+    # sqlite3
     sqlite
 
     enchant
@@ -259,13 +250,14 @@
     # '')
   ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts); # all nerd-fonts
 
-  programs.starship.enable = true;
-  programs.fish = {
-    enable = true;
-    interactiveShellInit = ''
+  programs = {
+    starship.enable = true;
+    fish = {
+      enable = true;
+      interactiveShellInit = ''
       set fish_greeting # Disable greeting
     '';
-    shellInit=''
+      shellInit=''
       if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish' ]
         . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
       end
@@ -282,23 +274,32 @@
         source "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
       end
     '';
-  };
-
-  programs.direnv = {
-    enable = true;
-    # enableFishIntegration = true;
-    nix-direnv.enable = true;
-  };
-
-  programs.git = {
-    enable = true;
-    userName = "Oskar Haukebøe";
-    userEmail = "ohaukeboe@pm.me";
-    extraConfig = {
-      log.decorate = "full";
     };
-  };
 
+    direnv = {
+      enable = true;
+      # enableFishIntegration = true;
+      nix-direnv.enable = true;
+    };
+
+    git = {
+      enable = true;
+      userName = "Oskar Haukebøe";
+      userEmail = "ohaukeboe@pm.me";
+      extraConfig = {
+        log.decorate = "full";
+      };
+    };
+
+    chromium = {
+      enable = true;
+      extensions = [
+        "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock origin
+        "aeblfdkhhhdcdjpifhhbdiojplfjncoa" # 1password
+      ];
+    };
+
+  };
 
   # Allow home-manager to install fonts
   fonts.fontconfig.enable = true;
