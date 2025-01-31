@@ -117,6 +117,7 @@
     aws-nuke
     tealdeer # tldr
     protonmail-bridge
+    davmail # bridge allowing to use exchange through IMAP
 
 
     ### terraform ###
@@ -318,6 +319,24 @@
       };
 
     };
+
+    davmail = {
+      Unit = {
+        Description = "DavMail Exchange Gateway";
+        After = [ "network.target" ];
+      };
+
+      Service = {
+        Type = "simple";
+        ExecStart = "${pkgs.davmail}/bin/davmail";
+        Restart = "on-failure";
+      };
+
+      Install = {
+        WantedBy = [ "default.target" ];
+      };
+    };
+
   };
 
   # Allow home-manager to install fonts
@@ -327,18 +346,33 @@
   # plain files is through 'home.file'.
   home.file = {
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
-    ".msmtprc".source = ./dotfiles/msmtprc.conf;
+  };
 
-    # # Building this configuration will create a copy of 'dotfiles/screenrc' in
-    # # the Nix store. Activating the configuration will then make '~/.screenrc' a
-    # # symlink to the Nix store copy.
-    # ".screenrc".source = dotfiles/screenrc;
+  # Only create initial config if it doesn't exist
+  home.activation = {
+    createDavmailConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      if [ ! -f ~/.davmail.properties ]; then
+        cat > ~/.davmail.properties << EOF
+davmail.url=https://outlook.office365.com/EWS/Exchange.asmx
+davmail.mode=O365Interactive
+davmail.ssl=false
+davmail.imapPort=1143
+davmail.smtpPort=1025
+davmail.caldavPort=1080
+davmail.ldapPort=1389
+davmail.keepDelay=30
+davmail.allowRemoteConnections=false
+davmail.disableUpdateCheck=true
+davmail.logFilePath=~/.davmail/davmail.log
+EOF
+      fi
+    '';
 
-    # # You can also set the file content immediately.
-    # ".gradle/gradle.properties".text = ''
-    #   org.gradle.console=verbose
-    #   org.gradle.daemon.idletimeout=3600000
-    # '';
+    copyMsmtpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      cp ${./dotfiles/msmtprc.conf} ~/.msmtprc
+      chmod 600 ~/.msmtprc
+    '';
+
   };
 
   # You can also manage environment variables but you will have to manually

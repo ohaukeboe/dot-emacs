@@ -1849,7 +1849,9 @@ Both the =mbsyncrc= and the =msmtprc= files are in the [[./dotfiles]] directory.
 
 To initialize the maildir run:
 #+begin_src sh
+  mkdir ~/.mail ~/.mail/ifi ~/.mail/proton
   mu init --maildir=~/.mail/proton --my-address=ohaukeboe@pm.me
+  mu init --maildir=~/.mail/ifi --my-address=oskah@uio.no
   mu index
   mbsync -a
 #+end_src
@@ -1862,9 +1864,8 @@ To initialize the maildir run:
              (executable-find "mbsync")
              (executable-find "msmtp")
              (executable-find "mu"))
-    ;; :general
-    ;; (oh/leader-key
-    ;;   "om" '(mu4e :which-key "mu4e"))
+    :bind
+    ("C-c o m" . mu4e)
 
     :custom
     (mu4e-split-view nil)
@@ -1888,19 +1889,19 @@ To initialize the maildir run:
 
     (setq mu4e-contexts
           (list
-           ;; (make-mu4e-context
-           ;;  :name "ifi"
-           ;;  :match-func
-           ;;  (lambda (msg)
-           ;;    (when msg
-           ;;      (string-prefix-p "/ifi" (mu4e-message-field msg :maildir))))
-           ;;  :vars '((user-mail-address . "oskah@ifi.uio.no")
-           ;;          (user-full-name . "Oskar Haukebøe")
-           ;;          (mu4e-sent-folder . "/ifi/Sent Items")
-           ;;          (mu4e-trash-folder . "/ifi/Deleted Items")
-           ;;          (mu4e-drafts-folder . "/ifi/Drafts")
-           ;;          (mu4e-refile-folder . "/ifi/Archive")
-           ;;          (smtpmail-smtp-user .)))
+           (make-mu4e-context
+            :name "ifi"
+            :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/ifi" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "oskah@uio.no")
+                    (user-full-name . "Oskar Haukebøe")
+                    (mu4e-sent-folder . "/Sent Items")
+                    (mu4e-trash-folder . "/Deleted Items")
+                    (mu4e-drafts-folder . "/Drafts")
+                    (mu4e-refile-folder . "/Archive")
+                    (smtpmail-smtp-user .)))
            (make-mu4e-context
             :name "proton"
             :match-func
@@ -1923,6 +1924,7 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
   (use-package org-msg
     :ensure t
       :after mu4e
+      :disabled
       :config
       (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
             org-msg-startup "hidestars indent inlineimages"
