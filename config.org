@@ -1672,19 +1672,18 @@ A terminal emulator
     (:map project-prefix-map
           ("t" . project-vterm))
     :custom
-    (vterm-max-scrollback 100000)
+    (vterm-max-scrollback 10000)
     (vterm-tramp-shells '(("ssh" "/bin/bash")
-                          ("podman" "/bin/bash")))
+                          ("podman" "/bin/bash")
+                          ("docker" "/bin/bash")))
+
     :preface
     (defun project-vterm ()
       (interactive)
       (defvar vterm-buffer-name)
-      (let* ((default-directory (project-root     (project-current t)))
-             (vterm-buffer-name (project-prefixed-buffer-name "vterm"))
-             (vterm-buffer (get-buffer vterm-buffer-name)))
-        (if (and vterm-buffer (not current-prefix-arg))
-            (pop-to-buffer vterm-buffer  (bound-and-true-p display-comint-buffer-action))
-          (vterm))))
+      (let* ((default-directory (project-root (project-current t)))
+             (vterm-buffer-name (project-prefixed-buffer-name "vterm")))
+          (call-interactively 'vterm vterm-buffer-name)))
     :init
     (add-to-list 'project-switch-commands     '(project-vterm "Vterm") t)
     (add-to-list 'project-kill-buffer-conditions  '(major-mode . vterm-mode)))
