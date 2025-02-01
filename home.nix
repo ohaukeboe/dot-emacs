@@ -356,8 +356,8 @@
 davmail.url=https://outlook.office365.com/EWS/Exchange.asmx
 davmail.mode=O365Interactive
 davmail.ssl=false
-davmail.imapPort=1143
-davmail.smtpPort=1025
+davmail.imapPort=1144
+davmail.smtpPort=1026
 davmail.caldavPort=1080
 davmail.ldapPort=1389
 davmail.keepDelay=30
