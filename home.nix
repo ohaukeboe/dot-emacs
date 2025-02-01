@@ -363,7 +363,7 @@ davmail.ldapPort=1389
 davmail.keepDelay=30
 davmail.allowRemoteConnections=false
 davmail.disableUpdateCheck=true
-davmail.logFilePath=~/.davmail/davmail.log
+davmail.logFilePath=$HOME/.davmail/davmail.log
 EOF
       fi
     '';

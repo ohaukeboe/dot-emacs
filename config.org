@@ -1848,7 +1848,7 @@ The configuration for pulling mail using mbsyncrc is in [[file:dotfiles/mbsyncrc
 To initialize the maildir run:
 #+begin_src sh
   mkdir ~/.mail ~/.mail/ifi ~/.mail/proton
-  mu init --maildir=~/.mail --my-address=oskah@uio.no --my-address=ohaukeboe@pm.me
+  mu init --maildir=~/.mail --my-address=oskah@uio.no --my-address=ohaukeboe@pm.me --my-address=oskar.haukeboe@knowit.no
   mu index
   mbsync -a
 #+end_src
@@ -1896,7 +1896,9 @@ To initialize the maildir run:
            '(:maildir "/ifi/INBOX"
                       :key ?i)
            '(:maildir "/proton/INBOX"
-                      :key ?p)))
+                      :key ?p)
+           '(:maildir "/knowit/INBOX"
+                      :key ?k)))
 
     (setq mu4e-contexts
           (list
@@ -1926,7 +1928,21 @@ To initialize the maildir run:
                     (mu4e-drafts-folder . "/proton/Drafts")
                     (mu4e-refile-folder . "/proton/Archive")
                     (mu4e-compose-signature . nil)
-                    (smtpmail-smtp-user . "ohaukeboe@pm.me"))))))
+                    (smtpmail-smtp-user . "ohaukeboe@pm.me")))
+           (make-mu4e-context
+            :name "knowit"
+            :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/knowit" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "oskar.haukeboe@knowit.no")
+                    (user-full-name . "Oskar Haukebøe")
+                    (mu4e-sent-folder . "/knowit/Sent")
+                    (mu4e-trash-folder . "/knowit/Trash")
+                    (mu4e-drafts-folder . "/knowit/Drafts")
+                    (mu4e-refile-folder . "/knowit/Archive")
+                    (mu4e-compose-signature . nil)
+                    (smtpmail-smtp-user . "oskar.haukeboe@knowit.no"))))))
 #+end_src
 
 Org-msg allows for composing the mail using orgmode, and then send it as beautiful html.
