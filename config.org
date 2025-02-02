@@ -625,6 +625,20 @@ Make magit integrate with github and other git hosting services.
           forge-alist))
 #+end_src
 
+** Project.el
+
+#+begin_src elisp
+  (use-package project
+    :custom
+    (project-vc-ignore "^/var/home")
+    :config
+    (require 'f)
+    (let ((proj-dirs
+           (seq-filter #'f-dir? '("~/projects"
+                                  "~/knowit"))))
+      (mapc #'project-remember-projects-under proj-dirs)))
+#+End_src
+
 * Programming
 ** Eglot
 Eglot is a client for Language Server Protocol (LSP). It is a protocol that allows for IDE-like features such as code completion, code navigation, etc. It is supported by many programming languages.
@@ -834,6 +848,15 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     :mode
     "\\.c\\'"
     "\\.h\\'")
+#+end_src
+
+** Cuda
+
+#+begin_src elisp
+  (use-package cuda-mode
+    :ensure t
+    :mode "\\.cu\\'"
+    :hook (cuda-mode . lsp-deferred))
 #+end_src
 
 ** Java
@@ -1672,7 +1695,7 @@ A terminal emulator
     (:map project-prefix-map
           ("t" . project-vterm))
     :custom
-    (vterm-max-scrollback 10000)
+    ;; (vterm-max-scrollback 10000)
     (vterm-tramp-shells '(("ssh" "/bin/bash")
                           ("podman" "/bin/bash")
                           ("docker" "/bin/bash")))
