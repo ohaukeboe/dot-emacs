@@ -96,7 +96,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (winner-mode 1)
 
     :custom-face
-    (default ((t :family "RobotoMono Nerd Font" :height 140)))
+    (default ((t :family "RobotoMono Nerd Fonts" :height 140)))
     ;; (fixed-pitch ((t :family "Roboto Mono" :height 1.1)))
     ;; (variable-pitch ((t :family "Roboto Serif" :height 1.3)))
 
