@@ -141,11 +141,6 @@
     ### Assembly ###
     asm-lsp
 
-    ### fonts ###
-    roboto-mono
-    roboto
-    roboto-serif
-
     ### C ###
     man-pages
     man-pages-posix

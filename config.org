@@ -95,15 +95,21 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     ;; Allow undo/redo window configuration with C-c <left>/<right>
     (winner-mode 1)
 
-    :custom-face
-    (default ((t :family "RobotoMono Nerd Fonts" :height 140)))
-    ;; (fixed-pitch ((t :family "Roboto Mono" :height 1.1)))
-    ;; (variable-pitch ((t :family "Roboto Serif" :height 1.3)))
-
     :config
     (server-start)
     (add-to-list 'load-path
                  (concat user-emacs-directory "packages")))
+#+end_src
+
+#+begin_src elisp :tangle early-init.el
+  (push '(tool-bar-lines . 0) default-frame-alist)
+  (push '(menu-bar-lines . 0) default-frame-alist)
+  (push '(vertical-scroll-bars) default-frame-alist)
+
+  (set-face-attribute 'default nil
+                      :family "RobotoMono Nerd Font"
+                      :height 140)
+  (set-frame-font "RobotoMono Nerd Font" nil t)
 #+end_src
 
 ** Benchmark
@@ -124,7 +130,7 @@ This is a handy package which helps to show what packages are slowing down the E
 * Look and feel
 ** Theme
 
-#+begin_src elisp
+#+begin_src elisp :tangle early-init.el
   (use-package doom-themes
     :ensure t
     :custom-face
@@ -691,7 +697,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-keymap-prefix nil)
     (lsp-headerline-breadcrumb-enable nil)
     (eldoc-display-functions '(eldoc-display-in-buffer))
-    (lsp-idle-delay 0.5)
+    (lsp-idle-delay 0.0)
 
     (lsp-inlay-hint-enable t)
 
