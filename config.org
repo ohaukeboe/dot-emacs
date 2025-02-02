@@ -96,9 +96,9 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (winner-mode 1)
 
     :custom-face
-    (default ((t :family "Roboto Mono" :height 140)))
-    (fixed-pitch ((t :family "Roboto Mono" :height 1.1)))
-    (variable-pitch ((t :family "Roboto Serif" :height 1.3)))
+    (default ((t :family "RobotoMono Nerd Font" :height 140)))
+    ;; (fixed-pitch ((t :family "Roboto Mono" :height 1.1)))
+    ;; (variable-pitch ((t :family "Roboto Serif" :height 1.3)))
 
     :config
     (server-start)
@@ -1345,9 +1345,9 @@ rather than files.  These modes usually use read-only buffers.
 
     :config
     ;; Pretty bullets
-    (font-lock-add-keywords 'org-mode
-                            '(("^ *\\([-]\\) "
-                               (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+    ;; (font-lock-add-keywords 'org-mode
+    ;;                         '(("^ *\\([-]\\) "
+    ;;                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
     (add-to-list 'org-latex-packages-alist '("" "listings"))
     (add-to-list 'org-latex-packages-alist '("" "amsmath"))
     (with-eval-after-load 'ox-latex
@@ -1415,7 +1415,6 @@ Provides a clean look for org-mode.
 #+begin_src elisp
   (use-package org-modern
     :ensure t
-    :disabled
     :hook (org-mode . org-modern-mode)
     :custom
     (org-modern-table nil)
@@ -1690,6 +1689,15 @@ A terminal emulator
 #+begin_src elisp
   (use-package vterm
     :ensure t
+    :hook
+    ;; Iv'e had some severe performance issues, so I am disabling a
+    ;; bunch of minor modes and hoping for it to imrove
+    (vterm-mode . (lambda ()
+                    (corfu-mode)
+                    (flycheck-mode)
+                    (undo-fu-session-mode)
+                    (wakatime-mode)
+                    (yas-minor-mode)))
     :bind
     ("C-c v" . 'vterm)
     (:map project-prefix-map

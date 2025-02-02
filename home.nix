@@ -119,6 +119,9 @@
     protonmail-bridge
     davmail # bridge allowing to use exchange through IMAP
 
+    git
+    ripgrep
+    fd
 
     ### terraform ###
     terraform
@@ -142,11 +145,6 @@
     roboto-mono
     roboto
     roboto-serif
-
-
-    git
-    ripgrep
-    fd
 
     ### C ###
     man-pages
