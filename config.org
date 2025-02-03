@@ -983,7 +983,10 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 #+begin_src elisp
   (use-package yaml-ts-mode
     :mode
-    "\\.yml\\'")
+    "\\.yml\\'"
+    "\\.yaml\\'"
+    :hook
+    (yaml-ts-mode . lsp-deferred))
 
 #+end_src
 
