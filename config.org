@@ -130,7 +130,7 @@ This is a handy package which helps to show what packages are slowing down the E
 * Look and feel
 ** Theme
 
-#+begin_src elisp :tangle early-init.el
+#+begin_src elisp
   (use-package doom-themes
     :ensure t
     :custom-face
