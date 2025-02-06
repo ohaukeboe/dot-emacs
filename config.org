@@ -954,6 +954,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     :mode ("\\.kt\\'" "\\.kts\\'")
     :custom
     (lsp-kotlin-compiler-jvm-target "21.0")
+    (lsp-idle-delay 0.4)
     :init
     (with-eval-after-load 'treesit
         (add-to-list 'treesit-language-source-alist
@@ -1113,6 +1114,7 @@ CDLatex makes writing math a pleasure.
 #+end_src
 
 ** PlantUML
+PlantUML is a markup language for generating UML diagrams
 
 #+begin_src elisp
   (use-package plantuml-mode
@@ -1132,6 +1134,23 @@ CDLatex makes writing math a pleasure.
     (org-plantuml-exec-mode 'plantuml)
     (plantuml-indent-level 4)
     (plantuml-output-type "png"))
+#+end_src
+
+** Mermaid
+Mermaid is a markup language for generating graphs. Pretty similar to PlantUML.
+
+#+begin_src elisp
+  (use-package mermaid-mode
+    :ensure t
+    :mode
+    "\\.mermaid\\'"
+    "\\.mmd\\'")
+
+  (use-package ob-mermaid
+    :after org
+    :ensure t
+    :config
+    (add-to-list 'org-babel-load-languages '(mermaid . t)))
 #+end_src
 
 ** biblatex

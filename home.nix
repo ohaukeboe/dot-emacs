@@ -26,6 +26,7 @@
   	  alwaysEnsure = false;
   	  alwaysTangle = true;
   	  extraEmacsPackages = epkgs: with epkgs; [
+        edit-indirect # Edit codeblocks in markdown
   	    copilot
   	    jinx
         cdlatex
@@ -172,6 +173,8 @@
     ### plantuml ###
     plantuml
     graphviz
+
+    mermaid-cli
 
     ### python ###
     #python312
