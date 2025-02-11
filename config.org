@@ -118,7 +118,7 @@ This is a handy package which helps to show what packages are slowing down the E
 #+begin_src elisp
   (use-package benchmark-init
     :ensure t
-    :init
+    :config
     (benchmark-init/activate)
     ;; (add-hook 'after-init-hook 'benchmark-init/deactivate)
     :hook
@@ -1351,6 +1351,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-startup-with-latex-preview t)
     (org-format-latex-options
       (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
+    (org-latex-prefer-user-labels t)
 
     :config
     ;; Pretty bullets
