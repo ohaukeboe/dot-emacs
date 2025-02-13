@@ -1352,6 +1352,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-format-latex-options
       (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
     (org-latex-prefer-user-labels t)
+    (org-ditaa-jar-path "~/.local/share/ditaa/ditaa.jar")
 
     :config
     ;; Pretty bullets
@@ -1369,11 +1370,11 @@ rather than files.  These modes usually use read-only buffers.
               ("postbreak" "\\mbox{$\\hookrightarrow$\\space}")
               ("xleftmargin" "2.8em")
               ("framexleftmargin" "2.8em")
-              ("numbers" "left")
+              ;; ("numbers" "left")
               ("tabsize" "2"))))
 
     (org-babel-do-load-languages 'org-babel-load-languages
-                                 org-babel-load-languages)
+                                 '((ditaa . t)))
 
     ;; Load extra export backends
     (require 'ox-beamer)

@@ -229,6 +229,7 @@
     nixgl.nixVulkanIntel
     # nixgl.auto.nixVulkanNvidia
 
+    roboto-mono
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
@@ -339,6 +340,7 @@
   # plain files is through 'home.file'.
   home.file = {
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
+    ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
   };
 
   # Only create initial config if it doesn't exist
