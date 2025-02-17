@@ -113,7 +113,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (defun my/kill-buffers-not-backed-by-file ()
       "Kill all buffers that are not backed by a file."
       (interactive)
-      (mapc 'kill-buffer (-remove 'buffer-backed-by-file-p (buffer-list)))))
+      (mapc 'kill-buffer (-remove 'my/buffer-backed-by-file-p (buffer-list)))))
 #+end_src
 
 #+begin_src elisp :tangle early-init.el
