@@ -42,6 +42,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     ("C-0" . text-scale-adjust)
     ("C-x c" . window-swap-states)
     ("C-c d" . delete-pair)
+    ("C-x x k" . my/kill-buffers-not-backed-by-file)
 
     :custom
     (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
@@ -98,7 +99,21 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     :config
     (server-start)
     (add-to-list 'load-path
-                 (concat user-emacs-directory "packages")))
+                 (concat user-emacs-directory "packages"))
+    :preface
+    (require 'dash)
+    (defun my/buffer-backed-by-file-p (buffer)
+      (let ((backing-file (buffer-file-name buffer)))
+        (if (buffer-modified-p buffer)
+            t
+          (if backing-file
+              (file-exists-p (buffer-file-name buffer))
+            t))))
+
+    (defun my/kill-buffers-not-backed-by-file ()
+      "Kill all buffers that are not backed by a file."
+      (interactive)
+      (mapc 'kill-buffer (-remove 'buffer-backed-by-file-p (buffer-list)))))
 #+end_src
 
 #+begin_src elisp :tangle early-init.el
@@ -1656,8 +1671,14 @@ Export dispatcher using pandoc
     :custom
     (dired-listing-switches "-agohv --group-directories-first")
     (dired-kill-when-opening-new-dired-buffer t)
-    (dired-async-mode t))
+    (dired-async-mode t)
 
+    :config
+    ;; Kill the buffer belonging to the deleted file or directory
+    (advice-add 'dired-delete-file :before
+              (lambda (file &rest rest)
+                (when-let ((buf (get-file-buffer file)))
+                  (kill-buffer buf)))))
     ;; :general
     ;; (oh/leader-key
     ;;   "fd" '(dired-jump :which-key "dired jump")
