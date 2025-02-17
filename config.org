@@ -620,12 +620,17 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     :ensure t
     :hook
     (prog-mode . diff-hl-mode)
-    (dired-mode . diff-hl-dired-mode)
+    (dired-mode . my/diff-hl-dired-mode-unless-tramp)
     :custom
     (diff-hl-flydiff-mode t)
     (diff-hl-flydiff-delay 0)
-    (diff-hl-update-async t))
+    (diff-hl-update-async t)
     ;; (diff-hl-dired-extra-indicators nil))
+    :init
+    (defun my/diff-hl-dired-mode-unless-tramp ()
+        "Enable diff-hl-dired mode when not accessing through tramp"
+      (unless (file-remote-p default-directory)
+        (diff-hl-dired-mode))))
 #+end_src
 
 ** Forge
@@ -689,9 +694,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
 ** lsp-mode
 
 #+begin_src elisp
-
   (use-package lsp-mode
-    ;; :ensure t
     :commands
     (lsp-deferred lsp)
 
@@ -724,7 +727,6 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-face-highlight-textual ((t (:background nil :foreground nil :weight ultra-bold :distant-foreground nil)))))
 
   (use-package lsp-ui
-    ;; :ensure t
     :after lsp-mode
 
     :custom
@@ -2202,4 +2204,18 @@ Make text more readable by narrowing the text at the center of the screen. This 
     :custom (olivetti-body-width 90)
     :bind
     ("C-c t o" . olivetti-mode))
+#+end_src
+
+** Tramp
+
+#+begin_src elisp
+  (use-package tramp
+    :custom
+    ;; Make tramp use controllerMaster options from ssh config
+    (tramp-use-connection-share nil)
+    :config
+    ;; helps in making remote lsp server available
+    (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
+
+
 #+end_src
