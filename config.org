@@ -1969,11 +1969,11 @@ To initialize the maildir run:
 
     (setq mu4e-maildir-shortcuts
           (list
-           '(:maildir "/ifi/INBOX"
+           '(:maildir "/ifi/Inbox"
                       :key ?i)
-           '(:maildir "/proton/INBOX"
+           '(:maildir "/proton/Inbox"
                       :key ?p)
-           '(:maildir "/knowit/INBOX"
+           '(:maildir "/knowit/Inbox"
                       :key ?k)))
 
     (setq mu4e-contexts

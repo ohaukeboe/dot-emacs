@@ -347,8 +347,8 @@
   # Only create initial config if it doesn't exist
   home.activation = {
     createDavmailConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-      if [ ! -f ~/.davmail.properties ]; then
-        cat > ~/.davmail.properties << EOF
+      if [ ! -f $HOME/.davmail.properties ]; then
+        cat > $HOME/.davmail.properties << EOF
 davmail.url=https://outlook.office365.com/EWS/Exchange.asmx
 davmail.mode=O365Interactive
 davmail.ssl=false
@@ -365,8 +365,8 @@ EOF
     '';
 
     copyMsmtpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-      cp ${./dotfiles/msmtprc.conf} ~/.msmtprc
-      chmod 600 ~/.msmtprc
+      cp ${./dotfiles/msmtprc.conf} $HOME/.msmtprc
+      chmod 600 $HOME/.msmtprc
     '';
 
   };
