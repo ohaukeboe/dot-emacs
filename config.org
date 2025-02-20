@@ -100,6 +100,12 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (server-start)
     (add-to-list 'load-path
                  (concat user-emacs-directory "packages"))
+
+    (set-face-attribute 'default nil
+                        :family "RobotoMono Nerd Font Mono"
+                        :height 140)
+    (set-frame-font "RobotoMono Nerd Font Mono" nil t)
+
     :preface
     (require 'dash)
     (defun my/buffer-backed-by-file-p (buffer)
@@ -120,11 +126,6 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
   (push '(tool-bar-lines . 0) default-frame-alist)
   (push '(menu-bar-lines . 0) default-frame-alist)
   (push '(vertical-scroll-bars) default-frame-alist)
-
-  (set-face-attribute 'default nil
-                      :family "RobotoMono Nerd Font"
-                      :height 140)
-  (set-frame-font "RobotoMono Nerd Font" nil t)
 #+end_src
 
 ** Benchmark
