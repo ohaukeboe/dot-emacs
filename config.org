@@ -1944,6 +1944,18 @@ Use any LLM in Emacs.
     ;;   "ogm" '(gptel-menu :wk "gptel menu")))
 #+end_src
 
+[[https://github.com/karthink/gptel-quick][gptel-quick]] is a nifty package that uses gptel to describe thing at point
+
+#+begin_src elisp
+  (use-package gptel-quick
+    :after embark
+    :vc (:url "https://github.com/karthink/gptel-quick.git"
+              :rev "d7a3aed")
+    :bind
+    (:map embark-general-map
+          ("?" . #'gptel-quick)))
+#+end_src
+
 ** SICP
 Of course I need to have the wizard book as info pages :)
 
