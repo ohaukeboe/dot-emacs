@@ -293,7 +293,13 @@ A prettier startup screen
                        (registers . 5)))
 
     :config
-    (dashboard-setup-startup-hook))
+    (dashboard-setup-startup-hook)
+    :init
+    ;; Hopefully this will improve emacs startup if ssh hangs
+    (defun my/load-projects-after-startup ()
+      (run-with-timer 1 nil #'dashboard-refresh-buffer))
+
+    (add-hook 'emacs-startup-hook #'my/load-projects-after-startup))
 #+end_src
 
 ** Which-key
@@ -2196,8 +2202,10 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 
 #+begin_src elisp
   (use-package powerthesaurus
-    :defer
-    :ensure t)
+    :ensure t
+    :bind
+    (:map embark-general-map
+          ("t" . #'powerthesaurus-transient)))
     ;; :general
     ;; (oh/leader-key
     ;;   "st" '(powerthesaurus-transient :wk "thesaurus")))
