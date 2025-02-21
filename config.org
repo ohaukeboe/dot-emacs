@@ -307,6 +307,7 @@ A prettier startup screen
 
 #+begin_src elisp
   (use-package which-key
+    :disabled
     :ensure t
     :config
     (which-key-mode))
@@ -579,7 +580,7 @@ Consult is a package that provides a set of commands for searching and navigatin
     :bind
     (("C-." . embark-act)         ;; pick some comfortable binding
      ("C-;" . embark-dwim)        ;; good alternative: M-.
-     ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+     ("C-h b" . embark-bindings)) ;; alternative for `describe-bindings'
 
     :init
 
@@ -1957,6 +1958,8 @@ Use any LLM in Emacs.
     :after embark
     :vc (:url "https://github.com/karthink/gptel-quick.git"
               :rev "d7a3aed")
+    :custom
+    (gptel-quick-timeout nil)
     :bind
     (:map embark-general-map
           ("?" . #'gptel-quick)))
@@ -2203,6 +2206,7 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 #+begin_src elisp
   (use-package powerthesaurus
     :ensure t
+    :after embark
     :bind
     (:map embark-general-map
           ("t" . #'powerthesaurus-transient)))
