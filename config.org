@@ -1864,6 +1864,17 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     :init
     (yas-global-mode 1))
 #+end_src
+** Smartparens
+
+#+begin_src elisp
+  (use-package smartparens
+    :ensure t
+    :hook (prog-mode text-mode markdown-mode) ;; add `smartparens-mode` to these hooks
+    :config
+    ;; load default config
+    (require 'smartparens-config))
+#+end_src
+
 ** Make
 
 #+begin_src elisp
@@ -1926,28 +1937,70 @@ Use any LLM in Emacs.
     :bind
     ("C-c g g" . gptel)
     ("C-c g s" . gptel-send)
-
-    :init
-    (which-key-add-key-based-replacements "C-c g" "gptel")
+    ("C-c g r" . gptel-rewrite)
 
     :custom
     ;; (gptel-api-key
     ;;  (lambda () (auth-source-pass-get 'secret "openai-key")))
     (gptel-api-key
      (auth-source-pick-first-password :host "api.openai.com"))
-
-    ;; (gptel-model "gpt-4o")
-    (gptel-model "claude-3-5-sonnet-20240620")
+    (gptel-default-mode 'org-mode)
 
     :config
     (setq gptel-backend
           (gptel-make-anthropic "Claude"          ;Any name you want
             :stream t                             ;Streaming responses
-            :key (auth-source-pick-first-password :host "api.anthropic.com"))))
-    ;; :general
-    ;; (oh/leader-key
-    ;;   "ogg" '(gptel :wk "gptel")
-    ;;   "ogm" '(gptel-menu :wk "gptel menu")))
+            :key (auth-source-pick-first-password :host "api.anthropic.com")))
+
+    (gptel-make-tool
+     :name "read_buffer"                    ; javascript-style snake_case name
+     :function (lambda (buffer)                  ; the function that will run
+                 (unless (buffer-live-p (get-buffer buffer))
+                   (error "error: buffer %s is not live." buffer))
+                 (with-current-buffer  buffer
+                   (buffer-substring-no-properties (point-min) (point-max))))
+     :description "return the contents of an emacs buffer"
+     :args (list '(:name "buffer"
+                         :type string            ; :type value must be a symbol
+                         :description "the name of the buffer whose contents are to be retrieved"))
+     :category "buffers")
+
+    (gptel-make-tool
+     :name "list_buffers"
+     :function (lambda ()
+                 (mapcar #'buffer-name (buffer-list)))
+     :description "return a list of all open buffers"
+     :args nil
+     :category "buffers")
+
+    (gptel-make-tool
+     :name "list_project_buffers"
+     :function (lambda ()
+                 (when-let ((proj (project-current)))
+                   (mapcar #'buffer-name (project-buffers proj))))
+     :description "return a list of buffers in the current project"
+     :args nil
+     :category "buffers")
+
+    (gptel-make-tool
+     :name "list_emacs_keybinds"
+     :function (lambda ()
+                 (let ((keybinds '()))
+                   (mapatoms
+                    (lambda (sym)
+                      (when (and (fboundp sym)
+                                 (not (string-prefix-p "widget-" (symbol-name sym)))
+                                 (not (string-prefix-p "cl-" (symbol-name sym))))
+                        (let ((keys (where-is-internal sym)))
+                          (when keys
+                            (push (cons (symbol-name sym)
+                                        (mapcar #'key-description keys))
+                                  keybinds))))))
+                   keybinds))
+     :description "return a list of all emacs keybinds"
+     :args nil
+     :category "emacs"))
+
 #+end_src
 
 [[https://github.com/karthink/gptel-quick][gptel-quick]] is a nifty package that uses gptel to describe thing at point
@@ -1957,8 +2010,8 @@ Use any LLM in Emacs.
     :after embark
     :vc (:url "https://github.com/karthink/gptel-quick.git"
               :rev "d7a3aed")
-    :custom
-    (gptel-quick-timeout nil)
+    :config
+    (setq gptel-quick-timeout nil)
     :bind
     (:map embark-general-map
           ("?" . #'gptel-quick)))
@@ -2004,6 +2057,7 @@ To initialize the maildir run:
     (mail-user-agent 'mu4e-user-agent)
     (shr-use-colors nil)
     (mu4e-context-policy 'pick-first)
+    (mu4e-update-interval (* 5 60)) ;; Update every 5 minutes
 
     (mu4e-bookmarks
      '((:name "Unread messages" :query "flag:unread AND NOT flag:trashed AND maildir:/INBOX/" :key 117)
