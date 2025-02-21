@@ -2193,6 +2193,12 @@ An RSS reader
     ("C-c e" . 'elfeed))
 #+end_src
 
+** rmapi
+
+#+begin_src elisp
+  (use-package rmapi)
+#+end_src
+
 ** Vundo
 Not undo-tree
 
