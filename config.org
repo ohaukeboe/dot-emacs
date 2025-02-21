@@ -2180,6 +2180,19 @@ And obviously I need consult integration as well
           ("s" . consult-mu)))
 #+end_src
 
+** Elfeed
+
+An RSS reader
+
+#+begin_src elisp
+  (use-package elfeed
+    :ensure t
+    :custom
+    (elfeed-feeds '("https://blog.nicco.love/rss"))
+    :bind
+    ("C-c e" . 'elfeed))
+#+end_src
+
 ** Vundo
 Not undo-tree
 
