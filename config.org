@@ -1405,6 +1405,10 @@ rather than files.  These modes usually use read-only buffers.
     (org-mode . turn-on-org-cdlatex)
     (org-mode . (lambda () (electric-pair-local-mode 0)))
 
+    :bind
+    ("C-c n a" . org-agenda)
+    ("C-c n c" . org-capture)
+
     :custom
     (org-export-with-smart-quotes t)
     (org-hide-emphasis-markers t)		; Hide markup characters
@@ -1420,7 +1424,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-fold-catch-invisible-edits 'show)
     (org-startup-folded 'content)
     (org-elipsis "…")
-    (org-default-notes-file "~/Nextcloud/org_notes/notes.org")
+    (org-default-notes-file "~/Nextcloud/org_notes/agenda/notes.org")
     (org-agenda-files `(,org-default-notes-file))
     (org-attach-archive-delete 'query)
     (org-attach-preferred-new-method 'dir)
@@ -1432,16 +1436,20 @@ rather than files.  These modes usually use read-only buffers.
     (org-ditaa-jar-path "~/.local/share/ditaa/ditaa.jar")
 
     (org-capture-templates
-     '(("t" "Todo" entry (file+headline org-default-notes-file "Elfeed")
+     '(("t" "Todo" entry (file "~/Nextcloud/org_notes/agenda/tasks.org")
         "* TODO %?\n  %i\n  %a")
+       ("n" "Note" entry
+        (file "~/Nextcloud/org_notes/agenda/notes.org")
+        "* %? :NOTES:\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n")
        ("e" "Elfeed entry" entry
-        (file+headline org-default-notes-file "Elfeed")
-        "* %:title\n:PROPERTIES:\n:ADDED: %U\n:FEED: %:feed-title\n:DATE: %:date-timestamp\n:LINK: %:external-link\n:END:\n%i\n#+begin_quote\n%:content\n#+end_quote\n\n%?")))
+        (file "~/Nextcloud/org_notes/agenda/notes.org")
+        "* %:title :FEED:\n:PROPERTIES:\n:ADDED: %U\n:FEED: %:feed-title\n:DATE: %:date-timestamp\n:LINK: %:external-link\n:END:\n%i\n#+begin_quote\n%:content\n#+end_quote\n\n%?")))
 
     (org-agenda-custom-commands
-     '(("e" "Elfeed entries" search "Elfeed"
-        ((org-agenda-files (list org-default-notes-file))
-            (org-agenda-skip-function '(org-agenda-skip-entry-if 'notregexp "Elfeed"))))))
+     '(("e" "Elfeed entries" tags "FEED"
+        ((org-agenda-files (list "~/Nextcloud/org_notes/agenda/notes.org"))))
+       ("n" "Notes" tags "NOTES"
+        ((org-agenda-files (list "~/Nextcloud/org_notes/agenda/notes.org"))))))
 
     :config
     ;; Pretty bullets
@@ -1765,7 +1773,7 @@ The emacs web browser
 
    :custom
    (browse-url-browser-function 'eww-browse-url)
-   (browse-url-generic-program "firefox")
+   (browse-url-generic-program "zen")
    :config
    (defun oh/switch-to-eww-buffer ()
      "Switches to an existing EWW buffer, if one exists."
@@ -2216,7 +2224,9 @@ An RSS reader
     :custom
     (elfeed-feeds '(("https://blog.nicco.love/rss" nicco blog)
                     ("http://www.masteringemacs.org/feed" masterringemacs blog emacs)
-                    ("https://blog.dornea.nu/feed.xml" dornea blog)))
+                    ("https://blog.dornea.nu/feed.xml" dornea blog)
+                    ("file:///var/home/oskar/Downloads/aurora-news.rss" aurora ublue)
+                    ("https://universal-blue.discourse.group/tag/announcements.rss" universalblueannounce ublue)))
     :bind
     ("C-c e" . 'elfeed))
 #+end_src
