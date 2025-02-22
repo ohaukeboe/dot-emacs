@@ -2092,6 +2092,7 @@ To initialize the maildir run:
     (mu4e-context-policy 'pick-first)
     (mu4e-update-interval (* 5 60)) ;; Update every 5 minutes
     (mu4e-index-update-error-warning nil) ;; Hide 'CLOSE' error from proton
+    (mu4e-hide-index-messages t)
 
     (mu4e-bookmarks
      '((:name "Unread messages" :query "flag:unread AND NOT flag:trashed AND maildir:/INBOX/" :key 117)

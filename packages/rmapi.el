@@ -91,4 +91,18 @@
       (rmapi--send-to-remarkable pdf-file)
       (message "Sent '%s' to reMarkable!" title))))
 
+;;;###autoload
+(defun rmapi-send-pdf (pdf-file)
+  "Send a PDF file to reMarkable.
+If called from a PDF buffer, use the current buffer's file."
+  (interactive
+   (list (if (derived-mode-p 'pdf-view-mode)
+             (buffer-file-name)
+           (read-file-name "PDF file to send: "))))
+  (unless (and pdf-file (file-exists-p pdf-file))
+    (error "Invalid PDF file: %s" pdf-file))
+  (message "Sending '%s' to reMarkable..." pdf-file)
+  (rmapi--send-to-remarkable pdf-file)
+  (message "Sent '%s' to reMarkable!" (file-name-nondirectory pdf-file)))
+
 (provide 'rmapi)
