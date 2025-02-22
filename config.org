@@ -48,6 +48,8 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
     (warning-minimum-level :error)
 
+    (pixel-scroll-precision-mode t)
+
     ;; gc settings ++ to improve performance
     (gc-cons-threshold (* 50 1024 1024))
     ;; (gc-cons-percentage 0.3)
@@ -1404,6 +1406,13 @@ rather than files.  These modes usually use read-only buffers.
     (org-mode . (lambda () (electric-pair-local-mode 0)))
 
     :custom
+    (org-capture-templates
+     '(("t" "Todo" entry (file+headline org-default-notes-file "Elfeed")
+        "* TODO %?\n  %i\n  %a")
+       ("e" "Elfeed entry" entry
+           (file+headline org-default-notes-file "Elfeed")
+           "* %:title\n:PROPERTIES:\n:ADDED: %U\n:FEED: %:feed-title\n:DATE: %:date-timestamp\n:LINK: %:external-link\n:END:\n%i\n#+begin_quote\n%:content\n#+end_quote\n\n%?")))
+
     (org-export-with-smart-quotes t)
     (org-hide-emphasis-markers t)		; Hide markup characters
     (org-startup-indented t)
@@ -1425,7 +1434,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-attach-dir-relative t)
     (org-startup-with-latex-preview t)
     (org-format-latex-options
-      (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
+     (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
     (org-latex-prefer-user-labels t)
     (org-ditaa-jar-path "~/.local/share/ditaa/ditaa.jar")
 
@@ -1749,6 +1758,9 @@ The emacs web browser
    ;; (oh/leader-key
    ;;   "ow" '(oh/switch-to-eww-buffer :wk "eww"))
 
+   :custom
+   (browse-url-browser-function 'eww-browse-url)
+   (browse-url-generic-program "firefox")
    :config
    (defun oh/switch-to-eww-buffer ()
      "Switches to an existing EWW buffer, if one exists."
@@ -2058,6 +2070,7 @@ To initialize the maildir run:
     (shr-use-colors nil)
     (mu4e-context-policy 'pick-first)
     (mu4e-update-interval (* 5 60)) ;; Update every 5 minutes
+    (mu4e-index-update-error-warning nil) ;; Hide 'CLOSE' error from proton
 
     (mu4e-bookmarks
      '((:name "Unread messages" :query "flag:unread AND NOT flag:trashed AND maildir:/INBOX/" :key 117)
@@ -2139,26 +2152,26 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
 #+begin_src elisp
   (use-package org-msg
     :ensure t
-      :after mu4e
-      :disabled
-      :config
-      (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
-            org-msg-startup "hidestars indent inlineimages"
-            org-msg-greeting-fmt "\nHi%s,\n\n"
+    :after mu4e
+    ;; :disabled
+    :config
+    (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
+          org-msg-startup "hidestars indent inlineimages"
+          org-msg-greeting-fmt "\nHi%s,\n\n"
 
-            org-msg-recipient-names '(("ohaukeboe@pm.me" . "Oskar"))
-            org-msg-greeting-name-limit 3
-            org-msg-default-alternatives '((new		. (text html))
-                                           (reply-to-html	. (text html))
-                                           (reply-to-text	. (text)))
-            org-msg-convert-citation t
-            org-msg-signature "
+          org-msg-recipient-names '(("ohaukeboe@pm.me" . "Oskar"))
+          org-msg-greeting-name-limit 3
+          org-msg-default-alternatives '((new		. (text html))
+                                         (reply-to-html	. (text html))
+                                         (reply-to-text	. (text)))
+          org-msg-convert-citation t
+          org-msg-signature "
 
   Cheers,
   ,#+begin_signature
   Oskar
   ,#+end_signature")
-      (org-msg-mode))
+    (org-msg-mode))
 #+end_src
 
 #+begin_src elisp
@@ -2188,7 +2201,9 @@ An RSS reader
   (use-package elfeed
     :ensure t
     :custom
-    (elfeed-feeds '("https://blog.nicco.love/rss"))
+    (elfeed-feeds '(("https://blog.nicco.love/rss" nicco blog)
+                    ("http://www.masteringemacs.org/feed" masterringemacs blog emacs)
+                    ("https://blog.dornea.nu/feed.xml" dornea blog)))
     :bind
     ("C-c e" . 'elfeed))
 #+end_src
