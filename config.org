@@ -1941,7 +1941,7 @@ Some utilities for using nix-shell together with direnv for projects
 #+end_src
 
 ** gptel
-Use any LLM in Emacs.
+Use any LLM in Emacs. I have also added GitHub Models which allows to use any of the models available at the [[https://github.com/marketplace/models][Marketplace]] using just one api key.
 
 #+begin_src elisp
   (use-package gptel
@@ -1950,6 +1950,7 @@ Use any LLM in Emacs.
     ("C-c g g" . gptel)
     ("C-c g s" . gptel-send)
     ("C-c g r" . gptel-rewrite)
+    ("C-c g a" . gptel-add)
 
     :custom
     ;; (gptel-api-key
@@ -1959,10 +1960,17 @@ Use any LLM in Emacs.
     (gptel-default-mode 'org-mode)
 
     :config
-    (setq gptel-backend
-          (gptel-make-anthropic "Claude"          ;Any name you want
-            :stream t                             ;Streaming responses
-            :key (auth-source-pick-first-password :host "api.anthropic.com")))
+    (gptel-make-anthropic "Claude"          ;Any name you want
+      :stream t                             ;Streaming responses
+      :key (auth-source-pick-first-password :host "api.anthropic.com"))
+
+    ;; OPTIONAL configuration
+    (gptel-make-openai "Github Models" ;Any name you want
+      :host "models.inference.ai.azure.com"
+      :endpoint "/chat/completions?api-version=2024-05-01-preview"
+      :stream t
+      :key (auth-source-pick-first-password :host "ai.azure.com")
+      :models '(DeepSeek-R1 gpt-4o o3-mini))
 
     (gptel-make-tool
      :name "read_buffer"                    ; javascript-style snake_case name
