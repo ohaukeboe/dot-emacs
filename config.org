@@ -2226,7 +2226,6 @@ An RSS reader
     (elfeed-feeds '(("https://blog.nicco.love/rss" nicco blog)
                     ("http://www.masteringemacs.org/feed" masterringemacs blog emacs)
                     ("https://blog.dornea.nu/feed.xml" dornea blog)
-                    ("file:///var/home/oskar/Downloads/aurora-news.rss" aurora ublue)
                     ("https://universal-blue.discourse.group/tag/announcements.rss" universalblueannounce ublue)))
     :bind
     ("C-c e" . 'elfeed))

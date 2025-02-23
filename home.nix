@@ -207,6 +207,7 @@
     # pandoc
     pandoc
     marksman
+    python313Packages.weasyprint # website to pdf converter
     # sqlite3
     sqlite
 

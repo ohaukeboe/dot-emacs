@@ -1,0 +1,22 @@
+@page {
+    margin: 3cm !important;
+    size: A4;
+}
+
+body {
+    font-size: 14px !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box;
+}
+
+article {
+    width: unset !important;
+    min-width: unset !important;
+    max-width: unset !important;
+}
+
+pre, code {
+    font-size: 12px !important;
+}
