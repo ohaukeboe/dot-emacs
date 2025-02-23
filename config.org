@@ -1973,9 +1973,10 @@ Use any LLM in Emacs. I have also added GitHub Models which allows to use any of
     (gptel-default-mode 'org-mode)
 
     :config
-    (gptel-make-anthropic "Claude"          ;Any name you want
-      :stream t                             ;Streaming responses
-      :key (auth-source-pick-first-password :host "api.anthropic.com"))
+    (setq gptel-backend
+          (gptel-make-anthropic "Claude"          ;Any name you want
+            :stream t                             ;Streaming responses
+            :key (auth-source-pick-first-password :host "api.anthropic.com")))
 
     ;; OPTIONAL configuration
     (gptel-make-openai "Github Models" ;Any name you want
@@ -2226,6 +2227,7 @@ An RSS reader
     (elfeed-feeds '(("https://blog.nicco.love/rss" nicco blog)
                     ("http://www.masteringemacs.org/feed" masterringemacs blog emacs)
                     ("https://blog.dornea.nu/feed.xml" dornea blog)
+                    ("https://blog.system76.com/rss.xml" cosmic)
                     ("https://universal-blue.discourse.group/tag/announcements.rss" universalblueannounce ublue)))
     :bind
     ("C-c e" . 'elfeed))
