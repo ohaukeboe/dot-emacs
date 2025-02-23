@@ -68,7 +68,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
 
     ;; Behavior settings
     (global-auto-revert-mode t)
-    (electric-pair-mode t)
+    ;; (electric-pair-mode t)
 
     (savehist-mode t)               ; Save history accross emacs sessions
     (use-short-answers t)                       ; y/n instead of yes/no
@@ -90,7 +90,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (repeat-mode t)                             ; Enable repeat mode
     (mouse-drag-copy-region t)                  ; Enable mouse drag copy
     (sentence-end-double-space nil)             ; single space end sentence
-    (delete-selection-mode t)                   ; auto delete selection on insert
+    ;; (delete-selection-mode t)                   ; auto delete selection on insert
     (delete-pair-blink-delay 0)
     (delete-pair-push-mark t)
     (blink-matching-delay 0)
@@ -1894,8 +1894,32 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 #+begin_src elisp
   (use-package smartparens
     :ensure t
-    :hook (prog-mode text-mode markdown-mode) ;; add `smartparens-mode` to these hooks
+    :hook
+    (prog-mode text-mode markdown-mode)
+    :bind
+    (:map smartparens-mode-map
+          ("C-M-f" . sp-forward-sexp)
+          ("C-M-b" . sp-backward-sexp)
+          ("C-M-d" . sp-down-sexp)
+          ("C-M-u" . sp-backward-up-sexp)
+          ("C-M-n" . sp-next-sexp)
+          ("C-M-p" . sp-previous-sexp)
+          ("C-S-d" . sp-beginning-of-sexp)
+          ("C-S-a" . sp-end-of-sexp)
+          ("C-M-k" . sp-kill-sexp)
+          ("C-M-w" . sp-copy-sexp)
+          ("C-<backspace>" . sp-backward-unwrap-sexp)
+          ;; ;; ("C-M-t" . sp-transpose-sexp)
+          ("M-D" . sp-splice-sexp)
+          ("C-<right>" . sp-forward-slurp-sexp)
+          ("C-<left>" . sp-forward-barf-sexp)
+          ("C-M-<left>" . sp-backward-slurp-sexp)
+          ("C-M-<right>" . sp-backward-barf-sexp)
+          ("C-]" . sp-select-previous-thing-exchange)
+          ("C-M-[" . sp-select-next-thing))
+
     :config
+    (show-smartparens-global-mode t)
     ;; load default config
     (require 'smartparens-config))
 #+end_src
