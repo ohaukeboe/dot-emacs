@@ -1,10 +1,10 @@
 @page {
-    margin: 3cm !important;
+    margin: 2cm !important;
     size: A4;
 }
 
 body {
-    font-size: 14px !important;
+    font-size: 18px !important;
     max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -17,6 +17,21 @@ article {
     max-width: unset !important;
 }
 
+.text-justify, .dropcap {
+    font-size: 1rem !important;
+}
+p.text-justify.drop-cap {
+    margin-left: 3rem !important;
+}
+
+.drop-cap::first-letter {
+    margin-left: -3.5rem !important;
+    margin-top: 0rem !important;
+
+    float: left;
+    line-height: 1;
+}
+
 pre, code {
-    font-size: 12px !important;
+    font-size: 0.785rem !important;
 }

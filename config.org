@@ -48,7 +48,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
     (warning-minimum-level :error)
 
-    (pixel-scroll-precision-mode t)
+    ;; (pixel-scroll-precision-mode t)
 
     ;; gc settings ++ to improve performance
     (gc-cons-threshold (* 50 1024 1024))
@@ -1071,6 +1071,10 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     ;; :hook (python-ts-mode . eglot-ensure)
     :hook (python-ts-mode . lsp)
     :mode "\\.py\\'"
+    :init
+    (with-eval-after-load 'org
+      (add-to-list 'org-babel-load-languages
+                   '(python . t)))
     :custom
     (lsp-pylsp-plugins-pydocstyle-enabled nil)
     (lsp-pylsp-plugins-pycodestyle-enabled t)
@@ -1471,7 +1475,13 @@ rather than files.  These modes usually use read-only buffers.
               ("tabsize" "2"))))
 
     (org-babel-do-load-languages 'org-babel-load-languages
-                                 '((ditaa . t)))
+                                 '((ditaa . t)
+                                   (calc . t)
+                                   (sed . t)
+                                   (latex . t)
+                                   (makefile . t)
+                                   (org . t)
+                                   (shell . t)))
 
     ;; Load extra export backends
     (require 'ox-beamer)
@@ -2415,4 +2425,18 @@ Make text more readable by narrowing the text at the center of the screen. This 
     (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
 
 
+#+end_src
+
+** Ultra Scroll
+An amazing litte package that makes scrolling actually feel smooth. This is especially nice when having images in the buffer.
+
+#+begin_src elisp
+  (use-package ultra-scroll
+    :vc (:url  "https://github.com/jdtsmith/ultra-scroll.git"
+               :rev "2c517bf")
+    :init
+    (setq scroll-conservatively 101 ; important!
+          scroll-margin 0)
+    :config
+    (ultra-scroll-mode 1))
 #+end_src

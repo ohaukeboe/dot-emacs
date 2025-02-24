@@ -1,5 +1,6 @@
 (require 'elfeed)
 (require 'org)
+(require 'async)
 
 (defgroup rmapi nil
   "Send elfeed entries to reMarkable tablet."
@@ -79,14 +80,13 @@
 
 (defun rmapi--send-to-remarkable (file)
   "Send FILE to reMarkable using rmapi."
-  (call-process "rmapi" nil nil nil
-                "put" file))
+  (async-start
+   `(lambda ()
+      (call-process "rmapi" nil nil nil
+                    "put" ,file))))
 
-;;;###autoload
-(defun rmapi-send-eww-page ()
-  "Send current EWW page to reMarkable."
-  (interactive)
-  (defun rmapi-send-pdf (pdf-file)
+;;###autoload
+(defun rmapi-send-pdf (pdf-file)
     "Send a PDF file to reMarkable.
    If called from a PDF buffer, use the current buffer's file."
     (interactive
@@ -100,6 +100,9 @@
     (message "Sent '%s' to reMarkable!" (file-name-nondirectory pdf-file)))
 
 ;;;###autoload
+(defun rmapi-send-eww-page ()
+  "Send current EWW page to reMarkable asynchronously."
+  (interactive)
   (if (eq major-mode 'eww-mode)
       (let* ((url (plist-get eww-data :url))
              (title (plist-get eww-data :title))
@@ -107,17 +110,17 @@
              (pdf-file (concat rmapi-temp-dir filename ".pdf")))
         (rmapi--ensure-temp-dir)
         (message "Converting URL to PDF...")
-        (message "PDF file: %s" pdf-file)
-        (message "CSS file: %s" rmapi-css-file)
-        (call-process "weasyprint" nil nil nil
-                      url
-                      pdf-file
-                      "-D" "300"
-                      "-p"
-                      "-s" rmapi-css-file)
-        (message "Sending to reMarkable...")
-        (rmapi--send-to-remarkable pdf-file)
-        (message "Sent '%s' to reMarkable!" filename))
+        (async-start
+         `(lambda ()
+            ,(async-inject-variables "\\`pdf-file\\'")
+            ,(async-inject-variables "\\`rmapi-css-file\\'")
+            ,(async-inject-variables "\\`url\\'")
+            (call-process "weasyprint" nil nil nil
+                         ,url ,pdf-file "-D" "300" "-p" "-s" ,rmapi-css-file))
+         `(lambda (_)
+            (message "Sending to reMarkable...")
+            (rmapi--send-to-remarkable ,pdf-file)
+            (message "Sent '%s' to reMarkable!" ,filename))))
     (error "Not in EWW buffer")))
 
 (provide 'rmapi)

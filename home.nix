@@ -21,7 +21,11 @@
   	enable = true;
   	# package = pkgs.emacs-pgtk;
   	package = (pkgs.emacsWithPackagesFromUsePackage {
-  	  package = pkgs.emacs-unstable-pgtk;
+  	  package = pkgs.emacs-unstable-pgtk.overrideAttrs (old: {
+        configureFlags = old.configureFlags ++ [
+          "--disable-gc-mark-trace"  # Improves gc performance
+        ];
+      });
   	  config = ./config.org;
   	  alwaysEnsure = false;
   	  alwaysTangle = true;
