@@ -1073,8 +1073,8 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     :mode "\\.py\\'"
     :init
     (with-eval-after-load 'org
-      (add-to-list 'org-babel-load-languages
-                   '(python . t)))
+     (org-babel-do-load-languages 'org-babel-load-languages (add-to-list 'org-babel-load-languages
+                   '(python . t))))
     :custom
     (lsp-pylsp-plugins-pydocstyle-enabled nil)
     (lsp-pylsp-plugins-pycodestyle-enabled t)
