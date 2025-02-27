@@ -1009,7 +1009,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     ;;                     (setq-local tab-width kotlin-ts-mode-indent-offset)))
     :mode ("\\.kt\\'" "\\.kts\\'")
     :custom
-    (lsp-kotlin-compiler-jvm-target "21.0")
+    (lsp-kotlin-compiler-jvm-target "21")
     (lsp-idle-delay 0.4)
     :init
     (with-eval-after-load 'treesit
