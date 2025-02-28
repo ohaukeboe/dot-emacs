@@ -1988,16 +1988,17 @@ Some utilities for using nix-shell together with direnv for projects
 #+end_src
 
 ** gptel
-Use any LLM in Emacs. I have also added GitHub Models which allows to use any of the models available at the [[https://github.com/marketplace/models][Marketplace]] using just one api key.
+Use any LLM in Emacs. It is really cool that it's also possible to define tools that the llms can call. I have also made some custom functions for opening gptel as I don't want to have to think about the name of the buffer when opening it.
 
 #+begin_src elisp
   (use-package gptel
     :ensure t
     :bind
-    ("C-c g g" . gptel)
+    ("C-c g g" . my/gptel)
     ("C-c g s" . gptel-send)
     ("C-c g r" . gptel-rewrite)
     ("C-c g a" . gptel-add)
+    ("C-c g p" . my/gptel-project)
 
     :custom
     ;; (gptel-api-key
@@ -2005,6 +2006,63 @@ Use any LLM in Emacs. I have also added GitHub Models which allows to use any of
     (gptel-api-key
      (auth-source-pick-first-password :host "api.openai.com"))
     (gptel-default-mode 'org-mode)
+
+    :preface
+    (defun my/gptel (&optional arg)
+      "Open a gptel buffer with a standardized name and focus it.
+
+  If ARG is non-nil (like with C-u prefix), create a new buffer.
+  The standard buffer name is '*GPTel Chat*' with a number appended
+  in angle brackets if needed to make the name unique."
+      (interactive "P")
+      (let* ((base-name "*gptel*")
+             (buffer-list (buffer-list))
+             (existing-buffers (seq-filter
+                                (lambda (buf)
+                                  (string-match-p
+                                   (concat "^" (regexp-quote base-name) "\\(<[0-9]+>\\)?$")
+                                   (buffer-name buf)))
+                                buffer-list))
+             (next-num (if existing-buffers
+                           (1+ (length existing-buffers))
+                         1))
+             (buffer-name (if (and arg (> next-num 1))
+                              (format "%s<%d>" base-name next-num)
+                            base-name))
+             (gptel-buffer (gptel buffer-name)))
+        ;; Switch to the gptel buffer
+        (switch-to-buffer gptel-buffer)
+        gptel-buffer))
+
+    (defun my/gptel-project (&optional arg)
+      "OPEN a gptel buffer in the project root directory with the project name in the buffer name.
+
+  If ARG is non-nil (like with C-u prefix), create a new buffer.
+  The buffer name will be '*<Project-Name> GPTel Chat*' with a number
+  appended in angle brackets if needed to make the name unique."
+      (interactive "P")
+      (let* ((project (project-current))
+             (project-name (if project (file-name-nondirectory (directory-file-name (project-root project))) "No-Project"))
+             (project-root (if project (project-root project) default-directory))
+             (base-name (format "*%s-gptel*" project-name))
+             (buffer-list (buffer-list))
+             (existing-buffers (seq-filter
+                                (lambda (buf)
+                                  (string-match-p
+                                   (concat "^" (regexp-quote base-name) "\\(<[0-9]+>\\)?$")
+                                   (buffer-name buf)))
+                                buffer-list))
+             (next-num (if existing-buffers
+                           (1+ (length existing-buffers))
+                         1))
+             (buffer-name (if (and arg (> next-num 1))
+                              (format "%s<%d>" base-name next-num)
+                            base-name))
+             (default-directory project-root) ; Set the working directory to project root
+             (gptel-buffer (gptel buffer-name)))
+        ;; Switch to the gptel buffer
+        (switch-to-buffer gptel-buffer)
+        gptel-buffer))
 
     :config
     (setq gptel-backend
@@ -2022,17 +2080,13 @@ Use any LLM in Emacs. I have also added GitHub Models which allows to use any of
 
     ;; OpenRouter offers an OpenAI compatible API
     (gptel-make-openai "OpenRouter"               ;Any name you want
-      :host (auth-source-pick-first-password :host "openrouter.ai")
+      :host "openrouter.ai"
       :endpoint "/api/v1/chat/completions"
       :stream t
-      :key "your-api-key"                   ;can be a function that returns the key
-      :models '(openai/gpt-3.5-turbo
-                mistralai/mixtral-8x7b-instruct
-                meta-llama/codellama-34b-instruct
-                codellama/codellama-70b-instruct
-                google/palm-2-codechat-bison-32k
-                google/gemini-pro))
-
+      :key (auth-source-pick-first-password :host "openrouter.ai")
+      :models '(google/gemini-2.0-flash-001
+                deepseek/deepseek-r1
+                deepseek/deepseek-chat))
 
     (gptel-make-tool
      :name "read_buffer"                    ; javascript-style snake_case name
@@ -2056,33 +2110,167 @@ Use any LLM in Emacs. I have also added GitHub Models which allows to use any of
      :category "buffers")
 
     (gptel-make-tool
-     :name "list_project_buffers"
+     :name "git_tracked_files"
      :function (lambda ()
                  (when-let ((proj (project-current)))
-                   (mapcar #'buffer-name (project-buffers proj))))
-     :description "return a list of buffers in the current project"
+                   (let* ((default-directory (project-root proj))
+                          (output (shell-command-to-string "git ls-files")))
+                     (if (string-empty-p output)
+                         "No git-tracked files found or not in a git repository."
+                       output))))
+     :description "return a list of all git-tracked files in the current project"
      :args nil
-     :category "buffers")
+     :category "project")
+
+    (gptel-make-tool
+     :name "read_project_file"
+     :function (lambda (file-path)
+                 (when-let ((proj (project-current)))
+                   (let ((full-path (expand-file-name file-path (project-root proj))))
+                     (if (file-exists-p full-path)
+                         (with-temp-buffer
+                           (insert-file-contents full-path)
+                           (buffer-string))
+                       (format "Error: File not found: %s" full-path)))))
+     :description "read the contents of a specific file in the current project"
+     :args (list '(:name "file-path"
+                         :type string
+                         :description "relative path to the file within the project"))
+     :category "project")
 
     (gptel-make-tool
      :name "list_emacs_keybinds"
-     :function (lambda ()
+     :function (lambda (&optional regex)
                  (let ((keybinds '()))
+                   (dolist (cmd command-history)
+                     (when (symbolp (car cmd))
+                       (let* ((sym (car cmd))
+                              (keys (where-is-internal sym)))
+                         (when (and keys
+                                    (not (string-prefix-p "widget-" (symbol-name sym)))
+                                    (not (string-prefix-p "cl-" (symbol-name sym)))
+                                    (or (null regex)
+                                        (string-match-p regex (symbol-name sym))))
+                           (push (cons (symbol-name sym)
+                                       (mapcar #'key-description keys))
+                                 keybinds)))))
+                   keybinds))
+     :description "return a list of all emacs keybinds"
+     :args (list '(:name "regex"
+                         :type string
+                         :description "optional regex pattern to filter keybindings"
+                         :required nil))
+     :category "emacs")
+
+    (gptel-make-tool
+     :name "list_emacs_functions"
+     :function (lambda (&optional regex)
+                 (let ((functions '()))
                    (mapatoms
                     (lambda (sym)
                       (when (and (fboundp sym)
+                                 (not (commandp sym)) ;; exclude commands
                                  (not (string-prefix-p "widget-" (symbol-name sym)))
-                                 (not (string-prefix-p "cl-" (symbol-name sym))))
-                        (let ((keys (where-is-internal sym)))
-                          (when keys
-                            (push (cons (symbol-name sym)
-                                        (mapcar #'key-description keys))
-                                  keybinds))))))
-                   keybinds))
-     :description "return a list of all emacs keybinds"
-     :args nil
-     :category "emacs"))
+                                 (not (string-prefix-p "cl-" (symbol-name sym)))
+                                 (not (string-prefix-p "internal-" (symbol-name sym)))
+                                 (not (string-prefix-p "--" (symbol-name sym)))
+                                 (not (string-match-p "-internal\\'" (symbol-name sym)))
+                                 (not (string-match-p "^[[:punct:]]" (symbol-name sym)))
+                                 (not (string-match-p "^ad-" (symbol-name sym)))
+                                 (not (string-match-p "^tramp-" (symbol-name sym)))
+                                 (> (length (symbol-name sym)) 2) ;; exclude tiny helpers
+                                 (or (null regex)
+                                     (string-match-p regex (symbol-name sym))))
+                        (push (symbol-name sym) functions))))
+                   (sort functions #'string<)))
+     :description "return a list of all non-command Emacs functions"
+     :args (list '(:name "regex"
+                         :type string
+                         :description "optional regex pattern to filter function names"
+                         :required nil))
+     :category "emacs")
 
+    (gptel-make-tool
+     :name "list_emacs_variables"
+     :function (lambda (&optional regex)
+                 (let ((variables '()))
+                   (mapatoms
+                    (lambda (sym)
+                      (when (and (boundp sym)
+                                 (not (fboundp sym)) ;; exclude functions
+                                 (not (string-prefix-p "widget-" (symbol-name sym)))
+                                 (not (string-prefix-p "cl-" (symbol-name sym)))
+                                 (not (string-prefix-p "internal-" (symbol-name sym)))
+                                 (not (string-prefix-p "--" (symbol-name sym)))
+                                 (not (string-match-p "-internal\\'" (symbol-name sym)))
+                                 (not (string-match-p "^[[:punct:]]" (symbol-name sym)))
+                                 (not (string-match-p "^ad-" (symbol-name sym)))
+                                 (not (string-match-p "^tramp-" (symbol-name sym)))
+                                 (> (length (symbol-name sym)) 2) ;; exclude tiny helpers
+                                 (or (null regex)
+                                     (string-match-p regex (symbol-name sym))))
+                        (push (cons (symbol-name sym)
+                                    (format "%S" (symbol-value sym)))
+                              variables))))
+                   (sort variables (lambda (a b) (string< (car a) (car b))))))
+     :description "return a list of all Emacs variables with their values"
+     :args (list '(:name "regex"
+                         :type string
+                         :description "optional regex pattern to filter variable names"
+                         :required nil))
+     :category "emacs")
+
+    (gptel-make-tool
+     :name "list_emacs_commands"
+     :function (lambda (&optional regex)
+                 (let ((commands '()))
+                   (mapatoms
+                    (lambda (sym)
+                      (when (and (commandp sym)
+                                 (not (string-prefix-p "widget-" (symbol-name sym)))
+                                 (not (string-prefix-p "--" (symbol-name sym)))
+                                 (not (string-match-p "-internal\\'" (symbol-name sym)))
+                                 (not (string-match-p "^[[:punct:]]" (symbol-name sym)))
+                                 (not (string-match-p "^ad-" (symbol-name sym)))
+                                 (not (string-match-p "^tramp-" (symbol-name sym)))
+                                 (not (string-match-p "^helm-" (symbol-name sym)))
+                                 (not (string-match-p "^ivy-" (symbol-name sym)))
+                                 (not (string-match-p "^counsel-" (symbol-name sym)))
+                                 (not (string-match-p "^company-" (symbol-name sym)))
+                                 (not (string-match-p "^pcomplete/" (symbol-name sym)))
+                                 (not (string-match-p "^org-babel-" (symbol-name sym)))
+                                 (> (length (symbol-name sym)) 2)
+                                 (or (null regex)
+                                     (string-match-p regex (symbol-name sym))))
+                        (push (symbol-name sym) commands))))
+                   (sort commands #'string<)))
+     :description "returns a list of all Emacs interactive commands"
+     :args (list '(:name "regex"
+                         :type string
+                         :description "optional regex pattern to filter command names"
+                         :required nil))
+     :category "emacs")
+
+    (gptel-make-tool
+     :name "get_documentation"
+     :function (lambda (symbol-name)
+                 (when-let ((sym (intern-soft symbol-name)))
+                   (cond
+                    ((fboundp sym)
+                     (concat
+                      (format "FUNCTION: %s\n\n" symbol-name)
+                      (or (documentation sym) "No documentation available.")))
+                    ((boundp sym)
+                     (concat
+                      (format "VARIABLE: %s\n\n" symbol-name)
+                      (or (documentation-property sym 'variable-documentation)
+                          "No documentation available.")))
+                    (t "Symbol not found or has no documentation."))))
+     :description "retrieve documentation for an Emacs function or variable"
+     :args (list '(:name "symbol_name"
+                         :type string
+                         :description "name of the Emacs function or variable to get documentation for"))
+     :category "emacs"))
 #+end_src
 
 [[https://github.com/karthink/gptel-quick][gptel-quick]] is a nifty package that uses gptel to describe thing at point
