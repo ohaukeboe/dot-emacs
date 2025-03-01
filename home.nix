@@ -212,6 +212,7 @@
     pandoc
     marksman
     python313Packages.weasyprint # website to pdf converter
+    readability-cli
     # sqlite3
     sqlite
 

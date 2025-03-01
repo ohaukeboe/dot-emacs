@@ -23,60 +23,21 @@
     (make-directory rmapi-temp-dir t)))
 
 (defun rmapi--sanitize-filename (title)
-  "Make title safe for filename."
+  "Make TITLE safe for filename."
   (replace-regexp-in-string "[^a-zA-Z0-9]" "-" title))
 
-(defun rmapi--get-current-entry ()
-  "Get elfeed entry at point from either search or show buffer."
-  (cond
-   ((eq major-mode 'elfeed-show-mode)
-    (bound-and-true-p elfeed-show-entry))
-   ((eq major-mode 'elfeed-search-mode)
-    (get-text-property (point) 'elfeed-entry))
-   (t
-    (error "Not in an elfeed buffer"))))
-
-(defun rmapi--entry-to-pdf (entry)
-  "Convert elfeed entry directly to epub."
-  (let* ((title (elfeed-entry-title entry))
-         (content (elfeed-deref (elfeed-entry-content entry)))
-         (link (elfeed-entry-link entry))
-         (date (elfeed-entry-date entry))
-         (feed (elfeed-entry-feed entry))
-         (html-file (concat rmapi-temp-dir
-                            (rmapi--sanitize-filename title)
-                            ".html"))
-         (pdf-file (concat rmapi-temp-dir
-                            (rmapi--sanitize-filename title)
-                            ".pdf")))
-    ;; Create HTML file with metadata
-    (with-temp-file html-file
-      (insert "<!DOCTYPE html>\n<html>\n<head>\n")
-      (insert (format "<title>%s</title>\n" title))
-      (insert (format "<meta name=\"date\" content=\"%s\">\n"
-                      (format-time-string "%Y-%m-%d" date)))
-      (when feed
-        (insert (format "<meta name=\"author\" content=\"%s\">\n"
-                        (elfeed-feed-title feed))))
-      (insert "</head>\n<body>\n")
-      (insert content)
-      (insert "\n</body>\n</html>"))
-
-    ;; Convert HTML to PDF using pandoc
-    (call-process "pandoc" nil nil nil
-                  html-file
-                  "-V" "geometry:margin=2cm"
-                  "-V" "papersize=a4paper"
-                  "-V" "fontsize=12pt"
-                  "-o" pdf-file
-                  "--from" "html"
-                  "--to" "pdf"
-                  "--dpi=300"
-                  "--pdf-engine=xelatex")
-
-    ;; Clean up HTML file
-    ;; (delete-file html-file)
-    pdf-file))
+(defun rmapi--get-elfeed-entry ()
+  "Get url and title from elfeed entry at point."
+  (let* ((entry (cond
+                ((eq major-mode 'elfeed-show-mode)
+                 (bound-and-true-p elfeed-show-entry))
+                ((eq major-mode 'elfeed-search-mode)
+                 (get-text-property (point) 'elfeed-entry))
+                (t
+                 (error "Not in an elfeed buffer"))))
+        (url (elfeed-entry-link entry))
+        (title (elfeed-entry-title entry)))
+    (list :url url :title title)))
 
 (defun rmapi--send-to-remarkable (file)
   "Send FILE to reMarkable using rmapi."
@@ -85,7 +46,35 @@
       (call-process "rmapi" nil nil nil
                     "put" ,file))))
 
-;;###autoload
+(defun rmapi--url-to-remarkable (url title)
+  "Send pdf with TITLE from URL to reMarkable."
+  (let* ((filename (rmapi--sanitize-filename title))
+         (pdf-file (concat rmapi-temp-dir filename ".pdf"))
+         (html-file (concat rmapi-temp-dir filename ".html")))
+    (rmapi--ensure-temp-dir)
+    (message "Converting URL to PDF...")
+    (async-start
+     `(lambda ()
+        (async-send :status "Converting URL to HTML...")
+        (unless (zerop (call-process "readable" nil nil nil
+                            ,url "-o" ,html-file))
+          (error "Failed to convert URL to HTML"))
+        (async-send :status (format "Converted URL to PDF: %s" ,pdf-file))
+        (unless (zerop (call-process "weasyprint" nil nil nil
+                            ,html-file ,pdf-file "-s" ,rmapi-css-file "-D" "300"))
+          (error "Failed to convert HTML to PDF"))
+        (async-send :status (format "Sending PDF file to ReMarkable: %s" ,pdf-file))
+        (unless (zerop (call-process "rmapi" nil nil nil
+                            "put" ,pdf-file))
+          (error "Failed to send PDF to reMarkable"))
+        (delete-file ,pdf-file)
+        (delete-file ,html-file))
+     `(lambda (result)
+        (if (async-message-p result)
+            (message (plist-get result :status)))
+        (message "Sent '%s' to reMarkable!" ,pdf-file)))))
+
+;;;###autoload
 (defun rmapi-send-pdf (pdf-file)
     "Send a PDF file to reMarkable.
    If called from a PDF buffer, use the current buffer's file."
@@ -107,20 +96,22 @@
       (let* ((url (plist-get eww-data :url))
              (title (plist-get eww-data :title))
              (filename (rmapi--sanitize-filename title))
-             (pdf-file (concat rmapi-temp-dir filename ".pdf")))
+             (pdf-file (concat rmapi-temp-dir filename ".pdf"))
+             (html-file (concat rmapi-temp-dir filename ".html")))
         (rmapi--ensure-temp-dir)
-        (message "Converting URL to PDF...")
-        (async-start
-         `(lambda ()
-            ,(async-inject-variables "\\`pdf-file\\'")
-            ,(async-inject-variables "\\`rmapi-css-file\\'")
-            ,(async-inject-variables "\\`url\\'")
-            (call-process "weasyprint" nil nil nil
-                         ,url ,pdf-file "-D" "300" "-p" "-s" ,rmapi-css-file))
-         `(lambda (_)
-            (message "Sending to reMarkable...")
-            (rmapi--send-to-remarkable ,pdf-file)
-            (message "Sent '%s' to reMarkable!" ,filename))))
+        (rmapi--url-to-remarkable url title))
+
     (error "Not in EWW buffer")))
+
+;;;###autoload
+(defun rmapi-send-elfeed-entry ()
+  "Send current elfeed entry to reMarkable asynchronously."
+  (interactive)
+  (let* ((entry (rmapi--get-elfeed-entry))
+         (_ (message "Title: %s, URL: %s" (plist-get entry :title) (plist-get entry :url)))
+         (url (plist-get entry :url))
+         (title (plist-get entry :title)))
+    (rmapi--ensure-temp-dir)
+    (rmapi--url-to-remarkable url title)))
 
 (provide 'rmapi)

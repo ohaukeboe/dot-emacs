@@ -17,19 +17,9 @@ article {
     max-width: unset !important;
 }
 
-.text-justify, .dropcap {
-    font-size: 1rem !important;
-}
-p.text-justify.drop-cap {
-    margin-left: 3rem !important;
-}
-
-.drop-cap::first-letter {
-    margin-left: -3.5rem !important;
-    margin-top: 0rem !important;
-
-    float: left;
-    line-height: 1;
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 pre, code {
