@@ -868,7 +868,7 @@ Visualize the colors of color codes
     (editorconfig-mode 1))
 #+end_src
 
-* Languanges
+* Languages
 Emacs 29 has built-in support for =tree-sitter=, which is a parser generator tool and an incremental parsing library. It is used to create a syntax highlighting engine that is faster and more accurate than the built-in one. However, Emacs does not ship with any language support for =tree-sitter=, so we'll have to install it ourselves... or have =treesit-auto= to do it for us.
 
 According to the =treesit-auto= documentation, Emacs 30 will ship with better defaults for =tree-sitter=, so hopefully we won't need =treesit-auto= anymore.
@@ -2466,7 +2466,7 @@ And obviously I need consult integration as well
 
 ** Elfeed
 
-An RSS reader
+An RSS reader. [[https://feedsearch.dev][Feedsearch]] can be used for finding rss feeds for a specific website. If it doesn't find any, [[https://openrss.org][Openrss]] might have an rss feed for it.
 
 #+begin_src elisp
   (use-package elfeed
@@ -2476,6 +2476,11 @@ An RSS reader
                     ("http://www.masteringemacs.org/feed" masterringemacs blog emacs)
                     ("https://blog.dornea.nu/feed.xml" dornea blog)
                     ("https://blog.system76.com/rss.xml" cosmic)
+                    ("https://openrss.org/changelog/rss" openrss changelog)
+                    ("https://openrss.org/rss" openrss)
+                    ("https://openrss.org/t3.gg/blog" theo blog)
+                    ("https://openrss.org/releases.1password.com/linux/" 1password)
+                    ("https://openrss.org/animecorner.me/feed/" animecorner anime)
                     ("https://universal-blue.discourse.group/tag/announcements.rss" universalblueannounce ublue)))
     :bind
     ("C-c f" . 'elfeed))
