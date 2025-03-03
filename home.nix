@@ -251,7 +251,8 @@
     #   echo "Hello, ${config.home.username}!"
     # '')
     nerd-fonts.roboto-mono
-  ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts); # all nerd-fonts
+    nerd-fonts.symbols-only
+  ]; # ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts); # all nerd-fonts
 
   programs = {
     starship.enable = true;
