@@ -43,6 +43,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     ("C-x c" . window-swap-states)
     ("C-c d" . delete-pair)
     ("C-c t t" . tab-bar-mode)
+    ("C-c s" . scratch-buffer)
     ("C-x x k" . my/kill-buffers-not-backed-by-file)
 
     :custom
