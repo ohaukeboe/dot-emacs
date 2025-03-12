@@ -42,6 +42,7 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     ("C-0" . text-scale-adjust)
     ("C-x c" . window-swap-states)
     ("C-c d" . delete-pair)
+    ("C-c t t" . tab-bar-mode)
     ("C-x x k" . my/kill-buffers-not-backed-by-file)
 
     :custom
@@ -763,7 +764,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-completion-provider :none) ;; I use Corfu instead!
     (lsp-keymap-prefix nil)
     (lsp-headerline-breadcrumb-enable nil)
-    (eldoc-display-functions '(eldoc-display-in-buffer))
+    ;; (eldoc-display-functions '(eldoc-display-in-buffer))
     (lsp-idle-delay 0.0)
 
     (lsp-inlay-hint-enable t)
@@ -779,7 +780,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     :after lsp-mode
 
     :custom
-    (lsp-ui-doc-enable nil)
+    ;; (lsp-ui-doc-enable nil)
     (lsp-ui-doc-show-with-cursor nil)
     (lsp-ui-doc-show-with-mouse nil)
     (lsp-ui-sideline-enable nil)
@@ -1933,7 +1934,15 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     ;; load default config
     (require 'smartparens-config))
 #+end_src
+** eshell
 
+#+begin_src elisp
+  (use-package eshell
+    :bind
+    ("C-c e" . eshell)
+    :config
+    (add-hook 'eshell-mode-hook (lambda () (setenv "TERM" "xterm-256color"))))
+#+end_src
 ** Make
 
 #+begin_src elisp
@@ -2468,7 +2477,7 @@ An RSS reader
                     ("https://blog.system76.com/rss.xml" cosmic)
                     ("https://universal-blue.discourse.group/tag/announcements.rss" universalblueannounce ublue)))
     :bind
-    ("C-c e" . 'elfeed))
+    ("C-c f" . 'elfeed))
 #+end_src
 
 ** rmapi
