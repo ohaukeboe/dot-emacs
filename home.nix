@@ -224,6 +224,7 @@
     nodePackages_latest.vscode-langservers-extracted
     nodejs
     nodePackages.typescript-language-server
+    typescript
     eslint
 
     ## chatgpt-shell
