@@ -41,7 +41,6 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
     ("C--" . text-scale-decrease)
     ("C-0" . text-scale-adjust)
     ("C-x c" . window-swap-states)
-    ("C-c d" . delete-pair)
     ("C-c t t" . tab-bar-mode)
     ("C-c s" . scratch-buffer)
     ("C-x x k" . my/kill-buffers-not-backed-by-file)
@@ -1055,9 +1054,17 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 ** Dockerfile
 
+Easily edit dockerfiles. I also choose between using Docker and Podman based on =my/docker-executable= as per Section [[Docker]].
+
 #+begin_src elisp
   (use-package dockerfile-ts-mode
-    :mode "dockerfile")
+    :mode "dockerfile"
+    :hook (dockerfile-ts-mode . lsp-deferred)
+    :config
+    (setq dockerfile-mode-command (lambda ()
+                                    (pcase my/docker-executable
+                                      ('docker "docker")
+                                      ('podman "podman")))))
 #+end_src
 
 ** Terraform
@@ -1937,6 +1944,62 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     ;; load default config
     (require 'smartparens-config))
 #+end_src
+** Docker
+
+[[https://www.rahuljuliato.com/posts/emacs-docker-podman][This]] is a nice blog about how to manage Docker/Podman containers from Emacs. First stepp is to make it easy to choose between using Docker and Podman.
+
+#+begin_src elisp
+  (defcustom my/docker-executable 'podman
+    "The executable to be used with docker-mode."
+    :type '(choice
+  		  (const :tag "podman" podman)
+  		  (const :tag "docker" docker))
+    :group 'oskah)
+#+end_src
+
+Since I tend to use both Docker and Podman interchangeably, I also define a function to toggle the executable. I also implement a hook that runs when changing it.
+
+#+begin_src elisp
+  (defvar my/toggle-docker-executable-hook nil
+    "Hook run after changing the docker executable")
+
+  (defun my/toggle-docker-executable ()
+    "Toggle between 'docker' and 'podman' for my/docker-executable."
+    (interactive)
+    (setq my/docker-executable
+          (if (eq my/docker-executable 'docker) 'podman 'docker))
+    (message "Docker executable set to: %s" my/docker-executable)
+    (run-hook-with-args 'my/toggle-docker-executable-hook my/docker-executable))
+#+end_src
+
+Next up, the =docker= package is good at handling containers.
+
+#+begin_src elisp
+  (use-package docker
+    :ensure t
+    :bind
+    (("C-c c" . docker)
+     ("C-c t d" . my/toggle-docker-executable))
+
+    :preface
+    (defun my/set-docker-executable (executable)
+      (pcase executable
+        ('docker
+         (setf docker-command "docker"
+               docker-compose-command "docker-compose"
+               docker-container-tramp-method "docker"))
+        ('podman
+         (setf docker-command "podman"
+               docker-compose-command "podman-compose"
+               docker-container-tramp-method "podman"))))
+
+    :config
+    (my/set-docker-executable my/docker-executable)
+    (add-hook 'my/toggle-docker-executable-hook
+              (lambda (new-value)
+                (my/set-docker-executable new-value))))
+#+end_src
+
 ** eshell
 
 #+begin_src elisp
