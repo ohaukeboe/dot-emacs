@@ -1,4 +1,4 @@
-{ lib, pkgs, system, zen-browser, ... }:
+{ lib, pkgs, system, zen-browser, isLinux, isDarwin, ... }:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
