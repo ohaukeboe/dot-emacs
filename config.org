@@ -1843,6 +1843,7 @@ A terminal emulator
     :custom
     ;; (vterm-max-scrollback 10000)
     (vterm-tramp-shells '(("ssh" "/bin/bash")
+                          ("sshx" "/bin/bash")
                           ("podman" "/bin/bash")
                           ("docker" "/bin/bash")))
 
