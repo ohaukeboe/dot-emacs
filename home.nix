@@ -30,6 +30,7 @@
   	  alwaysEnsure = false;
   	  alwaysTangle = true;
   	  extraEmacsPackages = epkgs: with epkgs; [
+        treesit-grammars.with-all-grammars
         edit-indirect # Edit codeblocks in markdown
   	    copilot
   	    jinx
