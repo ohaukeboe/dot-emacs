@@ -1,10 +1,13 @@
-{ lib, pkgs, system, zen-browser, ... }:
+{ lib, pkgs, system, zen-browser, isLinux, isDarwin, ... }:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = "oskar";
-  home.homeDirectory = "/home/oskar";
+  home.username = let user = builtins.getEnv "USER"; in
+                  if user != "" then user else "oskar";
+
+  home.homeDirectory = let home = builtins.getEnv "HOME"; in
+                       if home != "" then home else "/home/oskar";
 
   manual.manpages.enable = false;
 
@@ -93,19 +96,14 @@
     tailscale
     wakatime
     pympress # pdf presenter
-    nexusmods-app
 
     ### fish ###
     babelfish
 
-    ### zsa keyboard ###
-    zsa-udev-rules
-    # keymapp
 
     ### misc ###
-    zotero_7
+    zotero
     firefox
-    zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
     sshfs
     devbox
     phoronix-test-suite
@@ -115,7 +113,6 @@
     zoxide
     gnuplot
     ditaa
-    vlc
     pkg-config
     neofetch
     gh                          # github cli
@@ -150,8 +147,6 @@
     ### C ###
     man-pages
     man-pages-posix
-    valgrind
-    gdb
     gnumake
 
     clang-tools
@@ -212,7 +207,6 @@
     # pandoc
     pandoc
     marksman
-    python313Packages.weasyprint # website to pdf converter
     readability-cli
     # sqlite3
     sqlite
@@ -236,9 +230,6 @@
     msmtp
     isync
 
-    ### nixGL ###
-    nixgl.nixVulkanIntel
-    # nixgl.auto.nixVulkanNvidia
 
     # # It is sometimes useful to fine-tune packages, for example, by applying
     # # overrides. You can do that directly here, just don't forget the
@@ -254,7 +245,26 @@
     # '')
     nerd-fonts.roboto-mono
     nerd-fonts.symbols-only
-  ]; # ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts); # all nerd-fonts
+  ] ++ lib.optionals isLinux [
+    zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
+    nexusmods-app
+    vlc
+    python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
+
+    ### nixGL ###
+    nixgl.nixVulkanIntel
+    # nixgl.auto.nixVulkanNvidia
+
+    ### zsa keyboard ###
+    zsa-udev-rules
+    # keymapp
+
+    ### C ###
+    gdb
+    valgrind # is broken on darwin
+  ] ++ lib.optionals isDarwin [
+    uutils-coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
+  ];
 
   programs = {
     starship.enable = true;
@@ -297,7 +307,7 @@
       };
     };
 
-    chromium = {
+    chromium = lib.mkIf isLinux {
       enable = true;
       extensions = [
         "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock origin

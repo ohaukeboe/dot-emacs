@@ -147,6 +147,17 @@ This is a handy package which helps to show what packages are slowing down the E
                 (run-at-time 5 nil 'benchmark-init/deactivate))))
 #+end_src
 
+** MacOS
+I am trying out MacOS at the moment, and it appears that applications launched using the desktop entry does not inherit environment variables from the shell. The package [[https://github.com/purcell/exec-path-from-shell][exec-path-from-shell]] synchronizes environment variables from the shell to Emacs. This makes it a lot easier to deal with external programs on macOS
+
+#+begin_src elisp
+  (use-package exec-path-from-shell
+    :if (eq system-type 'darwin)
+    :ensure t
+    :config
+    (exec-path-from-shell-initialize))
+#+end_src
+
 * Look and feel
 ** Theme
 
@@ -1844,6 +1855,7 @@ A terminal emulator
     :custom
     ;; (vterm-max-scrollback 10000)
     (vterm-tramp-shells '(("ssh" "/bin/bash")
+                          ("sshx" "/bin/bash")
                           ("podman" "/bin/bash")
                           ("docker" "/bin/bash")))
 
