@@ -263,7 +263,7 @@
     gdb
     valgrind # is broken on darwin
   ] ++ lib.optionals isDarwin [
-    uutils-coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
+    coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
   ];
 
   programs = {
