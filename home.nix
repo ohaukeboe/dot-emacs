@@ -278,11 +278,17 @@
         . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
       end
 
+      if [ -e '/opt/homebrew/bin' ]
+         fish_add_path /opt/homebrew/bin
+      end
+
       fish_add_path ~/.dotnet/tools/
       fish_add_path ~/.local/bin/
       fish_add_path ~/.cargo/bin/
 
       alias git-del-merged='git branch --merged origin | grep -v -E " main\$| master\$" | xargs -pr git branch -d'
+
+      alias hs='home-manager switch --flake .#default --impure'
 
       alias edit='emacsclient -r -n'
 
