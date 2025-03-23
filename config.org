@@ -2630,6 +2630,15 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
       (vertico-multiform-mode 1)))
 #+end_src
 
+** RFC reader
+
+#+begin_src elisp
+  (use-package rfc-mode
+    :ensure t
+    :bind
+    ("C-c b r" . rfc-mode-browse))
+#+end_src
+
 ** LanguageTool
 
 #+begin_src elisp
