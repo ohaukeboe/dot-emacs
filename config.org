@@ -1546,6 +1546,7 @@ Provides a clean look for org-mode.
     :ensure t
     :hook (org-mode . org-modern-mode)
     :custom
+    (org-modern-hide-stars t)
     (org-modern-table nil)
     (org-modern-list
        '((?- . "•")
