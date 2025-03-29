@@ -1896,13 +1896,10 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
   (use-package pdf-tools
     :ensure t
     :mode ("\\.pdf\\'" . pdf-view-mode)
-    ;; :requires pdf-outline
-    :commands (pdf-view-mode)
-    ;:hook
-    ;(pdf-view-mode-hook . evil-normal-state)
     :config
-    (require 'pdf-outline))
-    ;; (pdf-tools-install))
+    (require 'pdf-outline)
+    (pdf-loader-install))
+
 #+end_src
 
 * Misc
@@ -2158,10 +2155,10 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
         gptel-buffer))
 
     :config
-    (setq gptel-backend
-          (gptel-make-anthropic "Claude"          ;Any name you want
-            :stream t                             ;Streaming responses
-            :key (auth-source-pick-first-password :host "api.anthropic.com")))
+    (setq gptel-model 'claude-3-7-sonnet-20250219
+          gptel-backend (gptel-make-anthropic "Claude"          ;Any name you want
+                          :stream t                             ;Streaming responses
+                          :key (auth-source-pick-first-password :host "api.anthropic.com")))
 
     ;; ;; OPTIONAL configuration
     ;; (gptel-make-openai "Github Models" ;Any name you want
@@ -2733,6 +2730,7 @@ Make text more readable by narrowing the text at the center of the screen. This 
     :custom
     ;; Make tramp use controllerMaster options from ssh config
     (tramp-use-connection-share nil)
+    (tramp-connection-timeout 5)
     :config
     ;; helps in making remote lsp server available
     (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
