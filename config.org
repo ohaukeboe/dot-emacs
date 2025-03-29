@@ -1436,6 +1436,7 @@ rather than files.  These modes usually use read-only buffers.
     ("C-c n c" . org-capture)
 
     :custom
+    (org-confirm-babel-evaluate nil)
     (org-export-with-smart-quotes t)
     (org-hide-emphasis-markers t)		; Hide markup characters
     (org-startup-indented t)
@@ -1495,6 +1496,9 @@ rather than files.  These modes usually use read-only buffers.
               ("framexleftmargin" "2.8em")
               ;; ("numbers" "left")
               ("tabsize" "2"))))
+
+    (add-hook 'org-babel-after-execute-hook
+              (lambda () (org-redisplay-inline-images)))
 
     (org-babel-do-load-languages 'org-babel-load-languages
                                  '((ditaa . t)
