@@ -15,13 +15,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    zen-browser.url = "github:0xc000022070/zen-browser-flake";
-
     # Add nixGL for better OpenGL and vulkan support
     nixgl.url = "github:nix-community/nixGL";
   };
 
-  outputs = { self, nixpkgs, home-manager, emacs-overlay, zen-browser, nixgl, ... }:
+  outputs = { self, nixpkgs, home-manager, emacs-overlay, nixgl, ... }:
     let
       defaultConfig =
         if builtins.match ".*darwin" builtins.currentSystem != null
@@ -54,7 +52,6 @@
             # Optionally use extraSpecialArgs
             # to pass through arguments to home.nix
             extraSpecialArgs = {
-              inherit zen-browser system;
               isLinux = builtins.match ".*linux" system != null;
               isDarwin = builtins.match ".*darwin" system != null;
             };
