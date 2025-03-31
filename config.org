@@ -946,7 +946,9 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     (java-ts-mode . (lambda ()
                       (setq-local tab-width java-ts-mode-indent-offset)))
     :mode
-    "\\.java\\'")
+    "\\.java\\'"
+    :config
+    (setenv "JAVA_OPTS" "-Xmx8g"))
 
   (use-package lsp-java
     ;; :ensure t
