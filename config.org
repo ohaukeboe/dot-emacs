@@ -2530,13 +2530,7 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
           org-msg-default-alternatives '((new		. (text html))
                                          (reply-to-html	. (text html))
                                          (reply-to-text	. (text)))
-          org-msg-convert-citation t
-          org-msg-signature "
-
-  Cheers,
-  ,#+begin_signature
-  Oskar
-  ,#+end_signature")
+          org-msg-convert-citation t)
     (org-msg-mode))
 #+end_src
 

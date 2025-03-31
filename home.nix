@@ -152,7 +152,7 @@
     (hiPrio gcc) # Needed hiPrio to resolve conflict as both
     # clang and gcc provide C++ binary
     ccls
-    bear # usefull for using lsp
+    bear # useful for using lsp
 
     ### C# ###
     omnisharp-roslyn
@@ -184,8 +184,6 @@
 
     ### Java ###
     jdk
-    # jdt-language-server
-    # java-language-server
     maven
     gradle
 
