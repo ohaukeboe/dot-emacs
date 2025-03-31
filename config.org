@@ -994,8 +994,8 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 #+begin_src elisp
   (use-package csharp-ts-mode
-    ;; :hook (csharp-ts-mode . lsp)
-    :hook (csharp-ts-mode . eglot-ensure)
+    :hook (csharp-ts-mode . lsp-deferred)
+    ;; :hook (csharp-ts-mode . eglot-ensure)
     :mode "\\.cs\\'"
     ;; (add-to-list 'treesit-language-source-alist
     ;;              '(csharp . ("https://github.com/tree-sitter/tree-sitter-c-sharp" Latest)))
