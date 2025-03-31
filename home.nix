@@ -103,7 +103,6 @@
 
     ### misc ###
     zotero
-    firefox
     sshfs
     devbox
     phoronix-test-suite
