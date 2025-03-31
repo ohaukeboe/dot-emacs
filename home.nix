@@ -93,7 +93,6 @@
   home.packages = with pkgs; [
     postgresql_16
 
-    tailscale
     wakatime
     pympress # pdf presenter
 
@@ -249,6 +248,7 @@
     nexusmods-app
     vlc
     python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
+    tailscale
 
     ### nixGL ###
     nixgl.nixVulkanIntel
