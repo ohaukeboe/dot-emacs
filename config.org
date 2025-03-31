@@ -1845,17 +1845,11 @@ A terminal emulator
 #+begin_src elisp
   (use-package vterm
     :ensure t
-    :hook
-    ;; Iv'e had some severe performance issues, so I am disabling a
-    ;; bunch of minor modes and hoping for it to imrove
-    (vterm-mode . (lambda ()
-                    (corfu-mode)
-                    (flycheck-mode)
-                    (undo-fu-session-mode)
-                    (wakatime-mode)
-                    (yas-minor-mode)))
     :bind
     ("C-c v" . 'vterm)
+    ("C-z" . toggle-vterm)
+    (:map vterm-mode-map
+          ("C-z" . toggle-vterm))
     (:map project-prefix-map
           ("t" . project-vterm))
     :custom
@@ -1871,10 +1865,27 @@ A terminal emulator
       (defvar vterm-buffer-name)
       (let* ((default-directory (project-root (project-current t)))
              (vterm-buffer-name (project-prefixed-buffer-name "vterm")))
-          (call-interactively 'vterm vterm-buffer-name)))
+        (call-interactively 'vterm vterm-buffer-name)))
+
+    (defvar vterms nil)
+
+    (defun toggle-vterm (&optional n)
+      (interactive)
+      (setq vterms (seq-filter 'buffer-live-p vterms))
+      (let ((default-directory (or (vc-root-dir) default-directory)))
+        (cond ((numberp n) (push (vterm n) vterms))
+              ((null vterms) (push (vterm 1) vterms))
+              ((seq-contains-p vterms (current-buffer))
+               (switch-to-buffer (car (seq-difference (buffer-list) vterms))))
+              (t (switch-to-buffer (car (seq-intersection (buffer-list) vterms)))))))
+
     :init
     (add-to-list 'project-switch-commands     '(project-vterm "Vterm") t)
-    (add-to-list 'project-kill-buffer-conditions  '(major-mode . vterm-mode)))
+    (add-to-list 'project-kill-buffer-conditions  '(major-mode . vterm-mode))
+
+    :config
+    (defadvice vterm (after kill-with-no-query nil activate)
+      (set-process-query-on-exit-flag (get-buffer-process ad-return-value) nil)))
 
 #+end_src
 

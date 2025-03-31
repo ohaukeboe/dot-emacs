@@ -100,7 +100,6 @@
     ### fish ###
     babelfish
 
-
     ### misc ###
     zotero
     sshfs
