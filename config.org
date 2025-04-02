@@ -1160,9 +1160,9 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
   (use-package LaTex-mode
     :mode ("\\.tex\\'" . tex-mode)
     :hook
-    (TeX-mode . eglot-ensure)
+    (TeX-mode . lsp-deferred)
     (TeX-mode . (lambda () (auto-fill-mode)))
-    (TeX-mode . (lambda () (truncate-lines nil)))
+    ;; (TeX-mode . (lambda () (truncate-lines nil)))
     (TeX-mode . (lambda () (reftex-mode 1)))
     :custom
     (LaTeX-electric-left-right-brace t)
@@ -1481,12 +1481,16 @@ rather than files.  These modes usually use read-only buffers.
         ((org-agenda-files (list "~/Nextcloud/org_notes/agenda/notes.org"))))))
 
     :config
+    ;; Make sure org opens pdfs inside emacs
+    (setf (alist-get "\\.pdf\\'" org-file-apps nil nil #'equal) 'emacs)
+
     ;; Pretty bullets
     ;; (font-lock-add-keywords 'org-mode
     ;;                         '(("^ *\\([-]\\) "
     ;;                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
     (add-to-list 'org-latex-packages-alist '("" "listings"))
     (add-to-list 'org-latex-packages-alist '("" "amsmath"))
+    (add-to-list 'org-latex-packages-alist '("" "todonotes"))
     (with-eval-after-load 'ox-latex
       (setq org-latex-listings 'listings)
       (setq org-latex-listings-options
@@ -1515,6 +1519,42 @@ rather than files.  These modes usually use read-only buffers.
     (require 'ox-beamer)
     (require 'ox-man)
     (require 'ox-texinfo)
+    (require 'ox)
+
+    (defun org-export-todo-keyword (backend)
+      "Process #+TODO: keywords and TODO blocks during export."
+      ;; Process #+TODO: keywords
+      (goto-char (point-min))
+      (while (re-search-forward "^#\\+TODO:\\s-*\\(.*\\)" nil t)
+        (let ((value (match-string 1)))
+          (cond
+           ((eq backend 'html)
+            (replace-match (format "#+HTML: <div class=\"todo-note\"><strong>TODO:</strong> %s</div>" value)))
+           ((eq backend 'latex)
+            (replace-match (format "\\\\todo{%s}" value))))))
+
+      ;; Process #+begin_todo ... #+end_todo blocks for inline todos
+      (goto-char (point-min))
+      (while (re-search-forward "^#\\+begin_todo\\s-*$" nil t)
+        (let ((start (match-beginning 0))
+              (block-start (match-end 0)))
+          (when (re-search-forward "^#\\+end_todo\\s-*$" nil t)
+            (let ((block-end (match-beginning 0))
+                  (end (match-end 0)))
+              (let ((content (buffer-substring-no-properties block-start block-end)))
+                (delete-region start end)
+                (goto-char start)
+                (cond
+                 ((eq backend 'html)
+                  (insert (format "#+HTML: <div class=\"todo-note inline\"><strong>TODO:</strong> %s</div>"
+                                  (string-trim content))))
+                 ((eq backend 'latex)
+                  (insert (format "\\todo[inline]{%s}"
+                                  (string-trim content)))))))))))
+
+    ;; Add to the export hook
+    (add-hook 'org-export-before-processing-hook 'org-export-todo-keyword)
+
 
     :custom-face
     (org-level-1 ((t (:inherit outline-1 :height 1.5))))
