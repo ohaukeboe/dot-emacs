@@ -17,9 +17,13 @@
 
     # Add nixGL for better OpenGL and vulkan support
     nixgl.url = "github:nix-community/nixGL";
+
+    # Make apps show in spotlight
+    mac-app-util.url = "github:hraban/mac-app-util";
+
   };
 
-  outputs = { self, nixpkgs, home-manager, emacs-overlay, nixgl, ... }:
+  outputs = { self, nixpkgs, home-manager, emacs-overlay, nixgl, mac-app-util, ... }:
     let
       defaultConfig =
         if builtins.match ".*darwin" builtins.currentSystem != null
@@ -46,6 +50,7 @@
             # Specify your home configuration modules here, for example,
             # the path to your home.nix.
             modules = [
+              mac-app-util.homeManagerModules.default
               ./home.nix
             ];
 
