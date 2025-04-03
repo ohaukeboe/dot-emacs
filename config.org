@@ -1490,7 +1490,8 @@ rather than files.  These modes usually use read-only buffers.
     ;;                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
     (add-to-list 'org-latex-packages-alist '("" "listings"))
     (add-to-list 'org-latex-packages-alist '("" "amsmath"))
-    (add-to-list 'org-latex-packages-alist '("" "todonotes"))
+    ;; It is also possible to use `obeyFinal' to include todonotes more often
+    (add-to-list 'org-latex-packages-alist '("obeyDraft" "todonotes"))
     (with-eval-after-load 'ox-latex
       (setq org-latex-listings 'listings)
       (setq org-latex-listings-options
