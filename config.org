@@ -1551,8 +1551,11 @@ rather than files.  These modes usually use read-only buffers.
                   (insert (format "#+HTML: <div class=\"todo-note inline\"><strong>TODO:</strong> %s</div>"
                                   (string-trim content))))
                  ((eq backend 'latex)
-                  (insert (format "\\todo[inline]{%s}"
-                                  (string-trim content)))))))))))
+                  (insert (concat "#+LATEX: \\todo[inline, caption={TODO}]{"
+                                  "\n#+LATEX: \\begin{minipage}{\\textwidth-4pt}"
+                                  "\n" (string-trim content) "\n"
+                                  "#+LATEX: \\end{minipage}"
+                                  "\n#+LATEX: }"))))))))))
 
     ;; Add to the export hook
     (add-hook 'org-export-before-processing-hook 'org-export-todo-keyword)
