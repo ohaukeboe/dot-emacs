@@ -64,11 +64,6 @@
               export LSP_USE_PLISTS=true;
             '' + p.buildPhase;
         }))
-        (lsp-ltex.overrideAttrs (p: {
-          buildPhase = ''
-              export LSP_USE_PLISTS=true;
-            '' + p.buildPhase;
-        }))
         (lsp-java.overrideAttrs (p: {
           buildPhase = ''
               export LSP_USE_PLISTS=true;
@@ -104,7 +99,7 @@
     sshfs
     devbox
     phoronix-test-suite
-    ltex-ls # languagetool lsp
+    ltex-ls-plus # languagetool lsp
     packwiz
     languagetool
     zoxide
