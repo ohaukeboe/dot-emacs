@@ -1403,6 +1403,7 @@ Org-ref handles crossreferences pretty well.
   (use-package org-ref
     :ensure t
     :after org
+    :disabled
     :bind
     (:map org-mode-map
           ("C-c r" . org-ref-insert-ref-link))
@@ -1844,28 +1845,31 @@ The emacs web browser
 
 #+begin_src elisp
   (use-package eww
-   :commands (oh/switch-to-eww-buffer)
-   ;; :custom
-   ;; (shr-use-fonts nil)
-   ;; :general
-   ;; (oh/leader-key
-   ;;   "ow" '(oh/switch-to-eww-buffer :wk "eww"))
+    :commands (oh/switch-to-eww-buffer)
 
-   :custom
-   (browse-url-browser-function 'eww-browse-url)
-   (browse-url-generic-program "zen")
-   :config
-   (defun oh/switch-to-eww-buffer ()
-     "Switches to an existing EWW buffer, if one exists."
-     (interactive)
-     (let ((eww-buf (catch 'found
-                      (dolist (buf (buffer-list))
-                        (when (with-current-buffer buf
-                                (eq major-mode 'eww-mode))
-                          (throw 'found buf))))))
-       (if eww-buf
-           (switch-to-buffer eww-buf)
-         (call-interactively 'eww)))))
+    :custom
+    (browse-url-browser-function 'my/browse-url-handler)
+
+    :config
+    (defun oh/switch-to-eww-buffer ()
+      "Switches to an existing EWW buffer, if one exists."
+      (interactive)
+      (let ((eww-buf (catch 'found
+                       (dolist (buf (buffer-list))
+                         (when (with-current-buffer buf
+                                 (eq major-mode 'eww-mode))
+                           (throw 'found buf))))))
+        (if eww-buf
+            (switch-to-buffer eww-buf)
+          (call-interactively 'eww))))
+
+    (defun my/browse-url-handler (url &rest args)
+      "Browse URL with EWW when no prefix arg is provided, otherwise use default browser."
+      (if current-prefix-arg
+          ;; With prefix: use default browser (typically external browser)
+          (browse-url-default-browser url)
+        ;; Without prefix: use eww
+        (eww-browse-url url))))
 #+end_src
 
 ** Eat
@@ -2687,7 +2691,26 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
   (use-package rfc-mode
     :ensure t
     :bind
-    ("C-c b r" . rfc-mode-browse))
+    ("C-c b r" . rfc-mode-browse)
+    (:map rfc-mode-map
+          ("b" . my/open-rfc-in-browser))
+
+    :preface
+    (defun my/get-current-rfc-number ()
+      "Extract RFC number from current buffer name."
+      (interactive)
+      (if (string-match "rfc\\([0-9]+\\)" (buffer-name))
+          (match-string 1 (buffer-name))
+        nil))
+
+    (defun my/open-rfc-in-browser (&optional arg)
+      "Open the current RFC document in a web browser.
+  With prefix argument ARG, pass it to `browse-url` function."
+      (interactive "P")
+      (let ((rfc-num (my/get-current-rfc-number)))
+        (if rfc-num
+            (browse-url (format "https://datatracker.ietf.org/doc/html/rfc%s" rfc-num) arg)
+          (message "Could not determine RFC number from buffer")))))
 #+end_src
 
 ** LanguageTool
