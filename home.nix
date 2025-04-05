@@ -86,8 +86,6 @@
   ];
 
   home.packages = with pkgs; [
-    postgresql_16
-
     wakatime
     pympress # pdf presenter
 
@@ -100,8 +98,7 @@
     devbox
     phoronix-test-suite
     ltex-ls-plus # languagetool lsp
-    packwiz
-    languagetool
+    packwiz # Minecraft modpack creator utility
     zoxide
     gnuplot
     ditaa
@@ -145,9 +142,9 @@
     clang
     clang-analyzer
     (hiPrio gcc) # Needed hiPrio to resolve conflict as both
-    # clang and gcc provide C++ binary
+                 # clang and gcc provide C++ binary
     ccls
-    bear # useful for using lsp
+    bear # useful for using clangd
 
     ### C# ###
     omnisharp-roslyn
@@ -168,15 +165,6 @@
 
     mermaid-cli
 
-    ### python ###
-    #python312
-    #mypy
-    ## nodePackages_latest.pyright
-    #python312Packages.numpy
-    #python312Packages.packaging
-    #python312Packages.matplotlib
-    # python312Packages.jedi-language-server
-
     ### Java ###
     jdk
     maven
@@ -187,7 +175,6 @@
 
     ### latex org ###
     texlive.combined.scheme-full
-    python312Packages.pygments
 
     # org-inline-pdf
     pdf2svg
@@ -211,9 +198,6 @@
     nodePackages.typescript-language-server
     typescript
     eslint
-
-    ## chatgpt-shell
-    pass
 
     ## mu4e (email)
     mu
@@ -254,9 +238,20 @@
     ### C ###
     gdb
     valgrind # is broken on darwin
-  ] ++ lib.optionals isDarwin [
+  ] ++ lib.optionals isDarwin (lib.lists.flatten [
     coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
-  ];
+
+    # Not installing python on Linux as I have experienced conflicts
+    # on ublue which include python already
+    python313
+    (with python313Packages; [
+      pip
+      python-lsp-server
+      python-lsp-server.optional-dependencies.all
+      matplotlib
+      scipy
+    ])
+  ]);
 
   programs = {
     starship.enable = true;
