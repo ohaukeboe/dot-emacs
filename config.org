@@ -20,6 +20,15 @@ I use universal-blue as my distro of choice and prefer to install 1password as ~
   rpm-ostree install 1password 1password-cli
 #+end_src
 
+Also, in order to get the 1password browser extension to talk to the program, you can use this script:
+
+#+begin_src sh
+  sh <(curl -L https://raw.githubusercontent.com/FlyinPancake/1password-flatpak-browser-integration/refs/heads/main/1password-flatpak-browser-integration.sh)
+
+  # or if you are on fish
+  sh (curl -L https://raw.githubusercontent.com/FlyinPancake/1password-flatpak-browser-integration/refs/heads/main/1password-flatpak-browser-integration.sh | psub)
+#+end_src
+
 * Personal information
 
 #+begin_src elisp
