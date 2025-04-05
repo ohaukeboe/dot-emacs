@@ -1265,11 +1265,7 @@ Some other zotero plugins I use are:
 
 #+begin_src elisp
   (defvar oh/bib-files
-     '("~/Nextcloud/.org/references.bib"
-       "~/Nextcloud/.org/bibliography/zotero.bib"
-       "~/Nextcloud/.org/bibliography/uni/IN3000.bib"
-       "~/Nextcloud/.org/bibliography/uni/IN2000 gang.bib"
-       "~/Nextcloud/.org/bibliography/uni/IN2120_gang-midterm.bib"))
+    `(,(concat user-emacs-directory ".cache/references.bib")))
 
   (defvar oh/roam-dir
     "~/Nextcloud/org_notes/roam/bibliography/")
@@ -1388,21 +1384,35 @@ Some other zotero plugins I use are:
   (use-package citar-org-roam
     :ensure t
     :after (citar org-roam)
-    :config (citar-org-roam-mode)
-    ;; :general
-    ;; (oh/leader-key
-    ;;   "nrc" '(citar-org-roam-ref-add :wk "add ref"))
+    :bind
+    (:map org-mode-map
+          ("C-c a" . my/org-attach-file))
+    :config
+    (citar-org-roam-mode)
+
+    (defun my/get-files-citar-roam ()
+      "Returns a list of associated files"
+      (let* ((key (citar-org-roam--node-cite-refs
+                   (org-roam-node-at-point)))
+             (file-hash (citar-get-files key)))
+        (mapcar 'file-relative-name (gethash (car key) file-hash))))
+
+    (defun my/org-attach-file ()
+      "Custom function to attach a file to an org-file"
+      (interactive)
+      (org-attach-attach
+       (completing-read "File to attach" (my/get-files-citar-roam)) nil 'ln))
+
     :custom
-    (citar-org-roam-capture-template-key "n"))
-    ;; :config
-    ;; (add-to-list 'org-roam-capture-templates
-    ;;    '("n" "literature note" plain
-    ;;            "%?"
-    ;;            :target
-    ;;            (file+head
-    ;;             "%(expand-file-name (or citar-org-roam-subdir \"\") org-roam-directory)/${citar-citekey}.org"
-    ;;             "#+title: ${citar-citekey} (${citar-date}). ${note-title}.\n#+created: %U\n#+last_modified: %U\n\n")
-    ;;            :unnarrowed t)))
+    (citar-org-roam-capture-template-key "n")
+    (add-to-list 'org-roam-capture-templates
+                 '("n" "literature note" plain
+                   "%?"
+                   :target
+                   (file+head
+                    "%(expand-file-name (or citar-org-roam-subdir \"\") org-roam-directory)/${citar-citekey}.org"
+                    "#+title: ${citar-citekey} (${citar-date}). ${note-title}.\n#+created: %U\n#+last_modified: %U\n\n")
+                   :unnarrowed t)))
 #+end_src
 
 ** org-ref
@@ -1466,7 +1476,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-default-notes-file "~/Nextcloud/org_notes/agenda/notes.org")
     (org-agenda-files `(,org-default-notes-file))
     (org-attach-archive-delete 'query)
-    (org-attach-preferred-new-method 'dir)
+    (org-attach-preferred-new-method 'id)
     (org-attach-dir-relative t)
     (org-startup-with-latex-preview t)
     (org-format-latex-options
@@ -1794,6 +1804,7 @@ Export dispatcher using pandoc
     ;;  "i" '(org-noter-insert-note :which-key "insert note"))
     :custom
     (org-noter-auto-save-last-location t)
+    (org-noter-highlight-selected-text t)
     (org-noter-notes-search-path
      '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
 #+end_src
