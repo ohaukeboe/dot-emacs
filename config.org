@@ -2591,7 +2591,7 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
     :config
     (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
           org-msg-startup "hidestars indent inlineimages"
-          org-msg-greeting-fmt "\nHi%s,\n\n"
+          org-msg-greeting-fmt "\nHei%s,\n\n"
 
           org-msg-recipient-names '(("ohaukeboe@pm.me" . "Oskar"))
           org-msg-greeting-name-limit 3
