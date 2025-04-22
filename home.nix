@@ -83,6 +83,7 @@
     # "keymapp"
     "terraform"
     "copilot-node-server"
+    "claude-code"
   ];
 
   home.packages = with pkgs; [
