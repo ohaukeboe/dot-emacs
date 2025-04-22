@@ -110,6 +110,7 @@
     tealdeer # tldr
     protonmail-bridge
     davmail # bridge allowing to use exchange through IMAP
+    claude-code
 
     git
     ripgrep
