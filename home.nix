@@ -242,6 +242,7 @@
     valgrind # is broken on darwin
   ] ++ lib.optionals isDarwin (lib.lists.flatten [
     coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
+    pngpaste
 
     # Not installing python on Linux as I have experienced conflicts
     # on ublue which include python already
