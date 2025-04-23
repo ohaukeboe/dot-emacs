@@ -1896,9 +1896,9 @@ The emacs web browser
       "Browse URL with EWW when no prefix arg is provided, otherwise use default browser."
       (if current-prefix-arg
           ;; With prefix: use default browser (typically external browser)
-          (browse-url-default-browser url)
+          (eww-browse-url url)
         ;; Without prefix: use eww
-        (eww-browse-url url))))
+        (browse-url-default-browser url))))
 #+end_src
 
 ** Eat
