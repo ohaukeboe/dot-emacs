@@ -88,7 +88,7 @@
 
   home.packages = with pkgs; [
     wakatime
-    pympress # pdf presenter
+    # pympress # pdf presenter
 
     ### fish ###
     babelfish
