@@ -55,6 +55,7 @@ Also, in order to get the 1password browser extension to talk to the program, yo
     ("C-x x k" . my/kill-buffers-not-backed-by-file)
 
     :custom
+    (custom-file (concat user-emacs-directory "var/custom.el"))
     (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
     (warning-minimum-level :error)
 
@@ -109,6 +110,7 @@ Also, in order to get the 1password browser extension to talk to the program, yo
     (winner-mode 1)
 
     :config
+    (load custom-file 'noerror)
     (server-start)
     (add-to-list 'load-path
                  (concat user-emacs-directory "packages"))
