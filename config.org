@@ -1430,7 +1430,6 @@ Org-ref handles crossreferences pretty well.
   (use-package org-ref
     :ensure t
     :after org
-    :disabled
     :bind
     (:map org-mode-map
           ("C-c r" . org-ref-insert-ref-link))
@@ -2459,18 +2458,18 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
 [[https://github.com/karthink/gptel-quick][gptel-quick]] is a nifty package that uses gptel to describe thing at point
 
 #+begin_src elisp
-  (use-package gptel-quick
-    :after embark
-    :vc (:url "https://github.com/karthink/gptel-quick.git"
-              :rev "d7a3aed")
-    :custom
-    (gptel-quick-backend (alist-get "OpenRouter" gptel--known-backends nil nil #'string=))
-    (gptel-quick-model "google/gemini-2.0-flash-001")
-    (gptel-quick-timeout nil)
+    (use-package gptel-quick
+      :after embark
+      :vc (:url "https://github.com/karthink/gptel-quick.git"
+                :rev "34acd43")
+      :custom
+      (gptel-quick-backend (alist-get "OpenRouter" gptel--known-backends nil nil #'string=))
+      (gptel-quick-model "google/gemini-2.0-flash-001")
+      (gptel-quick-timeout nil)
 
-    :bind
-    (:map embark-general-map
-          ("?" . #'gptel-quick)))
+      :bind
+      (:map embark-general-map
+            ("?" . #'gptel-quick)))
 #+end_src
 
 ** SICP
@@ -2628,7 +2627,7 @@ And obviously I need consult integration as well
   (use-package consult-mu
     :after (consult mu4e)
     :vc (:url "https://github.com/armindarvish/consult-mu.git"
-              :rev "39ed566")
+              :rev "e1dc636")
     :bind
     (:map mu4e-search-minor-mode-map
           ("s" . consult-mu)))
@@ -2850,7 +2849,7 @@ An amazing litte package that makes scrolling actually feel smooth. This is espe
 #+begin_src elisp
   (use-package ultra-scroll
     :vc (:url  "https://github.com/jdtsmith/ultra-scroll.git"
-               :rev "2c517bf")
+               :rev "f2e4fba")
     :init
     (setq scroll-conservatively 101 ; important!
           scroll-margin 0)
