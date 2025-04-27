@@ -1489,6 +1489,7 @@ rather than files.  These modes usually use read-only buffers.
      (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
     (org-latex-prefer-user-labels t)
     (org-ditaa-jar-path "~/.local/share/ditaa/ditaa.jar")
+    (org-latex-create-formula-image-program 'dvisvgm)
 
     (org-capture-templates
      '(("t" "Todo" entry (file "~/Nextcloud/org_notes/agenda/tasks.org")

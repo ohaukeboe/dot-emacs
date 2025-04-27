@@ -49,3 +49,4 @@ var/
 /workspace/
 /lsp-ltex/
 /*.sqlite
+/lsp-ltex-plus/
