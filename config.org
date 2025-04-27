@@ -2263,6 +2263,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
       :stream t
       :key (auth-source-pick-first-password :host "openrouter.ai")
       :models '(google/gemini-2.0-flash-001
+                google/gemini-2.5-flash-preview
                 deepseek/deepseek-r1
                 deepseek/deepseek-chat
                 anthropic/claude-3.7-sonnet:thinking
@@ -2460,8 +2461,11 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     :after embark
     :vc (:url "https://github.com/karthink/gptel-quick.git"
               :rev "d7a3aed")
-    :config
-    (setq gptel-quick-timeout nil)
+    :custom
+    (gptel-quick-backend (alist-get "OpenRouter" gptel--known-backends nil nil #'string=))
+    (gptel-quick-model "google/gemini-2.0-flash-001")
+    (gptel-quick-timeout nil)
+
     :bind
     (:map embark-general-map
           ("?" . #'gptel-quick)))
