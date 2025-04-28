@@ -1058,8 +1058,17 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     (lsp-idle-delay 0.4)
     :init
     (with-eval-after-load 'treesit
-        (add-to-list 'treesit-language-source-alist
-                     '(kotlin "https://github.com/fwcd/tree-sitter-kotlin"))))
+      (add-to-list 'treesit-language-source-alist
+                   '(kotlin "https://github.com/fwcd/tree-sitter-kotlin"))))
+
+  (use-package ob-kotlin
+    :ensure t
+    :after org
+    :preface
+    (with-eval-after-load 'org
+      (org-babel-do-load-languages 'org-babel-load-languages
+                                   (add-to-list 'org-babel-load-languages
+                                                '(kotlin . t)))))
 #+end_src
 
 ** dotnet
