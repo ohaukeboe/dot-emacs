@@ -404,7 +404,7 @@ EOF
   };
 
   # # Enable lorri for easy development environment
-  # services.lorri.enable = true;
+  services.lorri.enable = true;
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
