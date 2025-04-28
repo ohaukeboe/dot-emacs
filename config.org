@@ -184,6 +184,15 @@ I am trying out MacOS at the moment, and it appears that applications launched u
     (load-theme 'doom-tomorrow-night t))
 #+end_src
 
+** Spacious padding
+
+#+begin_src elisp
+  (use-package spacious-padding
+    :ensure t
+    :config
+    (spacious-padding-mode 1))
+#+end_src
+
 ** Nerd icons
 This package provides a set of icons for Emacs.
 
