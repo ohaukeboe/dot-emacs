@@ -112,6 +112,7 @@
     protonmail-bridge
     davmail # bridge allowing to use exchange through IMAP
     claude-code
+    act # run github actions locally
 
     git
     ripgrep
