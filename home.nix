@@ -158,6 +158,10 @@
     ### rust ###
     rustup
 
+    ### go ###
+    go
+    gopls
+
     ### maude ###
     maude
 

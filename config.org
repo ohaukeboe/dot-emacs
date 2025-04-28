@@ -937,6 +937,15 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     ;;                    :cargo (:targetDir t)))))))
 #+end_src
 
+** go
+
+#+begin_src elisp
+  (use-package go-ts-mode
+     :hook (go-ts-mode . lsp-deferred)
+     :mode "\\.go\\'" "\\bgo\\.mod\\'")
+
+#+end_src
+
 ** C
 
 #+begin_src elisp
