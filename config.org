@@ -1213,7 +1213,9 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
   (use-package nix-mode
     :ensure t
     :hook (nix-mode . lsp-deferred)
-    :mode "\\.nix\\'")
+    :mode "\\.nix\\'"
+    :custom
+    (lsp-nix-nil-formatter ["nixfmt"]))
 #+end_src
 
 ** Git

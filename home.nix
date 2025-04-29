@@ -1,13 +1,26 @@
-{ lib, pkgs, system, isLinux, isDarwin, ... }:
+{
+  lib,
+  pkgs,
+  system,
+  isLinux,
+  isDarwin,
+  ...
+}:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = let user = builtins.getEnv "USER"; in
-                  if user != "" then user else "oskar";
+  home.username =
+    let
+      user = builtins.getEnv "USER";
+    in
+    if user != "" then user else "oskar";
 
-  home.homeDirectory = let home = builtins.getEnv "HOME"; in
-                       if home != "" then home else "/home/oskar";
+  home.homeDirectory =
+    let
+      home = builtins.getEnv "HOME";
+    in
+    if home != "" then home else "/home/oskar";
 
   manual.manpages.enable = false;
 
@@ -21,276 +34,301 @@
   home.stateVersion = "23.05"; # Please read the comment before changing.
 
   programs.emacs = {
-  	enable = true;
-  	# package = pkgs.emacs-pgtk;
-  	package = (pkgs.emacsWithPackagesFromUsePackage {
-  	  package = pkgs.emacs-unstable-pgtk.overrideAttrs (old: {
-        configureFlags = old.configureFlags ++ [
-          "--disable-gc-mark-trace"  # Improves gc performance
-        ];
-      });
-  	  config = ./config.org;
-  	  alwaysEnsure = false;
-  	  alwaysTangle = true;
-  	  extraEmacsPackages = epkgs: with epkgs; [
-        treesit-grammars.with-all-grammars
-        edit-indirect # Edit codeblocks in markdown
-  	    copilot
-  	    jinx
-        cdlatex
-        auctex
-        (lsp-mode.overrideAttrs (p: {
-          buildPhase = ''
-              export LSP_USE_PLISTS=true;
-            '' + p.buildPhase;
-        }))
-        (lsp-ui.overrideAttrs (p: {
-          buildPhase = ''
-              export LSP_USE_PLISTS=true;
-            '' + p.buildPhase;
-        }))
-        (dap-mode.overrideAttrs (p: {
-          buildPhase = ''
-              export LSP_USE_PLISTS=true;
-            '' + p.buildPhase;
-        }))
-        (consult-lsp.overrideAttrs (p: {
-          buildPhase = ''
-              export LSP_USE_PLISTS=true;
-            '' + p.buildPhase;
-        }))
-        (lsp-treemacs.overrideAttrs (p: {
-          buildPhase = ''
-              export LSP_USE_PLISTS=true;
-            '' + p.buildPhase;
-        }))
-        (lsp-java.overrideAttrs (p: {
-          buildPhase = ''
-              export LSP_USE_PLISTS=true;
-            '' + p.buildPhase;
-        }))
-        (lsp-docker.overrideAttrs (p: {
-          buildPhase = ''
-              export LSP_USE_PLISTS=true;
-            '' + p.buildPhase;
-        }))
-  	  ];
-    });
+    enable = true;
+    # package = pkgs.emacs-pgtk;
+    package = (
+      pkgs.emacsWithPackagesFromUsePackage {
+        package = pkgs.emacs-unstable-pgtk.overrideAttrs (old: {
+          configureFlags = old.configureFlags ++ [
+            "--disable-gc-mark-trace" # Improves gc performance
+          ];
+        });
+        config = ./config.org;
+        alwaysEnsure = false;
+        alwaysTangle = true;
+        extraEmacsPackages =
+          epkgs: with epkgs; [
+            treesit-grammars.with-all-grammars
+            edit-indirect # Edit codeblocks in markdown
+            copilot
+            jinx
+            cdlatex
+            auctex
+            (lsp-mode.overrideAttrs (p: {
+              buildPhase =
+                ''
+                  export LSP_USE_PLISTS=true;
+                ''
+                + p.buildPhase;
+            }))
+            (lsp-ui.overrideAttrs (p: {
+              buildPhase =
+                ''
+                  export LSP_USE_PLISTS=true;
+                ''
+                + p.buildPhase;
+            }))
+            (dap-mode.overrideAttrs (p: {
+              buildPhase =
+                ''
+                  export LSP_USE_PLISTS=true;
+                ''
+                + p.buildPhase;
+            }))
+            (consult-lsp.overrideAttrs (p: {
+              buildPhase =
+                ''
+                  export LSP_USE_PLISTS=true;
+                ''
+                + p.buildPhase;
+            }))
+            (lsp-treemacs.overrideAttrs (p: {
+              buildPhase =
+                ''
+                  export LSP_USE_PLISTS=true;
+                ''
+                + p.buildPhase;
+            }))
+            (lsp-java.overrideAttrs (p: {
+              buildPhase =
+                ''
+                  export LSP_USE_PLISTS=true;
+                ''
+                + p.buildPhase;
+            }))
+            (lsp-docker.overrideAttrs (p: {
+              buildPhase =
+                ''
+                  export LSP_USE_PLISTS=true;
+                ''
+                + p.buildPhase;
+            }))
+          ];
+      }
+    );
   };
 
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
+    builtins.elem (lib.getName pkg) [
+      # "keymapp"
+      "terraform"
+      "copilot-node-server"
+      "claude-code"
+    ];
 
-  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
-    # "keymapp"
-    "terraform"
-    "copilot-node-server"
-    "claude-code"
-  ];
+  home.packages =
+    with pkgs;
+    [
+      wakatime
+      # pympress # pdf presenter
 
-  home.packages = with pkgs; [
-    wakatime
-    # pympress # pdf presenter
+      ### fish ###
+      babelfish
 
-    ### fish ###
-    babelfish
+      ### misc ###
+      zotero
+      sshfs
+      devbox
+      phoronix-test-suite
+      ltex-ls-plus # languagetool lsp
+      packwiz # Minecraft modpack creator utility
+      zoxide
+      gnuplot
+      ditaa
+      pkg-config
+      neofetch
+      gh # github cli
+      awscli2
+      aws-nuke
+      tealdeer # tldr
+      protonmail-bridge
+      davmail # bridge allowing to use exchange through IMAP
+      claude-code
+      act # run github actions locally
 
-    ### misc ###
-    zotero
-    sshfs
-    devbox
-    phoronix-test-suite
-    ltex-ls-plus # languagetool lsp
-    packwiz # Minecraft modpack creator utility
-    zoxide
-    gnuplot
-    ditaa
-    pkg-config
-    neofetch
-    gh                          # github cli
-    awscli2
-    aws-nuke
-    tealdeer # tldr
-    protonmail-bridge
-    davmail # bridge allowing to use exchange through IMAP
-    claude-code
-    act # run github actions locally
+      git
+      ripgrep
+      fd
 
-    git
-    ripgrep
-    fd
+      ### terraform ###
+      terraform
+      terraform-ls
 
-    ### terraform ###
-    terraform
-    terraform-ls
+      ### reMarkable ###
+      rmapi
 
-    ### reMarkable ###
-    rmapi
+      ### android ###
+      android-tools
 
-    ### android ###
-    android-tools
+      ### Kotlin ###
+      kotlin
+      kotlin-language-server
 
+      ### Assembly ###
+      asm-lsp
 
-    ### Kotlin ###
-    kotlin
-    kotlin-language-server
+      ### C ###
+      man-pages
+      man-pages-posix
+      gnumake
 
-    ### Assembly ###
-    asm-lsp
+      clang-tools
+      clang
+      clang-analyzer
+      (hiPrio gcc)
+      # Needed hiPrio to resolve conflict as both
+      # clang and gcc provide C++ binary
+      ccls
+      bear # useful for using clangd
 
-    ### C ###
-    man-pages
-    man-pages-posix
-    gnumake
+      ### C# ###
+      omnisharp-roslyn
 
-    clang-tools
-    clang
-    clang-analyzer
-    (hiPrio gcc) # Needed hiPrio to resolve conflict as both
-                 # clang and gcc provide C++ binary
-    ccls
-    bear # useful for using clangd
+      ### .net ###
+      dotnet-sdk_8
+      mono
 
-    ### C# ###
-    omnisharp-roslyn
+      ### rust ###
+      rustup
 
-    ### .net ###
-    dotnet-sdk_8
-    mono
+      ### go ###
+      go
+      gopls
+      golangci-lint-langserver
 
-    ### rust ###
-    rustup
+      ### maude ###
+      maude
 
-    ### go ###
-    go
-    gopls
+      ### plantuml ###
+      plantuml
+      graphviz
 
-    ### maude ###
-    maude
+      mermaid-cli
 
-    ### plantuml ###
-    plantuml
-    graphviz
+      ### Java ###
+      jdk
+      maven
+      gradle
 
-    mermaid-cli
+      ### nix ###
+      nil # lsp
+      nixfmt-rfc-style
 
-    ### Java ###
-    jdk
-    maven
-    gradle
+      ### latex org ###
+      texlive.combined.scheme-full
 
-    ### nix ###
-    nil # lsp
+      # org-inline-pdf
+      pdf2svg
+      imagemagick
+      # org-download
+      wl-clipboard
+      # pandoc
+      pandoc
+      marksman
+      readability-cli
+      # sqlite3
+      sqlite
 
-    ### latex org ###
-    texlive.combined.scheme-full
+      enchant
+      hunspellDicts.en_US
+      hunspellDicts.nb_NO
 
-    # org-inline-pdf
-    pdf2svg
-    imagemagick
-    # org-download
-    wl-clipboard
-    # pandoc
-    pandoc
-    marksman
-    readability-cli
-    # sqlite3
-    sqlite
+      ### node ###
+      nodePackages_latest.vscode-langservers-extracted
+      nodejs
+      nodePackages.typescript-language-server
+      typescript
+      eslint
 
-    enchant
-    hunspellDicts.en_US
-    hunspellDicts.nb_NO
+      ## mu4e (email)
+      mu
+      msmtp
+      isync
 
-    ### node ###
-    nodePackages_latest.vscode-langservers-extracted
-    nodejs
-    nodePackages.typescript-language-server
-    typescript
-    eslint
+      # # It is sometimes useful to fine-tune packages, for example, by applying
+      # # overrides. You can do that directly here, just don't forget the
+      # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
+      # # fonts?
+      # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
 
-    ## mu4e (email)
-    mu
-    msmtp
-    isync
+      # # You can also create simple shell scripts directly inside your
+      # # configuration. For example, this adds a command 'my-hello' to your
+      # # environment:
+      # (pkgs.writeShellScriptBin "my-hello" ''
+      #   echo "Hello, ${config.home.username}!"
+      # '')
+      nerd-fonts.roboto-mono
+      nerd-fonts.symbols-only
+    ]
+    ++ lib.optionals isLinux [
+      # Use script at https://github.com/FlyinPancake/1password-flatpak-browser-integration with zen flatpak instead
+      # zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
+      nexusmods-app
+      vlc
+      python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
+      tailscale
 
+      ### nixGL ###
+      nixgl.nixVulkanIntel
+      # nixgl.auto.nixVulkanNvidia
 
-    # # It is sometimes useful to fine-tune packages, for example, by applying
-    # # overrides. You can do that directly here, just don't forget the
-    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-    # # fonts?
-    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
+      ### zsa keyboard ###
+      zsa-udev-rules
+      # keymapp
 
-    # # You can also create simple shell scripts directly inside your
-    # # configuration. For example, this adds a command 'my-hello' to your
-    # # environment:
-    # (pkgs.writeShellScriptBin "my-hello" ''
-    #   echo "Hello, ${config.home.username}!"
-    # '')
-    nerd-fonts.roboto-mono
-    nerd-fonts.symbols-only
-  ] ++ lib.optionals isLinux [
-    # Use script at https://github.com/FlyinPancake/1password-flatpak-browser-integration with zen flatpak instead
-    # zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
-    nexusmods-app
-    vlc
-    python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
-    tailscale
+      ### C ###
+      gdb
+      valgrind # is broken on darwin
+    ]
+    ++ lib.optionals isDarwin (
+      lib.lists.flatten [
+        coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
+        pngpaste
 
-    ### nixGL ###
-    nixgl.nixVulkanIntel
-    # nixgl.auto.nixVulkanNvidia
-
-    ### zsa keyboard ###
-    zsa-udev-rules
-    # keymapp
-
-    ### C ###
-    gdb
-    valgrind # is broken on darwin
-  ] ++ lib.optionals isDarwin (lib.lists.flatten [
-    coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
-    pngpaste
-
-    # Not installing python on Linux as I have experienced conflicts
-    # on ublue which include python already
-    python313
-    (with python313Packages; [
-      pip
-      python-lsp-server
-      python-lsp-server.optional-dependencies.all
-      matplotlib
-      scipy
-    ])
-  ]);
+        # Not installing python on Linux as I have experienced conflicts
+        # on ublue which include python already
+        python313
+        (with python313Packages; [
+          pip
+          python-lsp-server
+          python-lsp-server.optional-dependencies.all
+          matplotlib
+          scipy
+        ])
+      ]
+    );
 
   programs = {
     starship.enable = true;
     fish = {
       enable = true;
       interactiveShellInit = ''
-      set fish_greeting # Disable greeting
-    '';
-      shellInit=''
-      if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish' ]
-        . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
-      end
+        set fish_greeting # Disable greeting
+      '';
+      shellInit = ''
+        if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish' ]
+          . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
+        end
 
-      if [ -e '/opt/homebrew/bin' ]
-         fish_add_path /opt/homebrew/bin
-      end
+        if [ -e '/opt/homebrew/bin' ]
+           fish_add_path /opt/homebrew/bin
+        end
 
-      fish_add_path ~/.dotnet/tools/
-      fish_add_path ~/.local/bin/
-      fish_add_path ~/.cargo/bin/
+        fish_add_path ~/.dotnet/tools/
+        fish_add_path ~/.local/bin/
+        fish_add_path ~/.cargo/bin/
 
-      alias git-del-merged='git branch --merged origin | grep -v -E " main\$| master\$" | xargs -pr git branch -d'
+        alias git-del-merged='git branch --merged origin | grep -v -E " main\$| master\$" | xargs -pr git branch -d'
 
-      alias hs='home-manager switch --flake .#default --impure'
+        alias hs='home-manager switch --flake .#default --impure'
 
-      alias edit='emacsclient -r -n'
+        alias edit='emacsclient -r -n'
 
-      if test "$INSIDE_EMACS" = 'vterm'; and test -n "$EMACS_VTERM_PATH"; and test -f "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
-        source "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
-      end
-    '';
+        if test "$INSIDE_EMACS" = 'vterm'; and test -n "$EMACS_VTERM_PATH"; and test -f "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
+          source "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
+        end
+      '';
     };
 
     direnv = {
@@ -367,25 +405,25 @@
 
   # Only create initial config if it doesn't exist
   home.activation = {
-    createDavmailConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
-      if [ ! -f $HOME/.davmail.properties ]; then
-        cat > $HOME/.davmail.properties << EOF
-davmail.url=https://outlook.office365.com/EWS/Exchange.asmx
-davmail.mode=O365Interactive
-davmail.ssl=false
-davmail.imapPort=1144
-davmail.smtpPort=1026
-davmail.caldavPort=1080
-davmail.ldapPort=1389
-davmail.keepDelay=30
-davmail.allowRemoteConnections=false
-davmail.disableUpdateCheck=true
-davmail.logFilePath=.davmail/davmail.log
-EOF
-      fi
+    createDavmailConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            if [ ! -f $HOME/.davmail.properties ]; then
+              cat > $HOME/.davmail.properties << EOF
+      davmail.url=https://outlook.office365.com/EWS/Exchange.asmx
+      davmail.mode=O365Interactive
+      davmail.ssl=false
+      davmail.imapPort=1144
+      davmail.smtpPort=1026
+      davmail.caldavPort=1080
+      davmail.ldapPort=1389
+      davmail.keepDelay=30
+      davmail.allowRemoteConnections=false
+      davmail.disableUpdateCheck=true
+      davmail.logFilePath=.davmail/davmail.log
+      EOF
+            fi
     '';
 
-    copyMsmtpConfig = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    copyMsmtpConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       cp ${./dotfiles/msmtprc.conf} $HOME/.msmtprc
       chmod 600 $HOME/.msmtprc
     '';
