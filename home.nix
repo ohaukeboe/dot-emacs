@@ -353,6 +353,15 @@
         "aeblfdkhhhdcdjpifhhbdiojplfjncoa" # 1password
       ];
     };
+
+    plasma = {
+      hotkeys.commands."launch-konsole" = {
+        name = "Launch Konsole";
+        key = "Meta+Alt+K";
+        command = "konsole";
+      };
+
+    };
   };
 
   systemd.user.services = {

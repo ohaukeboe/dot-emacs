@@ -15,6 +15,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    plasma-manager = {
+      url = "github:nix-community/plasma-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
+
     # Add nixGL for better OpenGL and vulkan support
     nixgl.url = "github:nix-community/nixGL";
 
@@ -31,9 +37,12 @@
       emacs-overlay,
       nixgl,
       mac-app-util,
+      plasma-manager,
       ...
     }:
     let
+      username = "oskar";
+
       defaultConfig =
         if builtins.match ".*darwin" builtins.currentSystem != null then "oskar-darwin" else "oskar";
 
@@ -59,6 +68,14 @@
           modules =
             [
               ./home.nix
+              plasma-manager.homeManagerModules.plasma-manager
+
+              {
+                home = {
+                  inherit username;
+                  homeDirectory = "/home/${username}";
+                };
+              }
             ]
             ++ lib.optionals (builtins.match ".*darwin" system != null) [
               mac-app-util.homeManagerModules.default
