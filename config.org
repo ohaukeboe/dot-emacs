@@ -119,7 +119,7 @@ Also, in order to get the 1password browser extension to talk to the program, yo
                  (concat user-emacs-directory "packages"))
 
     (set-face-attribute 'default nil
-                        :family "RobotoMono Nerd Font"
+                        :family "Roboto Mono"
                         :height 140)
 
     :preface

@@ -258,7 +258,7 @@
       # (pkgs.writeShellScriptBin "my-hello" ''
       #   echo "Hello, ${config.home.username}!"
       # '')
-      nerd-fonts.roboto-mono
+      roboto-mono
       nerd-fonts.symbols-only
     ]
     ++ lib.optionals isLinux [
