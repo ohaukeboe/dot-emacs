@@ -379,7 +379,6 @@ Corfu is a completion framework that provides a horizontal completion UI. It is 
     :config
     (global-corfu-mode 1)
     (corfu-popupinfo-mode 1))
-
 #+end_src
 
 It is also possible to use Corfu in the terminal. This requires the =corfu-terminal= package to be installed.
@@ -425,7 +424,7 @@ Completion at point extensions that are useful together with =corfu=
   (use-package cape
     :ensure t
     :after corfu
-    :bind ("M-p" . cape-prefix-map)
+    ;; :bind ("M-p" . cape-prefix-map)
     :init
     (add-hook 'completion-at-point-functions #'cape-elisp-block)
     (add-hook 'completion-at-point-functions #'cape-file))
@@ -850,7 +849,16 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (setq read-process-output-max (* 3 1024 1024)) ;; 3mb
 
     :custom-face
-    (lsp-face-highlight-textual ((t (:background nil :foreground nil :weight ultra-bold :distant-foreground nil)))))
+    (lsp-face-highlight-textual ((t (:background nil :foreground nil :weight ultra-bold :distant-foreground nil))))
+
+    :config
+    ;; trigger the lsp to update when changing window focus
+    (defun trigger-lsp-update (window)
+      (if lsp-mode (run-with-timer 1 nil 'lsp-on-change 0 1 1)))
+    (defun add-trigger-lsp-update ()
+      (make-local-variable 'window-state-change-functions)
+      (add-to-list 'window-state-change-functions 'trigger-lsp-update))
+    (add-hook 'lsp-mode-hook #'add-trigger-lsp-update))
 
   (use-package lsp-ui
     :after lsp-mode
@@ -912,6 +920,9 @@ Flymake is a minor mode that performs on-the-fly syntax checking. It is enabled 
 #+begin_src elisp
   (use-package flycheck
     :ensure t
+    :bind
+    ("M-n" . flycheck-next-error)
+    ("M-p" . flycheck-previous-error)
     :custom
     (flycheck-display-errors-function #'flycheck-display-error-messages)
     (flycheck-display-errors-delay 0.0)
@@ -994,7 +1005,9 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
 #+begin_src elisp
   (use-package go-ts-mode
      :hook (go-ts-mode . lsp-deferred)
-     :mode "\\.go\\'" "\\bgo\\.mod\\'")
+     :mode "\\.go\\'" "\\bgo\\.mod\\'"
+     :custom
+     (go-ts-mode-indent-offset 4))
 
 #+end_src
 
