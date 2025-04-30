@@ -33,6 +33,7 @@
   # release notes.
   home.stateVersion = "23.05"; # Please read the comment before changing.
 
+  services.emacs.enable = true;
   programs.emacs = {
     enable = true;
     # package = pkgs.emacs-pgtk;
