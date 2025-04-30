@@ -374,10 +374,11 @@ Corfu is a completion framework that provides a horizontal completion UI. It is 
     ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
     ;; (corfu-scroll-margin 5)        ;; Use scroll margin
 
-    ;; (corfu-popupinfo-delay '(nil . 0.0))
+    (corfu-popupinfo-delay '(1.0 . 0.0))
 
     :config
-    (global-corfu-mode 1))
+    (global-corfu-mode 1)
+    (corfu-popupinfo-mode 1))
 
 #+end_src
 
@@ -427,7 +428,6 @@ Completion at point extensions that are useful together with =corfu=
     :bind ("M-p" . cape-prefix-map)
     :init
     (add-hook 'completion-at-point-functions #'cape-elisp-block)
-    (add-hook 'completion-at-point-functions #'cape-line)
     (add-hook 'completion-at-point-functions #'cape-file))
 #+end_src
 
