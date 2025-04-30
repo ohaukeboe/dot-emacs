@@ -363,6 +363,7 @@ Corfu is a completion framework that provides a horizontal completion UI. It is 
     (corfu-quit-at-boundary 'separator)
     (corfu-quit-no-match t)
     (corfu-auto-prefix 2)
+    (corfu-auto-delay 0)
     (corfu-cycle t)                   ;; Enable cycling for `corfu-next/previous'
     (corfu-auto t)                    ;; Enable auto completion
     ;; (corfu-separator ?\s)          ;; Orderless field separator
@@ -414,6 +415,20 @@ Make Corfu also show up in the minibuffer.
         (corfu-mode 1)))
 
     (add-hook 'minibuffer-setup-hook #'oh/corfu-enable-always-in-minibuffer))
+#+end_src
+
+** Cape
+Completion at point extensions that are useful together with =corfu=
+
+#+begin_src elisp
+  (use-package cape
+    :ensure t
+    :after corfu
+    :bind ("M-p" . cape-prefix-map)
+    :init
+    (add-hook 'completion-at-point-functions #'cape-elisp-block)
+    (add-hook 'completion-at-point-functions #'cape-line)
+    (add-hook 'completion-at-point-functions #'cape-file))
 #+end_src
 
 ** Vertico
@@ -476,7 +491,6 @@ Add completion for directories
 #+begin_src elisp
   ;; Use Dabbrev with Corfu!
   (use-package dabbrev
-    :disabled
     ;; Swap M-/ and C-M-/
     :bind (("M-/" . dabbrev-completion)
            ("C-M-/" . dabbrev-expand))
