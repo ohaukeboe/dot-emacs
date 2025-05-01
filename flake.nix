@@ -78,46 +78,46 @@
             ++ lib.optionals (builtins.match ".*darwin" system != null) [
               mac-app-util.homeManagerModules.default
             ];
-            extraSpecialArgs = {
-              isNixos = false;
-            };
+          extraSpecialArgs = {
+            isNixos = false;
+          };
         };
     in
     {
-     nixosConfigurations = {
-       x1laptop = nixpkgs.lib.nixosSystem {
-         modules = [
-{
-           nix.settings = {
-             substituters = [ "https://cosmic.cachix.org/" ];
-             trusted-public-keys = [ "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE=" ];
-};
-}
-           nixos-cosmic.nixosModules.default
-           ./configuration.nix
+      nixosConfigurations = {
+        x1laptop = nixpkgs.lib.nixosSystem {
+          modules = [
+            {
+              nix.settings = {
+                substituters = [ "https://cosmic.cachix.org/" ];
+                trusted-public-keys = [ "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE=" ];
+              };
+            }
+            nixos-cosmic.nixosModules.default
+            ./configuration.nix
 
-           home-manager.nixosModules.home-manager
-{
-nixpkgs.overlays = [ emacs-overlay.overlays.default ];
-nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
-home-manager.useGlobalPkgs = true;
-home-manager.useUserPackages = true;
-home-manager.users.oskar = import ./home.nix;
-home-manager.extraSpecialArgs = {
-  isNixos = true;
-};
-}
-#home-manager.users.oskar = import ./home.nix {
-#inherit pkgs;
-#lib = lib // { hm = config.home-manager.lib; };
-#system = "x86_64-linux";
-#isLinux = true;
-#isDarwin = false;
-#isNixos = true;
-#};
-         ];
-     };
-};
+            home-manager.nixosModules.home-manager
+            {
+              nixpkgs.overlays = [ emacs-overlay.overlays.default ];
+              nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.users.oskar = import ./home.nix;
+              home-manager.extraSpecialArgs = {
+                isNixos = true;
+              };
+            }
+            #home-manager.users.oskar = import ./home.nix {
+            #inherit pkgs;
+            #lib = lib // { hm = config.home-manager.lib; };
+            #system = "x86_64-linux";
+            #isLinux = true;
+            #isDarwin = false;
+            #isNixos = true;
+            #};
+          ];
+        };
+      };
 
       homeConfigurations = {
         "oskar" = mkHomeConfiguration "x86_64-linux";

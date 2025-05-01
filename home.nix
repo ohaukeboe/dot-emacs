@@ -5,7 +5,7 @@
   isNixos ? false,
   ...
 }:
-let 
+let
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
   #isNixos = builtins.pathExists /etc/nixos;
@@ -256,26 +256,28 @@ in
       roboto-mono
       nerd-fonts.symbols-only
     ]
-    ++ lib.optionals isLinux (lib.lists.flatten [
-      # Use script at https://github.com/FlyinPancake/1password-flatpak-browser-integration with zen flatpak instead
-      # zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
-      nexusmods-app
-      vlc
-      python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
-      tailscale
+    ++ lib.optionals isLinux (
+      lib.lists.flatten [
+        # Use script at https://github.com/FlyinPancake/1password-flatpak-browser-integration with zen flatpak instead
+        # zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
+        nexusmods-app
+        vlc
+        python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
+        tailscale
 
-      ### nixGL ###
-      (lib.optional (!isNixos) pkgs.nixgl.nixVulkanIntel)
-      # nixgl.auto.nixVulkanNvidia
+        ### nixGL ###
+        (lib.optional (!isNixos) pkgs.nixgl.nixVulkanIntel)
+        # nixgl.auto.nixVulkanNvidia
 
-      ### zsa keyboard ###
-      zsa-udev-rules
-      # keymapp
+        ### zsa keyboard ###
+        zsa-udev-rules
+        # keymapp
 
-      ### C ###
-      gdb
-      valgrind # is broken on darwin
-    ])
+        ### C ###
+        gdb
+        valgrind # is broken on darwin
+      ]
+    )
     ++ lib.optionals isDarwin (
       lib.lists.flatten [
         coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
