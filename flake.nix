@@ -34,6 +34,14 @@
       ...
     }:
     let
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
+      # Helper function to generate attributes for each system
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+
       defaultConfig =
         if builtins.match ".*darwin" builtins.currentSystem != null then "oskar-darwin" else "oskar";
 
@@ -78,5 +86,17 @@
         "oskar-darwin" = mkHomeConfiguration "aarch64-darwin";
         "default" = self.homeConfigurations.${defaultConfig};
       };
+
+      packages = forAllSystems (system: {
+        default = self.homeConfigurations."default".activationPackage;
+      });
+
+      # For convenience, you can also add apps
+      apps = forAllSystems (system: {
+        default = {
+          type = "app";
+          program = "${self.packages.${system}.default}/activate";
+        };
+      });
     };
 }
