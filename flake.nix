@@ -88,7 +88,7 @@
       };
 
       packages = forAllSystems (system: {
-        default = self.homeConfigurations."default".activationPackage;
+        default = self.homeConfigurations."oskar".activationPackage;
       });
 
       # For convenience, you can also add apps
