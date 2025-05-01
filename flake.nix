@@ -3,7 +3,11 @@
 
   inputs = {
     # Specify the source of Home Manager and Nixpkgs.
-    nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs.follows = "nixos-cosmic/nixpkgs";
+
+    nixos-cosmic.url = "github:lilyinstarlight/nixos-cosmic";
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -20,19 +24,19 @@
 
     # Make apps show in spotlight
     mac-app-util.url = "github:hraban/mac-app-util";
-
   };
 
   outputs =
     {
       self,
       nixpkgs,
+      nixos-cosmic,
       home-manager,
       emacs-overlay,
       nixgl,
       mac-app-util,
       ...
-    }:
+    }@inputs:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -51,6 +55,9 @@
         let
           pkgs = import nixpkgs {
             inherit system;
+            config = {
+              allowUnfreePredicate = import ./common/unfree-predicates.nix { inherit (nixpkgs) lib; };
+            };
             overlays = [
               emacs-overlay.overlay
               # Only add nixGL overlay for Linux
@@ -71,16 +78,47 @@
             ++ lib.optionals (builtins.match ".*darwin" system != null) [
               mac-app-util.homeManagerModules.default
             ];
-
-          # Optionally use extraSpecialArgs
-          # to pass through arguments to home.nix
-          extraSpecialArgs = {
-            isLinux = builtins.match ".*linux" system != null;
-            isDarwin = builtins.match ".*darwin" system != null;
-          };
+            extraSpecialArgs = {
+              isNixos = false;
+            };
         };
     in
     {
+     nixosConfigurations = {
+       x1laptop = nixpkgs.lib.nixosSystem {
+         modules = [
+{
+           nix.settings = {
+             substituters = [ "https://cosmic.cachix.org/" ];
+             trusted-public-keys = [ "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE=" ];
+};
+}
+           nixos-cosmic.nixosModules.default
+           ./configuration.nix
+
+           home-manager.nixosModules.home-manager
+{
+nixpkgs.overlays = [ emacs-overlay.overlays.default ];
+nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
+home-manager.useGlobalPkgs = true;
+home-manager.useUserPackages = true;
+home-manager.users.oskar = import ./home.nix;
+home-manager.extraSpecialArgs = {
+  isNixos = true;
+};
+}
+#home-manager.users.oskar = import ./home.nix {
+#inherit pkgs;
+#lib = lib // { hm = config.home-manager.lib; };
+#system = "x86_64-linux";
+#isLinux = true;
+#isDarwin = false;
+#isNixos = true;
+#};
+         ];
+     };
+};
+
       homeConfigurations = {
         "oskar" = mkHomeConfiguration "x86_64-linux";
         "oskar-darwin" = mkHomeConfiguration "aarch64-darwin";

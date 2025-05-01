@@ -50,3 +50,4 @@ var/
 /lsp-ltex/
 /*.sqlite
 /lsp-ltex-plus/
+*.swp

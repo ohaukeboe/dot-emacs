@@ -172,6 +172,20 @@ I am trying out MacOS at the moment, and it appears that applications launched u
     (exec-path-from-shell-initialize))
 #+end_src
 
+** Nextcloud
+I keep most of my things in Nextcloud, and this config relies a lot on me having my Nextcloud files available. Here is an attempt at making this configuration work without my Nextcloud files. Now I can simply use ~my/nextcloud-dir-expand~ when setting variables and they will be set to =nil= if the Nextcloud directory is not on my system.
+
+#+begin_src elisp
+  (defvar my/nextcloud-dir (let ((path "~/Nextcloud"))
+                             (when (file-exists-p path)
+                               path)))
+
+  (defun my/nextcloud-dir-expand (subdir)
+    "Prefixes SUBDIR with path to nextcloud. Returns nil if nextcloud path does not exist"
+    (when my/nextcloud-dir
+      (concat my/nextcloud-dir "/" subdir)))
+#+end_src
+
 * Look and feel
 ** Theme
 
@@ -1355,10 +1369,10 @@ Some other zotero plugins I use are:
     `(,(concat user-emacs-directory ".cache/references.bib")))
 
   (defvar oh/roam-dir
-    "~/Nextcloud/org_notes/roam/bibliography/")
+    (my/nextcloud-dir-expand "org_notes/roam/bibliography/"))
 
   (defvar oh/library-dir
-    "~/Nextcloud/.org/library/")
+    (my/nextcloud-dir-expand ".org/library/"))
 #+end_src
 
 ** org-cite
@@ -1565,7 +1579,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-fold-catch-invisible-edits 'show)
     (org-startup-folded 'content)
     (org-elipsis "…")
-    (org-default-notes-file "~/Nextcloud/org_notes/agenda/notes.org")
+    (org-default-notes-file (my/nextcloud-dir-expand "org_notes/agenda/notes.org"))
     (org-agenda-files `(,org-default-notes-file))
     (org-attach-archive-delete 'query)
     (org-attach-preferred-new-method 'id)
@@ -1578,20 +1592,20 @@ rather than files.  These modes usually use read-only buffers.
     (org-latex-create-formula-image-program 'dvisvgm)
 
     (org-capture-templates
-     '(("t" "Todo" entry (file "~/Nextcloud/org_notes/agenda/tasks.org")
+     '(("t" "Todo" entry (file (my/nextcloud-dir-expand "org_notes/agenda/tasks.org")))
         "* TODO %?\n  %i\n  %a")
        ("n" "Note" entry
-        (file "~/Nextcloud/org_notes/agenda/notes.org")
+        (file (my/nextcloud-dir-expand "org_notes/agenda/notes.org"))
         "* %? :NOTES:\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n")
        ("e" "Elfeed entry" entry
-        (file "~/Nextcloud/org_notes/agenda/notes.org")
-        "* %:title :FEED:\n:PROPERTIES:\n:ADDED: %U\n:FEED: %:feed-title\n:DATE: %:date-timestamp\n:LINK: %:external-link\n:END:\n%i\n#+begin_quote\n%:content\n#+end_quote\n\n%?")))
+        (file (my/nextcloud-dir-expand "org_notes/agenda/notes.org"))
+        "* %:title :FEED:\n:PROPERTIES:\n:ADDED: %U\n:FEED: %:feed-title\n:DATE: %:date-timestamp\n:LINK: %:external-link\n:END:\n%i\n#+begin_quote\n%:content\n#+end_quote\n\n%?"))
 
     (org-agenda-custom-commands
      '(("e" "Elfeed entries" tags "FEED"
-        ((org-agenda-files (list "~/Nextcloud/org_notes/agenda/notes.org"))))
+        ((org-agenda-files (list (my/nextcloud-dir-expand "org_notes/agenda/notes.org")))))
        ("n" "Notes" tags "NOTES"
-        ((org-agenda-files (list "~/Nextcloud/org_notes/agenda/notes.org"))))))
+        ((org-agenda-files (list (my/nextcloud-dir-expand "org_notes/agenda/notes.org")))))))
 
     :config
     ;; Make sure org opens pdfs inside emacs
@@ -1809,13 +1823,14 @@ Export dispatcher using pandoc
 #+begin_src elisp
   (use-package org-roam
     :ensure t
+    :if my/nextcloud-dir
     :defer
     :custom
     (org-roam-completion-everywhere t)
     (org-roam-node-display-template "${title:*} ${tags:10}")
     (org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-    (org-roam-directory (file-truename "~/Nextcloud/org_notes/roam"))
-    (org-roam-dailies-directory (file-truename "~/Nextcloud/org_notes/daily"))
+    (org-roam-directory (file-truename (my/nextcloud-dir-expand "org_notes/roam")))
+    (org-roam-dailies-directory (file-truename (my/nextcloud-dir-expand "org_notes/daily")))
     :bind
     ("C-c n j"  . org-roam-dailies-capture-today)
     ;; :general
@@ -1888,6 +1903,9 @@ Export dispatcher using pandoc
 #+begin_src elisp
   (use-package org-noter
     :ensure t
+    :if
+    my/nextcloud-dir
+    (file-exists-p "~/.mail")
     :defer
     ;; :general
     ;; (oh/leader-key
@@ -1899,7 +1917,7 @@ Export dispatcher using pandoc
     (org-noter-auto-save-last-location t)
     (org-noter-highlight-selected-text t)
     (org-noter-notes-search-path
-     '("~/Nextcloud/org_notes" "~/Nextcloud/org_notes/roam/bibliography")))
+     '((my/nextcloud-dir-expand "org_notes" (my/nextcloud-dir-expand "org_notes/roam/bibliography")))))
 #+end_src
 
 *** org-sidetree

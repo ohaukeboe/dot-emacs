@@ -1,12 +1,15 @@
 {
   lib,
   pkgs,
-  system,
-  isLinux,
-  isDarwin,
+  config,
+  isNixos ? false,
   ...
 }:
-
+let 
+  isLinux = pkgs.stdenv.isLinux;
+  isDarwin = pkgs.stdenv.isDarwin;
+  #isNixos = builtins.pathExists /etc/nixos;
+in
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
@@ -33,7 +36,7 @@
   # release notes.
   home.stateVersion = "23.05"; # Please read the comment before changing.
 
-  services.emacs.enable = true;
+  #services.emacs.enable = true;
   programs.emacs = {
     enable = true;
     # package = pkgs.emacs-pgtk;
@@ -108,15 +111,6 @@
       }
     );
   };
-
-  nixpkgs.config.allowUnfreePredicate =
-    pkg:
-    builtins.elem (lib.getName pkg) [
-      # "keymapp"
-      "terraform"
-      "copilot-node-server"
-      "claude-code"
-    ];
 
   home.packages =
     with pkgs;
@@ -262,7 +256,7 @@
       roboto-mono
       nerd-fonts.symbols-only
     ]
-    ++ lib.optionals isLinux [
+    ++ lib.optionals isLinux (lib.lists.flatten [
       # Use script at https://github.com/FlyinPancake/1password-flatpak-browser-integration with zen flatpak instead
       # zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
       nexusmods-app
@@ -271,7 +265,7 @@
       tailscale
 
       ### nixGL ###
-      nixgl.nixVulkanIntel
+      (lib.optional (!isNixos) pkgs.nixgl.nixVulkanIntel)
       # nixgl.auto.nixVulkanNvidia
 
       ### zsa keyboard ###
@@ -281,7 +275,7 @@
       ### C ###
       gdb
       valgrind # is broken on darwin
-    ]
+    ])
     ++ lib.optionals isDarwin (
       lib.lists.flatten [
         coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
@@ -402,6 +396,9 @@
   home.file = {
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
+    ".config/emacs/init.el".source = ./init.el;
+    ".config/emacs/config.org".source = ./config.org;
+    ".config/emacs/packages/".source = ./packages;
   };
 
   # Only create initial config if it doesn't exist
