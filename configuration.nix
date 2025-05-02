@@ -22,8 +22,23 @@
   ];
 
   # Use the systemd-boot EFI boot loader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader = {
+    systemd-boot = {
+      enable = true;
+      configurationLimit = 10;
+    };
+
+    efi.canTouchEfiVariables = true;
+  };
+
+  # For the gc to work, it is important that the boot-loader stops
+  # referencing old configurations (`configurationLimit' needs to be set)
+  nix.gc = {
+    automatic = true;
+    dates = "weekly";
+    options = "--delete-older-than 30d";
+    randomizedDelaySec = "45min";
+  };
 
   networking.hostName = "x1_laptop"; # Define your hostname.
   # Pick only one of the below networking options.
