@@ -152,6 +152,7 @@ This is a handy package which helps to show what packages are slowing down the E
 #+begin_src elisp
   (use-package benchmark-init
     :ensure t
+    :disabled
     :config
     (benchmark-init/activate)
     ;; (add-hook 'after-init-hook 'benchmark-init/deactivate)
@@ -176,7 +177,7 @@ I am trying out MacOS at the moment, and it appears that applications launched u
 I keep most of my things in Nextcloud, and this config relies a lot on me having my Nextcloud files available. Here is an attempt at making this configuration work without my Nextcloud files. Now I can simply use ~my/nextcloud-dir-expand~ when setting variables and they will be set to =nil= if the Nextcloud directory is not on my system.
 
 #+begin_src elisp
-  (defvar my/nextcloud-dir (let ((path "~/Nextcloud"))
+  (setq my/nextcloud-dir (let ((path "~/Nextcloud"))
                              (when (file-exists-p path)
                                path)))
 
@@ -195,8 +196,8 @@ I keep most of my things in Nextcloud, and this config relies a lot on me having
     :custom-face
     (default ((t (:background "#171717"))))
     (ansi-color-bright-black ((nil (:inherit font-lock-comment-face
-                                             :foreground nil
-                                             :background nil))))
+                                             :foreground unspecified
+                                             :background unspecified))))
     :config
     (load-theme 'doom-tomorrow-night t))
 #+end_src
@@ -324,9 +325,9 @@ A prettier startup screen
 #+begin_src elisp
   (use-package dashboard
     :ensure t
-    ;; :hook
-    ;; ('elpaca-after-init-hook #'dashboard-insert-startupify-lists)
-    ;; ('elpaca-after-init-hook #'dashboard-initialize)
+    :hook
+    ('init-hook #'dashboard-insert-startupify-lists)
+    ('after-init-hook #'dashboard-initialize)
 
     :custom
     ;; (dashboard-projects-backend 'projectile)
@@ -345,13 +346,13 @@ A prettier startup screen
                        (registers . 5)))
 
     :config
-    (dashboard-setup-startup-hook)
-    :init
-    ;; Hopefully this will improve emacs startup if ssh hangs
-    (defun my/load-projects-after-startup ()
-      (run-with-timer 1 nil #'dashboard-refresh-buffer))
+    (dashboard-setup-startup-hook))
+    ;; :init
+    ;; ;; Hopefully this will improve emacs startup if ssh hangs
+    ;; (defun my/load-projects-after-startup ()
+    ;;   (run-with-timer 1 nil #'dashboard-refresh-buffer))
 
-    (add-hook 'emacs-startup-hook #'my/load-projects-after-startup))
+    ;; (add-hook 'emacs-startup-hook #'my/load-projects-after-startup))
 #+end_src
 
 ** Which-key
@@ -863,7 +864,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (setq read-process-output-max (* 3 1024 1024)) ;; 3mb
 
     :custom-face
-    (lsp-face-highlight-textual ((t (:background nil :foreground nil :weight ultra-bold :distant-foreground nil))))
+    (lsp-face-highlight-textual ((t (:background unspecified :foreground unspecified :weight ultra-bold :distant-foreground unspecified))))
 
     :config
     ;; trigger the lsp to update when changing window focus
@@ -1490,7 +1491,8 @@ Some other zotero plugins I use are:
 #+begin_src elisp
   (use-package citar-org-roam
     :ensure t
-    :after (citar org-roam)
+    :if my/nextcloud-dir
+    :after org-roam
     :bind
     (:map org-mode-map
           ("C-c a" . my/org-attach-file))
@@ -1510,16 +1512,18 @@ Some other zotero plugins I use are:
       (org-attach-attach
        (completing-read "File to attach" (my/get-files-citar-roam)) nil 'ln))
 
+    (with-eval-after-load 'org-roam
+      (add-to-list 'org-roam-capture-templates
+                   '("n" "literature note" plain
+                     "%?"
+                     :target
+                     (file+head
+                      "%(expand-file-name (or citar-org-roam-subdir \"\") org-roam-directory)/${citar-citekey}.org"
+                      "#+title: ${citar-citekey} (${citar-date}). ${note-title}.\n#+created: %U\n#+last_modified: %U\n\n")
+                     :unnarrowed t)))
+
     :custom
-    (citar-org-roam-capture-template-key "n")
-    (add-to-list 'org-roam-capture-templates
-                 '("n" "literature note" plain
-                   "%?"
-                   :target
-                   (file+head
-                    "%(expand-file-name (or citar-org-roam-subdir \"\") org-roam-directory)/${citar-citekey}.org"
-                    "#+title: ${citar-citekey} (${citar-date}). ${note-title}.\n#+created: %U\n#+last_modified: %U\n\n")
-                   :unnarrowed t)))
+    (citar-org-roam-capture-template-key "n"))
 #+end_src
 
 ** org-ref
@@ -1580,26 +1584,25 @@ rather than files.  These modes usually use read-only buffers.
     (org-startup-folded 'content)
     (org-elipsis "…")
     (org-default-notes-file (my/nextcloud-dir-expand "org_notes/agenda/notes.org"))
-    (org-agenda-files `(,org-default-notes-file))
+    (org-agenda-files (if org-default-notes-file
+                          `(,org-default-notes-file)))
     (org-attach-archive-delete 'query)
     (org-attach-preferred-new-method 'id)
     (org-attach-dir-relative t)
     (org-startup-with-latex-preview t)
-    (org-format-latex-options
-     (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
     (org-latex-prefer-user-labels t)
     (org-ditaa-jar-path "~/.local/share/ditaa/ditaa.jar")
     (org-latex-create-formula-image-program 'dvisvgm)
 
     (org-capture-templates
      '(("t" "Todo" entry (file (my/nextcloud-dir-expand "org_notes/agenda/tasks.org")))
-        "* TODO %?\n  %i\n  %a")
-       ("n" "Note" entry
-        (file (my/nextcloud-dir-expand "org_notes/agenda/notes.org"))
-        "* %? :NOTES:\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n")
-       ("e" "Elfeed entry" entry
-        (file (my/nextcloud-dir-expand "org_notes/agenda/notes.org"))
-        "* %:title :FEED:\n:PROPERTIES:\n:ADDED: %U\n:FEED: %:feed-title\n:DATE: %:date-timestamp\n:LINK: %:external-link\n:END:\n%i\n#+begin_quote\n%:content\n#+end_quote\n\n%?"))
+       "* TODO %?\n  %i\n  %a")
+     ("n" "Note" entry
+      (file (my/nextcloud-dir-expand "org_notes/agenda/notes.org"))
+      "* %? :NOTES:\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n")
+     ("e" "Elfeed entry" entry
+      (file (my/nextcloud-dir-expand "org_notes/agenda/notes.org"))
+      "* %:title :FEED:\n:PROPERTIES:\n:ADDED: %U\n:FEED: %:feed-title\n:DATE: %:date-timestamp\n:LINK: %:external-link\n:END:\n%i\n#+begin_quote\n%:content\n#+end_quote\n\n%?"))
 
     (org-agenda-custom-commands
      '(("e" "Elfeed entries" tags "FEED"
@@ -1610,6 +1613,11 @@ rather than files.  These modes usually use read-only buffers.
     :config
     ;; Make sure org opens pdfs inside emacs
     (setf (alist-get "\\.pdf\\'" org-file-apps nil nil #'equal) 'emacs)
+
+    (setq org-format-latex-options
+          (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
+
+
 
     ;; Pretty bullets
     ;; (font-lock-add-keywords 'org-mode
@@ -1829,8 +1837,7 @@ Export dispatcher using pandoc
     (org-roam-completion-everywhere t)
     (org-roam-node-display-template "${title:*} ${tags:10}")
     (org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-    (org-roam-directory (file-truename (my/nextcloud-dir-expand "org_notes/roam")))
-    (org-roam-dailies-directory (file-truename (my/nextcloud-dir-expand "org_notes/daily")))
+    (org-roam-dailies-directory (my/nextcloud-dir-expand "org_notes/daily"))
     :bind
     ("C-c n j"  . org-roam-dailies-capture-today)
     ;; :general
@@ -1846,6 +1853,7 @@ Export dispatcher using pandoc
     ;;   "na" '(org-roam-alias-add :wk "add alias"))
 
     :config
+    (setq org-roam-directory (my/nextcloud-dir-expand "org_notes/roam"))
     (org-roam-db-autosync-mode 1))
 #+end_src
 
@@ -1904,8 +1912,8 @@ Export dispatcher using pandoc
   (use-package org-noter
     :ensure t
     :if
-    my/nextcloud-dir
-    (file-exists-p "~/.mail")
+    (and my/nextcloud-dir
+         (file-exists-p "~/.mail"))
     :defer
     ;; :general
     ;; (oh/leader-key
