@@ -217,6 +217,7 @@ I keep most of my things in Nextcloud, and this config relies a lot on me having
     (ansi-color-bright-black ((nil (:inherit font-lock-comment-face
                                              :foreground unspecified
                                              :background unspecified))))
+    (hl-line ((t (:background "#202020"))))
     :config
     (load-theme 'doom-tomorrow-night t))
 #+end_src
@@ -1266,6 +1267,45 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
     :mode "\\.nix\\'"
     :custom
     (lsp-nix-nil-formatter ["nixfmt"]))
+#+end_src
+
+#+begin_src elisp
+  (use-package nix-modeline
+    :ensure t
+    :custom
+    (nix-modeline-delay 2)
+    (nix-modeline-users 'all)
+    (nix-modeline-process-regex
+     "\\(nix-build\\)\\|\\(nix-instantiate\\)\\|\\(nix-shell\\)\\|\\(nixos-rebuild\\)")
+    (nix-modeline-idle-text "")
+    (nix-modeline-running-text " 󱄅(%s) " )
+    (nix-modeline-process-counter 'pgrep)
+    :config
+    (setq nix-modeline--timer2 nil)
+    (defun nix-modeline--start-watchers ()
+      "Start watchers for the paths in `nix-modeline-trigger-files'."
+      (setq nix-modeline--watchers
+            (mapcar (lambda (path)
+                      (file-notify-add-watch path
+                                             '(change)
+                                             (lambda (event)
+                                               (unless (or (eq (cadr event) 'stopped)
+                                                           (not (file-notify-valid-p (car event))))
+                                                 (nix-modeline--stop-watchers)
+                                                 (and (timerp nix-modeline--timer)
+                                                      (cancel-timer nix-modeline--timer))
+                                                 (and (timerp nix-modeline--timer2)
+                                                      (cancel-timer nix-modeline--timer2))
+                                                 (nix-modeline--callback)
+                                                 (setq nix-modeline--timer2 (run-with-timer 2
+                                                                                           nil
+                                                                                           #'nix-modeline--callback))
+                                                 (setq nix-modeline--timer (run-with-timer nix-modeline-delay
+                                                                                           nil
+                                                                                           #'nix-modeline--callback))))))
+                    nix-modeline-trigger-files)))
+
+    (nix-modeline-mode 1))
 #+end_src
 
 ** Git
