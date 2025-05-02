@@ -115,15 +115,31 @@ Also, in order to get the 1password browser extension to talk to the program, yo
     (read-extended-command-predicate #'command-completion-default-include-p)
     (text-mode-ispell-word-completion nil)
 
+    :custom-face
+    (italic ((t (:foreground "#b294bb"))))
+
     :config
     (load custom-file 'noerror)
     (server-start)
     (add-to-list 'load-path
                  (concat user-emacs-directory "packages"))
 
-    (set-face-attribute 'default nil
-                        :family "Roboto Mono"
-                        :height 140)
+    (defvar my-font-name "RobotoMono Nerd Font"
+      "Text font to use.")
+    (defvar my-font-size 12 "Font size to use in points (for example, 10).")
+    (defvar my-font (format "%s-%f" my-font-name my-font-size))
+
+    (defun font-exists-p (font)
+      "Check if the FONT exists."
+      (and (display-graphic-p) (not (null (x-list-fonts font)))))
+
+    (cond ((font-exists-p my-font)
+           (add-to-list 'default-frame-alist `(font . ,my-font))
+           (add-to-list 'default-frame-alist `(height . 80))
+           (add-to-list 'default-frame-alist `(width . 180))
+           (add-to-list 'initial-frame-alist `(font . ,my-font))
+           (add-to-list 'initial-frame-alist `(height . 80))
+           (add-to-list 'initial-frame-alist `(width  . 180))))
 
     :preface
     (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
@@ -221,8 +237,7 @@ This package provides a set of icons for Emacs.
   (use-package nerd-icons
     :ensure t
     :custom
-    (nerd-icons-nerd-font-font-family "Symbols Nerd Font Mono")
-    (nerd-icons-install-font t))
+    (nerd-icons-nerd-font-font-family "Symbols Nerd Font Mono"))
 #+end_src
 
 Adds nerd-icons to completion menus. It works well with Marginalia
