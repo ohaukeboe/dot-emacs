@@ -646,7 +646,11 @@ Consult is a package that provides a set of commands for searching and navigatin
      ;; Minibuffer history
      :map minibuffer-local-map
      ("M-s" . consult-history)                 ;; orig. next-matching-history-element
-     ("M-r" . consult-history))                ;; orig. previous-matching-history-element
+     ("M-r" . consult-history)                 ;; orig. previous-matching-history-element
+     :map project-prefix-map
+     ("r" . consult-ripgrep)
+     ("g" . consult-git-grep))
+
 
     :config
     (recentf-mode 1))

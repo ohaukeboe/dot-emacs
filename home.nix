@@ -298,6 +298,9 @@ in
 
   programs = {
     starship.enable = true;
+    bash = {
+      enable = true;
+    };
     fish = {
       enable = true;
       interactiveShellInit = ''
