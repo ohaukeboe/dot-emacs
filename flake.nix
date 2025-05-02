@@ -74,6 +74,19 @@
           modules =
             [
               ./home.nix
+              {
+                nix.package = pkgs.nix;
+                nix.settings = {
+                  substituters = [
+                    "https://cache.nixos.org"
+                    "https://nix-community.cachix.org"
+                  ];
+                  trusted-public-keys = [
+                    "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+                    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+                  ];
+                };
+              }
             ]
             ++ lib.optionals (builtins.match ".*darwin" system != null) [
               mac-app-util.homeManagerModules.default
@@ -89,8 +102,16 @@
           modules = [
             {
               nix.settings = {
-                substituters = [ "https://cosmic.cachix.org/" ];
-                trusted-public-keys = [ "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE=" ];
+                substituters = [
+                  "https://cache.nixos.org"
+                  "https://cosmic.cachix.org/"
+                  "https://nix-community.cachix.org"
+                ];
+                trusted-public-keys = [
+                  "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+                  "cosmic.cachix.org-1:Dya9IyXD4xdBehWjrkPv6rtxpmMdRel02smYzA85dPE="
+                  "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+                ];
               };
             }
             nixos-cosmic.nixosModules.default
@@ -107,14 +128,6 @@
                 isNixos = true;
               };
             }
-            #home-manager.users.oskar = import ./home.nix {
-            #inherit pkgs;
-            #lib = lib // { hm = config.home-manager.lib; };
-            #system = "x86_64-linux";
-            #isLinux = true;
-            #isDarwin = false;
-            #isNixos = true;
-            #};
           ];
         };
       };
