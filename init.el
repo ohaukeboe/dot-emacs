@@ -19,4 +19,5 @@
         (load-file config-elc)
       ;; Otherwise use org-babel to tangle and load the configuration
       (require 'org)
+      (delete-file config-elc)
       (org-babel-load-file config-org))))

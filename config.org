@@ -54,6 +54,9 @@ Also, in order to get the 1password browser extension to talk to the program, yo
     ("C-c s" . scratch-buffer)
     ("C-x x k" . my/kill-buffers-not-backed-by-file)
 
+    :preface
+    (set-frame-parameter nil 'undecorated t)
+
     :custom
     (custom-file (concat user-emacs-directory "var/custom.el"))
     (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))

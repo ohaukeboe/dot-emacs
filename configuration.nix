@@ -66,14 +66,12 @@
   #   pulse.enable = true;
   # };
 
-  # Enable touchpad support (enabled default in most desktopManager).
-  # services.libinput.enable = true;
-
   services.tailscale.enable = true;
 
   services.flatpak.enable = true;
-  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
-  xdg.portal.config.common.default = "gtk";
+  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-cosmic ];
+  xdg.portal.config.common.default = "cosmic";
+  xdg.portal.enable = true;
   systemd.services.flatpak-repo = {
     wantedBy = [ "multi-user.target" ];
     path = [ pkgs.flatpak ];
