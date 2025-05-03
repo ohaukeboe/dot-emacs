@@ -1273,7 +1273,6 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
   (use-package nix-modeline
     :ensure t
     :custom
-    (nix-modeline-delay 2)
     (nix-modeline-users 'all)
     (nix-modeline-process-regex
      "\\(nix-build\\)\\|\\(nix-instantiate\\)\\|\\(nix-shell\\)\\|\\(nixos-rebuild\\)\\|\\(home-manager\\)")
@@ -1281,6 +1280,7 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
     (nix-modeline-running-text " 󱄅⇒%s " )
     (nix-modeline-process-counter 'pgrep)
     :config
+    (setq nix-modeline-delay-later 1)
     (setq nix-modeline--timer2 nil)
     (defun nix-modeline--start-watchers ()
       "Start watchers for the paths in `nix-modeline-trigger-files'."
@@ -1297,7 +1297,7 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
                                                  (and (timerp nix-modeline--timer2)
                                                       (cancel-timer nix-modeline--timer2))
                                                  (nix-modeline--callback)
-                                                 (setq nix-modeline--timer2 (run-with-timer 2
+                                                 (setq nix-modeline--timer2 (run-with-timer nix-modeline-delay-later
                                                                                            nil
                                                                                            #'nix-modeline--callback))
                                                  (setq nix-modeline--timer (run-with-timer nix-modeline-delay
