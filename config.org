@@ -1276,9 +1276,9 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
     (nix-modeline-delay 2)
     (nix-modeline-users 'all)
     (nix-modeline-process-regex
-     "\\(nix-build\\)\\|\\(nix-instantiate\\)\\|\\(nix-shell\\)\\|\\(nixos-rebuild\\)")
+     "\\(nix-build\\)\\|\\(nix-instantiate\\)\\|\\(nix-shell\\)\\|\\(nixos-rebuild\\)\\|\\(home-manager\\)")
     (nix-modeline-idle-text "")
-    (nix-modeline-running-text " 󱄅(%s) " )
+    (nix-modeline-running-text " 󱄅⇒%s " )
     (nix-modeline-process-counter 'pgrep)
     :config
     (setq nix-modeline--timer2 nil)
