@@ -142,7 +142,7 @@ in
       claude-code
       act # run github actions locally
 
-      git
+      # git
       ripgrep
       fd
 
@@ -338,15 +338,6 @@ in
       nix-direnv.enable = true;
     };
 
-    git = {
-      enable = true;
-      userName = "Oskar Haukebøe";
-      userEmail = "ohaukeboe@pm.me";
-      extraConfig = {
-        log.decorate = "full";
-      };
-    };
-
     chromium = lib.mkIf isLinux {
       enable = true;
       extensions = [
@@ -402,11 +393,6 @@ in
   home.file = {
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
-    ".gitconfig".source = ./dotfiles/gitconfig;
-    ".gitconfig.system".source =
-      if isDarwin then ./dotfiles/gitconfig.darwin else ./dotfiles/gitconfig.linux;
-    ".gitconfig.personal".source = ./dotfiles/gitconfig.personal;
-    ".gitconfig.knowit".source = ./dotfiles/gitconfig.knowit;
     "${config.xdg.configHome}/tealdeer/config.toml".source = ./dotfiles/tealdeer.toml;
     "${config.xdg.configHome}/emacs/init.el".source = ./emacs/init.el;
     "${config.xdg.configHome}/emacs/config.org".source = ./emacs/config.org;
@@ -425,7 +411,55 @@ in
       cp ${./dotfiles/msmtprc.conf} $HOME/.msmtprc
       chmod 600 $HOME/.msmtprc
     '';
+  };
 
+  programs.git = {
+    enable = true;
+    # Basic settings
+    extraConfig = {
+      user = {
+        name = "Oskar Haukebøe";
+        signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO9NwXaeqUQU6XVa9pAWPl0Q02hFSTt29i32QU4wR5wV";
+      };
+
+      init.defaultBranch = "main";
+      github.user = "ohaukeboe";
+      gitlab.user = "ohaukeboe";
+      "github \"github.uio.no/api/v3\"".user = "oskah";
+      "gitea \"codeberg.org/api/v1\"".user = "ohaukeboe";
+      "github \"api.github.uio.no\"".user = "oskah";
+
+      core = {
+        preloadindex = true;
+        fscache = true;
+      };
+
+      log.decorate = "full";
+      gc.auto = 256;
+
+      gpg.format = "ssh";
+      commit.gpgsign = true;
+      credential.helper = "store";
+      "gpg \"ssh\"" = {
+        program = "${lib.getExe' pkgs._1password-gui "op-ssh-sign"}";
+      };
+
+    };
+
+    # Includes
+    includes = [
+      {
+        contents.user = {
+          email = "ohaukeboe@pm.me";
+        };
+      }
+      {
+        condition = "gitdir:**/knowit/**/.git";
+        contents.user = {
+          email = "oskar.haukeboe@knowit.no";
+        };
+      }
+    ];
   };
 
   # You can also manage environment variables but you will have to manually

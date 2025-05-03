@@ -1,5 +1,0 @@
-[user]
-  signingkey = ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO9NwXaeqUQU6XVa9pAWPl0Q02hFSTt29i32QU4wR5wV
-
-[gpg "ssh"]
-  program = "/Applications/1Password.app/Contents/MacOS/op-ssh-sign"
