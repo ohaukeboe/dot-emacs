@@ -10,11 +10,6 @@
 }:
 
 {
-  imports = [
-    # Include the results of the hardware scan.
-    ./hardware-configuration.nix
-  ];
-
   nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix { inherit lib; };
   nix.settings.experimental-features = [
     "nix-command"

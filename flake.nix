@@ -73,6 +73,7 @@
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.users.oskar = import ./workstation/home.nix;
+            home-manager.backupFileExtension = "backup";
             home-manager.extraSpecialArgs = {
               isNixos = true;
             };
