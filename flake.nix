@@ -55,59 +55,39 @@
         ."${builtins.currentSystem}";
 
       # Function to create home-manager configuration for a system
-      mkHomeConfiguration =
-        system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            config = {
-              allowUnfreePredicate = import ./common/unfree-predicates.nix { inherit (nixpkgs) lib; };
+      mkHomeConfiguration = import ./lib/mkHomeConfiguration.nix {
+        inherit
+          nixpkgs
+          home-manager
+          emacs-overlay
+          nixgl
+          mac-app-util
+          ;
+      };
+      homeManagerNixosModule = {
+        imports = [
+          home-manager.nixosModules.home-manager
+          {
+            nixpkgs.overlays = [ emacs-overlay.overlays.default ];
+            nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.users.oskar = import ./home.nix;
+            home-manager.extraSpecialArgs = {
+              isNixos = true;
             };
-            overlays = [
-              emacs-overlay.overlay
-              # Only add nixGL overlay for Linux
-              (final: prev: if builtins.match ".*linux" system != null then (nixgl.overlay final prev) else { })
-            ];
-          };
-          lib = nixpkgs.lib;
-        in
-        home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
-
-          # Specify your home configuration modules here, for example,
-          # the path to your home.nix.
-          modules =
-            [
-              ./home.nix
-              ./common/caches.nix
-            ]
-            ++ lib.optionals (builtins.match ".*darwin" system != null) [
-              mac-app-util.homeManagerModules.default
-            ];
-          extraSpecialArgs = {
-            isNixos = false;
-          };
-        };
+          }
+        ];
+      };
     in
     {
       nixosConfigurations = {
         x1laptop = nixpkgs.lib.nixosSystem {
           modules = [
             ./common/caches.nix
-            nixos-cosmic.nixosModules.default
             ./configuration.nix
-
-            home-manager.nixosModules.home-manager
-            {
-              nixpkgs.overlays = [ emacs-overlay.overlays.default ];
-              nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.users.oskar = import ./home.nix;
-              home-manager.extraSpecialArgs = {
-                isNixos = true;
-              };
-            }
+            nixos-cosmic.nixosModules.default
+            homeManagerNixosModule
           ];
         };
       };
