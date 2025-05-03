@@ -1,0 +1,34 @@
+[init]
+	defaultBranch = main
+
+[gpg]
+	format = ssh
+
+[commit]
+  gpgsign = true
+
+[include]
+  path = ~/.gitconfig.personal
+  path = ~/.gitconfig.system
+
+# when working on knowit projects
+[includeIf "gitdir:**/knowit/**/.git"]
+  path = ~/.gitconfig.knowit
+
+[github]
+	user = ohaukeboe
+[gitlab]
+	user = ohaukeboe
+[github "github.uio.no/api/v3"]
+	user = oskah
+[gitea "codeberg.org/api/v1"]
+	user = ohaukeboe
+[github "api.github.uio.no"]
+	user = oskah
+[core]
+	preloadindex = true
+	fscache = true
+[gc]
+	auto = 256
+[credential]
+	helper = store

@@ -402,6 +402,12 @@ in
   home.file = {
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
+    ".gitconfig".source = ./dotfiles/gitconfig;
+    ".gitconfig.system".source =
+      if isDarwin then ./dotfiles/gitconfig.darwin else ./dotfiles/gitconfig.linux;
+    ".gitconfig.personal".source = ./dotfiles/gitconfig.personal;
+    ".gitconfig.knowit".source = ./dotfiles/gitconfig.knowit;
+    "${config.xdg.configHome}/tealdeer/config.toml".source = ./dotfiles/tealdeer.toml;
     "${config.xdg.configHome}/emacs/init.el".source = ./emacs/init.el;
     "${config.xdg.configHome}/emacs/config.org".source = ./emacs/config.org;
     "${config.xdg.configHome}/emacs/packages/".source = ./emacs/packages;
@@ -410,21 +416,9 @@ in
   # Only create initial config if it doesn't exist
   home.activation = {
     createDavmailConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            if [ ! -f $HOME/.davmail.properties ]; then
-              cat > $HOME/.davmail.properties << EOF
-      davmail.url=https://outlook.office365.com/EWS/Exchange.asmx
-      davmail.mode=O365Interactive
-      davmail.ssl=false
-      davmail.imapPort=1144
-      davmail.smtpPort=1026
-      davmail.caldavPort=1080
-      davmail.ldapPort=1389
-      davmail.keepDelay=30
-      davmail.allowRemoteConnections=false
-      davmail.disableUpdateCheck=true
-      davmail.logFilePath=.davmail/davmail.log
-      EOF
-            fi
+      if [ ! -f $HOME/.davmail.properties ]; then
+        cp ${./dotfiles/davmail.properties} $HOME/.davmail.properties
+      fi
     '';
 
     copyMsmtpConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
