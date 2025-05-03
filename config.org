@@ -1274,14 +1274,29 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
     :ensure t
     :custom
     (nix-modeline-users 'all)
-    (nix-modeline-process-regex
-     "\\(nix-build\\)\\|\\(nix-instantiate\\)\\|\\(nix-shell\\)\\|\\(nixos-rebuild\\)\\|\\(home-manager\\)")
+    (nix-modeline-pgrep-string "pgrep --full %s %s")
+    (nix-modeline-process-regex "^(nix\\sdevelop)|^(nix\\sbuild)|^(nix-instantiate)|^(nix\\seval)|^(nix-shell)")
     (nix-modeline-idle-text "")
     (nix-modeline-running-text " 󱄅⇒%s " )
     (nix-modeline-process-counter 'pgrep)
+
     :config
     (setq nix-modeline-delay-later 1)
     (setq nix-modeline--timer2 nil)
+    (defun nix-modeline--pgrep-callback ()
+    "Count Nix builder processes using pgrep."
+    (let ((process-connection-type nil))
+      (make-process
+       :name "Nix Process Counter"
+       :buffer nil
+       :command (split-string (format nix-modeline-pgrep-string
+                                      (nix-modeline--pgrep-users)
+                                       nix-modeline-process-regex)
+                              nil 'omit-nulls)
+       :filter 'nix-modeline--pgrep-filter
+       :sentinel 'nix-modeline--pgrep-sentinel
+       :noquery t)))
+
     (defun nix-modeline--start-watchers ()
       "Start watchers for the paths in `nix-modeline-trigger-files'."
       (setq nix-modeline--watchers
