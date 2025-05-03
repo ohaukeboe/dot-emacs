@@ -1272,6 +1272,7 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
 #+begin_src elisp
   (use-package nix-modeline
     :ensure t
+    :disabled
     :custom
     (nix-modeline-users 'all)
     (nix-modeline-pgrep-string "pgrep --full %s %s")

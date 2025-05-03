@@ -27,6 +27,7 @@ home-manager.lib.homeManagerConfiguration {
   # Specify your home configuration modules here
   modules =
     [
+      { home.stateVersion = "23.05"; }
       ../workstation/home.nix
       ../common/caches.nix
     ]

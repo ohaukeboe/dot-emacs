@@ -64,32 +64,45 @@
           mac-app-util
           ;
       };
-      homeManagerNixosModule = {
-        imports = [
-          home-manager.nixosModules.home-manager
-          {
-            nixpkgs.overlays = [ emacs-overlay.overlays.default ];
-            nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.users.oskar = import ./workstation/home.nix;
-            home-manager.backupFileExtension = "backup";
-            home-manager.extraSpecialArgs = {
-              isNixos = true;
-            };
-          }
-        ];
-      };
+      homeManagerNixosModule =
+        {
+          stateVersion,
+          imports ? [ ],
+        }:
+        {
+          imports = [
+            home-manager.nixosModules.home-manager
+            {
+              nixpkgs.overlays = [ emacs-overlay.overlays.default ];
+              nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.users.oskar = {
+                imports = imports;
+                home.stateVersion = "${stateVersion}";
+              };
+              home-manager.backupFileExtension = "backup";
+              home-manager.extraSpecialArgs = {
+                isNixos = true;
+              };
+            }
+          ];
+        };
     in
     {
       nixosConfigurations = {
         x1laptop = nixpkgs.lib.nixosSystem {
+          system.stateVersion = "24.11";
           modules = [
             ./common/caches.nix
             ./common/system.nix
             ./machines/x1carbon.nix
             nixos-cosmic.nixosModules.default
-            homeManagerNixosModule
+            (homeManagerNixosModule {
+              stateVersion = "24.11";
+              imports = [ ./workstation/home.nix ];
+            })
+
           ];
         };
       };
