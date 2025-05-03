@@ -8,7 +8,7 @@
 let
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
-  #isNixos = builtins.pathExists /etc/nixos;
+  system = pkgs.stdenv.system;
 in
 {
   # Home Manager needs a bit of information about you and the paths it should
@@ -112,9 +112,9 @@ in
     );
   };
 
-  home.packages =
+  home.packages = (
     with pkgs;
-    [
+    lib.lists.flatten [
       wakatime
       # pympress # pdf presenter
 
@@ -122,7 +122,7 @@ in
       babelfish
 
       ### misc ###
-      zotero
+      (lib.optional (system != "aarch64-linux") zotero)
       sshfs
       devbox
       phoronix-test-suite
@@ -294,7 +294,8 @@ in
           scipy
         ])
       ]
-    );
+    )
+  );
 
   programs = {
     starship.enable = true;
@@ -450,7 +451,7 @@ in
   };
 
   # # Enable lorri for easy development environment
-  services.lorri.enable = true;
+  services.lorri.enable = if isLinux then true else false;
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;

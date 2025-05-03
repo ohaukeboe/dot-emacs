@@ -47,7 +47,12 @@
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
 
       defaultConfig =
-        if builtins.match ".*darwin" builtins.currentSystem != null then "oskar-darwin" else "oskar";
+        {
+          "x86_64-linux" = "oskar@x86_64-linux";
+          "aarch64-linux" = "oskar@aarch64-linux";
+          "aarch64-darwin" = "oskar@aarch64-darwin";
+        }
+        ."${builtins.currentSystem}";
 
       # Function to create home-manager configuration for a system
       mkHomeConfiguration =
@@ -131,21 +136,14 @@
       };
 
       homeConfigurations = {
-        "oskar" = mkHomeConfiguration "x86_64-linux";
-        "oskar-darwin" = mkHomeConfiguration "aarch64-darwin";
-        "default" = self.homeConfigurations.${defaultConfig};
+        "oskar@x86_64-linux" = mkHomeConfiguration "x86_64-linux";
+        "oskar@aarch64-linux" = mkHomeConfiguration "aarch64-linux";
+        "oskar@aarch64-darwin" = mkHomeConfiguration "aarch64-darwin";
+        "oskar" = self.homeConfigurations.${defaultConfig};
       };
 
       packages = forAllSystems (system: {
-        default = self.homeConfigurations."oskar".activationPackage;
-      });
-
-      # For convenience, you can also add apps
-      apps = forAllSystems (system: {
-        default = {
-          type = "app";
-          program = "${self.packages.${system}.default}/activate";
-        };
+        default = self.homeConfigurations."oskar@${system}".activationPackage;
       });
     };
 }
