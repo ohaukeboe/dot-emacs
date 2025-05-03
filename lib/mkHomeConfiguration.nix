@@ -27,7 +27,7 @@ home-manager.lib.homeManagerConfiguration {
   # Specify your home configuration modules here
   modules =
     [
-      ../home.nix
+      ../workstation/home.nix
       ../common/caches.nix
     ]
     ++ lib.optionals (builtins.match ".*darwin" system != null) [

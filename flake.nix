@@ -72,7 +72,7 @@
             nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
-            home-manager.users.oskar = import ./home.nix;
+            home-manager.users.oskar = import ./workstation/home.nix;
             home-manager.extraSpecialArgs = {
               isNixos = true;
             };
@@ -85,7 +85,8 @@
         x1laptop = nixpkgs.lib.nixosSystem {
           modules = [
             ./common/caches.nix
-            ./configuration.nix
+            ./common/system.nix
+            ./machines/x1carbon.nix
             nixos-cosmic.nixosModules.default
             homeManagerNixosModule
           ];
@@ -97,6 +98,7 @@
         "oskar@aarch64-linux" = mkHomeConfiguration "aarch64-linux";
         "oskar@aarch64-darwin" = mkHomeConfiguration "aarch64-darwin";
         "oskar" = self.homeConfigurations.${defaultConfig};
+        "default" = self.homeConfigurations.${defaultConfig};
       };
 
       packages = forAllSystems (system: {

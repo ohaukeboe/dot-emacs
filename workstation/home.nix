@@ -47,7 +47,7 @@ in
             "--disable-gc-mark-trace" # Improves gc performance
           ];
         });
-        config = ./config.org;
+        config = ./emacs/config.org;
         alwaysEnsure = false;
         alwaysTangle = true;
         extraEmacsPackages =
@@ -402,9 +402,9 @@ in
   home.file = {
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
-    ".config/emacs/init.el".source = ./init.el;
-    ".config/emacs/config.org".source = ./config.org;
-    ".config/emacs/packages/".source = ./packages;
+    "${config.xdg.configHome}/emacs/init.el".source = ./emacs/init.el;
+    "${config.xdg.configHome}/emacs/config.org".source = ./emacs/config.org;
+    "${config.xdg.configHome}/emacs/packages/".source = ./emacs/packages;
   };
 
   # Only create initial config if it doesn't exist

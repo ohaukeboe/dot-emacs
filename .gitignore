@@ -46,7 +46,6 @@ var/
 /tutorial/
 /multisession/
 /eclipse.jdt.ls/
-/workspace/
 /lsp-ltex/
 /*.sqlite
 /lsp-ltex-plus/

@@ -14,9 +14,4 @@ mkdir -p ~/.config/nix
 ln -sf $DIR/nix.conf ~/.config/nix/nix.conf
 ln -sf $DIR ~/.config/home-manager
 
-# Setup cachix
-nix-env -iA cachix -f https://cachix.org/api/v1/install
-echo "trusted-users = root oskar" | sudo tee -a /etc/nix/nix.conf && sudo pkill nix-daemon
-cachix use nix-community
-
-home-manager switch --flake .#oskar-darwin --impure
+home-manager switch --flake .#oskar@aarch64-darwin

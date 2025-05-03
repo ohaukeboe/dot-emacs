@@ -1,1 +1,1 @@
-config.org
+./workstation/emacs/config.org
