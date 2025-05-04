@@ -1,5 +1,5 @@
 #+title: My Emacs configuration
-:HEADER:
+:PROPERTIES:
 #+startup: fold hideblocks
 #+property: header-args:elisp :tangle yes
 
@@ -108,6 +108,7 @@ Also, in order to get the 1password browser extension to talk to the program, yo
     (delete-pair-blink-delay 0)
     (delete-pair-push-mark t)
     (blink-matching-delay 0)
+    (global-visual-wrap-prefix-mode t)
 
     ;; Allow undo/redo window configuration with C-c <left>/<right>
     (winner-mode 1)
@@ -124,7 +125,7 @@ Also, in order to get the 1password browser extension to talk to the program, yo
     (add-to-list 'load-path
                  (concat user-emacs-directory "packages"))
 
-    (defvar my-font-name "RobotoMono Nerd Font"
+    (defvar my-font-name "RobotoMono Nerd Font Mono"
       "Text font to use.")
     (defvar my-font-size 12 "Font size to use in points (for example, 10).")
     (defvar my-font (format "%s-%f" my-font-name my-font-size))
@@ -143,6 +144,47 @@ Also, in order to get the 1password browser extension to talk to the program, yo
 
     :preface
     (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+
+    (defun my/prettify-symbols-setup ()
+      ;; Checkboxes
+      (push '("[ ]" . "") prettify-symbols-alist)
+      (push '("[X]" . "") prettify-symbols-alist)
+      (push '("[-]" . "" ) prettify-symbols-alist)
+
+      ;; org-abel
+      (push '("#+BEGIN_SRC" . ?) prettify-symbols-alist)
+      (push '("#+END_SRC" . ?) prettify-symbols-alist)
+      (push '("#+begin_src" . ?) prettify-symbols-alist)
+      (push '("#+end_src" . ?) prettify-symbols-alist)
+
+      (push '("#+BEGIN_QUOTE" . ?❝) prettify-symbols-alist)
+      (push '("#+END_QUOTE" . ?❞) prettify-symbols-alist)
+      (push '("#+begin_quote" . ?) prettify-symbols-alist)
+      (push '("#+end_quote" . ?) prettify-symbols-alist)
+
+      ;; Drawers
+      (push '(":PROPERTIES:" . "") prettify-symbols-alist)
+
+      ;; Tags
+      (push '(":projects:" . "") prettify-symbols-alist)
+      (push '(":work:"     . "") prettify-symbols-alist)
+      (push '(":inbox:"    . "") prettify-symbols-alist)
+      (push '(":task:"     . "") prettify-symbols-alist)
+      (push '(":thesis:"   . "") prettify-symbols-alist)
+      (push '(":uio:"      . "") prettify-symbols-alist)
+      (push '(":emacs:"    . "") prettify-symbols-alist)
+      (push '(":learn:"    . "") prettify-symbols-alist)
+      (push '(":code:"     . "") prettify-symbols-alist)
+
+      (push '(":noexport:"     . "󱙑") prettify-symbols-alist)
+      (push '(":attach:"     . "󰁦") prettify-symbols-alist)
+      (push '(":ATTACH:"     . "󰁦") prettify-symbols-alist)
+
+      (prettify-symbols-mode))
+
+    (add-hook 'org-mode-hook        #'my/prettify-symbols-setup)
+    (add-hook 'org-agenda-mode-hook #'my/prettify-symbols-setup)
+
 
     (require 'dash)
     (defun my/buffer-backed-by-file-p (buffer)
@@ -1663,10 +1705,9 @@ rather than files.  These modes usually use read-only buffers.
     (org-image-actual-width '(700))
     (org-image-align 'center)
     (org-auto-align-tags nil)
-    (org-tags-column 0)
     (org-fold-catch-invisible-edits 'show)
     (org-startup-folded 'content)
-    (org-elipsis "…")
+    (org-ellipsis "​") ; That is a zero width space ;)
     (org-default-notes-file (my/nextcloud-dir-expand "org_notes/agenda/notes.org"))
     (org-agenda-files (if org-default-notes-file
                           `(,org-default-notes-file)))
@@ -1677,6 +1718,16 @@ rather than files.  These modes usually use read-only buffers.
     (org-latex-prefer-user-labels t)
     (org-ditaa-jar-path "~/.local/share/ditaa/ditaa.jar")
     (org-latex-create-formula-image-program 'dvisvgm)
+    (org-log-done 'time)
+    (org-auto-align-tags t)
+    (org-tags-column -69)
+    (org-fold-catch-invisible-edits 'show-and-error)
+    (org-special-ctrl-a/e t)
+    (org-todo-keywords
+      '((sequence
+    	 "TODO(t)" "WAIT(w)"  ; Needs further action
+    	 "|"
+    	 "DONE(d)" "CANCELED(c)")))
 
     (org-capture-templates
      '(("t" "Todo" entry (file (my/nextcloud-dir-expand "org_notes/agenda/tasks.org")))
@@ -1780,16 +1831,16 @@ rather than files.  These modes usually use read-only buffers.
 
 
     :custom-face
-    (org-level-1 ((t (:inherit outline-1 :height 1.5))))
-    (org-level-2 ((t (:inherit outline-2 :height 1.3))))
-    (org-level-3 ((t (:inherit outline-3 :height 1.2))))
-    (org-level-4 ((t (:inherit outline-4 :height 1.1))))
-    (org-level-5 ((t (:inherit outline-5 :height 1.0))))
-    (org-level-6 ((t (:inherit outline-6 :height 1.0))))
-    (org-level-7 ((t (:inherit outline-7 :height 1.0))))
-    (org-level-8 ((t (:inherit outline-8 :height 1.0))))
+    (org-level-1 ((t (:inherit outline-1 :height 1.4))))
+    (org-level-2 ((t (:inherit outline-2 :height 1.4))))
+    (org-level-3 ((t (:inherit outline-3 :height 1.4))))
+    (org-level-4 ((t (:inherit outline-4 :height 1.4))))
+    (org-level-5 ((t (:inherit outline-5 :height 1.4))))
+    (org-level-6 ((t (:inherit outline-6 :height 1.4))))
+    (org-level-7 ((t (:inherit outline-7 :height 1.4))))
+    (org-level-8 ((t (:inherit outline-8 :height 1.4))))
 
-    ;; (org-block ((t (:inherit fixed-pitch))))
+    (org-block ((t (:background "#252525"))))
     ;; (org-code ((t (:inherit (shadow fixed-pitch)))))
 
     ;; (org-drawer ((t (:height 0.8))))
@@ -1826,152 +1877,90 @@ Provides a clean look for org-mode. I ended up overriding two of its functions s
     :ensure t
     :hook (org-mode . org-modern-mode)
     :custom
-    (org-modern-hide-stars t)
+    (org-modern-priority nil)
+    (org-modern-tag nil)
+    (org-modern-todo nil)
     (org-modern-table nil)
+    (org-modern-timestamp nil)
     (org-modern-list
      '((?- . "•")
        ;;(?* . "•")
        (?+ . "‣")))
+    (org-modern-checkbox
+     '((?X . "")
+       (?- . "󰛲")
+       (?\s . ""))))
+#+end_src
 
+*** SVG tag
+
+#+begin_src elisp
+  (use-package svg-tag-mode
+    :ensure t
+    :hook
+    (org-mode . svg-tag-mode)
     :config
-    (defun org-modern--block-name ()
-      "Prettify block according to `org-modern-block-name'."
-      (let* ((beg-ind (match-beginning 1))
-             (beg-rep (match-beginning 2))
-             (end-rep (match-end 3))
-             (beg-name (match-beginning 3))
-             (end-name (match-end 3))
-             (names (and (listp org-modern-block-name) org-modern-block-name))
-             (rep (cdr (assoc (downcase (match-string-no-properties 3)) names)))
-             (fringe org-modern-block-fringe))
-        (unless rep
-          (setq rep (cdr (assq t names)) end-rep beg-name))
-        (when (consp rep)
-          (setq rep (if (= 8 (- beg-name beg-rep)) (car rep) (cadr rep))))
-        (pcase rep
-          ('t
-           (add-face-text-property beg-name end-name 'org-modern-block-name)
-           (put-text-property (if fringe beg-ind beg-rep) beg-name 'invisible 'org-modern))
-          ((pred stringp)
-           (add-face-text-property beg-name end-name 'org-modern-block-name)
-           (put-text-property beg-rep end-rep 'display rep)
-           (when fringe
-             (put-text-property beg-ind beg-rep 'invisible 'org-modern))))))
+    (defconst date-re "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}")
+    (defconst time-re "[0-9]\\{2\\}:[0-9]\\{2\\}")
+    (defconst day-re "[A-Za-z]\\{3\\}")
+    (defconst day-time-re (format "\\(%s\\)? ?\\(%s\\)?" day-re time-re))
 
-    (defun org-modern--make-font-lock-keywords ()
-    "Compute font-lock keywords."
-    (append
-     (when-let ((bullet (alist-get ?+ org-modern-list)))
-       `(("^[ \t]*\\(+\\)[ \t]" 1 '(face nil display ,bullet))))
-     (when-let ((bullet (alist-get ?- org-modern-list)))
-       `(("^[ \t]*\\(-\\)[ \t]" 1 '(face nil display ,bullet))))
-     (when-let ((bullet (alist-get ?* org-modern-list)))
-       `(("^[ \t]+\\(*\\)[ \t]" 1 '(face nil display ,bullet))))
-     (when org-modern-priority
-       `(("^\\*+.*? \\(\\(\\[\\)#.\\(\\]\\)\\) "
-          (1 (org-modern--priority)))))
-     (when org-modern-todo
-       `((,(format "^\\*+ +%s\\(?: \\|$\\)" (regexp-opt org-todo-keywords-1 t))
-          (0 (org-modern--todo)))))
-     (when org-modern-checkbox
-       `((,org-list-full-item-re
-          (3 (org-modern--checkbox) nil t))))
-     (when (or org-modern-star (and org-modern-hide-stars
-                                    (not (bound-and-true-p org-indent-mode))))
-       `(("^\\(\\**\\)\\* "
-          (0 ,(if (and (eq org-modern-hide-stars t)
-                       (not (bound-and-true-p org-indent-mode)))
-                  ''(face nil invisible org-modern)
-                '(org-modern--star))))))
-     (when org-modern-horizontal-rule
-       `(("^[ \t]*-\\{5,\\}$" 0
-          '(face org-modern-horizontal-rule display
-                 ,(if (eq org-modern-horizontal-rule t)
-                      '(space :width text)
-                    org-modern-horizontal-rule)))))
-     (when org-modern-table
-       '(("^[ \t]*\\(|.*|\\)[ \t]*$" (0 (org-modern--table)))))
-     (when org-modern-footnote
-       `(("^\\(\\[fn:\\)[[:word:]-_]+\\]" ;; Definition
-          ,@(if-let ((x (car org-modern-footnote)))
-                `((0 '(face nil display ,x))
-                  (1 '(face nil display ,(propertize "[" 'display x))))
-              '((1 '(face nil display "[")))))
-         ("[^\n]\\(\\(\\[fn:\\)[[:word:]-_]+\\]\\)" ;; Reference
-          ,@(if-let ((x (cdr org-modern-footnote)))
-                `((1 '(face nil display ,x))
-                  (2 '(face nil display ,(propertize "[" 'display x))))
-              '((2 '(face nil display "[")))))))
-     (let ((target "\\([^<>\n\r\t ][^<>\n\r]*?[^<>\n\r\t @$]\\|[^<>\n\r\t @$]\\)"))
-       (append
-        (when org-modern-internal-target
-          `((,(format "\\(<<\\)%s\\(>>\\)" target)
-             (0 '(face org-modern-internal-target) t)
-             (1 '(face nil display ,(org-modern--symbol (car org-modern-internal-target))))
-             (3 '(face nil display ,(org-modern--symbol (caddr org-modern-internal-target))))
-             ,@(unless (cadr org-modern-internal-target)
-                 '((2 '(face nil invisible org-modern)))))))
-        (when org-modern-radio-target
-          `((,(format "\\(<<<\\)%s\\(>>>\\)" target)
-             (0 '(face org-modern-radio-target) t)
-             (1 '(face nil display ,(org-modern--symbol (car org-modern-radio-target))))
-             (3 '(face nil display ,(org-modern--symbol (caddr org-modern-radio-target))))
-             ,@(unless (cadr org-modern-radio-target)
-                 '((2 '(face nil invisible org-modern)))))))))
-     (when (integerp org-modern-progress)
-       `((" \\(\\[\\(?:\\([0-9]+\\)%\\|\\([0-9]+\\)/\\([0-9]+\\)\\)]\\)"
-          (0 (org-modern--progress)))))
-     (when org-modern-tag
-       `((,(concat "^\\*+.*?\\( \\)\\(:\\(?:" org-tag-re ":\\)+\\)[ \t]*$")
-          (0 (org-modern--tag)))))
-     ;; Ensure that blocks are properly fontified, source blocks etc.  This
-     ;; fontification rule must come late such that org-modern does not interfere
-     ;; with source fontification.
-     '((org-fontify-meta-lines-and-blocks))
-     (when org-modern-tag
-       `((,(concat "^[ \t]*#\\+\\(?:filetags\\|FILETAGS\\):\\( +\\)\\(:\\(?:"
-                   org-tag-re ":\\)+\\)[ \t]*$")
-          (0 (org-modern--tag)))))
-     (when org-modern-keyword
-       `(("^[ \t]*\\(#\\+\\)\\([^: \t\n]+\\):"
-          ,@(pcase org-modern-keyword
-              ('t '(1 '(face nil invisible org-modern)))
-              ((pred stringp) `(1 '(face nil display ,org-modern-keyword)))
-              (_ '(0 (org-modern--keyword)))))))
-     ;; Timestamps can come after keywords
-     (when org-modern-timestamp
-       '(("\\(?:<\\|^\\[\\|[^]]\\[\\)\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\(?: [[:word:]]+\\.?\\)?\\(?: [.+-]+[0-9ymwdh/]+\\)*\\)\\(\\(?: [0-9:-]+\\)?\\(?: [.+-]+[0-9ymwdh/]+\\)*\\)\\(?:>\\|\\]\\)"
-          (0 (org-modern--timestamp)))
-         ("<[^>]+>\\(-\\)\\(-\\)<[^>]+>\\|\\[[^]]+\\]\\(?1:-\\)\\(?2:-\\)\\[[^]]+\\]"
-          (1 '(face org-modern-label display #("  " 1 2 (face (:strike-through t) cursor t))) t)
-          (2 '(face org-modern-label display #("  " 0 1 (face (:strike-through t)))) t))))
-     ;; Do not add source block fringe markers if org-indent-mode is
-     ;; enabled. org-indent-mode uses line prefixes for indentation.
-     ;; Therefore we cannot have both.
-     (when org-modern-block-fringe
-       '(("^[ \t]*#\\+\\(?:begin\\|BEGIN\\)_\\S-"
-          (0 (org-modern--block-fringe)))))
-     (when org-modern-block-name
-       (let* ((indent (and org-modern-block-fringe
-                           (not (bound-and-true-p org-indent-mode))
-                           '((1 '(face nil invisible org-modern)))))
-              (name '(3 'org-modern-block-name append))
-              (hide `(,@indent (2 '(face nil invisible org-modern)) ,name))
-              (specs
-               (pcase org-modern-block-name
-                 ('t ;; Hide
-                  (cons hide hide))
-                 (`((,_k . ,_v) . ,_rest) ;; Dynamic replacement
-                  '(((0 (org-modern--block-name))) . ((0 (org-modern--block-name)))))
-                 (`(,beg . ,end) ;; Static replacement
-                  `((,@indent (2 '(face nil display ,beg)) ,name) .
-                    (,@indent (2 '(face nil display ,end)) ,name))))))
-         `(("^\\([ \t]*\\)\\(#\\+\\(?:begin\\|BEGIN\\)_\\)\\(\\S-+\\).*"
-            ,@(car specs))
-           ("^\\([ \t]*\\)\\(#\\+\\(?:end\\|END\\)_\\)\\(\\S-+\\).*"
-            ,@(cdr specs)))))
-     (when (fboundp 'org-activate-folds) ;; Since Org 9.7.25
-       '(org-activate-folds)))))
+    (defun svg-progress-percent (value)
+  	(svg-image (svg-lib-concat
+  				(svg-lib-progress-bar
+                   (/ (string-to-number value) 100.0)
+  			     nil :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+  				(svg-lib-tag (concat value "%")
+  				             nil :stroke 0 :margin 0)) :ascent 'center))
+
+    (defun svg-progress-count (value)
+  	(let* ((seq (mapcar #'string-to-number (split-string value "/")))
+             (count (float (car seq)))
+             (total (float (cadr seq))))
+  	  (svg-image (svg-lib-concat
+  				  (svg-lib-progress-bar
+                     (/ count total) nil
+  				   :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+  				  (svg-lib-tag value nil
+  					           :stroke 0 :margin 0)) :ascent 'center)))
+    (setq svg-tag-tags
+          `(;; Task priority
+            ("\\[#[A-Z]\\]" .
+             ((lambda (tag)
+                (svg-tag-make tag :face 'org-priority
+                              :beg 2 :end -1 :margin 0))))
+
+            ;; Progress
+            ("\\(\\[[0-9]\\{1,3\\}%\\]\\)" .
+             ((lambda (tag)
+                (svg-progress-percent (substring tag 1 -2)))))
+            ("\\(\\[[0-9]+/[0-9]+\\]\\)" .
+             ((lambda (tag)
+                (svg-progress-count (substring tag 1 -1)))))
+
+            ;; Active date (with or without day name, with or without time)
+            (,(format "\\(<%s>\\)" date-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :beg 1 :end -1 :margin 0))))
+            (,(format "\\(<%s \\)%s>" date-re day-time-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :beg 1 :inverse nil :crop-right t :margin 0))))
+            (,(format "<%s \\(%s>\\)" date-re day-time-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :end -1 :inverse t :crop-left t :margin 0))))
+
+            ;; Inactive date  (with or without day name, with or without time)
+            (,(format "\\(\\[%s\\]\\)" date-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :beg 1 :end -1 :margin 0 :face 'org-date))))
+            (,(format "\\(\\[%s \\)%s\\]" date-re day-time-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :beg 1 :inverse nil
+  						    :crop-right t :margin 0 :face 'org-date))))
+            (,(format "\\[%s \\(%s\\]\\)" date-re day-time-re) .
+             ((lambda (tag)
+                (svg-tag-make tag :end -1 :inverse t
+  						    :crop-left t :margin 0 :face 'org-date)))))))
 #+end_src
 
 *** src-block completion
