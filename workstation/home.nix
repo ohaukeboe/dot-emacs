@@ -412,22 +412,30 @@ in
   home.file = {
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
+
+    # Emacs
     "${config.xdg.configHome}/emacs/init.el".source = ./emacs/init.el;
-    "${config.xdg.configHome}/emacs/config.org".source = ./emacs/config.org;
-    "${config.xdg.configHome}/emacs/packages/".source = ./emacs/packages;
+    "${config.xdg.configHome}/emacs/special-symbols.el".source =
+      config.lib.file.mkOutOfStoreSymlink ./emacs/special-symbols.el;
+    "${config.xdg.configHome}/emacs/config.org".source =
+      config.lib.file.mkOutOfStoreSymlink ./emacs/config.org;
+    "${config.xdg.configHome}/emacs/packages/" = {
+      source = config.lib.file.mkOutOfStoreSymlink ./emacs/packages;
+      recursive = true;
+    };
   };
 
   # Only create initial config if it doesn't exist
   home.activation = {
     createDavmailConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ ! -f $HOME/.davmail.properties ]; then
-        cp ${./dotfiles/davmail.properties} $HOME/.davmail.properties
+        $DRY_RUN_CMD cp ${./dotfiles/davmail.properties} $HOME/.davmail.properties
       fi
     '';
 
     copyMsmtpConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      cp ${./dotfiles/msmtprc.conf} $HOME/.msmtprc
-      chmod 600 $HOME/.msmtprc
+      $DRY_RUN_CMD cp ${./dotfiles/msmtprc.conf} $HOME/.msmtprc
+      $DRY_RUN_CMD chmod 600 $HOME/.msmtprc
     '';
   };
 
