@@ -24,6 +24,8 @@
 
     # Make apps show in spotlight
     mac-app-util.url = "github:hraban/mac-app-util";
+
+    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
   outputs =
@@ -35,6 +37,7 @@
       emacs-overlay,
       nixgl,
       mac-app-util,
+      treefmt-nix,
       ...
     }:
     let
@@ -45,6 +48,9 @@
       ];
       # Helper function to generate attributes for each system
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+      nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
+
+      treefmtEval = forAllSystems (system: treefmt-nix.lib.evalModule nixpkgsFor.${system} ./treefmt.nix);
 
       defaultConfig =
         {
@@ -90,6 +96,8 @@
         };
     in
     {
+      formatter = forAllSystems (system: treefmtEval.${system}.config.build.wrapper);
+
       nixosConfigurations = {
         x1laptop = nixpkgs.lib.nixosSystem {
           system.stateVersion = "24.11";
@@ -117,6 +125,10 @@
 
       packages = forAllSystems (system: {
         default = self.homeConfigurations."oskar@${system}".activationPackage;
+      });
+
+      checks = forAllSystems (system: {
+        formatting = treefmtEval.${system}.config.build.check self;
       });
     };
 }
