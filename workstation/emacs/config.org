@@ -1655,6 +1655,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-export-with-smart-quotes t)
     (org-hide-emphasis-markers t)		; Hide markup characters
     (org-startup-indented t)
+    (org-indent-indentation-per-level 0)
     (org-pretty-entities t)
     (org-use-sub-superscripts "{}")
     (org-hide-emphasis-markers t)
@@ -1818,7 +1819,7 @@ Automatically toggle =org-preview-latex-fragment= when the cursor is on the line
 #+end_src
 
 *** Org-modern
-Provides a clean look for org-mode.
+Provides a clean look for org-mode. I ended up overriding two of its functions since I want to have the block-fringes even though I also use =org-indend-mode=, which is a combination that org-modern specifically does *not* support. It works fine to have these two things enabled at the same time as long as =org-indent-indentation-per-level= is set to 0.
 
 #+begin_src elisp
   (use-package org-modern
@@ -1828,9 +1829,149 @@ Provides a clean look for org-mode.
     (org-modern-hide-stars t)
     (org-modern-table nil)
     (org-modern-list
-       '((?- . "•")
-         ;;(?* . "•")
-         (?+ . "‣"))))
+     '((?- . "•")
+       ;;(?* . "•")
+       (?+ . "‣")))
+
+    :config
+    (defun org-modern--block-name ()
+      "Prettify block according to `org-modern-block-name'."
+      (let* ((beg-ind (match-beginning 1))
+             (beg-rep (match-beginning 2))
+             (end-rep (match-end 3))
+             (beg-name (match-beginning 3))
+             (end-name (match-end 3))
+             (names (and (listp org-modern-block-name) org-modern-block-name))
+             (rep (cdr (assoc (downcase (match-string-no-properties 3)) names)))
+             (fringe org-modern-block-fringe))
+        (unless rep
+          (setq rep (cdr (assq t names)) end-rep beg-name))
+        (when (consp rep)
+          (setq rep (if (= 8 (- beg-name beg-rep)) (car rep) (cadr rep))))
+        (pcase rep
+          ('t
+           (add-face-text-property beg-name end-name 'org-modern-block-name)
+           (put-text-property (if fringe beg-ind beg-rep) beg-name 'invisible 'org-modern))
+          ((pred stringp)
+           (add-face-text-property beg-name end-name 'org-modern-block-name)
+           (put-text-property beg-rep end-rep 'display rep)
+           (when fringe
+             (put-text-property beg-ind beg-rep 'invisible 'org-modern))))))
+
+    (defun org-modern--make-font-lock-keywords ()
+    "Compute font-lock keywords."
+    (append
+     (when-let ((bullet (alist-get ?+ org-modern-list)))
+       `(("^[ \t]*\\(+\\)[ \t]" 1 '(face nil display ,bullet))))
+     (when-let ((bullet (alist-get ?- org-modern-list)))
+       `(("^[ \t]*\\(-\\)[ \t]" 1 '(face nil display ,bullet))))
+     (when-let ((bullet (alist-get ?* org-modern-list)))
+       `(("^[ \t]+\\(*\\)[ \t]" 1 '(face nil display ,bullet))))
+     (when org-modern-priority
+       `(("^\\*+.*? \\(\\(\\[\\)#.\\(\\]\\)\\) "
+          (1 (org-modern--priority)))))
+     (when org-modern-todo
+       `((,(format "^\\*+ +%s\\(?: \\|$\\)" (regexp-opt org-todo-keywords-1 t))
+          (0 (org-modern--todo)))))
+     (when org-modern-checkbox
+       `((,org-list-full-item-re
+          (3 (org-modern--checkbox) nil t))))
+     (when (or org-modern-star (and org-modern-hide-stars
+                                    (not (bound-and-true-p org-indent-mode))))
+       `(("^\\(\\**\\)\\* "
+          (0 ,(if (and (eq org-modern-hide-stars t)
+                       (not (bound-and-true-p org-indent-mode)))
+                  ''(face nil invisible org-modern)
+                '(org-modern--star))))))
+     (when org-modern-horizontal-rule
+       `(("^[ \t]*-\\{5,\\}$" 0
+          '(face org-modern-horizontal-rule display
+                 ,(if (eq org-modern-horizontal-rule t)
+                      '(space :width text)
+                    org-modern-horizontal-rule)))))
+     (when org-modern-table
+       '(("^[ \t]*\\(|.*|\\)[ \t]*$" (0 (org-modern--table)))))
+     (when org-modern-footnote
+       `(("^\\(\\[fn:\\)[[:word:]-_]+\\]" ;; Definition
+          ,@(if-let ((x (car org-modern-footnote)))
+                `((0 '(face nil display ,x))
+                  (1 '(face nil display ,(propertize "[" 'display x))))
+              '((1 '(face nil display "[")))))
+         ("[^\n]\\(\\(\\[fn:\\)[[:word:]-_]+\\]\\)" ;; Reference
+          ,@(if-let ((x (cdr org-modern-footnote)))
+                `((1 '(face nil display ,x))
+                  (2 '(face nil display ,(propertize "[" 'display x))))
+              '((2 '(face nil display "[")))))))
+     (let ((target "\\([^<>\n\r\t ][^<>\n\r]*?[^<>\n\r\t @$]\\|[^<>\n\r\t @$]\\)"))
+       (append
+        (when org-modern-internal-target
+          `((,(format "\\(<<\\)%s\\(>>\\)" target)
+             (0 '(face org-modern-internal-target) t)
+             (1 '(face nil display ,(org-modern--symbol (car org-modern-internal-target))))
+             (3 '(face nil display ,(org-modern--symbol (caddr org-modern-internal-target))))
+             ,@(unless (cadr org-modern-internal-target)
+                 '((2 '(face nil invisible org-modern)))))))
+        (when org-modern-radio-target
+          `((,(format "\\(<<<\\)%s\\(>>>\\)" target)
+             (0 '(face org-modern-radio-target) t)
+             (1 '(face nil display ,(org-modern--symbol (car org-modern-radio-target))))
+             (3 '(face nil display ,(org-modern--symbol (caddr org-modern-radio-target))))
+             ,@(unless (cadr org-modern-radio-target)
+                 '((2 '(face nil invisible org-modern)))))))))
+     (when (integerp org-modern-progress)
+       `((" \\(\\[\\(?:\\([0-9]+\\)%\\|\\([0-9]+\\)/\\([0-9]+\\)\\)]\\)"
+          (0 (org-modern--progress)))))
+     (when org-modern-tag
+       `((,(concat "^\\*+.*?\\( \\)\\(:\\(?:" org-tag-re ":\\)+\\)[ \t]*$")
+          (0 (org-modern--tag)))))
+     ;; Ensure that blocks are properly fontified, source blocks etc.  This
+     ;; fontification rule must come late such that org-modern does not interfere
+     ;; with source fontification.
+     '((org-fontify-meta-lines-and-blocks))
+     (when org-modern-tag
+       `((,(concat "^[ \t]*#\\+\\(?:filetags\\|FILETAGS\\):\\( +\\)\\(:\\(?:"
+                   org-tag-re ":\\)+\\)[ \t]*$")
+          (0 (org-modern--tag)))))
+     (when org-modern-keyword
+       `(("^[ \t]*\\(#\\+\\)\\([^: \t\n]+\\):"
+          ,@(pcase org-modern-keyword
+              ('t '(1 '(face nil invisible org-modern)))
+              ((pred stringp) `(1 '(face nil display ,org-modern-keyword)))
+              (_ '(0 (org-modern--keyword)))))))
+     ;; Timestamps can come after keywords
+     (when org-modern-timestamp
+       '(("\\(?:<\\|^\\[\\|[^]]\\[\\)\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\(?: [[:word:]]+\\.?\\)?\\(?: [.+-]+[0-9ymwdh/]+\\)*\\)\\(\\(?: [0-9:-]+\\)?\\(?: [.+-]+[0-9ymwdh/]+\\)*\\)\\(?:>\\|\\]\\)"
+          (0 (org-modern--timestamp)))
+         ("<[^>]+>\\(-\\)\\(-\\)<[^>]+>\\|\\[[^]]+\\]\\(?1:-\\)\\(?2:-\\)\\[[^]]+\\]"
+          (1 '(face org-modern-label display #("  " 1 2 (face (:strike-through t) cursor t))) t)
+          (2 '(face org-modern-label display #("  " 0 1 (face (:strike-through t)))) t))))
+     ;; Do not add source block fringe markers if org-indent-mode is
+     ;; enabled. org-indent-mode uses line prefixes for indentation.
+     ;; Therefore we cannot have both.
+     (when org-modern-block-fringe
+       '(("^[ \t]*#\\+\\(?:begin\\|BEGIN\\)_\\S-"
+          (0 (org-modern--block-fringe)))))
+     (when org-modern-block-name
+       (let* ((indent (and org-modern-block-fringe
+                           (not (bound-and-true-p org-indent-mode))
+                           '((1 '(face nil invisible org-modern)))))
+              (name '(3 'org-modern-block-name append))
+              (hide `(,@indent (2 '(face nil invisible org-modern)) ,name))
+              (specs
+               (pcase org-modern-block-name
+                 ('t ;; Hide
+                  (cons hide hide))
+                 (`((,_k . ,_v) . ,_rest) ;; Dynamic replacement
+                  '(((0 (org-modern--block-name))) . ((0 (org-modern--block-name)))))
+                 (`(,beg . ,end) ;; Static replacement
+                  `((,@indent (2 '(face nil display ,beg)) ,name) .
+                    (,@indent (2 '(face nil display ,end)) ,name))))))
+         `(("^\\([ \t]*\\)\\(#\\+\\(?:begin\\|BEGIN\\)_\\)\\(\\S-+\\).*"
+            ,@(car specs))
+           ("^\\([ \t]*\\)\\(#\\+\\(?:end\\|END\\)_\\)\\(\\S-+\\).*"
+            ,@(cdr specs)))))
+     (when (fboundp 'org-activate-folds) ;; Since Org 9.7.25
+       '(org-activate-folds)))))
 #+end_src
 
 *** src-block completion
