@@ -136,7 +136,6 @@ in
       gh # github cli
       awscli2
       aws-nuke
-      tealdeer # tldr
       protonmail-bridge
       davmail # bridge allowing to use exchange through IMAP
       claude-code
@@ -299,14 +298,39 @@ in
 
   programs = {
     starship.enable = true;
+    bat.enable = true;
+    tealdeer = {
+      enable = true;
+      enableAutoUpdates = true;
+    };
+    zoxide.enable = true;
+    atuin = {
+      enable = true;
+      daemon.enable = true;
+    };
+
+    # I mostly use fish, but since nix-shell uses bash it is nice to
+    # also have it be managed by nix
     bash = {
       enable = true;
     };
+
     fish = {
       enable = true;
       interactiveShellInit = ''
         set fish_greeting # Disable greeting
       '';
+
+      functions = {
+        gitignore = "curl -sL https://www.gitignore.io/api/$argv";
+      };
+
+      shellAliases = {
+        git-del-merged = "git branch --merged origin | grep -v -E ' main\$| master\$' | xargs -pr git branch -d";
+        hs = "home-manager switch --flake .#default --impure";
+        edit = "emacsclient -r -n";
+      };
+
       shellInit = ''
         if [ -e '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish' ]
           . '/nix/var/nix/profiles/default/etc/profile.d/nix-daemon.fish'
@@ -319,13 +343,9 @@ in
         fish_add_path ~/.dotnet/tools/
         fish_add_path ~/.local/bin/
         fish_add_path ~/.cargo/bin/
+      '';
 
-        alias git-del-merged='git branch --merged origin | grep -v -E " main\$| master\$" | xargs -pr git branch -d'
-
-        alias hs='home-manager switch --flake .#default --impure'
-
-        alias edit='emacsclient -r -n'
-
+      shellInitLast = ''
         if test "$INSIDE_EMACS" = 'vterm'; and test -n "$EMACS_VTERM_PATH"; and test -f "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
           source "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
         end
@@ -341,7 +361,6 @@ in
     chromium = lib.mkIf isLinux {
       enable = true;
       extensions = [
-        "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock origin
         "aeblfdkhhhdcdjpifhhbdiojplfjncoa" # 1password
       ];
     };
@@ -393,7 +412,6 @@ in
   home.file = {
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
-    "${config.xdg.configHome}/tealdeer/config.toml".source = ./dotfiles/tealdeer.toml;
     "${config.xdg.configHome}/emacs/init.el".source = ./emacs/init.el;
     "${config.xdg.configHome}/emacs/config.org".source = ./emacs/config.org;
     "${config.xdg.configHome}/emacs/packages/".source = ./emacs/packages;
@@ -473,16 +491,6 @@ in
     };
   };
 
-  # You can also manage environment variables but you will have to manually
-  # source
-  #
-  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  /etc/profiles/per-user/oskar/etc/profile.d/hm-session-vars.sh
-  #
-  # if you don't want to manage your shell through Home Manager.
   home.sessionVariables = {
     EDITOR = "vim";
     DOTNET_ROOT = "${pkgs.dotnet-sdk_8}";
