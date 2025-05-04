@@ -415,7 +415,7 @@ in
 
   programs.git = {
     enable = true;
-    # Basic settings
+
     extraConfig = {
       user = {
         name = "Oskar Haukebøe";
@@ -462,6 +462,15 @@ in
         };
       }
     ];
+
+    # I don't really know yet how this works, but I guess I'll find out :)
+    maintenance = {
+      enable = true;
+      repositories = [
+        "~/projects/*"
+        "~/knowit/*"
+      ];
+    };
   };
 
   # You can also manage environment variables but you will have to manually
