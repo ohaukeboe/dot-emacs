@@ -734,6 +734,11 @@ Consult is a package that provides a set of commands for searching and navigatin
     :custom
     (magit-display-buffer-function
      #'magit-display-buffer-same-window-except-diff-v1)
+    (magit-diff-refine-hunk t)
+    (magit-diff-paint-whitespace t)
+    (magit-diff-highlight-indendation t)
+    (magit-diff-highlight-trailing t)
+    (magit-diff-refine-hunk 'all)
     :preface
     (defun my/magit-project-status ()
         "Run magit-status in the current project's root directory."
