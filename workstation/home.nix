@@ -116,6 +116,8 @@ in
     with pkgs;
     lib.lists.flatten [
       wakatime
+      comma
+      nix-index
       # pympress # pdf presenter
 
       ### fish ###
