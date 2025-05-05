@@ -50,3 +50,4 @@ var/
 /*.sqlite
 /lsp-ltex-plus/
 *.swp
+/result
