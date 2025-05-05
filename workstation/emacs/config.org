@@ -125,7 +125,7 @@ Also, in order to get the 1password browser extension to talk to the program, yo
     (add-to-list 'load-path
                  (concat user-emacs-directory "packages"))
 
-    (defvar my-font-name "RobotoMono Nerd Font Mono"
+    (defvar my-font-name "RobotoMono Nerd Font"
       "Text font to use.")
     (defvar my-font-size 12 "Font size to use in points (for example, 10).")
     (defvar my-font (format "%s-%f" my-font-name my-font-size))
@@ -1476,6 +1476,26 @@ Some other zotero plugins I use are:
     (org-cite-export-processors
      '((t csl))))
        ;; (latex biblatex))))
+#+end_src
+
+** org-cite overlay
+
+#+begin_src elisp
+  (use-package org-cite-overlay
+    :ensure t
+    :hook
+    (org-mode . org-cite-overlay-mode))
+
+  (use-package org-cite-overlay-sidecar
+    :ensure t
+    :bind
+    (:map org-mode-map
+          ("C-c o r" . universal-sidecar-toggle))
+    :custom
+    (universal-sidecar-citeproc-styles "~/Zotero/styles/")
+
+    :config
+    (add-to-list 'universal-sidecar-sections 'org-cite-overlay-sidecar))
 #+end_src
 
 ** citar
