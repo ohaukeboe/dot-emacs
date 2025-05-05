@@ -13,6 +13,9 @@
       (push '("#+begin_src" . ?) prettify-symbols-alist)
       (push '("#+end_src" . ?) prettify-symbols-alist)
 
+      (push '("#+begin_todo" . ?󱝽) prettify-symbols-alist)
+      (push '("#+end_todo" . ?󱝽) prettify-symbols-alist)
+
       (push '("#+BEGIN_QUOTE" . ?❝) prettify-symbols-alist)
       (push '("#+END_QUOTE" . ?❞) prettify-symbols-alist)
       (push '("#+begin_quote" . ?) prettify-symbols-alist)
