@@ -1507,7 +1507,9 @@ Some other zotero plugins I use are:
 
 #+begin_src elisp
   (defvar oh/bib-files
-    `(,(concat user-emacs-directory ".cache/references.bib")))
+    (let ((path (concat user-emacs-directory ".cache/references.bib")))
+      (when (file-exists-p path)
+        path)))
 
   (defvar oh/roam-dir
     (my/nextcloud-dir-expand "org_notes/roam/bibliography/"))
@@ -1521,6 +1523,7 @@ Some other zotero plugins I use are:
 #+begin_src elisp
   (use-package oc
     :after org
+    :if oh/bib-files
     :custom
     (org-cite-csl-styles-dir "~/Zotero/styles")
     (org-cite-global-bibliography oh/bib-files)
@@ -1585,10 +1588,10 @@ Some other zotero plugins I use are:
 
     :config
     (setq citar-templates
-        '((main . "${author editor:30%sn}     ${date year issued:4}     ${title:48}")
-          (suffix . "    ${=key= id:15}    ${=type=:12}    ${number:8}    ${tags keywords:*}")
-          (preview . "${author editor:%etal} (${year issued date}) ${title}, ${journal journaltitle publisher container-title collection-title}.\n")
-          (note . "Notes on ${author editor:%etal}, ${title}")))
+          '((main . "${author editor:30%sn}     ${date year issued:4}     ${title:48}")
+            (suffix . "    ${=key= id:15}    ${=type=:12}    ${number:8}    ${tags keywords:*}")
+            (preview . "${author editor:%etal} (${year issued date}) ${title}, ${journal journaltitle publisher container-title collection-title}.\n")
+            (note . "Notes on ${author editor:%etal}, ${title}")))
 
     (defvar citar-indicator-files-icons
       (citar-indicator-create
@@ -1627,10 +1630,10 @@ Some other zotero plugins I use are:
        :tag "is:cited"))
 
     (setq citar-indicators
-      (list citar-indicator-files-icons
-            citar-indicator-links-icons
-            citar-indicator-notes-icons
-            citar-indicator-cited-icons)))
+          (list citar-indicator-files-icons
+                citar-indicator-links-icons
+                citar-indicator-notes-icons
+                citar-indicator-cited-icons)))
 
   ;; (use-package citar-embark
   ;;   :ensure t
