@@ -2,6 +2,7 @@
   nixpkgs,
   home-manager,
   emacs-overlay,
+  flatpaks,
   nixgl,
   mac-app-util,
 }:
@@ -28,6 +29,7 @@ home-manager.lib.homeManagerConfiguration {
   modules =
     [
       { home.stateVersion = "23.05"; }
+      flatpaks.homeManagerModules.nix-flatpak
       ../workstation/home.nix
       ../common/caches.nix
     ]

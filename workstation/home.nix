@@ -368,6 +368,34 @@ in
     };
   };
 
+  services.flatpak = {
+    enable = if isNixos then true else false;
+    overrides = {
+      global = {
+        # Force Wayland by default
+        Context.sockets = [
+          "wayland"
+          "!x11"
+          "!fallback-x11"
+        ];
+
+        Environment = {
+          # Fix un-themed cursor in some Wayland apps
+          XCURSOR_PATH = "/run/host/user-share/icons:/run/host/share/icons";
+        };
+      };
+    };
+
+    update.auto = {
+      enable = true;
+      onCalendar = "daily";
+    };
+
+    packages = [
+      "app.zen_browser.zen"
+    ];
+  };
+
   systemd.user.services = {
     protonmail-bridge = {
       Unit = {

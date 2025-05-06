@@ -19,6 +19,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    flatpaks.url = "github:gmodena/nix-flatpak/?ref=latest";
+
     # Add nixGL for better OpenGL and vulkan support
     nixgl.url = "github:nix-community/nixGL";
 
@@ -35,11 +37,12 @@
       nixos-cosmic,
       home-manager,
       emacs-overlay,
+      flatpaks,
       nixgl,
       mac-app-util,
       treefmt-nix,
       ...
-    }:
+    }@inputs:
     let
       supportedSystems = [
         "x86_64-linux"
@@ -68,6 +71,7 @@
           emacs-overlay
           nixgl
           mac-app-util
+          flatpaks
           ;
       };
       homeManagerNixosModule =
@@ -83,8 +87,9 @@
               nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs.flake-inputs = inputs;
               home-manager.users.oskar = {
-                imports = imports;
+                imports = imports ++ [ flatpaks.homeManagerModules.nix-flatpak ];
                 home.stateVersion = "${stateVersion}";
               };
               home-manager.backupFileExtension = "backup";

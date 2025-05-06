@@ -80,13 +80,6 @@
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-cosmic ];
   xdg.portal.config.common.default = "cosmic";
   xdg.portal.enable = true;
-  systemd.services.flatpak-repo = {
-    wantedBy = [ "multi-user.target" ];
-    path = [ pkgs.flatpak ];
-    script = ''
-      flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-    '';
-  };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.oskar = {
