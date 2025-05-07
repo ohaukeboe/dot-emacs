@@ -369,7 +369,7 @@ in
   };
 
   services.flatpak = {
-    enable = if isNixos then true else false;
+    enable = isNixos;
     overrides = {
       global = {
         # Force Wayland by default

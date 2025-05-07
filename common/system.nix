@@ -90,12 +90,25 @@
     ]; # Enable ‘sudo’ for the user.
     packages = with pkgs; [
       tree
-      _1password-gui
-      _1password-cli
     ];
   };
 
   # programs.firefox.enable = true;
+  programs._1password.enable = true;
+  programs._1password-gui = {
+    enable = true;
+    polkitPolicyOwners = [ "oskar" ]; # TODO: don't hard-code username
+  };
+
+  environment.etc = {
+    "1password/custom_allowed_browsers" = {
+      text = ''
+        zen
+        flatpak-session-helper
+      '';
+      mode = "0755";
+    };
+  };
 
   programs.fish.enable = true;
   users.defaultUserShell = pkgs.fish;
