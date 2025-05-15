@@ -2413,6 +2413,13 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     ;; load default config
     (require 'smartparens-config))
 #+end_src
+** Prettier
+
+#+begin_src elisp
+  (use-package prettier
+    :ensure t
+    :commands prettier-mode)
+#+end_src
 ** Docker
 
 [[https://www.rahuljuliato.com/posts/emacs-docker-podman][This]] is a nice blog about how to manage Docker/Podman containers from Emacs. First stepp is to make it easy to choose between using Docker and Podman.
