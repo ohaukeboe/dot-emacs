@@ -1509,7 +1509,7 @@ Some other zotero plugins I use are:
   (defvar oh/bib-files
     (let ((path (concat user-emacs-directory ".cache/references.bib")))
       (when (file-exists-p path)
-        path)))
+        `(,path))))
 
   (defvar oh/roam-dir
     (my/nextcloud-dir-expand "org_notes/roam/bibliography/"))
