@@ -1755,17 +1755,17 @@ rather than files.  These modes usually use read-only buffers.
     (org-startup-with-latex-preview t)
     (org-latex-prefer-user-labels t)
     (org-ditaa-jar-path "~/.local/share/ditaa/ditaa.jar")
-    (org-latex-create-formula-image-program 'dvisvgm)
+    (org-latex-create-formula-image-program 'imagemagick)
     (org-log-done 'time)
     (org-auto-align-tags t)
     (org-tags-column -69)
     (org-fold-catch-invisible-edits 'show-and-error)
     (org-special-ctrl-a/e t)
     (org-todo-keywords
-      '((sequence
-    	 "TODO(t)" "WAIT(w)"  ; Needs further action
-    	 "|"
-    	 "DONE(d)" "CANCELED(c)")))
+     '((sequence
+    	  "TODO(t)" "WAIT(w)"  ; Needs further action
+    	  "|"
+    	  "DONE(d)" "CANCELED(c)")))
 
     (org-capture-templates
      '(("t" "Todo" entry (file (my/nextcloud-dir-expand "org_notes/agenda/tasks.org")))
@@ -2348,6 +2348,8 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
   (use-package pdf-tools
     :ensure t
     :mode ("\\.pdf\\'" . pdf-view-mode)
+    :bind
+    ("C-M-A" . pdf-annot-add-highlight-markup-annotation)
     :config
     (require 'pdf-outline)
     (pdf-loader-install))
