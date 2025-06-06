@@ -144,6 +144,8 @@ Also, in order to get the 1password browser extension to talk to the program, yo
 
     :preface
     (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+    (add-to-list 'display-buffer-alist
+               '("\\*Async Shell Command\\*" display-buffer-no-window (allow-no-window . t)))
 
     (load (concat user-emacs-directory "special-symbols.el"))
     (add-hook 'org-mode-hook        #'my/prettify-symbols-setup)
@@ -791,6 +793,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     (consult-gh-dashboard-action #'consult-gh--dashboard-action)
     (consult-gh-large-file-warning-threshold 2500000)
     (consult-gh-prioritize-local-folder t)
+    (consult-gh-favorite-orgs-list '("ohaukeboe" "knowit-objectnet"))
     :config
     ;; (consult-gh-with-pr-review-mode 1)
     ;; Remember visited orgs and repos across sessions
@@ -801,7 +804,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 
   (use-package consult-gh-transient
     :bind
-    ("C-c G" . consult-gh-transient))
+    ("C-x G" . consult-gh-transient))
 
   (use-package consult-gh-embark
     :ensure t
@@ -816,12 +819,19 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     (consult-gh-forge-timeout-seconds 20)
     :config
     (consult-gh-forge-mode 1))
+
+  (use-package consult-gh-with-pr-review
+    :ensure t
+    :after consult-gh
+    :config
+    (consult-gh-with-pr-review-mode 1))
 #+end_src
 ** PR-review
 
 #+begin_src elisp
   (use-package pr-review
-    :ensure t)
+    :ensure t
+    :after consult-gh)
 #+end_src
 ** Gitignore
 
@@ -2371,6 +2381,37 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     :config
     (global-wakatime-mode))
 #+end_src
+** Visual replace
+
+#+begin_src elisp
+  (use-package visual-replace
+    :ensure t
+    :config
+    (visual-replace-global-mode 1))
+
+  (use-package anzu
+    :ensure t
+    :disabled
+    :bind
+    ([remap query-replace] . anzu-query-replace)
+    ([remap query-replace-regexp] . anzu-query-replace-regexp)
+    :config
+    (global-anzu-mode 1))
+#+end_src
+
+** Run shell command on save
+
+#+begin_src elisp
+  (defun my/run-shell-cmd-on-save (cmd)
+    "Run CMD in the shell when the current buffer is saved."
+    (let ((file (buffer-file-name)))
+      (if file
+          (async-shell-command
+           (format cmd
+                   (shell-quote-argument file)))
+        (message "No file associated with this buffer"))))
+#+end_src
+
 ** Yasnippet
 #+begin_src elisp
   (use-package yasnippet
@@ -2637,10 +2678,8 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
       :key (auth-source-pick-first-password :host "openrouter.ai")
       :models '(google/gemini-2.0-flash-001
                 google/gemini-2.5-flash-preview
-                deepseek/deepseek-r1
-                deepseek/deepseek-chat
-                anthropic/claude-3.7-sonnet:thinking
-                anthropic/claude-3.7-sonnet))
+                anthropic/claude-3.7-sonnet
+                anthropic/claude-sonnet-4))
 
     (gptel-make-tool
      :name "read_buffer"                    ; javascript-style snake_case name
