@@ -115,6 +115,7 @@ Also, in order to get the 1password browser extension to talk to the program, yo
 
     (read-extended-command-predicate #'command-completion-default-include-p)
     (text-mode-ispell-word-completion nil)
+    (compilation-scroll-output 'first-error)
 
     :custom-face
     (italic ((t (:foreground "#b294bb"))))
