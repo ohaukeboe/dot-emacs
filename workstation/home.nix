@@ -446,6 +446,8 @@ in
   home.file = {
     ".authinfo".source = ../secrets/.authinfo;
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
+    ".wakatime.cfg".source = ../secrets/wakatime.cfg;
+
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
 
     # Emacs
