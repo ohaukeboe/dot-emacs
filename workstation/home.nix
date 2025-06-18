@@ -119,6 +119,7 @@ in
       comma
       nix-index
       # pympress # pdf presenter
+      git-crypt
 
       ### fish ###
       babelfish
