@@ -55,6 +55,8 @@
 
       treefmtEval = forAllSystems (system: treefmt-nix.lib.evalModule nixpkgsFor.${system} ./treefmt.nix);
 
+      secrets = builtins.fromJSON (builtins.readFile "${self}/secrets/secrets.json");
+
       defaultConfig =
         {
           "x86_64-linux" = "oskar@x86_64-linux";
@@ -72,6 +74,7 @@
           nixgl
           mac-app-util
           flatpaks
+          secrets
           ;
       };
       homeManagerNixosModule =
@@ -94,6 +97,7 @@
               };
               home-manager.backupFileExtension = "backup";
               home-manager.extraSpecialArgs = {
+                inherit secrets;
                 isNixos = true;
               };
             }

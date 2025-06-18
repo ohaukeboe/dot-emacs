@@ -5,6 +5,7 @@
   flatpaks,
   nixgl,
   mac-app-util,
+  secrets,
 }:
 
 system:
@@ -37,6 +38,7 @@ home-manager.lib.homeManagerConfiguration {
       mac-app-util.homeManagerModules.default
     ];
   extraSpecialArgs = {
+    inherit secrets;
     isNixos = false;
   };
 }

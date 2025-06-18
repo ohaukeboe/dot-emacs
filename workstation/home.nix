@@ -3,6 +3,7 @@
   pkgs,
   config,
   isNixos ? false,
+  secrets,
   ...
 }:
 let
@@ -11,6 +12,8 @@ let
   system = pkgs.stdenv.system;
 in
 {
+  imports = [ (import ./ssh.nix { inherit secrets; }) ];
+
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
   home.username =
@@ -441,6 +444,7 @@ in
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
   home.file = {
+    ".authinfo".source = ../secrets/.authinfo;
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
 
