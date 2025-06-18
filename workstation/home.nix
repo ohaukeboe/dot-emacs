@@ -538,8 +538,7 @@ in
 
   home.sessionVariables = {
     EDITOR = "vim";
-    DOTNET_ROOT = "${pkgs.dotnet-sdk_8}";
-    LSP_USE_PLISTS = "true";
+    DOTNET_ROOT = "${pkgs.dotnet-sdk_8}"; # TODO: remove this
   };
 
   # # Enable lorri for easy development environment

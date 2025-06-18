@@ -21,6 +21,11 @@
 
     flatpaks.url = "github:gmodena/nix-flatpak/?ref=latest";
 
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote/v0.4.2";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Add nixGL for better OpenGL and vulkan support
     nixgl.url = "github:nix-community/nixGL";
 
@@ -41,6 +46,7 @@
       nixgl,
       mac-app-util,
       treefmt-nix,
+      lanzaboote,
       ...
     }@inputs:
     let
@@ -113,13 +119,14 @@
           modules = [
             ./common/caches.nix
             ./common/system.nix
+            ./common/secure-boot.nix
             ./machines/x1carbon.nix
             nixos-cosmic.nixosModules.default
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [ ./workstation/home.nix ];
             })
-
+            lanzaboote.nixosModules.lanzaboote
           ];
         };
       };
