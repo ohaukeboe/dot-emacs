@@ -1810,7 +1810,8 @@ rather than files.  These modes usually use read-only buffers.
     (add-to-list 'org-latex-packages-alist '("" "listings"))
     (add-to-list 'org-latex-packages-alist '("" "amsmath"))
     ;; It is also possible to use `obeyFinal' to include todonotes more often
-    (add-to-list 'org-latex-packages-alist '("obeyDraft" "todonotes"))
+    ;; (add-to-list 'org-latex-packages-alist '("obeyDraft" "todonotes"))
+    (add-to-list 'org-latex-packages-alist '("obeyFinal" "todonotes"))
     (with-eval-after-load 'ox-latex
       (setq org-latex-listings 'listings)
       (setq org-latex-listings-options
