@@ -116,7 +116,11 @@
       nixosConfigurations = {
         x1laptop = nixpkgs.lib.nixosSystem {
           system.stateVersion = "24.11";
+
           modules = [
+            ({
+              networking.hostName = "x1laptop";
+            })
             ./common/caches.nix
             ./common/system.nix
             ./common/secure-boot.nix
