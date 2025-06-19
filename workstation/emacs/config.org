@@ -1289,7 +1289,7 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
 #+begin_src elisp
   (use-package terraform-mode
     :ensure t
-    :hook (terraform-mode . eglot-ensure)
+    :hook (terraform-mode . lsp-deferred)
     :mode "\\.tf")
 #+end_src
 

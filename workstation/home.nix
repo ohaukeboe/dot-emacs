@@ -332,7 +332,6 @@ in
       };
 
       shellAliases = {
-        git-del-merged = "git branch --merged origin | grep -v -E ' main\$| master\$' | xargs -pr git branch -d";
         hs = "home-manager switch --flake .#default --impure";
         edit = "emacsclient -r -n";
       };
@@ -549,6 +548,4 @@ in
 
   # Enable man cache. -- Needed for consult-man
   programs.man.generateCaches = true;
-
-  # nixpkgs.config.allowUnfree = true;
 }
