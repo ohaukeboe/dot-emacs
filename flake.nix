@@ -115,10 +115,9 @@
 
       nixosConfigurations = {
         x1laptop = nixpkgs.lib.nixosSystem {
-          system.stateVersion = "24.11";
-
           modules = [
             ({
+              system.stateVersion = "24.11";
               networking.hostName = "x1laptop";
             })
             ./common/caches.nix
