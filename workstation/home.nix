@@ -446,6 +446,7 @@ in
     ".authinfo".source = ../secrets/.authinfo;
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".wakatime.cfg".source = ../secrets/wakatime.cfg;
+    ".aws/config".source = ../secrets/aws.config; # might have to set the permissions to -rw-------
 
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
 
