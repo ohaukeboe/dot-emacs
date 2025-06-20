@@ -1,10 +1,10 @@
 { secrets, ... }:
 
 let
-  mainKey = "~/.ssh/pubkeys/main.pub";
-  oldKey = "~/.ssh/pubkeys/old.pub";
-  trashcanKey = "~/.ssh/pubkeys/trashcan.pub";
-  piKey = "~/.ssh/pubkeys/pi.pub";
+  mainKey = ".ssh/pubkeys/main.pub";
+  oldKey = ".ssh/pubkeys/old.pub";
+  trashcanKey = ".ssh/pubkeys/trashcan.pub";
+  piKey = ".ssh/pubkeys/pi.pub";
 in
 {
   programs.ssh = {
@@ -25,19 +25,19 @@ in
       "desktop" = {
         hostname = secrets.ssh_host.desktop;
         user = "oskar";
-        identityFile = mainKey;
+        identityFile = "~/${mainKey}";
       };
 
       "killono" = {
         hostname = secrets.ssh_host.killono;
         user = "oskar";
-        identityFile = oldKey;
+        identityFile = "~/${oldKey}";
       };
 
       "uio" = {
         hostname = "login.uio.no";
         user = "oskah";
-        identityFile = mainKey;
+        identityFile = "~/${mainKey}";
         forwardX11 = true;
         forwardX11Trusted = true;
       };
@@ -45,7 +45,7 @@ in
       "ifi" = {
         hostname = "login.ifi.uio.no";
         user = "oskah";
-        identityFile = mainKey;
+        identityFile = "~/${mainKey}";
         proxyJump = "uio";
         forwardX11 = true;
         forwardX11Trusted = true;
@@ -54,48 +54,48 @@ in
       "bayer" = {
         hostname = secrets.ssh_host.bayer;
         user = "drift";
-        identityFile = trashcanKey;
+        identityFile = "~/${trashcanKey}";
       };
 
       "joe" = {
         hostname = secrets.ssh_host.joe;
         user = "drift";
-        identityFile = trashcanKey;
+        identityFile = "~/${trashcanKey}";
       };
 
       "github.com" = {
         hostname = "github.com";
-        identityFile = mainKey;
+        identityFile = "~/${mainKey}";
       };
 
       "github.uio.no" = {
         hostname = "github.uio.no";
-        identityFile = oldKey;
+        identityFile = "~/${oldKey}";
       };
 
       "pi" = {
         hostname = secrets.ssh_host.pi;
         user = "oskar";
-        identityFile = piKey;
+        identityFile = "~/${piKey}";
       };
 
       "vm" = {
         hostname = "192.168.122.16";
         user = "oskar";
-        identityFile = mainKey;
+        identityFile = "~/${mainKey}";
       };
 
       "mininet" = {
         hostname = "localhost";
         user = "mininet";
         port = 8022;
-        identityFile = mainKey;
+        identityFile = "~/${mainKey}";
       };
 
       "laptop" = {
         hostname = secrets.ssh_host.laptop;
         user = "oskar";
-        identityFile = mainKey;
+        identityFile = "~/${mainKey}";
       };
     };
   };
@@ -103,9 +103,12 @@ in
   home.file = {
     # These are the public keys used to identify what key to use. The
     # private keys are stored in 1Password
-    mainKey.text = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILToVl9RmOhn1TaQHiDPIS1/TGbHeA6ssTTocJmv5Yvf";
-    oldKey.text = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKf4tcGBaTRbaBzgy7QbGcbL5E0ShA2EC0C5OwhZukkl";
-    trashcan.text = "TODO";
-    piKey.text = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJuhePKrlYe5FtKa8SA2thRyezpLu8WrNJq1AqsNsN/P";
+    "${mainKey}".text =
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILToVl9RmOhn1TaQHiDPIS1/TGbHeA6ssTTocJmv5Yvf";
+    "${oldKey}".text =
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKf4tcGBaTRbaBzgy7QbGcbL5E0ShA2EC0C5OwhZukkl";
+    "${trashcanKey}".text = "TODO";
+    "${piKey}".text =
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJuhePKrlYe5FtKa8SA2thRyezpLu8WrNJq1AqsNsN/P";
   };
 }
