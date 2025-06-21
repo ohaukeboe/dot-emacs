@@ -4,9 +4,6 @@
   inputs = {
     # Specify the source of Home Manager and Nixpkgs.
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs.follows = "nixos-cosmic/nixpkgs";
-
-    nixos-cosmic.url = "github:lilyinstarlight/nixos-cosmic";
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -39,7 +36,6 @@
     {
       self,
       nixpkgs,
-      nixos-cosmic,
       home-manager,
       emacs-overlay,
       flatpaks,
@@ -114,6 +110,24 @@
       formatter = forAllSystems (system: treefmtEval.${system}.config.build.wrapper);
 
       nixosConfigurations = {
+       x13-laptop = nixpkgs.lib.nixosSystem {
+
+          modules = [
+            ({
+              system.stateVersion = "24.11";
+              networking.hostName = "x13-laptop";
+            })
+            ./common/caches.nix
+            ./common/system.nix
+            ./common/secure-boot.nix
+            lanzaboote.nixosModules.lanzaboote
+            ./machines/x13-laptop.nix
+            (homeManagerNixosModule {
+              stateVersion = "24.11";
+              imports = [ ./workstation/home.nix ];
+            })
+          ];
+        };
         x1laptop = nixpkgs.lib.nixosSystem {
           modules = [
             ({
@@ -124,7 +138,6 @@
             ./common/system.nix
             ./common/secure-boot.nix
             ./machines/x1carbon.nix
-            nixos-cosmic.nixosModules.default
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [ ./workstation/home.nix ];
