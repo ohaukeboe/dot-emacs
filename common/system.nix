@@ -77,13 +77,22 @@
   xdg.portal.config.common.default = "cosmic";
   xdg.portal.enable = true;
 
+  virtualisation.docker.enable = true;
+  virtualisation.docker.storageDriver = "btrfs";
+  virtualisation.docker.rootless = {
+    enable = true;
+    setSocketVariable = true;
+  };
+
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.oskar = {
     isNormalUser = true;
     extraGroups = [
       "wheel"
       "networkmanager"
-    ]; # Enable ‘sudo’ for the user.
+      "docker"
+    ]; 
   };
 
   # programs.firefox.enable = true;
