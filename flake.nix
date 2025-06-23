@@ -110,7 +110,7 @@
       formatter = forAllSystems (system: treefmtEval.${system}.config.build.wrapper);
 
       nixosConfigurations = {
-       x13-laptop = nixpkgs.lib.nixosSystem {
+        x13-laptop = nixpkgs.lib.nixosSystem {
 
           modules = [
             ({

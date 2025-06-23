@@ -78,7 +78,7 @@
   xdg.portal.enable = true;
 
   programs.virt-manager.enable = true;
-  users.groups.libvirtd.members = ["oskar"];
+  users.groups.libvirtd.members = [ "oskar" ];
   virtualisation.libvirtd.enable = true;
   virtualisation.spiceUSBRedirection.enable = true;
 
@@ -89,7 +89,6 @@
     setSocketVariable = true;
   };
 
-
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.oskar = {
     isNormalUser = true;
@@ -97,7 +96,7 @@
       "wheel"
       "networkmanager"
       "docker"
-    ]; 
+    ];
   };
 
   # programs.firefox.enable = true;
