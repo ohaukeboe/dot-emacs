@@ -780,7 +780,8 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 #+begin_src elisp
   (use-package consult-gh
     :ensure t
-    :after consult
+    :disabled
+    :after consult ;; disabled for now as it breaks late versions of forge
     :custom
     (consult-gh-default-clone-directory "~/projects/")
     (consult-gh-show-preview t)
