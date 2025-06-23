@@ -23,6 +23,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+
     # Add nixGL for better OpenGL and vulkan support
     nixgl.url = "github:nix-community/nixGL";
 
@@ -43,6 +45,7 @@
       mac-app-util,
       treefmt-nix,
       lanzaboote,
+      nixos-hardware,
       ...
     }@inputs:
     let
@@ -116,6 +119,7 @@
               system.stateVersion = "24.11";
               networking.hostName = "x13-laptop";
             })
+            nixos-hardware.nixosModules.asus-flow-gv302x-nvidia
             ./common/caches.nix
             ./common/system.nix
             ./common/secure-boot.nix

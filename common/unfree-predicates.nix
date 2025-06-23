@@ -7,4 +7,6 @@ builtins.elem (lib.getName pkg) [
   "claude-code"
   "1password"
   "1password-cli"
+  "nvidia-x11"
+  "nvidia-settings"
 ]
