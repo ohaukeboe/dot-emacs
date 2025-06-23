@@ -111,7 +111,6 @@
 
       nixosConfigurations = {
         x13-laptop = nixpkgs.lib.nixosSystem {
-
           modules = [
             ({
               system.stateVersion = "24.11";
@@ -122,6 +121,23 @@
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
             ./machines/x13-laptop.nix
+            (homeManagerNixosModule {
+              stateVersion = "24.11";
+              imports = [ ./workstation/home.nix ];
+            })
+          ];
+        };
+        work-laptop = nixpkgs.lib.nixosSystem {
+          modules = [
+            ({
+              system.stateVersion = "24.11";
+              networking.hostName = "work-laptop";
+            })
+            ./common/caches.nix
+            ./common/system.nix
+            ./common/secure-boot.nix
+            lanzaboote.nixosModules.lanzaboote
+            ./machines/work-laptop.nix
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [ ./workstation/home.nix ];
