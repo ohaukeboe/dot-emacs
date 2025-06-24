@@ -73,6 +73,7 @@
   services.tailscale.enable = true;
 
   services.flatpak.enable = true;
+  xdg.portal.wlr.enable = true;
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-cosmic ];
   xdg.portal.config.common.default = "cosmic";
   xdg.portal.enable = true;
@@ -125,6 +126,7 @@
     vim
     wget
     git
+    tree
   ];
 
   # Some programs need SUID wrappers, can be configured further or are

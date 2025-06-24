@@ -264,6 +264,7 @@ in
       # '')
       nerd-fonts.roboto-mono
       nerd-fonts.symbols-only
+      noto-fonts-emoji
     ]
     ++ lib.optionals isLinux (
       lib.lists.flatten [
