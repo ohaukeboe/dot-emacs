@@ -142,6 +142,7 @@
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
             ./machines/work-laptop.nix
+            ./machines/work-laptop/config.nix
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [ ./workstation/home.nix ];
