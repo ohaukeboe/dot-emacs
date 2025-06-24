@@ -23,6 +23,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # for list of hardware modules: https://github.com/NixOS/nixos-hardware#list-of-profiles
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
     # Add nixGL for better OpenGL and vulkan support
