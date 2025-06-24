@@ -124,6 +124,10 @@ in
       # pympress # pdf presenter
       git-crypt
 
+      ### Jetbrains ###
+      jetbrains.idea-ultimate
+      jetbrains.datagrip
+
       ### fish ###
       babelfish
 
