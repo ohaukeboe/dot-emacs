@@ -33,6 +33,11 @@
     mac-app-util.url = "github:hraban/mac-app-util";
 
     treefmt-nix.url = "github:numtide/treefmt-nix";
+
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -47,6 +52,7 @@
       treefmt-nix,
       lanzaboote,
       nixos-hardware,
+      nix-index-database,
       ...
     }@inputs:
     let
@@ -81,6 +87,7 @@
           mac-app-util
           flatpaks
           secrets
+          nix-index-database
           ;
       };
       homeManagerNixosModule =
@@ -121,6 +128,8 @@
               networking.hostName = "x13-laptop";
             })
             nixos-hardware.nixosModules.asus-flow-gv302x-nvidia
+            nix-index-database.nixosModules.nix-index
+            { programs.nix-index-database.comma.enable = true; }
             ./common/caches.nix
             ./common/system.nix
             ./common/secure-boot.nix
@@ -138,6 +147,8 @@
               system.stateVersion = "24.11";
               networking.hostName = "work-laptop";
             })
+            nix-index-database.nixosModules.nix-index
+            { programs.nix-index-database.comma.enable = true; }
             ./common/caches.nix
             ./common/system.nix
             ./common/secure-boot.nix
@@ -156,6 +167,8 @@
               system.stateVersion = "24.11";
               networking.hostName = "x1laptop";
             })
+            nix-index-database.nixosModules.nix-index
+            { programs.nix-index-database.comma.enable = true; }
             ./common/caches.nix
             ./common/system.nix
             ./common/secure-boot.nix

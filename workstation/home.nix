@@ -119,7 +119,6 @@ in
     with pkgs;
     lib.lists.flatten [
       wakatime
-      comma
       nix-index
       # pympress # pdf presenter
       git-crypt
@@ -319,6 +318,8 @@ in
       enable = true;
       daemon.enable = true;
     };
+    nix-index.enable = true;
+    nix-index.enableFishIntegration = true;
 
     # I mostly use fish, but since nix-shell uses bash it is nice to
     # also have it be managed by nix

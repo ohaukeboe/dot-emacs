@@ -6,6 +6,7 @@
   nixgl,
   mac-app-util,
   secrets,
+  nix-index-database,
 }:
 
 system:
@@ -31,6 +32,8 @@ home-manager.lib.homeManagerConfiguration {
     [
       { home.stateVersion = "23.05"; }
       flatpaks.homeManagerModules.nix-flatpak
+      nix-index-database.hmModules.nix-index
+      { programs.nix-index-database.comma.enable = true; }
       ../workstation/home.nix
       ../common/caches.nix
     ]
