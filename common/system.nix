@@ -47,6 +47,8 @@
   services.displayManager.cosmic-greeter.enable = true;
   services.desktopManager.cosmic.enable = true;
 
+  programs.kdeconnect.enable = true;
+
   # Enable CUPS to print documents.
   # services.printing.enable = true;
 
@@ -126,5 +128,5 @@
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
+  networking.firewall.enable = false;
 }
