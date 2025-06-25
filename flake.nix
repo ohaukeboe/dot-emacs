@@ -131,7 +131,7 @@
             nix-index-database.nixosModules.nix-index
             { programs.nix-index-database.comma.enable = true; }
             ./common/caches.nix
-            ./common/system.nix
+            ./system/.
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
             ./machines/x13-laptop.nix
@@ -150,7 +150,7 @@
             nix-index-database.nixosModules.nix-index
             { programs.nix-index-database.comma.enable = true; }
             ./common/caches.nix
-            ./common/system.nix
+            ./system/.
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
             ./machines/work-laptop.nix
@@ -170,7 +170,7 @@
             nix-index-database.nixosModules.nix-index
             { programs.nix-index-database.comma.enable = true; }
             ./common/caches.nix
-            ./common/system.nix
+            ./system/.
             ./common/secure-boot.nix
             ./machines/x1carbon.nix
             (homeManagerNixosModule {

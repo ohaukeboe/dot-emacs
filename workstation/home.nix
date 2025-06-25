@@ -312,6 +312,7 @@ in
     tealdeer = {
       enable = true;
       enableAutoUpdates = true;
+      settings.updates.auto_update = true;
     };
     zoxide.enable = true;
     atuin = {
