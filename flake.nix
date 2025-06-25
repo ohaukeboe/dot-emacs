@@ -137,7 +137,10 @@
             ./machines/x13-laptop.nix
             (homeManagerNixosModule {
               stateVersion = "24.11";
-              imports = [ ./workstation/home.nix ];
+              imports = [
+                ./workstation/home.nix
+                ./system/home.nix
+              ];
             })
           ];
         };
@@ -157,7 +160,10 @@
             ./machines/work-laptop/config.nix
             (homeManagerNixosModule {
               stateVersion = "24.11";
-              imports = [ ./workstation/home.nix ];
+              imports = [
+                ./workstation/home.nix
+                ./system/home.nix
+              ];
             })
           ];
         };
@@ -175,7 +181,10 @@
             ./machines/x1carbon.nix
             (homeManagerNixosModule {
               stateVersion = "24.11";
-              imports = [ ./workstation/home.nix ];
+              imports = [
+                ./workstation/home.nix
+                ./system/home.nix
+              ];
             })
             lanzaboote.nixosModules.lanzaboote
           ];
