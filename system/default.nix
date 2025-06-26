@@ -54,6 +54,10 @@
 
   services.tailscale.enable = true;
 
+  # Improve compatibility with programs/scripts not made for nix
+  services.envfs.enable = true;
+  programs.nix-ld.enable = true;
+
   services.flatpak.enable = true;
   xdg.portal.wlr.enable = true;
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-cosmic ];
