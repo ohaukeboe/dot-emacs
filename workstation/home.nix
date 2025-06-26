@@ -387,7 +387,7 @@ in
 
     update.auto = {
       enable = true;
-      onCalendar = "daily";
+      onCalendar = "weekly";
     };
 
     packages = [
@@ -534,7 +534,7 @@ in
   };
 
   xdg.mimeApps = {
-    enable = true;
+    enable = isLinux;
     defaultApplications = {
       "text/html" = "app.zen_browser.zen.desktop";
       "x-scheme-handler/http" = "app.zen_browser.zen.desktop";

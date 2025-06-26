@@ -98,15 +98,15 @@
     polkitPolicyOwners = [ "oskar" ]; # TODO: don't hard-code username
   };
 
-  environment.etc = {
-    "1password/custom_allowed_browsers" = {
-      text = ''
-        zen
-        flatpak-session-helper
-      '';
-      mode = "0755";
-    };
-  };
+  # environment.etc = {
+  #   "1password/custom_allowed_browsers" = {
+  #     text = ''
+  #       zen
+  #       flatpak-session-helper
+  #     '';
+  #     mode = "0755";
+  #   };
+  # };
 
   programs.fish.enable = true;
   users.defaultUserShell = pkgs.fish;
