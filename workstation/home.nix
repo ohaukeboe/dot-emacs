@@ -123,10 +123,6 @@ in
       # pympress # pdf presenter
       git-crypt
 
-      ### Jetbrains ###
-      jetbrains.idea-ultimate
-      jetbrains.datagrip
-
       ### fish ###
       babelfish
 
@@ -382,13 +378,6 @@ in
     enable = isNixos;
     overrides = {
       global = {
-        # Force Wayland by default
-        Context.sockets = [
-          "wayland"
-          "!x11"
-          "!fallback-x11"
-        ];
-
         Environment = {
           # Fix un-themed cursor in some Wayland apps
           XCURSOR_PATH = "/run/host/user-share/icons:/run/host/share/icons";
@@ -403,6 +392,7 @@ in
 
     packages = [
       "app.zen_browser.zen"
+      "com.github.tchx84.Flatseal"
     ];
   };
 
