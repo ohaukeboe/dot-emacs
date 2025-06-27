@@ -12,20 +12,20 @@
     "nvidia"
   ];
   hardware.nvidia = {
-    open = true;
+    open = false;
 
     # Nvidia power management. Experimental, and can cause sleep/suspend to fail.
     # Enable this if you have graphical corruption issues or application crashes after waking
     # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ instead
     # of just the bare essentials.
-    powerManagement.enable = true;
+    # powerManagement.enable = true;
 
-    powerManagement.finegrained = true;
+    # powerManagement.finegrained = true;
     modesetting.enable = true;
     prime = {
-      offload.enable = true;
-      offload.enableOffloadCmd = true;
-      # sync.enable = true;
+      # offload.enable = true;
+      # offload.enableOffloadCmd = true;
+      sync.enable = true;
 
       intelBusId = "PCI:0:2:0";
       nvidiaBusId = "PCI:1:0:0";
