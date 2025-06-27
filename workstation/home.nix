@@ -461,6 +461,10 @@ in
 
   # Only create initial config if it doesn't exist
   home.activation = {
+    starshipConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      $DRY_RUN_CMD ${pkgs.starship}/bin/starship preset nerd-font-symbols > $HOME/.config/starship.toml
+    '';
+
     createDavmailConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       if [ ! -f $HOME/.davmail.properties ]; then
         $DRY_RUN_CMD cp ${./dotfiles/davmail.properties} $HOME/.davmail.properties
