@@ -139,8 +139,6 @@ in
       pkg-config
       neofetch
       gh # github cli
-      awscli2
-      aws-nuke
       protonmail-bridge
       davmail # bridge allowing to use exchange through IMAP
       claude-code
