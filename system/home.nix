@@ -27,4 +27,10 @@
       "/home/oskar/.local/share/applications/1password-silent.desktop"
     ];
   };
+
+  home.packages =
+    with pkgs;
+    lib.mkAfter [
+      nextcloud-client
+    ];
 }
