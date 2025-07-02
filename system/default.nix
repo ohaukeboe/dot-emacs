@@ -47,6 +47,12 @@
   services.displayManager.cosmic-greeter.enable = true;
   services.desktopManager.cosmic.enable = true;
 
+  systemd.services.fprintd = {
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig.Type = "simple";
+  };
+  services.fprintd.enable = true;
+
   programs.kdeconnect.enable = true;
 
   # Enable CUPS to print documents.
