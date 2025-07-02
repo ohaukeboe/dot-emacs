@@ -182,10 +182,6 @@ in
       ### C# ###
       omnisharp-roslyn
 
-      ### .net ###
-      dotnet-sdk_8
-      mono
-
       ### rust ###
       rustup
 
@@ -346,7 +342,6 @@ in
            fish_add_path /opt/homebrew/bin
         end
 
-        fish_add_path ~/.dotnet/tools/
         fish_add_path ~/.local/bin/
         fish_add_path ~/.cargo/bin/
       '';
@@ -548,7 +543,6 @@ in
 
   home.sessionVariables = {
     EDITOR = "vim";
-    DOTNET_ROOT = "${pkgs.dotnet-sdk_8}"; # TODO: remove this
     LSP_USE_PLISTS = "true";
   };
 
