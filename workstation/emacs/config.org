@@ -2469,7 +2469,7 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 [[https://www.rahuljuliato.com/posts/emacs-docker-podman][This]] is a nice blog about how to manage Docker/Podman containers from Emacs. First stepp is to make it easy to choose between using Docker and Podman.
 
 #+begin_src elisp
-  (defcustom my/docker-executable 'podman
+  (defcustom my/docker-executable 'docker
     "The executable to be used with docker-mode."
     :type '(choice
   		  (const :tag "podman" podman)
