@@ -1,9 +1,0 @@
-#!/bin/sh
-set -e
-
-# check formatting
-nix build .#checks.$(uname -m)-$(uname -s | awk '{print tolower($0)}').formatting ||
-  {
-    echo "Run \`nix fmt' to format the files"
-    exit 1
-  }
