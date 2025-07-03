@@ -119,7 +119,6 @@ in
     with pkgs;
     lib.lists.flatten [
       wakatime
-      nix-index
       # pympress # pdf presenter
       git-crypt
 
@@ -329,7 +328,7 @@ in
       };
 
       shellAliases = {
-        hs = "home-manager switch --flake .#default --impure";
+        hs = "home-manager switch --flake .#default --impure -b backup";
         edit = "emacsclient -r -n";
       };
 
