@@ -124,6 +124,7 @@
     wget
     git
     tree
+    lsof
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
