@@ -19,6 +19,7 @@ in
     extraOptionOverrides = {
       # TODO: make this dynamic based on the environment
       identityAgent = "~/.1password/agent.sock";
+      identitiesOnly = "yes";
     };
 
     matchBlocks = {
@@ -32,6 +33,12 @@ in
         hostname = secrets.ssh_host.killono;
         user = "oskar";
         identityFile = "~/${oldKey}";
+      };
+
+      "deepthought" = {
+        hostname = secrets.ssh_host.deepthought;
+        user = "deepthought";
+        identityFile = "~/${mainKey}";
       };
 
       "uio" = {
