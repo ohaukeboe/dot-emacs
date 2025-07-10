@@ -2304,6 +2304,10 @@ A terminal emulator
           ("C-z" . toggle-vterm))
     (:map project-prefix-map
           ("t" . project-vterm))
+
+    :hook
+    (vterm-mode . (lambda () (visual-line-mode t)))
+
     :custom
     ;; (vterm-max-scrollback 10000)
     (vterm-tramp-shells '(("ssh" "/bin/bash")
