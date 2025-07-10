@@ -2301,7 +2301,8 @@ A terminal emulator
     ("C-c v" . 'vterm)
     ("C-z" . toggle-vterm)
     (:map vterm-mode-map
-          ("C-z" . toggle-vterm))
+          ("C-z" . toggle-vterm)
+          ("M-y" . vterm-yank-pop))
     (:map project-prefix-map
           ("t" . project-vterm))
 
