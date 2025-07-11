@@ -476,7 +476,7 @@ in
     extraConfig = {
       user = {
         name = "Oskar Haukebøe";
-        signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO9NwXaeqUQU6XVa9pAWPl0Q02hFSTt29i32QU4wR5wV";
+        signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILToVl9RmOhn1TaQHiDPIS1/TGbHeA6ssTTocJmv5Yvf";
       };
 
       init.defaultBranch = "main";
