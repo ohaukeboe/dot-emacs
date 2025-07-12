@@ -41,6 +41,12 @@ in
         identityFile = "~/${mainKey}";
       };
 
+      "deploy-deepthought" = {
+        hostname = secrets.ssh_host.deepthought;
+        user = "root";
+        identityFile = "~/${mainKey}";
+      };
+
       "uio" = {
         hostname = "login.uio.no";
         user = "oskah";
