@@ -1,4 +1,5 @@
 {
+  inputs,
   nixpkgs,
   home-manager,
   emacs-overlay,
@@ -41,7 +42,7 @@ home-manager.lib.homeManagerConfiguration {
       mac-app-util.homeManagerModules.default
     ];
   extraSpecialArgs = {
-    inherit secrets;
+    inherit inputs secrets;
     isNixos = false;
   };
 }

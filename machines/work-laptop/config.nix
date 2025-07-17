@@ -18,7 +18,7 @@
     # of just the bare essentials.
     powerManagement.enable = true;
 
-    powerManagement.finegrained = true;
+    # powerManagement.finegrained = true;
     prime = {
       # offload.enable = true;
       # offload.enableOffloadCmd = true;

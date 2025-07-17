@@ -26,6 +26,11 @@
     # for list of hardware modules: https://github.com/NixOS/nixos-hardware#list-of-profiles
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
 
+    zen-browser = {
+      url = "github:0xc000022070/zen-browser-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Add nixGL for better OpenGL and vulkan support
     nixgl.url = "github:nix-community/nixGL";
 
@@ -52,6 +57,7 @@
       treefmt-nix,
       lanzaboote,
       nixos-hardware,
+      zen-browser,
       nix-index-database,
       ...
     }@inputs:
@@ -80,6 +86,7 @@
       # Function to create home-manager configuration for a system
       mkHomeConfiguration = import ./lib/mkHomeConfiguration.nix {
         inherit
+          inputs
           nixpkgs
           home-manager
           emacs-overlay
@@ -110,7 +117,7 @@
               };
               home-manager.backupFileExtension = "backup";
               home-manager.extraSpecialArgs = {
-                inherit secrets;
+                inherit inputs secrets;
                 isNixos = true;
               };
             }

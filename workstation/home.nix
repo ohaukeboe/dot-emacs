@@ -1,4 +1,5 @@
 {
+  inputs,
   lib,
   pkgs,
   config,
@@ -12,7 +13,10 @@ let
   system = pkgs.stdenv.system;
 in
 {
-  imports = [ (import ./ssh.nix { inherit secrets; }) ];
+  imports = [
+    (import ./ssh.nix { inherit secrets; })
+    inputs.zen-browser.homeModules.beta
+  ];
 
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
@@ -311,6 +315,8 @@ in
     nix-index.enable = true;
     nix-index.enableFishIntegration = true;
 
+    zen-browser.enable = true;
+
     # I mostly use fish, but since nix-shell uses bash it is nice to
     # also have it be managed by nix
     bash = {
@@ -383,7 +389,6 @@ in
     };
 
     packages = [
-      "app.zen_browser.zen"
       "com.github.tchx84.Flatseal"
     ];
   };
@@ -530,16 +535,16 @@ in
     };
   };
 
-  xdg.mimeApps = {
-    enable = isLinux;
-    defaultApplications = {
-      "text/html" = "app.zen_browser.zen.desktop";
-      "x-scheme-handler/http" = "app.zen_browser.zen.desktop";
-      "x-scheme-handler/https" = "app.zen_browser.zen.desktop";
-      "x-scheme-handler/about" = "app.zen_browser.zen.desktop";
-      "x-scheme-handler/unknown" = "app.zen_browser.zen.desktop";
-    };
-  };
+  # xdg.mimeApps = {
+  #   enable = isLinux;
+  #   defaultApplications = {
+  #     "text/html" = "app.zen_browser.zen.desktop";
+  #     "x-scheme-handler/http" = "app.zen_browser.zen.desktop";
+  #     "x-scheme-handler/https" = "app.zen_browser.zen.desktop";
+  #     "x-scheme-handler/about" = "app.zen_browser.zen.desktop";
+  #     "x-scheme-handler/unknown" = "app.zen_browser.zen.desktop";
+  #   };
+  # };
 
   home.sessionVariables = {
     EDITOR = "vim";
