@@ -535,16 +535,16 @@ in
     };
   };
 
-  # xdg.mimeApps = {
-  #   enable = isLinux;
-  #   defaultApplications = {
-  #     "text/html" = "app.zen_browser.zen.desktop";
-  #     "x-scheme-handler/http" = "app.zen_browser.zen.desktop";
-  #     "x-scheme-handler/https" = "app.zen_browser.zen.desktop";
-  #     "x-scheme-handler/about" = "app.zen_browser.zen.desktop";
-  #     "x-scheme-handler/unknown" = "app.zen_browser.zen.desktop";
-  #   };
-  # };
+  xdg.mimeApps = {
+    enable = isLinux;
+    defaultApplications = {
+      "text/html" = "zen-beta.desktop";
+      "x-scheme-handler/http" = "zen-beta.desktop";
+      "x-scheme-handler/https" = "zen-beta.desktop";
+      "x-scheme-handler/about" = "zen-beta.desktop";
+      "x-scheme-handler/unknown" = "zen-beta.desktop";
+    };
+  };
 
   home.sessionVariables = {
     EDITOR = "vim";
