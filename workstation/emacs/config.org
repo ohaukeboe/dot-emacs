@@ -1306,12 +1306,13 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
      (org-babel-do-load-languages 'org-babel-load-languages (add-to-list 'org-babel-load-languages
                    '(python . t))))
     :custom
-    (lsp-pylsp-plugins-pydocstyle-enabled nil)
-    (lsp-pylsp-plugins-pycodestyle-enabled t)
-    (lsp-pylsp-plugins-pyflakes-enabled t)
-    (lsp-pylsp-plugins-flake8-enabled nil)
+    (lsp-pylsp-plugins-ruff-enabled t))
+    ;; (lsp-pylsp-plugins-pydocstyle-enabled nil)
+    ;; (lsp-pylsp-plugins-pycodestyle-enabled t)
+    ;; (lsp-pylsp-plugins-pyflakes-enabled t)
+    ;; (lsp-pylsp-plugins-flake8-enabled nil)
     ;; (lsp-pylsp-plugins-pylint-enabled t) ;; should look at virtualenvwrapper.el or conda.el to get this to work with pyvenv
-    (lsp-pylsp-plugins-autopep8-enabled t))
+    ;; (lsp-pylsp-plugins-autopep8-enabled t))
 #+end_src
 
 ** Elisp

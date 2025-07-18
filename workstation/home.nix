@@ -189,6 +189,7 @@ in
           python-pkgs: with python313Packages; [
             python-lsp-server
             python-lsp-server.optional-dependencies.all
+            python-lsp-ruff
             matplotlib
             scipy
             pandas
