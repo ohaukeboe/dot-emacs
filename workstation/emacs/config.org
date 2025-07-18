@@ -2406,6 +2406,19 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     :config
     (global-anzu-mode 1))
 #+end_src
+** Postgresql
+
+#+begin_src elisp
+  (use-package pg
+    :ensure t
+    :after pgmacs)
+
+  (use-package pgmacs
+    :vc (:url "https://github.com/emarsden/pgmacs.git"
+              :rev "3a84cc0")
+    :bind
+    ("C-c o p" . pgmacs))
+#+end_src
 
 ** Run shell command on save
 
