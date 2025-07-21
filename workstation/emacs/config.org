@@ -2905,6 +2905,22 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
             ("?" . #'gptel-quick)))
 #+end_src
 
+** aidermacs
+
+#+begin_src elisp
+  (use-package aidermacs
+    :ensure t
+    :bind (("C-c o a" . aidermacs-transient-menu))
+    :config
+    (setenv "OPENROUTER_API_KEY" (auth-source-pick-first-password :host "openrouter.ai"))
+    :custom
+    (aidermacs-default-chat-mode 'architect)
+    (aidermacs-default-model "openrouter/anthropic/claude-sonnet-4")
+    (aidermacs-editor-model "openrouter/anthropic/claude-sonnet-4")
+    (aidermacs-weak-model "openrouter/google/gemini-2.5-flash")
+    (aidermacs-architect-model "openrouter/google/gemini-2.5-flash"))
+#+end_src
+
 ** SICP
 Of course I need to have the wizard book as info pages :)
 

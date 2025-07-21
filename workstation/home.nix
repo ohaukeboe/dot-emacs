@@ -145,6 +145,7 @@ in
       protonmail-bridge
       davmail # bridge allowing to use exchange through IMAP
       claude-code
+      aider-chat # another AI thingy
       act # run github actions locally
 
       # git
