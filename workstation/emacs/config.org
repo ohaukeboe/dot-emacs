@@ -2516,6 +2516,7 @@ Next up, the =docker= package is good at handling containers.
 #+begin_src elisp
   (use-package docker
     :ensure t
+    :disabled
     :bind
     (("C-c c" . docker)
      ("C-c t d" . my/toggle-docker-executable))
