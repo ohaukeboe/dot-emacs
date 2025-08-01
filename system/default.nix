@@ -46,6 +46,11 @@
 
   services.displayManager.cosmic-greeter.enable = true;
   services.desktopManager.cosmic.enable = true;
+  services.gnome.gnome-keyring.enable = true;
+
+  environment.sessionVariables = {
+    QT_QPA_PLATFORMTHEME = "gtk3";
+  };
 
   systemd.services.fprintd = {
     wantedBy = [ "multi-user.target" ];
@@ -72,7 +77,14 @@
 
   programs.virt-manager.enable = true;
   users.groups.libvirtd.members = [ "oskar" ];
-  virtualisation.libvirtd.enable = true;
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      vhostUserPackages = with pkgs; [ virtiofsd ];
+      swtpm.enable = true;
+      ovmf.packages = [ pkgs.OVMFFull.fd ];
+    };
+  };
   virtualisation.spiceUSBRedirection.enable = true;
 
   boot.binfmt.emulatedSystems = [
@@ -116,6 +128,8 @@
 
   programs.fish.enable = true;
   users.defaultUserShell = pkgs.fish;
+
+  programs.partition-manager.enable = true;
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
