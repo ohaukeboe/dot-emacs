@@ -14,6 +14,8 @@
 
   nix.settings.auto-optimise-store = true;
 
+  boot.kernelPackages = pkgs.linuxPackages_zen;
+
   # Use the systemd-boot EFI boot loader.
   boot.loader = {
     systemd-boot = {
