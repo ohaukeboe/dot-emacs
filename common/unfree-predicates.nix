@@ -9,4 +9,5 @@ builtins.elem (lib.getName pkg) [
   "1password-cli"
   "nvidia-x11"
   "nvidia-settings"
+  "7zz" # needed for nexusmods
 ]
