@@ -113,6 +113,8 @@ Also, in order to get the 1password browser extension to talk to the program, yo
     ;; Allow undo/redo window configuration with C-c <left>/<right>
     (winner-mode 1)
 
+    (save-place-mode 1)
+
     (read-extended-command-predicate #'command-completion-default-include-p)
     (text-mode-ispell-word-completion nil)
     (compilation-scroll-output 'first-error)
