@@ -29,18 +29,17 @@ home-manager.lib.homeManagerConfiguration {
   inherit pkgs;
 
   # Specify your home configuration modules here
-  modules =
-    [
-      { home.stateVersion = "23.05"; }
-      flatpaks.homeManagerModules.nix-flatpak
-      nix-index-database.hmModules.nix-index
-      { programs.nix-index-database.comma.enable = true; }
-      ../workstation/home.nix
-      ../common/caches.nix
-    ]
-    ++ lib.optionals (builtins.match ".*darwin" system != null) [
-      mac-app-util.homeManagerModules.default
-    ];
+  modules = [
+    { home.stateVersion = "23.05"; }
+    flatpaks.homeManagerModules.nix-flatpak
+    nix-index-database.homeModules.nix-index
+    { programs.nix-index-database.comma.enable = true; }
+    ../workstation/home.nix
+    ../common/caches.nix
+  ]
+  ++ lib.optionals (builtins.match ".*darwin" system != null) [
+    mac-app-util.homeManagerModules.default
+  ];
   extraSpecialArgs = {
     inherit inputs secrets;
     isNixos = false;

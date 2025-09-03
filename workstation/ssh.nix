@@ -9,12 +9,7 @@ in
 {
   programs.ssh = {
     enable = true;
-
-    serverAliveInterval = 30;
-    serverAliveCountMax = 3;
-    controlMaster = "auto";
-    controlPath = "/tmp/ssh-%u-%r@%h:%p";
-    controlPersist = "10m";
+    enableDefaultConfig = false;
 
     extraOptionOverrides = {
       # TODO: make this dynamic based on the environment
@@ -23,6 +18,13 @@ in
     };
 
     matchBlocks = {
+      "*" = {
+        serverAliveInterval = 30;
+        serverAliveCountMax = 3;
+        controlMaster = "auto";
+        controlPath = "/tmp/ssh-%u-%r@%h:%p";
+        controlPersist = "10m";
+      };
       "desktop" = {
         hostname = secrets.ssh_host.desktop;
         user = "oskar";
