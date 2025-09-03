@@ -178,17 +178,15 @@ in
 
       ### python ###
       uv
-      (lib.optional isNixos (
-        python3.withPackages (
-          python-pkgs: with python313Packages; [
-            python-lsp-server
-            python-lsp-server.optional-dependencies.all
-            python-lsp-ruff
-            matplotlib
-            scipy
-            pandas
-          ]
-        )
+      (python3.withPackages (
+        python-pkgs: with python313Packages; [
+          python-lsp-server
+          python-lsp-server.optional-dependencies.all
+          python-lsp-ruff
+          matplotlib
+          scipy
+          pandas
+        ]
       ))
 
       ### C# ###
