@@ -1301,20 +1301,37 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
 #+begin_src elisp
   (use-package python-ts-mode
     ;; :hook (python-ts-mode . eglot-ensure)
-    :hook (python-ts-mode . lsp)
+    :hook (python-ts-mode . lsp-deferred)
     :mode "\\.py\\'"
     :init
     (with-eval-after-load 'org
      (org-babel-do-load-languages 'org-babel-load-languages (add-to-list 'org-babel-load-languages
                    '(python . t))))
     :custom
-    (lsp-pylsp-plugins-ruff-enabled t))
+    (lsp-pylsp-plugins-ruff-enabled t)
+    (lsp-pylsp-plugins-mypy-enabled t))
     ;; (lsp-pylsp-plugins-pydocstyle-enabled nil)
     ;; (lsp-pylsp-plugins-pycodestyle-enabled t)
     ;; (lsp-pylsp-plugins-pyflakes-enabled t)
     ;; (lsp-pylsp-plugins-flake8-enabled nil)
     ;; (lsp-pylsp-plugins-pylint-enabled t) ;; should look at virtualenvwrapper.el or conda.el to get this to work with pyvenv
     ;; (lsp-pylsp-plugins-autopep8-enabled t))
+#+end_src
+
+** Just
+
+#+begin_src elisp
+  (use-package just-ts-mode
+    :ensure t
+    :mode "\\justfile\\'"
+    :hook
+    (just-ts-mode . lsp-deferred)
+    :preface
+    (add-to-list 'lsp-language-id-configuration '(just-ts-mode . "just"))
+    (lsp-register-client (make-lsp-client
+                          :new-connection (lsp-stdio-connection "just-lsp")
+                          :activation-fn (lsp-activate-on "just")
+                          :server-id 'just)))
 #+end_src
 
 ** Elisp

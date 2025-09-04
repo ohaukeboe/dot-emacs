@@ -141,6 +141,10 @@ in
       aider-chat # another AI thingy
       act # run github actions locally
 
+      ### just ###
+      just
+      just-lsp
+
       # git
       ripgrep
       fd
@@ -178,11 +182,14 @@ in
 
       ### python ###
       uv
-      (python3.withPackages (
-        python-pkgs: with python313Packages; [
+      (python313.withPackages (
+        ps: with ps; [
           python-lsp-server
           python-lsp-server.optional-dependencies.all
           python-lsp-ruff
+          pylsp-mypy
+
+          # I want these globally for use in org-mode
           matplotlib
           scipy
           pandas
