@@ -67,7 +67,7 @@ Also, in order to get the 1password browser extension to talk to the program, yo
     ;; gc settings ++ to improve performance
     (gc-cons-threshold (* 100000000))
     ;; (gc-cons-percentage 0.3)
-    (read-process-output-max (* 1024 1024))
+    (read-process-output-max (* 3 1024 1024))
 
     ;; UI settings
     (scroll-bar-mode nil)
@@ -2699,10 +2699,10 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
         gptel-buffer))
 
     :config
-    (setq gptel-model 'claude-3-7-sonnet-20250219
-          gptel-backend (gptel-make-anthropic "Claude"          ;Any name you want
-                          :stream t                             ;Streaming responses
-                          :key (auth-source-pick-first-password :host "api.anthropic.com")))
+    ;; (setq gptel-model 'claude-3-7-sonnet-20250219
+    ;;       gptel-backend (gptel-make-anthropic "Claude"          ;Any name you want
+    ;;                       :stream t                             ;Streaming responses
+    ;;                       :key (auth-source-pick-first-password :host "api.anthropic.com")))
 
     ;; ;; OPTIONAL configuration
     ;; (gptel-make-openai "Github Models" ;Any name you want
@@ -2713,15 +2713,15 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     ;;   :models '(DeepSeek-R1 gpt-4o o3-mini))
 
     ;; OpenRouter offers an OpenAI compatible API
-    (gptel-make-openai "OpenRouter"               ;Any name you want
-      :host "openrouter.ai"
-      :endpoint "/api/v1/chat/completions"
-      :stream t
-      :key (auth-source-pick-first-password :host "openrouter.ai")
-      :models '(google/gemini-2.0-flash-001
-                google/gemini-2.5-flash-preview
-                anthropic/claude-3.7-sonnet
-                anthropic/claude-sonnet-4))
+    (setq gptel-model 'claude-sonnet-4
+          gptel-backend
+          (gptel-make-openai "OpenRouter"               ;Any name you want
+            :host "openrouter.ai"
+            :endpoint "/api/v1/chat/completions"
+            :stream t
+            :key (auth-source-pick-first-password :host "openrouter.ai")
+            :models '(anthropic/claude-3.7-sonnet
+                      anthropic/claude-sonnet-4)))
 
     (gptel-make-tool
      :name "read_buffer"                    ; javascript-style snake_case name

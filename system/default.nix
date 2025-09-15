@@ -44,6 +44,7 @@
 
   # Set your time zone.
   time.timeZone = "Europe/Oslo";
+  i18n.extraLocales = [ "nb_NO.UTF-8/UTF-8" ];
 
   # Enable the X11 windowing system.
   # services.xserver.enable = true;
