@@ -70,6 +70,12 @@
 
   services.tailscale.enable = true;
 
+  services.resolved = {
+    enable = true;
+    dnsovertls = "opportunistic";
+    fallbackDns = [ "1.1.1.1" ];
+  };
+
   # Improve compatibility with programs/scripts not made for nix
   services.envfs.enable = true;
   programs.nix-ld.enable = true;
