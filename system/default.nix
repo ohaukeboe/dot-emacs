@@ -117,6 +117,7 @@
       "wheel"
       "networkmanager"
       "docker"
+      "wireshark"
     ];
   };
 
@@ -125,6 +126,11 @@
   programs._1password-gui = {
     enable = true;
     polkitPolicyOwners = [ "oskar" ]; # TODO: don't hard-code username
+  };
+
+  programs.wireshark = {
+    enable = true;
+    usbmon.enable = true;
   };
 
   environment.etc = {
