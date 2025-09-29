@@ -140,6 +140,7 @@ in
       claude-code
       aider-chat # another AI thingy
       act # run github actions locally
+      emacs-lsp-booster
 
       ### just ###
       just

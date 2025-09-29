@@ -1004,7 +1004,43 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
           ("M-g M-f" . consult-lsp-diagnostics)
           ("M-g M-s" . consult-lsp-file-symbols)))
 #+end_src
+** lsp-booster
 
+[[https://github.com/blahgeek/emacs-lsp-booster][emacs-lsp-booster]] is a wrapper executable which helps improve the performance of lsp-mode and eglot. This here is the configuration needed for using it with lsp-mode
+
+#+begin_src elisp
+  (with-eval-after-load 'lsp-mode
+   (defun lsp-booster--advice-json-parse (old-fn &rest args)
+    "Try to parse bytecode instead of json."
+    (or
+     (when (equal (following-char) ?#)
+       (let ((bytecode (read (current-buffer))))
+         (when (byte-code-function-p bytecode)
+           (funcall bytecode))))
+     (apply old-fn args)))
+  (advice-add (if (progn (require 'json)
+                         (fboundp 'json-parse-buffer))
+                  'json-parse-buffer
+                'json-read)
+              :around
+              #'lsp-booster--advice-json-parse)
+
+  (defun lsp-booster--advice-final-command (old-fn cmd &optional test?)
+    "Prepend emacs-lsp-booster command to lsp CMD."
+    (let ((orig-result (funcall old-fn cmd test?)))
+      (if (and (not test?)                             ;; for check lsp-server-present?
+               (not (file-remote-p default-directory)) ;; see lsp-resolve-final-command, it would add extra shell wrapper
+               lsp-use-plists
+               (not (functionp 'json-rpc-connection))  ;; native json-rpc
+               (executable-find "emacs-lsp-booster"))
+          (progn
+            (when-let ((command-from-exec-path (executable-find (car orig-result))))  ;; resolve command from exec-path (in case not found in $PATH)
+              (setcar orig-result command-from-exec-path))
+            (message "Using emacs-lsp-booster for %s!" orig-result)
+            (cons "emacs-lsp-booster" orig-result))
+        orig-result)))
+  (advice-add 'lsp-resolve-final-command :around #'lsp-booster--advice-final-command))
+#+end_src
 ** Eldoc
 Eldoc is a minor mode that shows documentation in the echo area. It is enabled by default in =prog-mode=.
 
