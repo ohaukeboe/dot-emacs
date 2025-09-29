@@ -163,6 +163,7 @@ in
       ### Kotlin ###
       kotlin
       kotlin-language-server
+      inputs.kotlin-lsp.packages.${system}.default
 
       ### Assembly ###
       asm-lsp

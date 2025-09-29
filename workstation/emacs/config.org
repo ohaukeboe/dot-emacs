@@ -1263,9 +1263,19 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     (lsp-kotlin-compiler-jvm-target "21")
     (lsp-idle-delay 0.4)
     :init
-    (with-eval-after-load 'treesit
-      (add-to-list 'treesit-language-source-alist
-                   '(kotlin "https://github.com/fwcd/tree-sitter-kotlin"))))
+    (defun kotlin-lsp-server-start-fun (port)
+      (list "kotlin-lsp" "--socket" (number-to-string port)))
+
+    (with-eval-after-load 'lsp-mode
+      (add-to-list 'lsp-language-id-configuration
+  	             '(kotlin-mode . "kotlin"))
+      (lsp-register-client
+       (make-lsp-client
+        :new-connection (lsp-tcp-connection 'kotlin-lsp-server-start-fun)
+        :activation-fn (lsp-activate-on "kotlin")
+        :major-modes '(kotlin-mode kotlin-ts-mode)
+        :priority -1
+        :server-id 'kotlin-lsp))))
 
   (use-package ob-kotlin
     :ensure t

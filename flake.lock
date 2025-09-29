@@ -222,6 +222,26 @@
         "type": "github"
       }
     },
+    "kotlin-lsp": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1759173745,
+        "narHash": "sha256-4B5ud1tOhBnLYq9PjMr9vVUqX/5jzPoSE85RoFmMY0E=",
+        "owner": "ohaukeboe",
+        "repo": "kotlin-lsp-flake",
+        "rev": "b85fa314ec6ea8d1f078eb48e6d4f5b95f743e03",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ohaukeboe",
+        "repo": "kotlin-lsp-flake",
+        "type": "github"
+      }
+    },
     "lanzaboote": {
       "inputs": {
         "crane": "crane",
@@ -469,6 +489,7 @@
         "emacs-overlay": "emacs-overlay",
         "flatpaks": "flatpaks",
         "home-manager": "home-manager",
+        "kotlin-lsp": "kotlin-lsp",
         "lanzaboote": "lanzaboote",
         "mac-app-util": "mac-app-util",
         "nix-index-database": "nix-index-database",

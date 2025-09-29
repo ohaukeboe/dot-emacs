@@ -43,6 +43,11 @@
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    kotlin-lsp = {
+      url = "github:ohaukeboe/kotlin-lsp-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -59,6 +64,7 @@
       nixos-hardware,
       zen-browser,
       nix-index-database,
+      kotlin-lsp,
       ...
     }@inputs:
     let
