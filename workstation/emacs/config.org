@@ -1907,6 +1907,7 @@ rather than files.  These modes usually use read-only buffers.
     (require 'ox-beamer)
     (require 'ox-man)
     (require 'ox-texinfo)
+    (require 'ox-md)
     (require 'ox)
 
     (defun org-export-todo-keyword (backend)
