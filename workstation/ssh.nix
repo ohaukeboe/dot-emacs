@@ -24,6 +24,7 @@ in
         controlMaster = "auto";
         controlPath = "/tmp/ssh-%u-%r@%h:%p";
         controlPersist = "10m";
+        forwardAgent = true;
       };
       "desktop" = {
         hostname = secrets.ssh_host.desktop;

@@ -1839,6 +1839,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-tags-column -69)
     (org-fold-catch-invisible-edits 'show-and-error)
     (org-special-ctrl-a/e t)
+    (org-list-allow-alphabetical t)
     (org-todo-keywords
      '((sequence
     	  "TODO(t)" "WAIT(w)"  ; Needs further action
