@@ -179,7 +179,7 @@ in
       (hiPrio gcc)
       # Needed hiPrio to resolve conflict as both
       # clang and gcc provide C++ binary
-      ccls
+      # ccls
       bear # useful for using clangd
 
       ### python ###
