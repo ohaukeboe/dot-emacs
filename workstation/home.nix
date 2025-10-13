@@ -141,6 +141,7 @@ in
       aider-chat # another AI thingy
       act # run github actions locally
       emacs-lsp-booster
+      trash-cli
 
       ### just ###
       just
