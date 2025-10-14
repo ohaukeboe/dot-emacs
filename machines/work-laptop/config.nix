@@ -43,4 +43,29 @@
     libvdpau-va-gl
     intel-media-driver
   ];
+
+  services.btrbk = {
+    instances."btrbk" = {
+      onCalendar = "daily";
+      settings = {
+        snapshot_preserve_min = "1w";
+        snapshot_preserve = "14d 4w";
+        target_preserve = "14d 4w";
+        volume = {
+          "/" = {
+            snapshot_dir = "/snapshots";
+            subvolume = {
+              "home/oskar/projects" = { };
+              "home/oskar/knowit" = { };
+            };
+          };
+        };
+      };
+    };
+  };
+
+  # Btrbk does not create snapshot directories automatically, so create one here.
+  systemd.tmpfiles.rules = [
+    "d /snapshots 0755 root root"
+  ];
 }
