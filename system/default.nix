@@ -27,6 +27,7 @@
   };
 
   hardware.keyboard.zsa.enable = true;
+  hardware.logitech.wireless.enable = true;
 
   # For the gc to work, it is important that the boot-loader stops
   # referencing old configurations (`configurationLimit' needs to be set)
