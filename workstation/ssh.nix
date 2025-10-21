@@ -24,12 +24,19 @@ in
         controlMaster = "auto";
         controlPath = "/tmp/ssh-%u-%r@%h:%p";
         controlPersist = "10m";
-        forwardAgent = true;
       };
       "desktop" = {
         hostname = secrets.ssh_host.desktop;
         user = "oskar";
         identityFile = "~/${mainKey}";
+        forwardAgent = true;
+      };
+
+      "work-laptop" = {
+        hostname = secrets.ssh_host.work-laptop;
+        user = "oskar";
+        identityFile = "~/${mainKey}";
+        forwardAgent = true;
       };
 
       "killono" = {
@@ -95,23 +102,11 @@ in
         identityFile = "~/${piKey}";
       };
 
-      "vm" = {
-        hostname = "192.168.122.16";
-        user = "oskar";
-        identityFile = "~/${mainKey}";
-      };
-
-      "mininet" = {
-        hostname = "localhost";
-        user = "mininet";
-        port = 8022;
-        identityFile = "~/${mainKey}";
-      };
-
       "laptop" = {
         hostname = secrets.ssh_host.laptop;
         user = "oskar";
         identityFile = "~/${mainKey}";
+        forwardAgent = true;
       };
     };
   };
@@ -123,7 +118,8 @@ in
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILToVl9RmOhn1TaQHiDPIS1/TGbHeA6ssTTocJmv5Yvf";
     "${oldKey}".text =
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKf4tcGBaTRbaBzgy7QbGcbL5E0ShA2EC0C5OwhZukkl";
-    "${trashcanKey}".text = "TODO";
+    "${trashcanKey}".text =
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWtqnZik41LZmBiVQK/d46GpuZT23uhpplZmcHBFOSC";
     "${piKey}".text =
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJuhePKrlYe5FtKa8SA2thRyezpLu8WrNJq1AqsNsN/P";
   };
