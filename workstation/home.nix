@@ -123,9 +123,7 @@ in
       babelfish
 
       ### misc ###
-      (lib.optional (system != "aarch64-linux") zotero)
       sshfs
-      devbox
       phoronix-test-suite
       ltex-ls-plus # languagetool lsp
       packwiz # Minecraft modpack creator utility
@@ -155,19 +153,20 @@ in
       terraform
       terraform-ls
 
-      ### reMarkable ###
+      ### Reading ###
       rmapi
+      calibre
+      (lib.optional (system != "aarch64-linux") zotero)
 
-      ### android ###
-      android-tools
+      ### Java ###
+      jdk
+      maven
+      gradle
 
       ### Kotlin ###
       kotlin
       kotlin-language-server
       inputs.kotlin-lsp.packages.${system}.default
-
-      ### Assembly ###
-      asm-lsp
 
       ### C ###
       man-pages
@@ -211,18 +210,13 @@ in
       golangci-lint-langserver
 
       ### maude ###
-      maude
+      # maude
 
       ### plantuml ###
       plantuml
       graphviz
 
       mermaid-cli
-
-      ### Java ###
-      jdk
-      maven
-      gradle
 
       ### nix ###
       nil # lsp
