@@ -31,6 +31,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    calibre-plugins.url = "git+https://codeberg.org/Nydragon/calibre-plugins";
+
     # Add nixGL for better OpenGL and vulkan support
     nixgl.url = "github:nix-community/nixGL";
 
@@ -65,6 +67,7 @@
       zen-browser,
       nix-index-database,
       kotlin-lsp,
+      calibre-plugins,
       ...
     }@inputs:
     let

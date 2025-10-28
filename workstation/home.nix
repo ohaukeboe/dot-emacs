@@ -16,6 +16,7 @@ in
   imports = [
     (import ./ssh.nix { inherit secrets; })
     inputs.zen-browser.homeModules.beta
+    ./calibre
   ];
 
   # Home Manager needs a bit of information about you and the paths it should
@@ -155,7 +156,6 @@ in
 
       ### Reading ###
       rmapi
-      calibre
       (lib.optional (system != "aarch64-linux") zotero)
 
       ### Java ###
@@ -458,12 +458,10 @@ in
 
     # Emacs
     "${config.xdg.configHome}/emacs/init.el".source = ./emacs/init.el;
-    "${config.xdg.configHome}/emacs/special-symbols.el".source =
-      config.lib.file.mkOutOfStoreSymlink ./emacs/special-symbols.el;
-    "${config.xdg.configHome}/emacs/config.org".source =
-      config.lib.file.mkOutOfStoreSymlink ./emacs/config.org;
+    "${config.xdg.configHome}/emacs/special-symbols.el".source = ./emacs/special-symbols.el;
+    "${config.xdg.configHome}/emacs/config.org".source = ./emacs/config.org;
     "${config.xdg.configHome}/emacs/packages/" = {
-      source = config.lib.file.mkOutOfStoreSymlink ./emacs/packages;
+      source = ./emacs/packages;
       recursive = true;
     };
   };
