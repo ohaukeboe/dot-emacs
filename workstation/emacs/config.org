@@ -2985,9 +2985,11 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     :custom
     (aidermacs-program "aider")
     (aidermacs-default-chat-mode 'architect)
+    (aidermacs-backend 'vterm)
+    (aidermacs-exit-kills-buffer t)
     (aidermacs-default-model "openrouter/anthropic/claude-sonnet-4.5")
     (aidermacs-editor-model "openrouter/anthropic/claude-sonnet-4.5")
-    (aidermacs-weak-model "openrouter/openai/gpt-5-chat")
+    (aidermacs-weak-model "openrouter/google/gemini-2.5-flash")
     (aidermacs-architect-model "openrouter/openai/gpt-5-chat"))
 #+end_src
 
@@ -2997,6 +2999,7 @@ Of course I need to have the wizard book as info pages :)
 #+begin_src elisp
   (use-package sicp
     :ensure t
+    :disabled t
     :after info)
 #+end_src
 
