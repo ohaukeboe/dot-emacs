@@ -1,4 +1,4 @@
-{ secrets, ... }:
+{ secrets, pkgs, ... }:
 
 let
   mainKey = ".ssh/pubkeys/main.pub";
@@ -122,5 +122,13 @@ in
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWtqnZik41LZmBiVQK/d46GpuZT23uhpplZmcHBFOSC";
     "${piKey}".text =
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJuhePKrlYe5FtKa8SA2thRyezpLu8WrNJq1AqsNsN/P";
+
+    ".config/1Password/ssh/agent.toml".source = (pkgs.formats.toml { }).generate "1password-agent" {
+      ssh-keys = [
+        { vault = "Private"; }
+        { vault = "Employee"; }
+        { vault = "320-Drift"; }
+      ];
+    };
   };
 }

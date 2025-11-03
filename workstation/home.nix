@@ -14,7 +14,7 @@ let
 in
 {
   imports = [
-    (import ./ssh.nix { inherit secrets; })
+    ./ssh.nix
     inputs.zen-browser.homeModules.beta
     ./calibre
   ];
