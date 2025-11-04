@@ -2372,7 +2372,8 @@ A terminal emulator
           ("C-z" . toggle-vterm)
           ("M-y" . vterm-yank-pop))
     (:map project-prefix-map
-          ("t" . project-vterm))
+          ("t" . project-vterm)
+          ("v" . my/project-consult-vterm))
 
     :hook
     (vterm-mode . (lambda () (visual-line-mode t)))
@@ -2403,6 +2404,24 @@ A terminal emulator
               ((seq-contains-p vterms (current-buffer))
                (switch-to-buffer (car (seq-difference (buffer-list) vterms))))
               (t (switch-to-buffer (car (seq-intersection (buffer-list) vterms)))))))
+
+    (defun my/project-consult-vterm ()
+      (interactive)
+      (require 'consult)
+      (let* ((vterm-bufs (seq-filter
+                          (lambda (b)
+                            (with-current-buffer b
+                              (memq major-mode '(vterm-mode vterm-copy-mode))))
+                          (buffer-list)))
+             (source `(:name "VTerm Buffers"
+                             :narrow ?v
+                             :category buffer
+                             :action ,#'switch-to-buffer
+                             :items ,(mapcar #'buffer-name vterm-bufs)
+                             :state ,#'consult--buffer-state)))
+        (if vterm-bufs
+            (consult-buffer (list source))
+          (user-error "No vterm buffers for this project"))))
 
     :init
     (add-to-list 'project-switch-commands     '(project-vterm "Vterm") t)
