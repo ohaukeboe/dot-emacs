@@ -464,6 +464,12 @@ in
       source = ./emacs/packages;
       recursive = true;
     };
+
+    ".aider.conf.yml".source = (pkgs.formats.yaml { }).generate "aider-conf" {
+      cache-prompts = true;
+      cache-keepalive-pings = 5;
+      code-theme = "monokai";
+    };
   };
 
   # Only create initial config if it doesn't exist
