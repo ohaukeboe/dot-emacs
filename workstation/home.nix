@@ -4,7 +4,6 @@
   pkgs,
   config,
   isNixos ? false,
-  secrets,
   ...
 }:
 let
@@ -525,7 +524,6 @@ in
 
     };
 
-    # Includes
     includes = [
       {
         contents.user = {
@@ -540,7 +538,6 @@ in
       }
     ];
 
-    # I don't really know yet how this works, but I guess I'll find out :)
     maintenance = {
       enable = true;
       repositories = [
@@ -565,9 +562,6 @@ in
     EDITOR = "vim";
     LSP_USE_PLISTS = "true";
   };
-
-  # # Enable lorri for easy development environment
-  services.lorri.enable = if isLinux then true else false;
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
