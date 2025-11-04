@@ -2408,10 +2408,15 @@ A terminal emulator
     (defun my/project-consult-vterm ()
       (interactive)
       (require 'consult)
-      (let* ((vterm-bufs (seq-filter
+      (let* ((current-project (project-current))
+             (project-root (when current-project (expand-file-name
+                                                  (project-root current-project))))
+             (vterm-bufs (seq-filter
                           (lambda (b)
                             (with-current-buffer b
-                              (memq major-mode '(vterm-mode vterm-copy-mode))))
+                              (and (memq major-mode '(vterm-mode vterm-copy-mode))
+                                   (when project-root
+                                     (string-prefix-p project-root default-directory)))))
                           (buffer-list)))
              (source `(:name "VTerm Buffers"
                              :narrow ?v
