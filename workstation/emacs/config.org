@@ -2511,7 +2511,7 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
 
   (use-package pgmacs
     :vc (:url "https://github.com/emarsden/pgmacs.git"
-              :rev "3a84cc0")
+              :rev "v0.27")
     :bind
     ("C-c o p" . pgmacs))
 #+end_src
@@ -2990,7 +2990,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     (use-package gptel-quick
       :after embark
       :vc (:url "https://github.com/karthink/gptel-quick.git"
-                :rev "34acd43")
+                :rev "018ff2b")
       :custom
       (gptel-quick-backend (alist-get "OpenRouter" gptel--known-backends nil nil #'string=))
       (gptel-quick-model "google/gemini-2.0-flash-001")
@@ -3177,7 +3177,7 @@ And obviously I need consult integration as well
   (use-package consult-mu
     :after (consult mu4e)
     :vc (:url "https://github.com/armindarvish/consult-mu.git"
-              :rev "e1dc636")
+              :rev "4958fb6")
     :bind
     (:map mu4e-search-minor-mode-map
           ("s" . consult-mu)))
@@ -3399,7 +3399,7 @@ An amazing litte package that makes scrolling actually feel smooth. This is espe
 #+begin_src elisp
   (use-package ultra-scroll
     :vc (:url  "https://github.com/jdtsmith/ultra-scroll.git"
-               :rev "f2e4fba")
+               :rev "19fd73e")
     :init
     (setq scroll-conservatively 101 ; important!
           scroll-margin 0)
