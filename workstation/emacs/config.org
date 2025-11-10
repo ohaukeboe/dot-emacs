@@ -2784,29 +2784,16 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
         gptel-buffer))
 
     :config
-    ;; (setq gptel-model 'claude-3-7-sonnet-20250219
-    ;;       gptel-backend (gptel-make-anthropic "Claude"          ;Any name you want
-    ;;                       :stream t                             ;Streaming responses
-    ;;                       :key (auth-source-pick-first-password :host "api.anthropic.com")))
-
-    ;; ;; OPTIONAL configuration
-    ;; (gptel-make-openai "Github Models" ;Any name you want
-    ;;   :host "models.inference.ai.azure.com"
-    ;;   :endpoint "/chat/completions?api-version=2024-05-01-preview"
-    ;;   :stream t
-    ;;   :key (auth-source-pick-first-password :host "ai.azure.com")
-    ;;   :models '(DeepSeek-R1 gpt-4o o3-mini))
-
     ;; OpenRouter offers an OpenAI compatible API
-    (setq gptel-model 'claude-sonnet-4
+    (setq gptel-model 'claude-sonnet-4.5
           gptel-backend
           (gptel-make-openai "OpenRouter"               ;Any name you want
             :host "openrouter.ai"
             :endpoint "/api/v1/chat/completions"
             :stream t
             :key (auth-source-pick-first-password :host "openrouter.ai")
-            :models '(anthropic/claude-3.7-sonnet
-                      anthropic/claude-sonnet-4)))
+            :models '(anthropic/claude-sonnet-4.5
+                      anthropic/claude-haiku-4.5)))
 
     (gptel-make-tool
      :name "read_buffer"                    ; javascript-style snake_case name
@@ -2996,18 +2983,18 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
 [[https://github.com/karthink/gptel-quick][gptel-quick]] is a nifty package that uses gptel to describe thing at point.
 
 #+begin_src elisp
-    (use-package gptel-quick
-      :after embark
-      :vc (:url "https://github.com/karthink/gptel-quick.git"
-                :rev "018ff2b")
-      :custom
-      (gptel-quick-backend (alist-get "OpenRouter" gptel--known-backends nil nil #'string=))
-      (gptel-quick-model "google/gemini-2.0-flash-001")
-      (gptel-quick-timeout nil)
+  (use-package gptel-quick
+    :after embark
+    :vc (:url "https://github.com/karthink/gptel-quick.git"
+              :rev "018ff2b")
+    :custom
+    (gptel-quick-backend (alist-get "OpenRouter" gptel--known-backends nil nil #'string=))
+    (gptel-quick-model "anthropic/claude-haiku-4.5")
+    (gptel-quick-timeout nil)
 
-      :bind
-      (:map embark-general-map
-            ("?" . #'gptel-quick)))
+    :bind
+    (:map embark-general-map
+          ("?" . #'gptel-quick)))
 #+end_src
 
 [[https://github.com/ragnard/gptel-magit][gptel-magit]] generates commit messages using gptel.
