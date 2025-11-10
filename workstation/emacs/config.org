@@ -791,7 +791,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
 #+begin_src elisp
   (use-package consult-gh
     :ensure t
-    :disabled
+    ;; :disabled
     :after consult ;; disabled for now as it breaks late versions of forge
     :custom
     (consult-gh-default-clone-directory "~/projects/")
@@ -836,8 +836,16 @@ Magit-todos for integrating TODO keywords with magit's overview screen
   (use-package consult-gh-with-pr-review
     :ensure t
     :after consult-gh
+    :preface
+    (defun my/forge-visit-with-pr-review (orig-fun &rest args)
+      (if (forge-pullreq-p (forge-current-topic))
+          (pr-review (forge-get-url (forge-current-topic)))
+        (apply orig-fun args)))
     :config
-    (consult-gh-with-pr-review-mode 1))
+    (consult-gh-with-pr-review-mode 1)
+    (advice-add 'forge-visit-topic :around #'my/forge-visit-with-pr-review)
+    (advice-add 'forge-visit-this-topic :around #'my/forge-visit-with-pr-review)
+    (advice-add 'forge-visit-pullreq :around #'my/forge-visit-with-pr-review))
 #+end_src
 ** PR-review
 
@@ -2793,6 +2801,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
             :stream t
             :key (auth-source-pick-first-password :host "openrouter.ai")
             :models '(anthropic/claude-sonnet-4.5
+                      anthropic/claude-sonnet-4
                       anthropic/claude-haiku-4.5)))
 
     (gptel-make-tool
