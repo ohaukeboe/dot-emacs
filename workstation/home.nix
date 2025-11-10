@@ -449,7 +449,7 @@ in
   home.file = {
     ".authinfo".source = ../secrets/.authinfo;
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
-    ".wakatime-cli.cfg".source = ../secrets/wakatime.cfg;
+    ".wakatime.cfg".source = ../secrets/wakatime.cfg;
     ".aws/config".source = ../secrets/aws.config;
     ".config/scw/config.yaml".source = ../secrets/scaleway.yaml;
 

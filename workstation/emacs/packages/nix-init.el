@@ -22,11 +22,13 @@
   "Create a shell.nix file in the root of the project."
   (write-region nix-init--shell-file-content nil (expand-file-name "shell.nix" (project-root (project-current)))))
 
+;;;###autoload
 (defun nix-init-edit-nix-shell ()
   "Open the shell.nix file in the current project."
   (interactive)
   (find-file (expand-file-name "shell.nix" (project-root (project-current)))))
 
+;;;###autoload
 (defun nix-init-project ()
   "Initialize a nix shell environment in current project."
   (interactive)

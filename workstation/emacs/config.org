@@ -2433,8 +2433,12 @@ A terminal emulator
     (add-to-list 'project-kill-buffer-conditions  '(major-mode . vterm-mode))
 
     :config
-    (defadvice vterm (after kill-with-no-query nil activate)
-      (set-process-query-on-exit-flag (get-buffer-process ad-return-value) nil)))
+    (defun my-vterm-no-query-on-exit (buffer)
+      "Set vterm process to not query on exit."
+      (when buffer
+        (set-process-query-on-exit-flag (get-buffer-process buffer) nil))
+      buffer)
+    (advice-add 'vterm :filter-return #'my-vterm-no-query-on-exit))
 
 #+end_src
 
