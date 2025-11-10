@@ -115,7 +115,7 @@ in
   home.packages = (
     with pkgs;
     lib.lists.flatten [
-      wakatime
+      wakatime-cli
       # pympress # pdf presenter
       git-crypt
 
@@ -175,7 +175,7 @@ in
       clang-tools
       clang
       clang-analyzer
-      (hiPrio gcc)
+      (lib.hiPrio gcc)
       # Needed hiPrio to resolve conflict as both
       # clang and gcc provide C++ binary
       # ccls
@@ -266,7 +266,7 @@ in
       # '')
       nerd-fonts.roboto-mono
       nerd-fonts.symbols-only
-      noto-fonts-emoji
+      noto-fonts-color-emoji
     ]
     ++ lib.optionals isLinux (
       lib.lists.flatten [
@@ -449,7 +449,7 @@ in
   home.file = {
     ".authinfo".source = ../secrets/.authinfo;
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
-    ".wakatime.cfg".source = ../secrets/wakatime.cfg;
+    ".wakatime-cli.cfg".source = ../secrets/wakatime.cfg;
     ".aws/config".source = ../secrets/aws.config;
     ".config/scw/config.yaml".source = ../secrets/scaleway.yaml;
 
@@ -492,7 +492,7 @@ in
   programs.git = {
     enable = true;
 
-    extraConfig = {
+    settings = {
       user = {
         name = "Oskar Haukebøe";
         signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILToVl9RmOhn1TaQHiDPIS1/TGbHeA6ssTTocJmv5Yvf";
