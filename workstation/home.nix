@@ -469,6 +469,8 @@ in
       cache-keepalive-pings = 5;
       code-theme = "monokai";
       auto-commits = false;
+      model = "openrouter/anthropic/claude-sonnet-4.5";
+      weak-model = "openrouter/anthropic/claude-haiku-4.5";
     };
   };
 
