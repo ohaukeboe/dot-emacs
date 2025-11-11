@@ -3206,16 +3206,33 @@ An RSS reader. [[https://feedsearch.dev][Feedsearch]] can be used for finding rs
     :custom
     (elfeed-feeds '(("https://blog.nicco.love/rss" nicco blog)
                     ("http://www.masteringemacs.org/feed" masterringemacs blog emacs)
+                    ("https://nixcademy.com/feed.xml" nix blog)
                     ("https://blog.dornea.nu/feed.xml" dornea blog)
                     ("https://blog.system76.com/rss.xml" cosmic)
-                    ("https://openrss.org/changelog/rss" openrss changelog)
-                    ("https://openrss.org/rss" openrss)
                     ("https://openrss.org/t3.gg/blog" theo blog)
                     ("https://openrss.org/releases.1password.com/linux/" 1password)
-                    ("https://openrss.org/animecorner.me/feed/" animecorner anime)
                     ("https://universal-blue.discourse.group/tag/announcements.rss" universalblueannounce ublue)))
     :bind
-    ("C-c f" . 'elfeed))
+    ("C-c o f" . 'elfeed)
+    :config
+    (defun my/elfeed-browse-url-advice (&optional use-generic-p)
+      "Visit the current entry in your browser using `browse-url'."
+      (interactive "P")
+      (let ((buffer (current-buffer))
+            (entries (elfeed-search-selected)))
+        (cl-loop for entry in entries
+                 do (elfeed-untag entry 'unread)
+                 when (elfeed-entry-link entry)
+                 do (browse-url it use-generic-p))
+        ;; `browse-url' could have switched to another buffer if eww or another
+        ;; internal browser is used, but the remainder of the functions needs to
+        ;; run in the elfeed buffer.
+        (with-current-buffer buffer
+          (mapc #'elfeed-search-update-entry entries)
+          (unless (or elfeed-search-remain-on-entry (use-region-p))
+            (forward-line)))))
+
+    (advice-add 'elfeed-search-browse-url :override #'my/elfeed-browse-url-advice))
 #+end_src
 
 ** rmapi
