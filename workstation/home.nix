@@ -468,6 +468,7 @@ in
       cache-prompts = true;
       cache-keepalive-pings = 5;
       code-theme = "monokai";
+      auto-commits = false;
     };
   };
 
