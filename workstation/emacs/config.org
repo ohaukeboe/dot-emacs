@@ -871,7 +871,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     :hook
     (prog-mode . diff-hl-mode)
     (dired-mode . my/diff-hl-dired-mode-unless-tramp)
-    (focus-in-hook . diff-hl-update)
+    (after-revert . diff-hl-update)
     :custom
     (diff-hl-flydiff-mode t)
     (diff-hl-flydiff-delay 0)
@@ -3070,7 +3070,7 @@ To initialize the maildir run:
     ("C-c o m" . mu4e)
 
     :custom
-    (mu4e-split-view nil)
+    (mu4e-split-view 'vertical)
     (mail-user-agent 'mu4e-user-agent)
     (shr-use-colors nil)
     (mu4e-context-policy 'pick-first)
