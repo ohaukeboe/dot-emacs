@@ -484,6 +484,7 @@ in
       if [ ! -f $HOME/.davmail.properties ]; then
         $DRY_RUN_CMD cp ${./dotfiles/davmail.properties} $HOME/.davmail.properties
       fi
+      $DRY_RUN_CMD chmod 664 $HOME/.davmail.properties
     '';
 
     copyMsmtpConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
