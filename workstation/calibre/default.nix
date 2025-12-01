@@ -52,8 +52,9 @@ in
         plugin_customization = { };
         plugins = {
           "Open With" = "${config.home.homeDirectory}/${pluginsDir}/Open With.zip";
-          "DeDRM" = inputs.calibre-plugins.packages.${pkgs.system}.dedrm-plugin;
-          "ACSM Input" = inputs.calibre-plugins.packages.${pkgs.system}.acsm-calibre-plugin;
+          "DeDRM" = inputs.calibre-plugins.packages.${pkgs.stdenv.hostPlatform.system}.dedrm-plugin;
+          "ACSM Input" =
+            inputs.calibre-plugins.packages.${pkgs.stdenv.hostPlatform.system}.acsm-calibre-plugin;
         };
       };
       force = true;

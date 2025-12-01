@@ -11,12 +11,6 @@ in
     enable = true;
     enableDefaultConfig = false;
 
-    extraOptionOverrides = {
-      # TODO: make this dynamic based on the environment
-      identityAgent = "~/.1password/agent.sock";
-      identitiesOnly = "yes";
-    };
-
     matchBlocks = {
       "*" = {
         serverAliveInterval = 30;
@@ -24,6 +18,9 @@ in
         controlMaster = "auto";
         controlPath = "/tmp/ssh-%u-%r@%h:%p";
         controlPersist = "10m";
+        # TODO: make this dynamic based on the environment
+        identityAgent = "~/.1password/agent.sock";
+        identitiesOnly = true;
       };
       "desktop" = {
         hostname = secrets.ssh_host.desktop;

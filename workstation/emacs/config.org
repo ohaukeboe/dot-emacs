@@ -1364,13 +1364,14 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
 
 #+begin_src elisp
   (use-package python-ts-mode
-    ;; :hook (python-ts-mode . eglot-ensure)
     :hook (python-ts-mode . lsp-deferred)
     :mode "\\.py\\'"
     :init
     (with-eval-after-load 'org
      (org-babel-do-load-languages 'org-babel-load-languages (add-to-list 'org-babel-load-languages
-                   '(python . t))))
+                                                                         '(python . t))))
+    (add-to-list 'major-mode-remap-alist
+                 '(python-mode . python-ts-mode))
     :custom
     (lsp-pylsp-plugins-ruff-enabled t)
     (lsp-pylsp-plugins-mypy-enabled t))
