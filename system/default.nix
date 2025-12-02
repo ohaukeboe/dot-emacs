@@ -103,11 +103,20 @@
     "riscv64-linux"
   ];
 
-  virtualisation.docker.enable = true;
-  virtualisation.docker.storageDriver = "btrfs";
-  virtualisation.docker.rootless = {
+  virtualisation.docker = {
     enable = true;
-    setSocketVariable = true;
+    storageDriver = "btrfs";
+    rootless = {
+      enable = true;
+      setSocketVariable = true;
+      daemon.settings = {
+        dns = [
+          "1.1.1.1"
+          "8.8.8.8"
+        ];
+        registry-mirrors = [ "https://mirror.gcr.io" ];
+      };
+    };
   };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
