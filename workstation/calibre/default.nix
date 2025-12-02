@@ -22,10 +22,6 @@ in
   ];
 
   home.file = {
-    "${calibreDir}/conversion" = {
-      source = ./calibre-config/conversion;
-      force = true;
-    };
     "${calibreDir}/global.py.json" = {
       source = ./calibre-config/global.py.json;
       force = true;
@@ -160,5 +156,12 @@ in
         worker_process_priority = "normal";
       };
     };
+  };
+
+  home.activation = {
+    calibre-conversion = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      run cp -rf --no-preserve=mode,ownership $VERBOSE_ARG \
+          ${builtins.toPath ./calibre-config/conversion} $HOME/${calibreDir}/
+    '';
   };
 }
