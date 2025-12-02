@@ -1809,6 +1809,7 @@ rather than files.  These modes usually use read-only buffers.
 
 #+begin_src elisp
   (use-package special
+    :disabled
     :hook (special-mode . visual-line-mode))
 #+end_src
 
@@ -2364,6 +2365,15 @@ The emacs web browser
           (eww-browse-url url)
         ;; Without prefix: use eww
         (browse-url-default-browser url))))
+#+end_src
+
+** w3m
+
+#+begin_src elisp
+  (use-package w3m
+    :ensure t
+    :custom
+    (w3m-treat-image-size nil))
 #+end_src
 
 ** Eat
@@ -3063,21 +3073,20 @@ To initialize the maildir run:
   (use-package mu4e
     :ensure nil
     :defer t
-    :if (and (file-exists-p "~/.mail")
-             (executable-find "mbsync")
-             (executable-find "msmtp")
-             (executable-find "mu"))
+    :if (file-exists-p "~/.mail")
+
     :bind
     ("C-c o m" . mu4e)
 
     :custom
-    (mu4e-split-view 'vertical)
+    (mu4e-split-view 'horizontal)
     (mail-user-agent 'mu4e-user-agent)
     (shr-use-colors nil)
     (mu4e-context-policy 'pick-first)
     (mu4e-update-interval (* 5 60)) ;; Update every 5 minutes
     (mu4e-index-update-error-warning nil) ;; Hide 'CLOSE' error from proton
     (mu4e-hide-index-messages t)
+    (mm-text-html-renderer 'w3m)
 
     (mu4e-bookmarks
      '((:name "Unread messages" :query "flag:unread AND NOT flag:trashed AND maildir:/INBOX/" :key 117)

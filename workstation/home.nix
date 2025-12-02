@@ -140,6 +140,7 @@ in
       act # run github actions locally
       emacs-lsp-booster
       trash-cli
+      w3m # text based web-browser
 
       ### just ###
       just
