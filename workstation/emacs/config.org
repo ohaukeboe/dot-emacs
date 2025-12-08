@@ -2541,8 +2541,98 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
   (use-package pgmacs
     :vc (:url "https://github.com/emarsden/pgmacs.git"
               :rev "v0.27")
+    :custom
+    (pgmacs-row-colors `(,(face-background 'default) ,(face-background 'markdown-code-face)))
+    (pgmacs-schemaspy-cmdline "podman run -v %D:/output --userns=keep-id --network=host docker.io/schemaspy/schemaspy:latest -t pgsql11 -host %h -port %P -u %u -p %p -db %d -imageformat svg")
+
+    :custom-face
+    (pgmacs-table-data ((nil (:inherit default
+                                       :foreground unspecified))))
+    (pgmacs-column-foreign-key ((nil (:foreground ,(face-foreground 'outline-1)))))
+    (pgmacs-highlighted ((nil (:inherit outline-2
+                                        :foreground unspecified))))
+    (pgmacs-table-header ((t (:inherit magit-header-line
+                                       :foreground unspecified
+                                       :background unspecified))))
     :bind
-    ("C-c o p" . pgmacs))
+    ("C-c o p" . pgmacs)
+
+    :config
+    (defun pgmacs--svg-icon-database ()
+      "Return a nerd-icon for a database."
+      (if (fboundp 'nerd-icons-mdicon)
+          (nerd-icons-mdicon "nf-md-database" :face 'nerd-icons)
+        " "))
+
+    (defun pgmacs--svg-icon-user ()
+      "Return a nerd-icon for a user."
+      (if (fboundp 'nerd-icons-mdicon)
+          (nerd-icons-mdicon "nf-md-account" :face 'nerd-icons)
+        " "))
+
+    (defun pgmacs--svg-icon-table ()
+      "Return a nerd-icon for a table."
+      (if (fboundp 'nerd-icons-mdicon)
+          (nerd-icons-mdicon "nf-md-table" :face 'nerd-icons)
+        " "))
+
+    (defun pgmacs--svg-icon-comment ()
+      "Return a nerd-icon for a comment."
+      (if (fboundp 'nerd-icons-mdicon)
+          (nerd-icons-mdicon "nf-md-comment_text" :face 'nerd-icons)
+        " "))
+
+    (defun pgmacs--svg-icon-replication ()
+      "Return a nerd-icon for replication."
+      (if (fboundp 'nerd-icons-mdicon)
+          (nerd-icons-mdicon "nf-md-sync" :face 'nerd-icons)
+        " "))
+    (setq pgmacs-table-list-buttons
+      (list (pgmacs-shortcut-button
+             :condition (lambda () (not (member (pgcon-server-variant pgmacs--con) '(questdb spanner materialize ydb))))
+  	       :label "Display procedures"
+             :action #'pgmacs--display-procedures
+             :help-echo "Display a table with all functions and procedures")
+  	      (pgmacs-shortcut-button
+             :condition (lambda () (not (member (pgcon-server-variant pgmacs--con) '(cratedb questdb spanner materialize risingwave))))
+  	       :label "Display running queries"
+             :action #'pgmacs--display-running-queries)
+            (pgmacs-shortcut-button
+             :label "Display databases"
+             :action #'pgmacs--display-database-list)
+  	      (pgmacs-shortcut-button
+             :condition (lambda () (not (member (pgcon-server-variant pgmacs--con) '(spanner))))
+  	       :label "More backend information"
+             :action #'pgmacs--display-backend-information)
+  	      (pgmacs-shortcut-button
+             :condition (lambda () (not (member (pgcon-server-variant pgmacs--con) '(questdb ydb))))
+  	       :label "PostgreSQL settings"
+             :action (lambda (&rest _ignore)
+                       (pgmacs-show-result pgmacs--con "SELECT * FROM pg_settings")))
+  	      (pgmacs-shortcut-button
+             :condition (lambda () (not (member (pgcon-server-variant pgmacs--con) '(cratedb questdb spanner materialize risingwave))))
+  	       :label "Stat activity"
+             :action #'pgmacs--display-stat-activity
+             :help-echo "Show information from the pg_stat_activity table")
+            (pgmacs-shortcut-button
+             :condition (lambda () (eq (pgcon-server-variant pgmacs--con) 'risingwave))
+             :label "Show jobs"
+             :action #'pgmacs--display-jobs/risingwave
+             :help-echo "Show all streaming jobs in process")
+            (pgmacs-shortcut-button
+             :condition (lambda () (eq (pgcon-server-variant pgmacs--con) 'materialize))
+             :label "Show connections"
+             :action #'pgmacs--display-connections/materialize
+             :help-echo "Show all connections configured in Materialize")
+  	      (pgmacs-shortcut-button
+             :condition (lambda () (not (member (pgcon-server-variant pgmacs--con) '(cratedb questdb spanner materialize risingwave))))
+  	       :label "Replication stats"
+  	       :action #'pgmacs--display-replication-stats
+  	       :help-echo "Show information on PostgreSQL replication status")
+            (pgmacs-shortcut-button
+             :label "Disconnect"
+             :action #'pgmacs-disconnect
+             :help-echo "Close this connection to PostgreSQL"))))
 #+end_src
 
 ** Run shell command on save
