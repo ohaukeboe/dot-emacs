@@ -60,10 +60,6 @@ in
       source = ./calibre-config/plugins + "/Open With.zip";
       force = true;
     };
-    "${pluginsDir}/DeACSM/account" = {
-      source = ../../secrets/deacsm;
-      force = true;
-    };
 
     "${pluginsDir}/Open With.json" = {
       text = builtins.toJSON {
@@ -162,6 +158,10 @@ in
     calibre-conversion = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       run cp -rf --no-preserve=mode,ownership $VERBOSE_ARG \
           ${builtins.toPath ./calibre-config/conversion} $HOME/${calibreDir}/
+
+      mkdir -p $HOME/${calibreDir}/plugins/DeACSM
+      run cp -rf --no-preserve=mode,ownership $VERBOSE_ARG \
+          ${builtins.toPath ../../secrets/deacsm} $HOME/${calibreDir}/plugins/DeACSM/account
     '';
   };
 }
