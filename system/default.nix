@@ -107,6 +107,7 @@
   virtualisation.docker = {
     enable = true;
     storageDriver = "btrfs";
+    autoPrune.enable = true;
     rootless = {
       enable = true;
       setSocketVariable = true;
@@ -120,6 +121,15 @@
     };
   };
 
+  virtualisation = {
+    containers.enable = true;
+    podman = {
+      enable = true;
+      defaultNetwork.settings.dns_enabled = true; # Required for containers under podman-compose to be able to talk to each other.
+      autoPrune.enable = true;
+    };
+  };
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.oskar = {
     isNormalUser = true;
@@ -127,6 +137,7 @@
       "wheel"
       "networkmanager"
       "docker"
+      "podman"
       "wireshark"
     ];
   };
