@@ -871,7 +871,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     :hook
     (prog-mode . diff-hl-mode)
     (dired-mode . my/diff-hl-dired-mode-unless-tramp)
-    (after-revert . diff-hl-update)
+    (focus-in-hook . diff-hl-update)
     :custom
     (diff-hl-flydiff-mode t)
     (diff-hl-flydiff-delay 0)
