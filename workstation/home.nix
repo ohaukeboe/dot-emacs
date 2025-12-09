@@ -137,6 +137,7 @@ in
       davmail # bridge allowing to use exchange through IMAP
       claude-code
       aider-chat # another AI thingy
+      playwright
       emacs-lsp-booster
       trash-cli
       w3m # text based web-browser
