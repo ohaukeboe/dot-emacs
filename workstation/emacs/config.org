@@ -737,7 +737,6 @@ Consult is a package that provides a set of commands for searching and navigatin
 #+begin_src elisp
   (use-package magit
     :ensure t
-    :defer t
     :commands magit-status
     :bind
     (:map project-prefix-map
@@ -1604,9 +1603,9 @@ Some other zotero plugins I use are:
 
 #+begin_src elisp
   (defvar oh/bib-files
-    (let ((path (concat user-emacs-directory ".cache/references.bib")))
-      (when (file-exists-p path)
-        `(,path))))
+    (let ((paths (list (concat user-emacs-directory ".cache/references.bib")
+                       "~/Nextcloud/.org/references.bib")))
+      (seq-filter #'file-exists-p paths)))
 
   (defvar oh/roam-dir
     (my/nextcloud-dir-expand "org_notes/roam/bibliography/"))
@@ -1800,6 +1799,90 @@ Org-ref handles crossreferences pretty well.
     (org-ref-insert-cite-function
      (lambda ()
   	 (org-cite-insert nil))))
+#+end_src
+
+** Zotra
+
+#+begin_src elisp
+  (use-package zotra
+    :ensure t
+    :custom
+    (zotra-default-bibliography "~/Nextcloud/.org/references.bib")
+    (zotra-download-attachment-default-directory "~/Nextcloud/.org/library")
+    (zotra-backend 'zotra-server)
+    (zotra-local-server-directory t)
+    (zotra-use-curl t)
+
+    :config
+    (defun zotra-maybe-start-local-server ()
+      (when (and zotra-local-server-directory
+                 (member zotra-backend '(translation-server zotra-server)))
+        (let ((start (not (process-live-p zotra-local-server-process))))
+          (when (and (process-live-p zotra-local-server-process)
+                     (not (equal zotra-local-server-process-directory
+                                 zotra-local-server-directory)))
+            (zotra-kill-local-server)
+            (setq start t))
+          (when start
+            (message "Starting local %s..." zotra-backend)
+            (setq zotra-local-server-process
+                  (make-process
+                   :name "zotra-server-process"
+                   :buffer (and zotra-local-server-process-buffer-name
+                                (get-buffer-create
+                                 zotra-local-server-process-buffer-name))
+                   :noquery t
+                   :command (list "zotra" "server")))
+            (setq zotra-local-server-process-directory
+                  zotra-local-server-directory)
+            (sleep-for 2)))))
+
+    (defun zotra-download-attachment-for-current-entry ()
+      (interactive)
+      (save-excursion
+        (bibtex-beginning-of-entry)
+        (let* ((entry (bibtex-parse-entry t))
+               (key (cdr (assoc "=key=" entry)))
+               (url (cdr (assoc "url" entry)))
+               (filename (concat key ".pdf"))
+               (filename (when entry
+                           (zotra-download-attachment
+                            url nil filename))))
+          (when filename
+            (bibtex-make-field (list "File" nil filename) t)))))
+
+    (add-hook 'zotra-after-get-bibtex-entry-hook 'zotra-download-attachment-for-current-entry)
+
+    (with-eval-after-load "bibtex-completion"
+      (zotra-bibtex-completion)))
+#+end_src
+
+** Biblio
+
+#+begin_src elisp
+  (use-package biblio
+    :ensure t)
+#+end_src
+
+** ebib
+
+#+begin_src elisp
+  (use-package ebib
+    :ensure t
+    :bind ("C-c o e" . ebib)
+    :custom
+    (ebib-preload-bib-files '("~/Nextcloud/.org/references.bib"))
+    (ebib-file-search-dirs '("~/Nextcloud/.org/library/"))
+    (ebib-reading-list-file "~/Nextcloud/.org/reading_list.org")
+    (ebib-use-timestamp t)
+    (ebib-file-associations nil))
+
+  (use-package ebib-biblio
+    :after (ebib biblio)
+    :bind (:map ebib-index-mode-map
+                ("B" . ebib-biblio-import-doi)
+                :map biblio-selection-mode-map
+                ("e" . ebib-biblio-selection-import)))
 #+end_src
 
 * Major Modes
@@ -2545,13 +2628,6 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     :config
     (global-wakatime-mode))
 #+end_src
-** Zotra
-
-#+begin_src elisp
-  (use-package zotra
-    :ensure t)
-#+end_src
-
 ** Visual replace
 
 #+begin_src elisp
