@@ -157,6 +157,7 @@ in
       ### Reading ###
       rmapi
       (lib.optional (system != "aarch64-linux") zotero)
+      inputs.zotra-server.packages.${system}.default
 
       ### Java ###
       jdk

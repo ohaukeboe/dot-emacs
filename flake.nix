@@ -50,6 +50,11 @@
       url = "github:ohaukeboe/kotlin-lsp-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    zotra-server = {
+      url = "github:ohaukeboe/zotra-server-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -68,6 +73,7 @@
       nix-index-database,
       kotlin-lsp,
       calibre-plugins,
+      zotra-server,
       ...
     }@inputs:
     let
