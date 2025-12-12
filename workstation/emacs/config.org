@@ -1216,7 +1216,13 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     :mode "\\.ts\\'"
     :custom
     (tab-width 4)
-    (typescript-ts-mode-indent-offset 4))
+    (typescript-ts-mode-indent-offset 4)
+    (lsp-javascript-display-parameter-name-hints "all")
+    (lsp-javascript-display-enum-member-value-hints t)
+    (lsp-javascript-display-parameter-type-hints t)
+    (lsp-javascript-display-property-declaration-type-hints t)
+    (lsp-javascript-display-return-type-hints)
+    (lsp-javascript-display-variable-type-hints))
 
 #+end_src
 
