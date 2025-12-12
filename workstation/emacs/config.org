@@ -1812,6 +1812,7 @@ Org-ref handles crossreferences pretty well.
     (zotra-backend 'zotra-server)
     (zotra-local-server-directory t)
     (zotra-use-curl t)
+    (zotra-default-entry-format "biblatex")
 
     :config
     (defun zotra-maybe-start-local-server ()
@@ -1875,7 +1876,8 @@ Org-ref handles crossreferences pretty well.
     (ebib-file-search-dirs '("~/Nextcloud/.org/library/"))
     (ebib-reading-list-file "~/Nextcloud/.org/reading_list.org")
     (ebib-use-timestamp t)
-    (ebib-file-associations nil))
+    (ebib-file-associations nil)
+    (ebib-bibtex-dialect 'biblatex))
 
   (use-package ebib-biblio
     :after (ebib biblio)
