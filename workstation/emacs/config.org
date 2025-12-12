@@ -3268,8 +3268,8 @@ When first connecting davmail to the mail accounts, it must be run with ~davmail
 
 To initialize the maildir run:
 #+begin_src sh
-  mkdir ~/.mail ~/.mail/ifi ~/.mail/proton ~/.mail/knowit
-  mu init --maildir=~/.mail --my-address=oskah@uio.no --my-address=ohaukeboe@pm.me --my-address=oskar.haukeboe@knowit.no
+  mkdir ~/.mail ~/.mail/ifi ~/.mail/proton ~/.mail/knowit ~/.mail/knowit-drift
+  mu init --maildir=~/.mail --my-address=oskah@uio.no --my-address=ohaukeboe@pm.me --my-address=oskar.haukeboe@knowit.no --my-address=drift@knowit.no
   mu index
   mbsync -a
 #+end_src
@@ -3321,7 +3321,9 @@ To initialize the maildir run:
            '(:maildir "/proton/Inbox"
                       :key ?p)
            '(:maildir "/knowit/Inbox"
-                      :key ?k)))
+                      :key ?k)
+           '(:maildir "/knowit-drift/Inbox"
+                      :key ?d)))
 
     (setq mu4e-contexts
           (list
@@ -3365,7 +3367,21 @@ To initialize the maildir run:
                     (mu4e-drafts-folder . "/knowit/Drafts")
                     (mu4e-refile-folder . "/knowit/Archive")
                     (mu4e-compose-signature . nil)
-                    (smtpmail-smtp-user . "oskar.haukeboe@knowit.no"))))))
+                    (smtpmail-smtp-user . "oskar.haukeboe@knowit.no")))
+           (make-mu4e-context
+            :name "knowit-drift"
+            :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/knowit-drift" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address . "drift@knowit.no")
+                    (user-full-name . "Drift")
+                    (mu4e-sent-folder . "/knowit-drift/Sent")
+                    (mu4e-trash-folder . "/knowit-drift/Trash")
+                    (mu4e-drafts-folder . "/knowit-drift/Drafts")
+                    (mu4e-refile-folder . "/knowit-drift/Archive")
+                    (mu4e-compose-signature . nil)
+                    (smtpmail-smtp-user . "drift@knowit.no"))))))
 #+end_src
 
 Org-msg allows for composing the mail using orgmode, and then send it as beautiful html.
