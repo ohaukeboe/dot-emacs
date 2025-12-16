@@ -2673,11 +2673,11 @@ I've encountered issues with the =wakatime-cli= program not functioning properly
     (pgmacs-column-foreign-key ((nil (:foreground ,(face-foreground 'outline-1)))))
     (pgmacs-highlighted ((nil (:inherit outline-2
                                         :foreground unspecified))))
-    (pgmacs-table-header ((t (:inherit magit-header-line
+    (pgmacs-table-header ((t (:inherit default
                                        :foreground unspecified
                                        :background unspecified))))
     :bind
-    ("C-c o p" . pgmacs)
+    ("C-c o p" . pgmacs-open-uri)
 
     :config
     (defun pgmacs--svg-icon-database ()
