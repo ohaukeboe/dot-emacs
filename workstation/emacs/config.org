@@ -3255,6 +3255,28 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     (aidermacs-exit-kills-buffer t))
 #+end_src
 
+** agent-shell
+
+#+begin_src elisp
+  (use-package agent-shell
+    :ensure t
+    :bind
+    ("C-c o l" . agent-shell)
+    ("C-c l l" . agent-shell)
+    ("C-c l f" . agent-shell-send-current-file)
+    ("C-c l r" . agent-shell-send-dwim)
+    :config
+    (setq agent-shell-goose-authentication
+          (agent-shell-make-goose-authentication :none t)))
+
+  (use-package agent-review
+    :disabled
+    :vc (:url "https://github.com/nineluj/agent-review.git"
+              :rev "df684c4")
+    :bind
+    ("C-c l p" . agent-review))
+#+end_src
+
 ** SICP
 Of course I need to have the wizard book as info pages :)
 
@@ -3443,6 +3465,7 @@ An RSS reader. [[https://feedsearch.dev][Feedsearch]] can be used for finding rs
     (elfeed-feeds '(("https://blog.nicco.love/rss" nicco blog)
                     ("http://www.masteringemacs.org/feed" masterringemacs blog emacs)
                     ("https://nixcademy.com/feed.xml" nix blog)
+                    ("https://xenodium.com/feed" xenodium emacs blog)
                     ("https://blog.dornea.nu/feed.xml" dornea blog)
                     ("https://blog.system76.com/rss.xml" cosmic)
                     ("https://openrss.org/t3.gg/blog" theo blog)

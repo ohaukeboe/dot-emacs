@@ -136,6 +136,8 @@ in
       protonmail-bridge
       davmail # bridge allowing to use exchange through IMAP
       claude-code
+      claude-code-acp
+      goose-cli
       aider-chat-full # another AI thingy
       emacs-lsp-booster
       trash-cli
