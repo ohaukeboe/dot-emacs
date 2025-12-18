@@ -136,8 +136,7 @@ in
       protonmail-bridge
       davmail # bridge allowing to use exchange through IMAP
       claude-code
-      aider-chat # another AI thingy
-      playwright
+      aider-chat-full # another AI thingy
       emacs-lsp-booster
       trash-cli
       w3m # text based web-browser

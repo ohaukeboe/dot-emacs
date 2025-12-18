@@ -846,6 +846,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     (advice-add 'forge-visit-this-topic :around #'my/forge-visit-with-pr-review)
     (advice-add 'forge-visit-pullreq :around #'my/forge-visit-with-pr-review))
 #+end_src
+
 ** PR-review
 
 #+begin_src elisp
@@ -853,6 +854,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     :ensure t
     :after consult-gh)
 #+end_src
+
 ** Gitignore
 
 #+begin_src elisp
