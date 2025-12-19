@@ -1292,15 +1292,23 @@ I find that [[https://github.com/fwcd/kotlin-language-server][kotlin-language-se
     :init
     (with-eval-after-load 'lsp-mode
       (add-to-list 'lsp-language-id-configuration
-  	             '(kotlin-mode . "kotlin"))
+  	             '(kotlin-mode . "kotlin")
+                   '(kotlin-ts-mode . "kotlin"))
+
       (lsp-register-client
        (make-lsp-client
         :new-connection (lsp-stdio-connection '("kotlin-lsp" "--stdio"))
         :activation-fn (lsp-activate-on "kotlin")
         :major-modes '(kotlin-mode kotlin-ts-mode)
-        ;; :priority -1
-        :add-on? t  ;; Use together with other lsp
-        :server-id 'kotlin-lsp))))
+        :priority 5
+        :server-id 'kotlin-jb-lsp))
+
+      (lsp-register-custom-settings
+       '(("jetbrains.kotlin.hints.settings.types.property" t)
+         ("jetbrains.kotlin.hints.settings.types.variable" t)
+         ("jetbrains.kotlin.hints.type.function.return" t)
+         ("jetbrains.kotlin.hints.type.function.parameter" t)
+         ("jetbrains.kotlin.hints.parameters" t)))))
 
   (use-package ob-kotlin
     :ensure t
@@ -3265,9 +3273,9 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     ("C-c l l" . agent-shell)
     ("C-c l f" . agent-shell-send-current-file)
     ("C-c l r" . agent-shell-send-dwim)
-    :config
-    (setq agent-shell-goose-authentication
-          (agent-shell-make-goose-authentication :none t)))
+    :custom
+    (agent-shell-goose-authentication
+     (agent-shell-make-goose-authentication :none t)))
 
   (use-package agent-review
     :disabled
