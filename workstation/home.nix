@@ -49,11 +49,7 @@ in
     # package = pkgs.emacs-pgtk;
     package = (
       pkgs.emacsWithPackagesFromUsePackage {
-        package = pkgs.emacs-unstable-pgtk.overrideAttrs (old: {
-          configureFlags = old.configureFlags ++ [
-            "--disable-gc-mark-trace" # Improves gc performance
-          ];
-        });
+        package = pkgs.emacs-unstable-pgtk;
         config = ./emacs/config.org;
         alwaysEnsure = false;
         alwaysTangle = true;
