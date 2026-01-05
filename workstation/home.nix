@@ -231,7 +231,7 @@ in
       # pandoc
       pandoc
       marksman
-      readability-cli
+      # readability-cli
       # sqlite3
       sqlite
 
@@ -271,9 +271,10 @@ in
       lib.lists.flatten [
         # Use script at https://github.com/FlyinPancake/1password-flatpak-browser-integration with zen flatpak instead
         # zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
-        nexusmods-app-unfree
+
+        # nexusmods-app-unfree
         vlc
-        python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
+        # python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
         tailscale
 
         ### nixGL ###
