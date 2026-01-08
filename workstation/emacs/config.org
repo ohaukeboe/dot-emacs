@@ -3222,6 +3222,38 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
      :category "emacs"))
 #+end_src
 
+MCP support is also nice :)
+
+#+begin_src elisp
+  (use-package mcp
+    :ensure t
+    :after gptel
+    :custom (mcp-hub-servers
+             `(("filesystem" . (
+                                :command "npx"
+                                :args ("-y" "@modelcontextprotocol/server-filesystem")
+                                :roots ("/home/oskar/projects/" "/home/oskar/knowit/")))
+               ;; ("playwright" . (:command "npx"
+               ;; :args ("-y" "@playwright/mcp@latest" "--extension")))
+               ("context7" . (
+                              :command "npx"
+                              :args ("-y" "@upstash/context7-mcp" "--api-key"
+                                     ,(auth-source-pick-first-password :host "context7.com"))))
+               ("github" . (
+                            :command "npx"
+                            :args ("-y" "@modelcontextprotocol/server-github")
+                            :env (
+                                  :GITHUB_PERSONAL_ACCESS_TOKEN
+                                  ,(auth-source-pick-first-password :host "githubpat"))))
+               ("serena" . (
+                            :command "nix"
+                            :args ("run" "github:oraios/serena" "--" "start-mcp-server")))))
+    :config
+    (require 'mcp-hub)
+    (require 'gptel-integrations)
+    :hook (after-init . mcp-hub-start-all-server))
+#+end_src
+
 [[https://github.com/karthink/gptel-quick][gptel-quick]] is a nifty package that uses gptel to describe thing at point.
 
 #+begin_src elisp
@@ -3265,6 +3297,8 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
 
 ** agent-shell
 
+Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client Protocol]].
+
 #+begin_src elisp
   (use-package agent-shell
     :ensure t
@@ -3275,7 +3309,18 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     ("C-c l r" . agent-shell-send-dwim)
     :custom
     (agent-shell-goose-authentication
-     (agent-shell-make-goose-authentication :none t)))
+     (agent-shell-make-goose-authentication :none t))
+    (agent-shell-mcp-servers
+     `(((name . "serena")
+        (type . "stdio")
+        (command . "nix")
+        (args . ("run" "github:oraios/serena" "--" "start-mcp-server"))
+        (env . []))
+       ((name . "context7")
+        (type . "stdio")
+        (command . "npx")
+        (args . ("-y" "@upstash/context7-mcp" "--api-key" ,(auth-source-pick-first-password :host "context7.com")))
+        (env . [])))))
 
   (use-package agent-review
     :disabled
