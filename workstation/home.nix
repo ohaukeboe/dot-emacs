@@ -135,6 +135,7 @@ in
       claude-code-acp
       goose-cli
       aider-chat-full # another AI thingy
+      opencode
       emacs-lsp-booster
       trash-cli
       w3m # text based web-browser
