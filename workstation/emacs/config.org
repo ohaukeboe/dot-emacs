@@ -3255,7 +3255,9 @@ MCP support is also nice :)
 #+begin_src elisp
   (use-package gptel-magit
     :ensure t
-    :hook (magit-mode . gptel-magit-install))
+    :hook (magit-mode . gptel-magit-install)
+    :custom
+    (gptel-magit-model "openrouter/google/gemini-2.5-flash"))
 #+end_src
 
 ** aidermacs
