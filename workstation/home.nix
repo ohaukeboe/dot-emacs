@@ -454,6 +454,10 @@ in
     ".aws/config".source = ../secrets/aws.config;
     ".config/scw/config.yaml".source = ../secrets/scaleway.yaml;
 
+    "${config.xdg.configHome}/agents/AGENTS.md".source = ./agents-global.md;
+    "${config.xdg.configHome}/opencode/AGENTS.md".source = ./agents-global.md;
+    "${config.xdg.configHome}/claude/CLAUDE.md".source = ./agents-global.md;
+
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
 
     # Emacs
