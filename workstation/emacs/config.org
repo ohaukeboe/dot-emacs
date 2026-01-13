@@ -2339,7 +2339,7 @@ Export dispatcher using pandoc
   (use-package consult-org-roam
     :ensure t
     :custom
-    (consult-org-roam-mode 1)
+    (consult-org-roam-mode t)
     ;; Use `ripgrep' for searching with `consult-org-roam-search'
     (consult-org-roam-grep-func #'consult-ripgrep)
     ;; Configure a custom narrow key for `consult-buffer'
@@ -3026,7 +3026,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
 
     :config
     ;; OpenRouter offers an OpenAI compatible API
-    (setq gptel-model 'claude-sonnet-4.5
+    (setq gptel-model 'anthropic/claude-sonnet-4.5
           gptel-backend
           (gptel-make-openai "OpenRouter"               ;Any name you want
             :host "openrouter.ai"
@@ -3048,6 +3048,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
      :args (list '(:name "buffer"
                          :type string            ; :type value must be a symbol
                          :description "the name of the buffer whose contents are to be retrieved"))
+     :required '("buffer")
      :category "buffers")
 
     (gptel-make-tool
@@ -3085,6 +3086,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
      :args (list '(:name "file-path"
                          :type string
                          :description "relative path to the file within the project"))
+     :required '("file-path")
      :category "project")
 
     (gptel-make-tool
@@ -3107,8 +3109,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
      :description "return a list of all emacs keybinds"
      :args (list '(:name "regex"
                          :type string
-                         :description "optional regex pattern to filter keybindings"
-                         :required nil))
+                         :description "optional regex pattern to filter keybindings"))
      :category "emacs")
 
     (gptel-make-tool
@@ -3135,8 +3136,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
      :description "return a list of all non-command Emacs functions"
      :args (list '(:name "regex"
                          :type string
-                         :description "optional regex pattern to filter function names"
-                         :required nil))
+                         :description "optional regex pattern to filter function names"))
      :category "emacs")
 
     (gptel-make-tool
@@ -3165,8 +3165,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
      :description "return a list of all Emacs variables with their values"
      :args (list '(:name "regex"
                          :type string
-                         :description "optional regex pattern to filter variable names"
-                         :required nil))
+                         :description "optional regex pattern to filter variable names"))
      :category "emacs")
 
     (gptel-make-tool
@@ -3196,8 +3195,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
      :description "returns a list of all Emacs interactive commands"
      :args (list '(:name "regex"
                          :type string
-                         :description "optional regex pattern to filter command names"
-                         :required nil))
+                         :description "optional regex pattern to filter command names"))
      :category "emacs")
 
     (gptel-make-tool
@@ -3219,6 +3217,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
      :args (list '(:name "symbol_name"
                          :type string
                          :description "name of the Emacs function or variable to get documentation for"))
+     :required '("symbol_name")
      :category "emacs"))
 #+end_src
 
@@ -3250,8 +3249,7 @@ MCP support is also nice :)
                             :args ("run" "github:oraios/serena" "--" "start-mcp-server")))))
     :config
     (require 'mcp-hub)
-    (require 'gptel-integrations)
-    :hook (after-init . mcp-hub-start-all-server))
+    (require 'gptel-integrations))
 #+end_src
 
 [[https://github.com/karthink/gptel-quick][gptel-quick]] is a nifty package that uses gptel to describe thing at point.
@@ -3308,6 +3306,8 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     ("C-c l f" . agent-shell-send-current-file)
     ("C-c l r" . agent-shell-send-dwim)
     :custom
+    (agent-shell-completion-mode t)
+    (agent-shell-file-completion-enabled t)
     (agent-shell-goose-authentication
      (agent-shell-make-goose-authentication :none t))
     (agent-shell-mcp-servers
