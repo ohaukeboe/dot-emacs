@@ -579,18 +579,6 @@ Consult is a package that provides a set of commands for searching and navigatin
 #+begin_src elisp
   (use-package consult
     :ensure t
-    :custom
-    (consult-buffer-sources
-     '(consult--source-hidden-buffer
-       consult--source-modified-buffer
-       consult--source-buffer
-       ;; +consult-source-special
-       consult--source-recent-file
-       consult--source-file-register
-       consult--source-bookmark
-       consult--source-project-buffer-hidden
-       consult--source-project-recent-file-hidden))
-
     :bind
     (;; C-c bindings in `mode-specific-map'
      ("C-c M-x" . consult-mode-command)
