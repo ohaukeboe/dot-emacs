@@ -458,6 +458,13 @@ in
     "${config.xdg.configHome}/opencode/AGENTS.md".source = ./agents-global.md;
     "${config.xdg.configHome}/claude/CLAUDE.md".source = ./agents-global.md;
 
+    "${config.xdg.configHome}/opencode/opencode.json" = {
+      text = builtins.toJSON {
+        "$schema" = "https://opencode.ai/config.json";
+        model = "openrouter/anthropic/claude-sonnet-4.5";
+      };
+    };
+
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
 
     # Emacs
