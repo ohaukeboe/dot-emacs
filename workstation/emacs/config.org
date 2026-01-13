@@ -2339,7 +2339,6 @@ Export dispatcher using pandoc
   (use-package consult-org-roam
     :ensure t
     :custom
-    (consult-org-roam-mode t)
     ;; Use `ripgrep' for searching with `consult-org-roam-search'
     (consult-org-roam-grep-func #'consult-ripgrep)
     ;; Configure a custom narrow key for `consult-buffer'
@@ -2348,6 +2347,7 @@ Export dispatcher using pandoc
     ;; in consult-buffer (and not down at the bottom)
     (consult-org-roam-buffer-after-buffers t)
     :config
+    (consult-org-roam-mode 1)
     ;; Eventually suppress previewing for certain functions
     (consult-customize
      consult-org-roam-forward-links
