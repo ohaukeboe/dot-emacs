@@ -10,25 +10,6 @@
 
 Welcome to my literate Emacs configuration. It is written in org-mode as I find that it helps keeping things tidy. I also use nix home-manager and flakes in order to maintain dependencies.
 
-* Install 1password
-
-I use universal-blue as my distro of choice and prefer to install 1password as ~rpm-ostree~ overlay instead of through nix. For this the following commands needs to be run to install it.
-
-#+begin_src sh
-  curl https://downloads.1password.com/linux/keys/1password.asc | sudo tee /etc/pki/rpm-gpg/RPM-GPG-KEY-1password
-  sudo sh -c 'echo -e "[1password]\nname=1Password Stable Channel\nbaseurl=https://downloads.1password.com/linux/rpm/stable/\$basearch\nenabled=1\ngpgcheck=1\nrepo_gpgcheck=0\ngpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-1password" > /etc/yum.repos.d/1password.repo'
-  rpm-ostree install 1password 1password-cli
-#+end_src
-
-Also, in order to get the 1password browser extension to talk to the program, you can use this script:
-
-#+begin_src sh
-  sh <(curl -L https://raw.githubusercontent.com/FlyinPancake/1password-flatpak-browser-integration/refs/heads/main/1password-flatpak-browser-integration.sh)
-
-  # or if you are on fish
-  sh (curl -L https://raw.githubusercontent.com/FlyinPancake/1password-flatpak-browser-integration/refs/heads/main/1password-flatpak-browser-integration.sh | psub)
-#+end_src
-
 * Personal information
 
 #+begin_src elisp
