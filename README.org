@@ -27,6 +27,30 @@ Where ~<hostname>~ is: ~x13-laptop~, ~work-laptop~, or ~x1laptop~
 - Fish shell with starship, zoxide, and atuin
 - AI coding assistants (Claude Code, Aider, Goose, OpenCode)
 
+* Gaming
+
+The gaming module provides a custom ~gamescope-game~ command that launches games with optimal gamescope settings:
+- Adaptive sync (VRR/FreeSync/G-Sync)
+- HDR enabled
+- Fullscreen mode
+- Auto-detected resolution (uses highest current display resolution)
+- Gamemode integration for CPU governor optimization
+- Forced cursor grab
+
+** Using with Steam
+
+To use ~gamescope-game~ with Steam games, add this to the game's launch options:
+
+#+begin_src sh
+gamescope-game -- %command%
+#+end_src
+
+** Using from Terminal
+
+#+begin_src sh
+gamescope-game /path/to/game
+#+end_src
+
 * Some Tips
 
 - [[https://www.nixhub.io/][nixhub.io]] for finding version history for nix packages

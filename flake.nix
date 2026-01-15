@@ -202,6 +202,7 @@
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
             ./machines/desktop/hardware-configuration.nix
+            { modules.gaming.enable = true; }
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [
