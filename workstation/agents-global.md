@@ -38,6 +38,16 @@
     2.  Most maintainable
     3.  Most efficient
 
+## Token Efficiency
+
+-   **Prefer targeted search tools over reading entire files** to minimize token usage
+-   When searching codebases, prefer in order:
+    1.  **Serena tools** (if available): `find_symbol`, `search_for_pattern`, `get_symbols_overview`
+    2.  **Grep/Glob tools**: Use pattern matching to find specific content
+    3.  **Read with offset/limit**: Only read the specific lines needed
+-   Avoid reading entire files when you only need specific sections
+-   Use symbol-aware tools (Serena) for code navigation instead of text-based search when possible
+
 ## Error Handling
 
 -   If something fails, explain what happened and why
