@@ -27,18 +27,6 @@
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
-  services.openssh = {
-    enable = true;
-    settings = {
-      PasswordAuthentication = false;
-      KbdInteractiveAuthentication = false;
-      PermitRootLogin = "no";
-    };
-  };
-  users.users.oskar.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILToVl9RmOhn1TaQHiDPIS1/TGbHeA6ssTTocJmv5Yvf"
-  ];
-
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/d8c58584-f4a3-45fe-9848-f9f653a55a1d";
     fsType = "btrfs";

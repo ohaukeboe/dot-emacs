@@ -180,6 +180,7 @@
             lanzaboote.nixosModules.lanzaboote
             ./machines/work-laptop.nix
             ./machines/work-laptop/config.nix
+            { modules.sshd.enable = true; }
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [
@@ -203,6 +204,7 @@
             lanzaboote.nixosModules.lanzaboote
             ./machines/desktop/hardware-configuration.nix
             { modules.gaming.enable = true; }
+            { modules.sshd.enable = true; }
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [
