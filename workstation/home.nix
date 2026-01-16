@@ -136,6 +136,7 @@ in
       goose-cli
       aider-chat-full # another AI thingy
       opencode
+      playwright-mcp
       emacs-lsp-booster
       trash-cli
       w3m # text based web-browser
