@@ -56,6 +56,7 @@ gamescope-game /path/to/game
 - [[https://www.nixhub.io/][nixhub.io]] for finding version history for nix packages
 - [[https://search.nixos.org/packages][search.nixos.org]] for finding nixos packages ond options
 - [[https://home-manager-options.extranix.com/][home-manager-options.extranix.com]] for finding home-manager options
+- [[https://smithery.ai/][smithery.ai]] for finding mcp servers
 
 ** Install 1password
 
@@ -75,8 +76,6 @@ Also, in order to get the 1password browser extension to talk to the program eve
   # or if you are on fish
   sh (curl -L https://raw.githubusercontent.com/FlyinPancake/1password-flatpak-browser-integration/refs/heads/main/1password-flatpak-browser-integration.sh | psub)
 #+end_src
-
-
 
 * Structure
 
