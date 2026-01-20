@@ -571,6 +571,7 @@ in
       "x-scheme-handler/https" = "zen-beta.desktop";
       "x-scheme-handler/about" = "zen-beta.desktop";
       "x-scheme-handler/unknown" = "zen-beta.desktop";
+      "application/pdf" = "zen-beta.desktop";
     };
   };
 
