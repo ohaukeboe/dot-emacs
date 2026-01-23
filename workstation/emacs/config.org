@@ -1346,6 +1346,9 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
 
 ** Python
 
+I use =python-lsp-server= (pylsp) together with =ruff= and =ty= as the language server for Python. It is highly configurable via plugins. These can be added to an uv project via:
+~uv add --dev python-lsp-ruff python-lsp-server ty~
+
 #+begin_src elisp
   (use-package python-ts-mode
     :hook (python-ts-mode . lsp-deferred)
@@ -1357,6 +1360,7 @@ Easily edit dockerfiles. I also choose between using Docker and Podman based on 
     (add-to-list 'major-mode-remap-alist
                  '(python-mode . python-ts-mode))
     :custom
+    (lsp-pylsp-server-command "pylsp")
     (lsp-pylsp-plugins-ruff-enabled t)
     (lsp-pylsp-plugins-mypy-enabled t))
     ;; (lsp-pylsp-plugins-pydocstyle-enabled nil)

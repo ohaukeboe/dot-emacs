@@ -184,6 +184,7 @@ in
 
       ### python ###
       uv
+      ty
       (python313.withPackages (
         ps: with ps; [
           python-lsp-server
