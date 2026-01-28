@@ -81,7 +81,6 @@ in
       gamescope-game
 
       prismlauncher
-      nexusmods-app-unfree
 
       # Lutris with extra dependencies for Wine-GE runner support
       (lutris.override {
