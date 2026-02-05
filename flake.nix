@@ -55,6 +55,11 @@
       url = "github:ohaukeboe/zotra-server-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    cutecosmic = {
+      url = "github:tenshou170/cutecosmic-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -74,6 +79,7 @@
       kotlin-lsp,
       calibre-plugins,
       zotra-server,
+      cutecosmic,
       ...
     }@inputs:
     let
@@ -144,6 +150,7 @@
 
       nixosConfigurations = {
         x13-laptop = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
           modules = [
             ({
               system.stateVersion = "24.11";
@@ -167,6 +174,7 @@
           ];
         };
         work-laptop = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
           modules = [
             ({
               system.stateVersion = "24.11";
@@ -191,6 +199,7 @@
           ];
         };
         desktop = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
           modules = [
             ({
               system.stateVersion = "24.11";
@@ -215,6 +224,7 @@
           ];
         };
         x1laptop = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
           modules = [
             ({
               system.stateVersion = "24.11";

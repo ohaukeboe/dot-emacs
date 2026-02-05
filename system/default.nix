@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
@@ -60,7 +61,7 @@
   services.gnome.gnome-keyring.enable = true;
 
   environment.sessionVariables = {
-    QT_QPA_PLATFORMTHEME = "gtk3";
+    QT_QPA_PLATFORMTHEME = "cosmic";
   };
 
   services.avahi = {
@@ -93,8 +94,12 @@
 
   services.resolved = {
     enable = true;
-    dnsovertls = "opportunistic";
-    fallbackDns = [ "1.1.1.1" ];
+    settings = {
+      Resolve = {
+        DNSOverTLS = "opportunistic";
+        FallbackDNS = [ "1.1.1.1" ];
+      };
+    };
   };
 
   # Improve compatibility with programs/scripts not made for nix
@@ -191,6 +196,7 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
+    inputs.cutecosmic.packages.${pkgs.system}.default
     vim
     wget
     git
