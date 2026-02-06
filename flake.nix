@@ -159,6 +159,7 @@
             nixos-hardware.nixosModules.asus-flow-gv302x-nvidia
             nix-index-database.nixosModules.nix-index
             { programs.nix-index-database.comma.enable = true; }
+            { modules.cosmic-de.enable = true; }
             ./common/caches.nix
             ./system/.
             ./common/secure-boot.nix
@@ -182,13 +183,14 @@
             })
             nix-index-database.nixosModules.nix-index
             { programs.nix-index-database.comma.enable = true; }
+            { modules.cosmic-de.enable = true; }
+            { modules.sshd.enable = true; }
             ./common/caches.nix
             ./system/.
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
             ./machines/work-laptop.nix
             ./machines/work-laptop/config.nix
-            { modules.sshd.enable = true; }
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [
@@ -207,13 +209,14 @@
             })
             nix-index-database.nixosModules.nix-index
             { programs.nix-index-database.comma.enable = true; }
+            { modules.cosmic-de.enable = true; }
+            { modules.gaming.enable = true; }
+            { modules.sshd.enable = true; }
             ./common/caches.nix
             ./system/.
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
             ./machines/desktop/hardware-configuration.nix
-            { modules.gaming.enable = true; }
-            { modules.sshd.enable = true; }
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [
@@ -221,29 +224,6 @@
                 ./system/home.nix
               ];
             })
-          ];
-        };
-        x1laptop = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            ({
-              system.stateVersion = "24.11";
-              networking.hostName = "x1laptop";
-            })
-            nix-index-database.nixosModules.nix-index
-            { programs.nix-index-database.comma.enable = true; }
-            ./common/caches.nix
-            ./system/.
-            ./common/secure-boot.nix
-            ./machines/x1carbon.nix
-            (homeManagerNixosModule {
-              stateVersion = "24.11";
-              imports = [
-                ./workstation/home.nix
-                ./system/home.nix
-              ];
-            })
-            lanzaboote.nixosModules.lanzaboote
           ];
         };
       };

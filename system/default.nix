@@ -52,17 +52,8 @@
   time.timeZone = "Europe/Oslo";
   i18n.extraLocales = [ "nb_NO.UTF-8/UTF-8" ];
 
-  # Enable the X11 windowing system.
-  # services.xserver.enable = true;
-
-  services.displayManager.cosmic-greeter.enable = true;
-  services.desktopManager.cosmic.enable = true;
-  services.system76-scheduler.enable = true;
-  services.gnome.gnome-keyring.enable = true;
-
-  environment.sessionVariables = {
-    QT_QPA_PLATFORMTHEME = "cosmic";
-  };
+  # Realtime scheduling for pipewire
+  security.rtkit.enable = true;
 
   services.avahi = {
     enable = true;
@@ -107,10 +98,6 @@
   programs.nix-ld.enable = true;
 
   services.flatpak.enable = true;
-  xdg.portal.wlr.enable = true;
-  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-cosmic ];
-  xdg.portal.config.common.default = "cosmic";
-  xdg.portal.enable = true;
 
   programs.virt-manager.enable = true;
   users.groups.libvirtd.members = [ "oskar" ];
@@ -196,7 +183,6 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    inputs.cutecosmic.packages.${pkgs.system}.default
     vim
     wget
     git
