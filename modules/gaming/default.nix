@@ -98,5 +98,18 @@ in
       steam-run
       gamescope-wsi # HDR
     ];
+
+    # Home-manager configuration
+    home-manager.users.oskar = {
+      # XDG autostart entry for Steam
+      xdg.configFile."autostart/steam.desktop".text = ''
+        [Desktop Entry]
+        Type=Application
+        Name=Steam
+        Exec=steam -silent
+        X-GNOME-Autostart-enabled=true
+        NoDisplay=true
+      '';
+    };
   };
 }
