@@ -55,6 +55,20 @@
   # Realtime scheduling for pipewire
   security.rtkit.enable = true;
 
+  services.pipewire = {
+    enable = true; # if not already enabled
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    # If you want to use JACK applications, uncomment the following
+    #jack.enable = true;
+    extraConfig.pipewire."192khz" = {
+      "context.properties" = {
+        "default.clock.rate" = 192000;
+      };
+    };
+  };
+
   services.avahi = {
     enable = true;
     nssmdns4 = true;
