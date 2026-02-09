@@ -100,7 +100,7 @@ in
     ];
 
     # Home-manager configuration
-    home-manager.users.oskar = {
+    home-manager.users.${config.user.username} = {
       # XDG autostart entry for Steam
       xdg.configFile."autostart/steam.desktop".text = ''
         [Desktop Entry]

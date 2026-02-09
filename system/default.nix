@@ -9,6 +9,7 @@
 {
   imports = [
     ../modules/default.nix
+    ../common/options.nix
   ];
 
   nixpkgs.config.allowUnfreePredicate = import ../common/unfree-predicates.nix { inherit lib; };
@@ -114,7 +115,7 @@
   services.flatpak.enable = true;
 
   programs.virt-manager.enable = true;
-  users.groups.libvirtd.members = [ "oskar" ];
+  users.groups.libvirtd.members = [ config.user.username ];
   virtualisation.libvirtd = {
     enable = true;
     qemu = {
@@ -156,7 +157,7 @@
   };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.oskar = {
+  users.users.${config.user.username} = {
     isNormalUser = true;
     extraGroups = [
       "wheel"
@@ -171,7 +172,7 @@
   programs._1password.enable = true;
   programs._1password-gui = {
     enable = true;
-    polkitPolicyOwners = [ "oskar" ]; # TODO: don't hard-code username
+    polkitPolicyOwners = [ config.user.username ];
   };
 
   programs.wireshark = {

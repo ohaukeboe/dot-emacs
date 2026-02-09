@@ -123,6 +123,7 @@
           stateVersion,
           imports ? [ ],
         }:
+        { config, ... }:
         {
           imports = [
             home-manager.nixosModules.home-manager
@@ -132,7 +133,7 @@
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
               home-manager.extraSpecialArgs.flake-inputs = inputs;
-              home-manager.users.oskar = {
+              home-manager.users.${config.user.username} = {
                 imports = imports ++ [ flatpaks.homeManagerModules.nix-flatpak ];
                 home.stateVersion = "${stateVersion}";
               };
