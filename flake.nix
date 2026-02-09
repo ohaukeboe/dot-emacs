@@ -207,6 +207,14 @@
             ({
               system.stateVersion = "24.11";
               networking.hostName = "desktop";
+              system.audio.allowedSampleRates = [
+                32000
+                44100
+                48000
+                88200
+                96000
+                192000
+              ];
             })
             nix-index-database.nixosModules.nix-index
             { programs.nix-index-database.comma.enable = true; }

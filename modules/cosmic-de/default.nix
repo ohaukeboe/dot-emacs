@@ -26,6 +26,7 @@ in
     # Qt theming for COSMIC
     environment.sessionVariables = {
       QT_QPA_PLATFORMTHEME = "cosmic";
+      COSMIC_DATA_CONTROL_ENABLED = 1; # Clipboard management
     };
 
     # XDG Desktop Portal configuration for COSMIC

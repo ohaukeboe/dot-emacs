@@ -63,9 +63,30 @@
     pulse.enable = true;
     # If you want to use JACK applications, uncomment the following
     #jack.enable = true;
-    extraConfig.pipewire."192khz" = {
-      "context.properties" = {
-        "default.clock.rate" = 192000;
+    extraConfig.pipewire = lib.mkIf (config.system.audio.allowedSampleRates != null) {
+      "allowed-samplerates" = {
+        "context.properties" = {
+          # "default.clock.rate" = 192000;
+          # These can be found using 'grep -E 'Codec|Audio Output|rates' /proc/asound/card*/codec#*'
+          "default.clock.allowed-rates" = config.system.audio.allowedSampleRates;
+        };
+      };
+    };
+    wireplumber.extraConfig = lib.mkIf (config.system.audio.allowedSampleRates != null) {
+      "50-alsa-config" = {
+        "monitor.alsa.rules" = [
+          {
+            matches = [
+              { "device.name" = "~alsa_card.*"; }
+            ];
+            actions = {
+              update-props = {
+                "api.alsa.use-acp" = false;
+              };
+            };
+          }
+        ];
+
       };
     };
   };
