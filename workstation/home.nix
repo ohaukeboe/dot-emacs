@@ -9,7 +9,7 @@
 let
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
-  system = pkgs.stdenv.system;
+  system = pkgs.stdenv.hostPlatform.system;
 in
 {
   imports = [
@@ -221,7 +221,7 @@ in
 
       ### nix ###
       nil # lsp
-      nixfmt-rfc-style
+      nixfmt
 
       ### latex org ###
       texlive.combined.scheme-full

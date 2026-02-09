@@ -25,7 +25,7 @@ let
       height=$(echo "$resolution" | cut -d'x' -f2)
     else
       # X11: Use xrandr to get the primary display resolution
-      resolution=$(${pkgs.xorg.xrandr}/bin/xrandr | grep -oP '(?<=current )\d+ x \d+' | head -1 | tr -d ' ')
+      resolution=$(${pkgs.xrandr}/bin/xrandr | grep -oP '(?<=current )\d+ x \d+' | head -1 | tr -d ' ')
       width=$(echo "$resolution" | cut -d'x' -f1)
       height=$(echo "$resolution" | cut -d'x' -f2)
     fi
