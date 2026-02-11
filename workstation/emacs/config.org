@@ -841,15 +841,16 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     :hook
     (prog-mode . diff-hl-mode)
     (dired-mode . my/diff-hl-dired-mode-unless-tramp)
-    (focus-in-hook . diff-hl-update)
+    (window-state-change . (lambda () (diff-hl-update)))
     :custom
     (diff-hl-flydiff-mode t)
     (diff-hl-flydiff-delay 0)
-    (diff-hl-update-async t)
+    (diff-hl-update-async 'thread)
+
     ;; (diff-hl-dired-extra-indicators nil))
     :init
     (defun my/diff-hl-dired-mode-unless-tramp ()
-        "Enable diff-hl-dired mode when not accessing through tramp"
+      "Enable diff-hl-dired mode when not accessing through tramp"
       (unless (file-remote-p default-directory)
         (diff-hl-dired-mode))))
 #+end_src
