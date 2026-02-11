@@ -119,35 +119,31 @@ in
       babelfish
 
       ### misc ###
+      ripgrep
+      fd
       sshfs
-      phoronix-test-suite
       ltex-ls-plus # languagetool lsp
-      packwiz # Minecraft modpack creator utility
       zoxide
       gnuplot
       ditaa
       pkg-config
       neofetch
       gh # github cli
-      protonmail-bridge
-      davmail # bridge allowing to use exchange through IMAP
+      emacs-lsp-booster
+      trash-cli
+      winboat
+
+      ### Coding agent ###
       claude-code
       claude-code-acp
       goose-cli
       aider-chat-full # another AI thingy
       opencode
       playwright-mcp
-      emacs-lsp-booster
-      trash-cli
-      w3m # text based web-browser
 
       ### just ###
       just
       just-lsp
-
-      # git
-      ripgrep
-      fd
 
       ### terraform ###
       terraform
@@ -182,20 +178,27 @@ in
       # ccls
       bear # useful for using clangd
 
+      (lib.optionals isLinux (
+        with pkgs;
+        [
+          gdb
+          valgrind # is broken on darwin
+        ]
+      ))
+
       ### python ###
       uv
       ty
       (python313.withPackages (
         ps: with ps; [
           python-lsp-server
-          python-lsp-server.optional-dependencies.all
           python-lsp-ruff
-          pylsp-mypy
 
           # I want these globally for use in org-mode
           matplotlib
           scipy
           pandas
+          pandas-stubs
         ]
       ))
 
@@ -226,12 +229,12 @@ in
       ### latex org ###
       texlive.combined.scheme-full
 
-      # org-inline-pdf
+      ## org-inline-pdf
       pdf2svg
       imagemagick
-      # org-download
+      ## org-download
       wl-clipboard
-      # pandoc
+      ## pandoc
       pandoc
       marksman
       # readability-cli
@@ -253,28 +256,17 @@ in
       mu
       msmtp
       isync
+      protonmail-bridge
+      davmail # bridge allowing to use exchange through IMAP
+      w3m # text based web-browser
 
-      # # It is sometimes useful to fine-tune packages, for example, by applying
-      # # overrides. You can do that directly here, just don't forget the
-      # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-      # # fonts?
-      # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-
-      # # You can also create simple shell scripts directly inside your
-      # # configuration. For example, this adds a command 'my-hello' to your
-      # # environment:
-      # (pkgs.writeShellScriptBin "my-hello" ''
-      #   echo "Hello, ${config.home.username}!"
-      # '')
+      ### fonts ###
       nerd-fonts.roboto-mono
       nerd-fonts.symbols-only
       noto-fonts-color-emoji
     ]
     ++ lib.optionals isLinux (
       lib.lists.flatten [
-        # Use script at https://github.com/FlyinPancake/1password-flatpak-browser-integration with zen flatpak instead
-        # zen-browser.packages."${system}".default # for 1password to work, add '.zen-wrapped' to '/etc/1password/custom_allowed_browsers'
-
         vlc
         # python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
         tailscale
@@ -286,27 +278,12 @@ in
         ### zsa keyboard ###
         zsa-udev-rules
         # keymapp
-
-        ### C ###
-        gdb
-        valgrind # is broken on darwin
       ]
     )
     ++ lib.optionals isDarwin (
       lib.lists.flatten [
         coreutils # gets the gnu coreutils. Needed for ls --group-directories-first
         pngpaste
-
-        # Not installing python on Linux as I have experienced conflicts
-        # on ublue which include python already
-        python313
-        (with python313Packages; [
-          pip
-          python-lsp-server
-          python-lsp-server.optional-dependencies.all
-          matplotlib
-          scipy
-        ])
       ]
     )
   );
@@ -372,7 +349,6 @@ in
 
     direnv = {
       enable = true;
-      # enableFishIntegration = true;
       nix-direnv.enable = true;
     };
 
