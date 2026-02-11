@@ -1,189 +1,228 @@
-# AGENTS.md
+# NixOS & Home Manager Configuration - Agent Guide
 
-This file provides guidance to coding agents when working with code in this repository.
+This is a personal NixOS and Home Manager configuration using flakes with literate Emacs config in org-mode.
 
-## Repository Overview
+## Build & Deploy Commands
 
-This is a NixOS and Home Manager configuration repository managing system configurations, user environments, and a comprehensive Emacs setup. The configuration uses Nix flakes and supports multiple systems (x86_64-linux, aarch64-linux, aarch64-darwin) and multiple machines.
-
-## Common Commands
-
-### Home Manager Operations
+### Home Manager (Standalone)
 ```bash
-# Switch home-manager configuration (standalone)
+# Apply home-manager configuration (non-NixOS systems)
 home-manager switch --flake .#default --impure -b backup
-# or use the fish alias:
-hs
 
-# Build without switching
-nix build .#homeConfigurations.oskar@x86_64-linux.activationPackage
+# Apply for specific system
+home-manager switch --flake .#oskar@x86_64-linux --impure -b backup
 ```
 
-### NixOS Operations (system-level)
+### NixOS System
 ```bash
-# Rebuild NixOS system
+# Deploy NixOS configuration
 sudo nixos-rebuild switch --flake .#<hostname>
-# where <hostname> is: x13-laptop, work-laptop, or x1laptop
 
-# Test configuration without switching
-sudo nixos-rebuild test --flake .#<hostname>
+# Available hostnames: x13-laptop, work-laptop, desktop
+sudo nixos-rebuild switch --flake .#x13-laptop
 ```
 
-### Formatting
+### Testing & Validation
 ```bash
-# Format all nix files
+# Check formatting (treefmt: nixfmt, shfmt, toml-sort)
 nix fmt
 
-# Check formatting
+# Verify formatting without applying
 nix flake check
+
+# Build without activating (test before deploying)
+nix build .#homeConfigurations.default.activationPackage
+
+# Show all flake outputs
+nix flake show
 ```
 
-### Emacs Configuration
-The Emacs configuration is written in literate org-mode at `workstation/emacs/config.org`. It uses org-babel to tangle elisp code.
+## Project Structure
 
-- The init.el at `workstation/emacs/init.el` automatically tangles config.org if it's newer than the compiled config.el
-- After editing config.org, Emacs will auto-tangle on save (via local variables)
-- The configuration uses `use-package` with nix-managed packages
-- LSP mode is compiled with `LSP_USE_PLISTS=true` for performance
+```
+.
+├── flake.nix              # Main flake entry point
+├── lib/                   # Helper functions (mkHomeConfiguration, mkNixosConfiguration)
+├── machines/              # Hardware-specific configs (desktop, x13-laptop, work-laptop)
+│   └── machines.nix       # Declarative machine definitions
+├── common/                # Shared modules
+│   ├── caches.nix         # Nix binary cache configuration
+│   ├── unfree-predicates.nix  # Allowed unfree packages
+│   ├── options.nix        # Custom options (user.username, system.audio.allowedSampleRates)
+│   └── system/            # NixOS system defaults
+├── modules/               # Optional feature modules
+│   ├── gaming/            # Gaming setup (Steam, gamescope, Lutris)
+│   ├── cosmic-de/         # COSMIC desktop environment
+│   ├── secure-boot/       # Lanzaboote secure boot
+│   └── sshd/              # SSH daemon configuration
+└── workstation/           # Home Manager user configuration
+    ├── home.nix           # Main home-manager config
+    ├── emacs/             # Literate Emacs configuration
+    │   ├── config.org     # Org-mode literate config (SOURCE OF TRUTH)
+    │   └── init.el        # Bootstrap loader
+    ├── dotfiles/          # Shell configs (fish, starship, etc.)
+    └── ssh.nix            # SSH client configuration
+```
 
-## Architecture
+## Code Style Guidelines
 
-### Flake Structure
+### Nix Files
 
-**Entry point**: `flake.nix` - Defines all inputs, outputs, and system configurations
+#### Formatting
+- **Indentation**: 2 spaces (enforced by `nixfmt`)
+- **Line length**: Reasonable (nixfmt handles wrapping)
+- **Strings**: Use double quotes `"string"` for strings
+- **Multi-line strings**: Use `''` for heredocs and shell scripts
 
-**Key outputs**:
-- `nixosConfigurations.*` - Full NixOS system configurations for each machine
-- `homeConfigurations.*` - Standalone Home Manager configurations for various systems
-- `packages.*` - Build outputs including home activation packages
-- `formatter.*` - Code formatting via treefmt
+#### Function Arguments
+```nix
+# Multi-line argument set (opening brace on same line)
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+```
 
-### Configuration Layers
+#### Module Structure
+```nix
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
-The configuration is organized in distinct layers:
+with lib;
 
-1. **System layer** (`system/`)
-   - `system/default.nix` - NixOS system configuration (boot, desktop, services)
-   - `system/home.nix` - System-specific home-manager additions (Linux desktop apps)
-   - Enables COSMIC desktop, virtualization (libvirt, docker, podman), services
+let
+  cfg = config.modules.feature-name;
+in
+{
+  options.modules.feature-name = {
+    enable = mkEnableOption "Feature description";
 
-2. **Workstation layer** (`workstation/`)
-   - `workstation/home.nix` - Main home-manager configuration
-   - Contains: Emacs setup, development tools, shell configuration (fish), git setup
-   - Platform-aware: distinguishes between Linux/Darwin, NixOS/standalone
-   - `workstation/emacs/` - Complete Emacs configuration including literate config.org
+    someOption = mkOption {
+      type = types.str;
+      default = "default-value";
+      description = "Clear description of what this does";
+      example = "example-value";
+    };
+  };
 
-3. **Machine layer** (`machines/`)
-   - `machines/<hostname>.nix` - Hardware-specific NixOS configurations
-   - Generated by nixos-generate-config, defines filesystems, kernel modules, hardware
+  config = mkIf cfg.enable {
+    # Implementation here
+  };
+}
+```
 
-4. **Common layer** (`common/`)
-   - `common/caches.nix` - Nix cache configuration (nixos cache, nix-community)
-   - `common/secure-boot.nix` - Secure boot setup via lanzaboote
-   - `common/unfree-predicates.nix` - Allows specific unfree packages
+#### Imports and Dependencies
+- List imports in `imports = [ ... ]` array
+- Import paths relative to file location
+- Prefer explicit inputs over global references
+- Use `inherit` to avoid repetition
 
-5. **Library layer** (`lib/`)
-   - `lib/mkHomeConfiguration.nix` - Function to create home-manager configurations
-   - Handles overlays (emacs-overlay, nixGL), system-specific package sets
+#### Naming Conventions
+- **Options**: `camelCase` for option names (e.g., `allowedSampleRates`)
+- **Modules**: `kebab-case` for module directories (e.g., `cosmic-de/`, `secure-boot/`)
+- **Variables**: `camelCase` in let bindings (e.g., `cfg`, `homeManagerNixosModule`)
+- **Files**: `kebab-case.nix` (e.g., `unfree-predicates.nix`)
 
-### Configuration Composition
+#### Comments
+```nix
+# Single-line comments for brief explanations
 
-**NixOS machines** compose:
-- System configuration (system/default.nix)
-- Hardware configuration (machines/<hostname>.nix)
-- Home Manager as NixOS module (imports workstation/home.nix + system/home.nix)
-- Common modules (caches, secure-boot via lanzaboote)
-- Hardware-specific nixos-hardware modules where applicable
+# Multi-line comments for complex logic
+# explaining why something is done a certain way
+```
 
-**Standalone Home Manager** configurations:
-- Built via mkHomeConfiguration function
-- Import workstation/home.nix and common/caches.nix
-- Platform-aware overlays (emacs-overlay, nixGL for Linux)
-- Mac-specific: includes mac-app-util for app integration
+#### Shell Scripts in Nix
+```nix
+pkgs.writeShellScriptBin "script-name" ''
+  # Use full package paths for portability
+  resolution=$(${pkgs.wlr-randr}/bin/wlr-randr | \
+    ${pkgs.gnugrep}/bin/grep 'current)' | \
+    ${pkgs.coreutils}/bin/head -1)
+''
+```
 
-### Key Patterns
+### Emacs Lisp
 
-**Secrets Management**:
-- Secrets stored in `secrets/` directory (git-crypt encrypted)
-- Loaded into configurations via `secrets.json`
-- Linked into home directory via home.file
+#### Emacs Package Management
+- Packages managed through `emacsWithPackagesFromUsePackage` in Nix
+- List packages in `extraEmacsPackages` in `workstation/home.nix`
+- Use `use-package` declarations in `config.org`
 
-**Platform Detection**:
-- Uses `pkgs.stdenv.isLinux`, `pkgs.stdenv.isDarwin` for platform-specific config
-- `isNixos` parameter distinguishes NixOS from standalone home-manager
+### Commit Message Convention
 
-**Package Overlays**:
-- emacs-overlay: Latest Emacs packages and unstable builds
-- nixGL: OpenGL/Vulkan support for non-NixOS systems
-- Custom package overrides (e.g., LSP packages with plists enabled)
+Follow Conventional Commits format:
 
-**Emacs Integration**:
-- Uses `emacsWithPackagesFromUsePackage` to manage packages declaratively
-- Parses config.org to determine required packages
-- Custom build overrides for LSP packages with performance flags
-- Treesit grammars included for all languages
+```
+<type>[optional scope]: <description>
 
-## Development Environment
+[optional body]
+```
 
-### Language Toolchains Available
+**Types**:
+- `feat`: New feature or capability
+- `fix`: Bug fix
+- `refactor`: Code restructuring without changing behavior
+- `chore`: Maintenance (dependency updates, etc.)
+- `docs`: Documentation changes
+- `build`: Build system or dependency changes
+- `perf`: Performance improvements
+- `style`: Code style/formatting changes
 
-The configuration includes comprehensive development toolchains:
-- **Python**: python313 with LSP, ruff, mypy, scientific stack (matplotlib, scipy, pandas)
-- **Rust**: rustup for full toolchain management
-- **Go**: go, gopls, golangci-lint-langserver
-- **Java/Kotlin**: JDK, Maven, Gradle, kotlin-language-server
-- **C/C++**: clang-tools, clangd, gcc, bear for compile_commands.json generation
-- **C#**: omnisharp-roslyn
-- **JavaScript/TypeScript**: node, typescript, vscode-langservers-extracted, eslint
-- **Nix**: nil LSP, nixfmt-rfc-style
-- **Terraform**: terraform, terraform-ls
+**Examples**:
+```
+feat(gaming): Add Steam autostart configuration
+fix(audio): Configure PipeWire with 192kHz sample rate
+refactor: Restructure machine configurations into directories
+chore: Update flake dependencies
+docs(emacs): Add custom conventional commit prompt for gptel-magit
+build: Update flake dependencies and fix platform references
+```
 
-### Shell Environment
+## Error Handling & Best Practices
 
-Default shell is **fish** with:
-- starship prompt (using nerd-font-symbols preset)
-- zoxide for directory jumping
-- atuin for shell history with sync
-- direnv with nix-direnv integration
-- Aliases: `hs` for home-manager switch, `edit` for emacsclient
+### When Making Changes
 
-### AI Tooling
+1. **Test before deploying**: Use `nix build` to verify changes compile
+2. **Format before committing**: Run `nix fmt`
+3. **Check flake validity**: Run `nix flake check`
+4. **Use module system**: Create optional modules in `modules/` for features
+5. **Avoid hardcoding**: Use `config.user.username` instead of `"oskar"`
 
-Multiple AI coding assistants configured:
-- **Claude Code** with ACP (claude-code, claude-code-acp)
-- **Aider** with config at `.aider.conf.yml` (uses Claude Sonnet 4.5 via OpenRouter)
-- **Goose CLI** (goose-cli)
-- **OpenCode** (opencode)
-- **Copilot** integration in Emacs
+### Common Patterns
 
-Agent configuration files:
-- `workstation/agents-global.md` - Shared agent directives
-- Symlinked to `~/.config/agents/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.config/claude/CLAUDE.md`
+#### Adding a New Module
+1. Create `modules/feature-name/default.nix`
+2. Use `mkEnableOption` for the enable option
+3. Wrap all config in `mkIf cfg.enable { ... }`
+4. Import automatically via `modules/default.nix`
 
-## Important Notes
+#### Adding a New Machine
+1. Create `machines/hostname/` directory
+2. Add `default.nix`, `hardware-configuration.nix`, optional `config.nix`
+3. Register in `machines/machines.nix`
 
-### Emacs LSP Performance
-LSP packages are built with `LSP_USE_PLISTS=true` for significant performance improvements. This affects:
-- lsp-mode, lsp-ui, dap-mode, consult-lsp, lsp-treemacs, lsp-java, lsp-docker
+#### Managing Secrets
+- Use git-crypt for `secrets/secrets.json`
+- Never commit unencrypted secrets
+- Reference via `secrets` parameter passed to configurations
 
-The environment variable is also set in sessionVariables.
+## Tools & Resources
 
-### Unfree Packages
-Only specific unfree packages are allowed via `common/unfree-predicates.nix`. To add new unfree packages, add them to this list.
+- **Package search**: https://search.nixos.org/packages
+- **Home Manager options**: https://home-manager-options.extranix.com/
+- **Version history**: https://www.nixhub.io/
+- **MCP servers**: https://smithery.ai/
 
-### Git Configuration
-- Signing with SSH keys via 1Password (op-ssh-sign)
-- Multiple email addresses based on directory (gitdir conditional includes)
-- Default: ohaukeboe@pm.me
-- For knowit projects: oskar.haukeboe@knowit.no
+## Notes for Agents
 
-### Services
-Several systemd user services auto-start:
-- `protonmail-bridge` - ProtonMail IMAP/SMTP bridge
-- `davmail` - Exchange gateway for email
-
-### Virtualization
-Rootless Docker and Podman are both enabled with:
-- BTRFS storage for Docker
-- Auto-pruning enabled
-- DNS configuration for container networking
+- This repo started as Emacs config (hence name "dot-emacs")
+- Primary user configuration in `workstation/home.nix`
+- NixOS configs support multi-platform (x86_64-linux, aarch64-linux, aarch64-darwin)
+- Always run `nix fmt` before committing Nix files
+- When editing Emacs config, edit `config.org`, not generated `.el` files
