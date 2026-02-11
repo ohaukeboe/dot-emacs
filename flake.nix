@@ -165,7 +165,7 @@
             ./system/.
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
-            ./machines/x13-laptop.nix
+            ./machines/x13-laptop
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [
@@ -190,8 +190,7 @@
             ./system/.
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
-            ./machines/work-laptop.nix
-            ./machines/work-laptop/config.nix
+            ./machines/work-laptop
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [
@@ -225,7 +224,7 @@
             ./system/.
             ./common/secure-boot.nix
             lanzaboote.nixosModules.lanzaboote
-            ./machines/desktop/hardware-configuration.nix
+            ./machines/desktop
             (homeManagerNixosModule {
               stateVersion = "24.11";
               imports = [
