@@ -2,17 +2,11 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 
 {
-  imports = [
-    ../modules/default.nix
-    ../common/options.nix
-  ];
-
-  nixpkgs.config.allowUnfreePredicate = import ../common/unfree-predicates.nix { inherit lib; };
+  nixpkgs.config.allowUnfreePredicate = import ../../common/unfree-predicates.nix { inherit lib; };
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"

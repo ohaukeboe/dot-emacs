@@ -118,123 +118,28 @@
           nix-index-database
           ;
       };
-      homeManagerNixosModule =
-        {
-          stateVersion,
-          imports ? [ ],
-        }:
-        { config, ... }:
-        {
-          imports = [
-            home-manager.nixosModules.home-manager
-            {
-              nixpkgs.overlays = [ emacs-overlay.overlays.default ];
-              nixpkgs.config.allowUnfreePredicate = import ./common/unfree-predicates.nix;
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.extraSpecialArgs.flake-inputs = inputs;
-              home-manager.users.${config.user.username} = {
-                imports = imports ++ [ flatpaks.homeManagerModules.nix-flatpak ];
-                home.stateVersion = "${stateVersion}";
-              };
-              home-manager.backupFileExtension = "backup";
-              home-manager.extraSpecialArgs = {
-                inherit inputs secrets;
-                isNixos = true;
-              };
-            }
-          ];
-        };
+
+      # Function to create NixOS configuration for a machine
+      mkNixosConfiguration = import ./lib/mkNixosConfiguration.nix {
+        inherit
+          inputs
+          nixpkgs
+          home-manager
+          emacs-overlay
+          flatpaks
+          lanzaboote
+          nix-index-database
+          secrets
+          ;
+      };
+
+      # Machine definitions
+      machines = import ./machines/machines.nix { inherit nixos-hardware; };
     in
     {
       formatter = forAllSystems (system: treefmtEval.${system}.config.build.wrapper);
 
-      nixosConfigurations = {
-        x13-laptop = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            ({
-              system.stateVersion = "24.11";
-              networking.hostName = "x13-laptop";
-            })
-            nixos-hardware.nixosModules.asus-flow-gv302x-nvidia
-            nix-index-database.nixosModules.nix-index
-            { programs.nix-index-database.comma.enable = true; }
-            { modules.cosmic-de.enable = true; }
-            ./common/caches.nix
-            ./system/.
-            ./common/secure-boot.nix
-            lanzaboote.nixosModules.lanzaboote
-            ./machines/x13-laptop
-            (homeManagerNixosModule {
-              stateVersion = "24.11";
-              imports = [
-                ./workstation/home.nix
-                ./system/home.nix
-              ];
-            })
-          ];
-        };
-        work-laptop = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            ({
-              system.stateVersion = "24.11";
-              networking.hostName = "work-laptop";
-            })
-            nix-index-database.nixosModules.nix-index
-            { programs.nix-index-database.comma.enable = true; }
-            { modules.cosmic-de.enable = true; }
-            { modules.sshd.enable = true; }
-            ./common/caches.nix
-            ./system/.
-            ./common/secure-boot.nix
-            lanzaboote.nixosModules.lanzaboote
-            ./machines/work-laptop
-            (homeManagerNixosModule {
-              stateVersion = "24.11";
-              imports = [
-                ./workstation/home.nix
-                ./system/home.nix
-              ];
-            })
-          ];
-        };
-        desktop = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = [
-            ({
-              system.stateVersion = "24.11";
-              networking.hostName = "desktop";
-              system.audio.allowedSampleRates = [
-                32000
-                44100
-                48000
-                88200
-                96000
-                192000
-              ];
-            })
-            nix-index-database.nixosModules.nix-index
-            { programs.nix-index-database.comma.enable = true; }
-            { modules.cosmic-de.enable = true; }
-            { modules.gaming.enable = true; }
-            { modules.sshd.enable = true; }
-            ./common/caches.nix
-            ./system/.
-            ./common/secure-boot.nix
-            lanzaboote.nixosModules.lanzaboote
-            ./machines/desktop
-            (homeManagerNixosModule {
-              stateVersion = "24.11";
-              imports = [
-                ./workstation/home.nix
-                ./system/home.nix
-              ];
-            })
-          ];
-        };
-      };
+      nixosConfigurations = nixpkgs.lib.mapAttrs (_name: config: mkNixosConfiguration config) machines;
 
       homeConfigurations = {
         "oskar@x86_64-linux" = mkHomeConfiguration "x86_64-linux";
