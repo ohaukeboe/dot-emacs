@@ -139,7 +139,9 @@
     {
       formatter = forAllSystems (system: treefmtEval.${system}.config.build.wrapper);
 
-      nixosConfigurations = nixpkgs.lib.mapAttrs (_name: config: mkNixosConfiguration config) machines;
+      nixosConfigurations = nixpkgs.lib.mapAttrs (
+        hostname: config: mkNixosConfiguration (config // { inherit hostname; })
+      ) machines;
 
       homeConfigurations = {
         "oskar@x86_64-linux" = mkHomeConfiguration "x86_64-linux";

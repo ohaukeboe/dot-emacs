@@ -2,7 +2,6 @@
 
 {
   x13-laptop = {
-    hostname = "x13-laptop";
     stateVersion = "24.11";
     modules = [
       { modules.cosmic-de.enable = true; }
@@ -11,7 +10,6 @@
   };
 
   work-laptop = {
-    hostname = "work-laptop";
     stateVersion = "24.11";
     modules = [
       { modules.cosmic-de.enable = true; }
@@ -20,7 +18,6 @@
   };
 
   desktop = {
-    hostname = "desktop";
     stateVersion = "24.11";
     modules = [
       {
