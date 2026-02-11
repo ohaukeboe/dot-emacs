@@ -4,18 +4,16 @@
   x13-laptop = {
     hostname = "x13-laptop";
     stateVersion = "24.11";
-    hardwareModules = [
-      nixos-hardware.nixosModules.asus-flow-gv302x-nvidia
-    ];
-    systemModules = [
+    modules = [
       { modules.cosmic-de.enable = true; }
+      nixos-hardware.nixosModules.asus-flow-gv302x-nvidia
     ];
   };
 
   work-laptop = {
     hostname = "work-laptop";
     stateVersion = "24.11";
-    systemModules = [
+    modules = [
       { modules.cosmic-de.enable = true; }
       { modules.sshd.enable = true; }
     ];
@@ -24,7 +22,7 @@
   desktop = {
     hostname = "desktop";
     stateVersion = "24.11";
-    systemModules = [
+    modules = [
       {
         system.audio.allowedSampleRates = [
           32000

@@ -12,15 +12,16 @@
 {
   hostname,
   stateVersion ? "24.11",
-  hardwareModules ? [ ],
-  systemModules ? [ ],
+  modules ? [ ],
   homeImports ? [
     ../workstation/home.nix
     ../common/system/home.nix
   ],
+  enableSecureBoot ? true,
 }:
 
 let
+  inherit (inputs.nixpkgs) lib;
   homeManagerNixosModule =
     { config, ... }:
     {
@@ -60,10 +61,12 @@ nixpkgs.lib.nixosSystem {
     { programs.nix-index-database.comma.enable = true; }
     ../common/nixos-default.nix
     ../modules
-    lanzaboote.nixosModules.lanzaboote
     ../machines/${hostname}
     homeManagerNixosModule
   ]
-  ++ hardwareModules
-  ++ systemModules;
+  ++ lib.optionals enableSecureBoot [
+    inputs.lanzaboote.nixosModules.lanzaboote
+    { modules.secure-boot.enable = true; }
+  ]
+  ++ modules;
 }
