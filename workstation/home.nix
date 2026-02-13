@@ -121,6 +121,7 @@ in
       ### misc ###
       ripgrep
       fd
+      screen
       sshfs
       ltex-ls-plus # languagetool lsp
       zoxide
