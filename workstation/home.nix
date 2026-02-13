@@ -121,6 +121,7 @@ in
       ### misc ###
       ripgrep
       fd
+      dragon-drop # drag-andn-drop from terminal
       screen
       sshfs
       ltex-ls-plus # languagetool lsp

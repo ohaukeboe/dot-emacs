@@ -2379,18 +2379,34 @@ Export dispatcher using pandoc
 #+begin_src elisp
   (use-package dired
     :commands (dired dired-jump)
+    :bind
+    (:map dired-mode-map
+          ("C-c C-d" . my/dragon-drop-file))
 
     :custom
-    (dired-listing-switches "-agohv --group-directories-first")
+    ;; (dired-listing-switches "-agohv --group-directories-first")
+    (dired-listing-switches "-agohv")
     (dired-kill-when-opening-new-dired-buffer t)
     (dired-async-mode t)
 
     :config
+    (defun my/dragon-drop-file ()
+      "Open current file or dired item with dragon-drop for drag-and-drop."
+      (interactive)
+      (let ((file (or (and (eq major-mode 'dired-mode)
+                           (dired-get-filename nil t))
+                      (buffer-file-name)
+                      (error "No file to open with dragon-drop"))))
+        (unless (file-exists-p file)
+          (error "File does not exist: %s" file))
+        (start-process "dragon-drop" nil "dragon-drop" file)
+        (message "Opened %s with dragon-drop" (file-name-nondirectory file))))
+
     ;; Kill the buffer belonging to the deleted file or directory
     (advice-add 'dired-delete-file :before
-              (lambda (file &rest rest)
-                (when-let ((buf (get-file-buffer file)))
-                  (kill-buffer buf)))))
+                (lambda (file &rest rest)
+                  (when-let ((buf (get-file-buffer file)))
+                    (kill-buffer buf)))))
     ;; :general
     ;; (oh/leader-key
     ;;   "fd" '(dired-jump :which-key "dired jump")
@@ -2401,13 +2417,41 @@ Export dispatcher using pandoc
     ;;   "l" 'dired-find-file))
 #+end_src
 
+Dired-preview provides file previews in dired buffers. I have it set to ignore media files and archives since those are usually not very useful to preview and can be slow to load.
+
 #+begin_src elisp
   (use-package dired-preview
     :ensure t
     :after dired
+    :bind (:map dired-mode-map
+                ("C-c C-p" . dired-preview-mode))
     :custom
     (dired-preview-delay 0.0)
     (dired-preview-ignored-extensions-regexp "\\.\\(mkv\\|webm\\|mp4\\|mp3\\|ogg\\|m4a\\|flac\\|wav\\|gz\\|zst\\|tar\\|xz\\|rar\\|zip\\|iso\\|epub\\)"))
+#+end_src
+
+#+begin_src elisp
+  (use-package dired-auto-readme
+    :ensure t
+    :hook
+    (dired-mode . dired-auto-readme-mode))
+
+  (use-package dired-open-with
+    :ensure t
+    :bind
+    (:map dired-mode-map
+          ("C-c o" . dired-open-with)))
+
+  (use-package nerd-icons-dired
+    :ensure t
+    :hook
+    (dired-mode . nerd-icons-dired-mode))
+
+  (use-package dired-quick-sort
+    :ensure t
+    :after dired
+    :config
+    (dired-quick-sort-setup))
 #+end_src
 
 ** Eww
