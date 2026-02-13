@@ -2434,7 +2434,8 @@ Dired-preview provides file previews in dired buffers. I have it set to ignore m
   (use-package dired-auto-readme
     :ensure t
     :hook
-    (dired-mode . dired-auto-readme-mode))
+    (dired-mode . dired-auto-readme-mode)
+    (dired-auto-readme-mode-hook . visual-line-mode))
 
   (use-package dired-open-with
     :ensure t
@@ -2452,6 +2453,16 @@ Dired-preview provides file previews in dired buffers. I have it set to ignore m
     :after dired
     :config
     (dired-quick-sort-setup))
+
+  (use-package dired-rsync
+    :ensure t
+    :bind (:map dired-mode-map
+                ("C-c C-r" . dired-rsync)))
+
+  (use-package dired-rsync-transient
+    :ensure t
+    :bind (:map dired-mode-map
+                ("C-c C-x" . dired-rsync-transient)))
 #+end_src
 
 ** Eww
