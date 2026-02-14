@@ -3011,6 +3011,12 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
                       anthropic/claude-sonnet-4
                       anthropic/claude-haiku-4.5)))
 
+    (gptel-make-ollama "Ollama"
+      :host "localhost:11434"
+      :stream t
+      :models '(llama3.2:3b
+                llama3.1:8b))
+
     (gptel-make-tool
      :name "read_buffer"                    ; javascript-style snake_case name
      :function (lambda (buffer)                  ; the function that will run
@@ -3250,7 +3256,8 @@ MCP support is also nice :)
     :ensure t
     :hook (magit-mode . gptel-magit-install)
     :custom
-    (gptel-magit-model "openrouter/google/gemini-2.5-flash")
+    (gptel-magit-model "gemma3:4b")
+    (gptel-magit-backend (cdr (assoc "Ollama" gptel--known-backends)))
     (gptel-magit-prompt-conventional-commits
      "You are an expert at writing Git commits. Your job is to write a short clear commit message that summarizes the changes.
 

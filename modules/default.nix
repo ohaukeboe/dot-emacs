@@ -7,5 +7,6 @@
     ./no-rgb
     ./sshd
     ./secure-boot
+    ./ollama
   ];
 }
