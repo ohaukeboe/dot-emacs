@@ -111,7 +111,6 @@ in
   home.packages = (
     with pkgs;
     lib.lists.flatten [
-      wakatime-cli
       # pympress # pdf presenter
       git-crypt
 
@@ -429,7 +428,6 @@ in
   home.file = {
     ".authinfo".source = ../secrets/.authinfo;
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
-    ".wakatime.cfg".source = ../secrets/wakatime.cfg;
     ".aws/config".source = ../secrets/aws.config;
     ".config/scw/config.yaml".source = ../secrets/scaleway.yaml;
 
