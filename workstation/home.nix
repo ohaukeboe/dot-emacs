@@ -233,6 +233,7 @@ in
       ## org-inline-pdf
       pdf2svg
       imagemagick
+      ghostscript
       ## org-download
       wl-clipboard
       ## pandoc

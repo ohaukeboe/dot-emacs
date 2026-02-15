@@ -1567,9 +1567,7 @@ Some other zotero plugins I use are:
 
 #+begin_src elisp
   (use-package org-cite-overlay
-    :ensure t
-    :hook
-    (org-mode . org-cite-overlay-mode))
+    :ensure t)
 
   (use-package org-cite-overlay-sidecar
     :ensure t
@@ -1873,10 +1871,10 @@ rather than files.  These modes usually use read-only buffers.
     (org-startup-with-latex-preview t)
     (org-latex-prefer-user-labels t)
     (org-ditaa-jar-path "~/.local/share/ditaa/ditaa.jar")
-    (org-latex-create-formula-image-program 'imagemagick)
+    (org-latex-create-formula-image-program 'dvisvgm)
     (org-log-done 'time)
     (org-auto-align-tags t)
-    (org-tags-column -69)
+    (org-tags-column 5)
     (org-fold-catch-invisible-edits 'show-and-error)
     (org-special-ctrl-a/e t)
     (org-list-allow-alphabetical t)
@@ -1908,8 +1906,6 @@ rather than files.  These modes usually use read-only buffers.
 
     (setq org-format-latex-options
           (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
-
-
 
     ;; Pretty bullets
     ;; (font-lock-add-keywords 'org-mode
@@ -2789,6 +2785,7 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
     :ensure t
     :commands prettier-mode)
 #+end_src
+
 ** Docker
 
 [[https://www.rahuljuliato.com/posts/emacs-docker-podman][This]] is a nice blog about how to manage Docker/Podman containers from Emacs. First stepp is to make it easy to choose between using Docker and Podman.
