@@ -3363,6 +3363,8 @@ To initialize the maildir run:
 
     :bind
     ("C-c o m" . mu4e)
+    (:map mu4e-main-mode-map
+          ("z" . bury-buffer))
 
     :custom
     (mu4e-split-view 'horizontal)
@@ -3472,17 +3474,25 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
     :ensure t
     :after mu4e
     ;; :disabled
-    :config
-    (setq org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t"
-          org-msg-startup "hidestars indent inlineimages"
-          org-msg-greeting-fmt "\nHei%s,\n\n"
+    :custom
+    (org-msg-options "html-postamble:nil H:5 num:nil ^:{} toc:nil author:nil email:nil \\n:t")
+    (org-msg-startup "hidestars indent inlineimages")
+    (org-msg-greeting-fmt "\nHei%s,\n\n")
 
-          org-msg-recipient-names '(("ohaukeboe@pm.me" . "Oskar"))
-          org-msg-greeting-name-limit 3
-          org-msg-default-alternatives '((new		. (text html))
-                                         (reply-to-html	. (text html))
-                                         (reply-to-text	. (text)))
-          org-msg-convert-citation t)
+    (org-msg-recipient-names '(("ohaukeboe@pm.me" . "Oskar")))
+    (org-msg-greeting-name-limit 3)
+    (org-msg-default-alternatives '((new		. (text))
+                                    (reply-to-html	. (text html))
+                                    (reply-to-text	. (text))))
+    (org-msg-convert-citation t)
+    (org-msg-signature "
+
+  Hilsen,
+  ,#+begin_signature
+  Oskar
+  ,#+end_signature")
+
+    :config
     (org-msg-mode))
 #+end_src
 
