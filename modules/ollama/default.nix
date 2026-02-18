@@ -12,11 +12,7 @@ let
 in
 {
   options.modules.ollama = {
-    enable = mkOption {
-      type = types.bool;
-      default = true;
-      description = "Whether to enable the Ollama service.";
-    };
+    enable = mkEnableOption "Ollama";
 
     loadModels = mkOption {
       type = with types; listOf str;
