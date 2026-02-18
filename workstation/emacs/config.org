@@ -41,7 +41,7 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
     :custom
     (custom-file (concat user-emacs-directory "var/custom.el"))
     (byte-compile-warnings '(not free-vars unresolved noruntime lexical make-local))
-    (warning-minimum-level :error)
+    ;; (warning-minimum-level :error)
 
     ;; (pixel-scroll-precision-mode t)
 
@@ -2662,6 +2662,22 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
     :config
     (global-anzu-mode 1))
 #+end_src
+** wgrep
+
+=wgrep= makes it possible to edit the results from the grep command, just like you can in occur-mode. This is built into emacs 31, so it can be safely removed once I update.
+
+#+begin_src elisp
+  (use-package wgrep
+    :ensure t
+    :after grep
+    :bind
+    (:map grep-mode-map
+          ("e" . wgrep-change-to-wgrep-mode))
+    :init
+    (when (>= emacs-major-version 31)
+      (warn "wgrep configuration can be safely removed in Emacs 31+")))
+#+end_src
+
 ** Postgresql
 
 #+begin_src elisp
