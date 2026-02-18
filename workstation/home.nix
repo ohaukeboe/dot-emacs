@@ -439,7 +439,7 @@ in
     "${config.xdg.configHome}/opencode/opencode.json" = {
       text = builtins.toJSON {
         "$schema" = "https://opencode.ai/config.json";
-        model = "openrouter/anthropic/claude-sonnet-4.5";
+        model = "openrouter/anthropic/claude-sonnet-4.6";
       };
     };
 
@@ -459,7 +459,7 @@ in
       cache-keepalive-pings = 5;
       code-theme = "monokai";
       auto-commits = false;
-      model = "openrouter/anthropic/claude-sonnet-4.5";
+      model = "openrouter/anthropic/claude-sonnet-4.6";
       weak-model = "openrouter/anthropic/claude-haiku-4.5";
     };
   };

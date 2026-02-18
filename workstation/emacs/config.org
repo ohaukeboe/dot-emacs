@@ -3044,15 +3044,14 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
 
     :config
     ;; OpenRouter offers an OpenAI compatible API
-    (setq gptel-model 'anthropic/claude-sonnet-4.5
+    (setq gptel-model 'anthropic/claude-sonnet-4.6
           gptel-backend
           (gptel-make-openai "OpenRouter"               ;Any name you want
             :host "openrouter.ai"
             :endpoint "/api/v1/chat/completions"
             :stream t
             :key (auth-source-pick-first-password :host "openrouter.ai")
-            :models '(anthropic/claude-sonnet-4.5
-                      anthropic/claude-sonnet-4
+            :models '(anthropic/claude-sonnet-4.6
                       anthropic/claude-haiku-4.5)))
 
     (gptel-make-ollama "Ollama"
