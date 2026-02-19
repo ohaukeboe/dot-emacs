@@ -86,10 +86,10 @@ in
       # Lutris with extra dependencies for Wine-GE runner support
       (lutris.override {
         extraPkgs = pkgs: [
-          wineWowPackages.stable
-          wineWowPackages.staging
+          wineWow64Packages.stable
+          wineWow64Packages.staging
+          wineWow64Packages.waylandFull
           winetricks
-          wineWowPackages.waylandFull
         ];
         extraLibraries = pkgs: [
           # Additional libraries for better compatibility
