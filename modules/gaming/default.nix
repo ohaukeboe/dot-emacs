@@ -43,6 +43,7 @@ let
       -w "$width" \
       -h "$height" \
       --force-grab-cursor \
+      --mouse-sensitivity 1.5 \
       -g \
       "$@"
   '';
