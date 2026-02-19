@@ -2505,48 +2505,74 @@ A terminal emulator
 #+end_src
 
 ** vterm
+
 #+begin_src elisp
   (use-package vterm
     :ensure t
     :bind
-    ("C-c v" . 'vterm)
     ("C-z" . toggle-vterm)
+    ("M-z" . project-toggle-vterm)
     (:map vterm-mode-map
           ("C-z" . toggle-vterm)
+          ("M-z" . project-toggle-vterm)
           ("M-y" . vterm-yank-pop))
     (:map project-prefix-map
-          ("t" . project-vterm)
-          ("v" . my/project-consult-vterm))
+          ("t" . my/project-consult-vterm))
 
     :hook
     (vterm-mode . (lambda () (visual-line-mode t)))
 
     :custom
-    ;; (vterm-max-scrollback 10000)
+    (vterm-max-scrollback 10000)
     (vterm-tramp-shells '(("ssh" "/bin/bash")
                           ("sshx" "/bin/bash")
                           ("podman" "/bin/bash")
                           ("docker" "/bin/bash")))
 
     :preface
-    (defun project-vterm ()
-      (interactive)
-      (defvar vterm-buffer-name)
-      (let* ((default-directory (project-root (project-current t)))
-             (vterm-buffer-name (project-prefixed-buffer-name "vterm")))
-        (call-interactively 'vterm vterm-buffer-name)))
-
     (defvar vterms nil)
 
+    (defun vterm-project-buffer-p (buffer)
+      "Return non-nil if BUFFER is a project vterm buffer."
+      (and (buffer-live-p buffer)
+           (project-current nil (buffer-local-value 'default-directory buffer))
+           (string-prefix-p (with-current-buffer buffer
+                              (project-prefixed-buffer-name "vterm"))
+                            (buffer-name buffer))))
+
+    (defun project-toggle-vterm (&optional n)
+      (interactive "P")
+      (let* ((project (project-current t))
+             (root (project-root project))
+             (prefix (project-prefixed-buffer-name "vterm"))
+             (project-vterms (seq-filter (lambda (b)
+                                           (and (buffer-live-p b)
+                                                (string-prefix-p prefix (buffer-name b))))
+                                         vterms))
+             (default-directory root)
+             (vterm-buffer-name prefix)
+             (num (cond ((numberp n) n)
+                        ((consp n) (1+ (length project-vterms)))
+                        (t nil))))
+        (cond ((numberp num) (push (vterm num) vterms))
+              ((null project-vterms) (push (vterm 1) vterms))
+              ((seq-contains-p project-vterms (current-buffer))
+               (switch-to-buffer (car (seq-difference (buffer-list) project-vterms))))
+              (t (switch-to-buffer (car (seq-intersection (buffer-list) project-vterms)))))))
+
     (defun toggle-vterm (&optional n)
-      (interactive)
+      (interactive "P")
       (setq vterms (seq-filter 'buffer-live-p vterms))
-      (let ((default-directory (or (vc-root-dir) default-directory)))
-        (cond ((numberp n) (push (vterm n) vterms))
-              ((null vterms) (push (vterm 1) vterms))
-              ((seq-contains-p vterms (current-buffer))
-               (switch-to-buffer (car (seq-difference (buffer-list) vterms))))
-              (t (switch-to-buffer (car (seq-intersection (buffer-list) vterms)))))))
+      (let* ((default-directory (or (vc-root-dir) default-directory))
+             (global-vterms (seq-remove 'vterm-project-buffer-p vterms))
+             (num (cond ((numberp n) n)
+                        ((consp n) (1+ (length global-vterms)))
+                        (t nil))))
+        (cond ((numberp num) (push (vterm num) vterms))
+              ((null global-vterms) (push (vterm 1) vterms))
+              ((seq-contains-p global-vterms (current-buffer))
+               (switch-to-buffer (car (seq-difference (buffer-list) global-vterms))))
+              (t (switch-to-buffer (car (seq-intersection (buffer-list) global-vterms)))))))
 
     (defun my/project-consult-vterm ()
       (interactive)
@@ -3344,6 +3370,17 @@ MCP support is also nice :)
 
   Only return the commit message in your response. Do not include any additional meta-commentary about the task. Do not include the raw diff output in the commit message.
   "))
+#+end_src
+
+[[https://github.com/lanceberge/elysium][elysium]] makes it easier to make changes to the current file
+
+#+begin_src elisp
+  (use-package elysium
+    :ensure t
+    :custom
+    ;; Below are the default values
+    (elysium-window-size 0.33) ; The elysium buffer will be 1/3 your screen
+    (elysium-window-style 'vertical)) ; Can be customized to horizontal
 #+end_src
 
 ** aidermacs
