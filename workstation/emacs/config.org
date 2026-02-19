@@ -3372,17 +3372,6 @@ MCP support is also nice :)
   "))
 #+end_src
 
-[[https://github.com/lanceberge/elysium][elysium]] makes it easier to make changes to the current file
-
-#+begin_src elisp
-  (use-package elysium
-    :ensure t
-    :custom
-    ;; Below are the default values
-    (elysium-window-size 0.33) ; The elysium buffer will be 1/3 your screen
-    (elysium-window-style 'vertical)) ; Can be customized to horizontal
-#+end_src
-
 ** aidermacs
 
 #+begin_src elisp
