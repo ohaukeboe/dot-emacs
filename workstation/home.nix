@@ -346,6 +346,21 @@ in
         if test "$INSIDE_EMACS" = 'vterm'; and test -n "$EMACS_VTERM_PATH"; and test -f "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
           source "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
         end
+
+        # make fish update fish_complete_path when XDG_DATA_DIRS
+        # changes. This is necessary to make fish apply shell
+        # completions from direnv. This will not be necessary anymore
+        # when https://github.com/direnv/direnv/issues/1539 is merged
+        function __direnv_update_fish_complete_path --on-variable XDG_DATA_DIRS
+          for dir in (string split ':' -- $XDG_DATA_DIRS)
+            set -l completions_dir "$dir/fish/vendor_completions.d"
+            if test -d "$completions_dir"
+              if not contains -- "$completions_dir" $fish_complete_path
+                set -g fish_complete_path $fish_complete_path $completions_dir
+              end
+            end
+          end
+        end
       '';
     };
 
