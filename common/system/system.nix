@@ -66,23 +66,6 @@
         };
       };
     };
-    wireplumber.extraConfig = lib.mkIf (config.system.audio.allowedSampleRates != null) {
-      "50-alsa-config" = {
-        "monitor.alsa.rules" = [
-          {
-            matches = [
-              { "device.name" = "~alsa_card.*"; }
-            ];
-            actions = {
-              update-props = {
-                "api.alsa.use-acp" = false;
-              };
-            };
-          }
-        ];
-
-      };
-    };
   };
 
   services.avahi = {
