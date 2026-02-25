@@ -2598,8 +2598,8 @@ A terminal emulator
           (user-error "No vterm buffers for this project"))))
 
     :init
-    (add-to-list 'project-switch-commands     '(project-vterm "Vterm") t)
-    (add-to-list 'project-kill-buffer-conditions  '(major-mode . vterm-mode))
+    (add-to-list 'project-switch-commands '(project-toggle-vterm "Vterm" "t") t)
+    (add-to-list 'project-kill-buffer-conditions '(major-mode . vterm-mode))
 
     :config
     (defun my-vterm-no-query-on-exit (buffer)
