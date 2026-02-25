@@ -42,6 +42,11 @@ in
     boot.lanzaboote = {
       enable = true;
       pkiBundle = cfg.pkiBundle;
+      autoGenerateKeys.enable = true;
+      autoEnrollKeys = {
+        enable = true;
+        autoReboot = true;
+      };
     };
   };
 }
