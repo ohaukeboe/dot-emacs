@@ -3633,7 +3633,8 @@ An RSS reader. [[https://feedsearch.dev][Feedsearch]] can be used for finding rs
                     ("https://blog.system76.com/rss.xml" cosmic)
                     ("https://openrss.org/t3.gg/blog" theo blog)
                     ("https://openrss.org/releases.1password.com/linux/" 1password)
-                    ("https://universal-blue.discourse.group/tag/announcements.rss" universalblueannounce ublue)))
+                    ("https://universal-blue.discourse.group/tag/announcements.rss" universalblueannounce ublue)
+                    ("https://samleathers.com/feed.xml" samleathers blog)))
     :bind
     ("C-c o f" . 'elfeed)
     :config
