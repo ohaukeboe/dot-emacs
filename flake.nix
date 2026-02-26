@@ -10,6 +10,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    sops-nix = {
+      url = "github:Mic92/sops-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Add emacs-overlay
     emacs-overlay = {
       url = "github:nix-community/emacs-overlay";
@@ -72,6 +77,7 @@
       self,
       nixpkgs,
       home-manager,
+      sops-nix,
       emacs-overlay,
       emacs-skills,
       flatpaks,

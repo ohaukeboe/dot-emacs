@@ -8,5 +8,6 @@
     ./sshd
     ./secure-boot
     ./ollama
+    ./sops
   ];
 }

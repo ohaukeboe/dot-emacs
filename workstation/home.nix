@@ -133,6 +133,7 @@ in
       emacs-lsp-booster
       trash-cli
       winboat
+      yaml-language-server
 
       ### Coding agent ###
       claude-code
@@ -346,6 +347,7 @@ in
       shellInitLast = ''
         if test "$INSIDE_EMACS" = 'vterm'; and test -n "$EMACS_VTERM_PATH"; and test -f "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
           source "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
+          set EDITOR emacsclient
         end
 
         # make fish update fish_complete_path when XDG_DATA_DIRS

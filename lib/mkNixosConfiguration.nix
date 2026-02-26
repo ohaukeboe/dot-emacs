@@ -53,6 +53,7 @@ nixpkgs.lib.nixosSystem {
     inherit inputs;
   };
   modules = [
+    inputs.sops-nix.nixosModules.sops
     {
       system.stateVersion = stateVersion;
       networking.hostName = hostname;
