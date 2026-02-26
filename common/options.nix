@@ -26,6 +26,25 @@ with lib;
       # };
     };
 
+    sops = {
+      ageKey = mkOption {
+        type = types.enum [
+          "default"
+          "tpm"
+          "yubikey-wallet"
+          "yubikey-home"
+        ];
+        default = "default";
+        description = ''
+          Which age key type to use for SOPS decryption.
+          Each context resolves this to its own directory:
+            NixOS system:  /var/lib/sops-nix/<key>.txt  (default -> keys.txt)
+            Home Manager:  ~/.config/sops/age/<key>.txt  (default -> keys.txt)
+          Note: "tpm" is only functional on NixOS/Linux with a TPM.
+        '';
+      };
+    };
+
     system = {
       audio.allowedSampleRates = mkOption {
         type = types.nullOr (types.listOf types.int);

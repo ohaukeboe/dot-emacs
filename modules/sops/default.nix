@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 
@@ -17,24 +16,6 @@ in
       type = types.bool;
       default = true;
       description = "Enable secret management";
-    };
-
-    ageKey = mkOption {
-      type = types.enum [
-        "default"
-        "tpm"
-        "yubikey-wallet"
-        "yubikey-home"
-      ];
-      default = "tpm";
-      description = ''
-        Which age identity file to use for SOPS decryption.
-        Maps to files under ~/.config/sops/age/:
-          default        -> keys.txt
-          tpm            -> tpm-identity.txt
-          yubikey-wallet -> yubikey-wallet.txt
-          yubikey-home   -> yubikey-home.txt
-      '';
     };
   };
 
@@ -61,15 +42,15 @@ in
       security.tpm2.tctiEnvironment.enable = true;
       users.users.${config.user.username}.extraGroups = [ "tss" ];
 
-      sops.defaultSopsFile = ../../sops/example.yaml;
+      # sops.defaultSopsFile = ../../sops/system/secrets.yaml;
       sops.age.sshKeyPaths = [ ];
-      sops.age.keyFile = ageKeyFiles.${cfg.ageKey};
+      sops.age.keyFile = ageKeyFiles.${config.sops.ageKey};
       sops.age.plugins = [
         pkgs.age-plugin-yubikey
         pkgs.age-plugin-tpm
       ];
 
       # This is the actual specification of the secrets.
-      sops.secrets.example_key = { };
+      # sops.secrets.example_key = { };
     };
 }

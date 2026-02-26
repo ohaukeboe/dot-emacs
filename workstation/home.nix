@@ -14,6 +14,7 @@ in
 {
   imports = [
     ./ssh.nix
+    ./sops.nix
     inputs.zen-browser.homeModules.beta
     ./calibre
   ];

@@ -36,6 +36,7 @@ home-manager.lib.homeManagerConfiguration {
     { programs.nix-index-database.comma.enable = true; }
     ../workstation/home.nix
     ../common/caches.nix
+    ../common/options.nix
   ]
   ++ lib.optionals (builtins.match ".*darwin" system != null) [
     mac-app-util.homeManagerModules.default

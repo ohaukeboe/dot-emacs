@@ -33,6 +33,7 @@
       { modules.cosmic-de.enable = true; }
       { modules.gaming.enable = true; }
       { modules.sshd.enable = true; }
+      { sops.ageKey = "tpm"; }
     ];
   };
 }

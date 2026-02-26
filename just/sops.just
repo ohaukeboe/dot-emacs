@@ -13,7 +13,7 @@ sops-updatekeys identity="auto":
     #!/usr/bin/env bash
     set -euo pipefail
     source scripts/sops-identity.sh "{{ identity }}"
-    nix-shell -p sops age age-plugin-yubikey age-plugin-tpm --run "sops updatekeys sops/*"
+    nix-shell -p sops age age-plugin-yubikey age-plugin-tpm --run "sops updatekeys sops/home/*"
 
 # Show which identity would be used (for debugging)
 sops-which identity="auto":

@@ -1,9 +1,17 @@
 keys:
-  - &wallet_key age1yubikey1qwqkymath4fcdgfyx5vdy7z7z7n70xr7gekvtld9tfflzjgnk27ljm838l9
+  # Hosts
   - &desktop age1tpm1qt4ldukffnp9h3v30vu4wjthsprch8ae335kf7y2y2gytquruuuvkxtqqun
 
+  # FIDO keys
+  - &wallet_key age1yubikey1qwqkymath4fcdgfyx5vdy7z7z7n70xr7gekvtld9tfflzjgnk27ljm838l9
+
 creation_rules:
-  - path_regex: sops/[^/]+\.(yaml|json|env|ini)$
+  # - path_regex: sops/system/[^/]+\.(yaml|json|env|ini)$
+  #   key_groups:
+  #     - age:
+  #       - *wallet_key
+  #       - *desktop
+  - path_regex: sops/home/[^/]+\.(yaml|json|env|ini)$
     key_groups:
       - age:
         - *wallet_key
