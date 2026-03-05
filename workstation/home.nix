@@ -128,7 +128,7 @@ in
       gnuplot
       ditaa
       pkg-config
-      neofetch
+      fastfetch
       gh # github cli
       emacs-lsp-booster
       trash-cli
