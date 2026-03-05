@@ -307,6 +307,7 @@ in
     nix-index.enableFishIntegration = true;
 
     zen-browser.enable = true;
+    zen-browser.suppressXdgMigrationWarning = true;
 
     # I mostly use fish, but since nix-shell uses bash it is nice to
     # also have it be managed by nix
