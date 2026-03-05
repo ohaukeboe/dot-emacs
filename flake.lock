@@ -96,6 +96,22 @@
         "type": "github"
       }
     },
+    "emacs-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1772494490,
+        "narHash": "sha256-ilgWnb3w+6mkeLwy5xkU5iX0NRbguur7iTLVqCu27TA=",
+        "owner": "xenodium",
+        "repo": "emacs-skills",
+        "rev": "de7adccbc4aef5f4e1e7ebc7a487bdcd7f95509a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "xenodium",
+        "repo": "emacs-skills",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -607,6 +623,7 @@
         "calibre-plugins": "calibre-plugins",
         "cutecosmic": "cutecosmic",
         "emacs-overlay": "emacs-overlay",
+        "emacs-skills": "emacs-skills",
         "flatpaks": "flatpaks",
         "home-manager": "home-manager",
         "kotlin-lsp": "kotlin-lsp",

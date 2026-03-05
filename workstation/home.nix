@@ -478,6 +478,11 @@ in
       model = "openrouter/anthropic/claude-sonnet-4.6";
       weak-model = "openrouter/anthropic/claude-haiku-4.5";
     };
+
+    ".agents/skills" = {
+      source = "${inputs.emacs-skills}/skills";
+      recursive = true;
+    };
   };
 
   # Only create initial config if it doesn't exist

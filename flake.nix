@@ -16,6 +16,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    emacs-skills = {
+      url = "github:xenodium/emacs-skills";
+      flake = false;
+    };
+
     flatpaks.url = "github:gmodena/nix-flatpak/?ref=latest";
 
     lanzaboote = {
@@ -68,6 +73,7 @@
       nixpkgs,
       home-manager,
       emacs-overlay,
+      emacs-skills,
       flatpaks,
       nixgl,
       mac-app-util,
