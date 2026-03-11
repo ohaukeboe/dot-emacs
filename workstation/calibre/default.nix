@@ -14,6 +14,10 @@ let
 
   calibreDir = ".config/calibre";
   pluginsDir = "${calibreDir}/plugins";
+  calibre-open-with = pkgs.fetchurl {
+    url = "https://github.com/kiwidude68/calibre_plugins/releases/download/open_with-1.8.5/open_with-1.8.5.zip";
+    hash = "sha256-aky+oCiMnTm2Seayn1VC1PbtlnG/ZFxvEX6q/yp4iNM=";
+  };
 in
 {
   home.packages = with pkgs; [
@@ -57,7 +61,7 @@ in
     };
 
     "${pluginsDir}/Open With.zip" = {
-      source = ./calibre-config/plugins + "/Open With.zip";
+      source = calibre-open-with;
       force = true;
     };
 
