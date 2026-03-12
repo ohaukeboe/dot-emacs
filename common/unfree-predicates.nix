@@ -11,4 +11,5 @@ builtins.elem (lib.getName pkg) [
   "nvidia-settings"
   "steam"
   "steam-unwrapped"
+  "kotlin-lsp"
 ]

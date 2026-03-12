@@ -165,7 +165,7 @@ in
       ### Kotlin ###
       kotlin
       kotlin-language-server
-      inputs.kotlin-lsp.packages.${system}.default
+      (pkgs.callPackage "${inputs.kotlin-lsp}/package.nix" { })
 
       ### C ###
       man-pages
