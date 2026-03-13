@@ -135,6 +135,8 @@ in
       trash-cli
       winboat
       yaml-language-server
+      (lib.optional isLinux wl-clipboard-x11) # used by agent-shell
+      (lib.optional isDarwin pngpaste) # used by agent-shell
 
       ### Coding agent ###
       claude-code

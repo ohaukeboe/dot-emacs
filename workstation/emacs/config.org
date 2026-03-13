@@ -3403,6 +3403,7 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     :custom
     (agent-shell-completion-mode t)
     (agent-shell-file-completion-enabled t)
+    (agent-shell-session-strategy 'new)
     (agent-shell-goose-authentication
      (agent-shell-make-goose-authentication :none t))
     (agent-shell-mcp-servers
