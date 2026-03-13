@@ -36,4 +36,48 @@ in
   sops.age.generateKey = config.sops.ageKey == "default";
   sops.age.sshKeyPaths = [ ];
   sops.defaultSopsFile = ../sops/home/secrets.yaml;
+
+  sops.secrets = {
+    "authinfo/openai" = { };
+    "authinfo/anthropic" = { };
+    "authinfo/openrouter" = { };
+    "authinfo/azure" = { };
+    "authinfo/github" = { };
+    "authinfo/gitlab" = { };
+    "authinfo/github_uio" = { };
+    "authinfo/codeberg" = { };
+    "authinfo/imap_uio" = { };
+    "authinfo/imap_knowit" = { };
+    "authinfo/context7" = { };
+    "authinfo/github_pat" = { };
+  };
+
+  sops.templates.authinfo = {
+    path = "${homeDir}/.authinfo";
+    mode = "0600";
+    content = ''
+      machine api.openai.com password ${config.sops.placeholder."authinfo/openai"}
+      machine api.anthropic.com password ${config.sops.placeholder."authinfo/anthropic"}
+      machine openrouter.ai password ${config.sops.placeholder."authinfo/openrouter"}
+      machine ai.azure.com password ${config.sops.placeholder."authinfo/azure"}
+      machine api.github.com login ohaukeboe^forge password ${config.sops.placeholder."authinfo/github"}
+      machine gitlab.com/api/v4 login ohaukeboe^forge password ${
+        config.sops.placeholder."authinfo/gitlab"
+      }
+      machine api.github.uio.no login oskah^forge password ${
+        config.sops.placeholder."authinfo/github_uio"
+      }
+      machine codeberg.org/api/v1 login ohaukeboe^forge password ${
+        config.sops.placeholder."authinfo/codeberg"
+      }
+      machine localhost port 1026 login oskah@uio.no/ password ${
+        config.sops.placeholder."authinfo/imap_uio"
+      }
+      machine localhost port 1026 login oskar.haukeboe@knowit.no/ password "${
+        config.sops.placeholder."authinfo/imap_knowit"
+      }"
+      machine context7.com password ${config.sops.placeholder."authinfo/context7"}
+      machine githubpat password ${config.sops.placeholder."authinfo/github_pat"}
+    '';
+  };
 }

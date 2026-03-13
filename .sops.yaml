@@ -1,6 +1,8 @@
 keys:
   # Hosts
   - &desktop age1tpm1qt4ldukffnp9h3v30vu4wjthsprch8ae335kf7y2y2gytquruuuvkxtqqun
+  - &work-laptop age1tpm1qwf7q7h905xcdv45mjus9pgjkg6tcx7ynxke4m622ewy0hr25y9cyxrj5s9
+  - &work-tmp age1c72w86x4lalere2e44z59lmv70ydm3xv7vu5wta3znp9mgau5g2srsju65
 
   # FIDO keys
   - &wallet_key age1yubikey1qwqkymath4fcdgfyx5vdy7z7z7n70xr7gekvtld9tfflzjgnk27ljm838l9
@@ -16,3 +18,5 @@ creation_rules:
       - age:
         - *wallet_key
         - *desktop
+        - *work-laptop
+        - *work-tmp

@@ -6,6 +6,7 @@
 sops-init:
     mkdir -p ~/.config/sops/age
     nix-shell -p age --run "age-keygen -o ~/.config/sops/age/keys.txt"
+    sudo mkdir -p /var/lib/sops-nix
     sudo cp ~/.config/sops/age/keys.txt /var/lib/sops-nix/
 
 # Re-encrypt secrets.yaml after adding new keys to .sops.yaml
@@ -88,6 +89,7 @@ yubikey-save-identity name slot="1":
     echo "Make sure your '{{ name }}' YubiKey is inserted."
     mkdir -p ~/.config/sops/age
     nix-shell -p age-plugin-yubikey --run "age-plugin-yubikey --identity --slot {{ slot }} > ~/.config/sops/age/yubikey-{{ name }}.txt"
+    sudo mkdir -p /var/lib/sops-nix
     sudo cp ~/.config/sops/age/yubikey-{{ name }}.txt /var/lib/sops-nix/
     echo "Identity saved to ~/.config/sops/age/yubikey-{{ name }}.txt"
     echo ""
@@ -121,6 +123,7 @@ tpm-save-identity pin="true":
     else
       nix-shell -p age-plugin-tpm --run "sudo age-plugin-tpm --tpm-recipient --generate > ~/.config/sops/age/tpm-identity.txt"
     fi
+    sudo mkdir -p /var/lib/sops-nix
     sudo cp ~/.config/sops/age/tpm-identity.txt /var/lib/sops-nix/
     echo "Identity saved to ~/.config/sops/age/tpm-identity.txt"
     echo ""

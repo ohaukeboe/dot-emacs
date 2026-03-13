@@ -448,7 +448,6 @@ in
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.
   home.file = {
-    ".authinfo".source = ../secrets/.authinfo;
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".aws/config".source = ../secrets/aws.config;
     ".config/scw/config.yaml".source = ../secrets/scaleway.yaml;

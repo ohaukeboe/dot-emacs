@@ -16,6 +16,7 @@
   homeImports ? [
     ../workstation/home.nix
     ../common/system/home.nix
+    ../common/options.nix
   ],
   enableSecureBoot ? true,
 }:
