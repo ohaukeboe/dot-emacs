@@ -3620,7 +3620,7 @@ And obviously I need consult integration as well
 
 ** Elfeed
 
-An RSS reader. [[https://feedsearch.dev][Feedsearch]] can be used for finding rss feeds for a specific website. If it doesn't find any, [[https://openrss.org][Openrss]] might have an rss feed for it.
+An RSS reader. [[https://feedsearch.dev][Feedsearch]] or [[https://lighthouseapp.io/tools/feed-finder][Lighthouse feed finder]] can be used for finding rss feeds for a specific website. If it doesn't find any, [[https://openrss.org][Openrss]] might have an rss feed for it.
 
 #+begin_src elisp
   (use-package elfeed
@@ -3637,7 +3637,8 @@ An RSS reader. [[https://feedsearch.dev][Feedsearch]] can be used for finding rs
                     ("https://universal-blue.discourse.group/tag/announcements.rss" universalblueannounce ublue)
                     ("https://samleathers.com/feed.xml" samleathers blog)
                     ("https://oddlama.org/rss.xml" oddlama nix blog)
-                    ("https://determinate.systems/rss.xml" determinate-systems nix blog)))
+                    ("https://determinate.systems/rss.xml" determinate-systems nix blog)
+                    ("https://bou.ke/feed.xml" bouke blog)))
     :bind
     ("C-c o f" . 'elfeed)
     :config
