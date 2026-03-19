@@ -165,8 +165,6 @@ in
       gradle
 
       ### Kotlin ###
-      kotlin
-      kotlin-language-server
       (pkgs.callPackage "${inputs.kotlin-lsp}/package.nix" { })
 
       ### C ###

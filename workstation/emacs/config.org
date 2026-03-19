@@ -1289,8 +1289,6 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
 
 ** Kotlin
 
-I find that [[https://github.com/fwcd/kotlin-language-server][kotlin-language-server]] and [[https://github.com/Kotlin/kotlin-lsp][kotlin-lsp]] both are lacking, but that they provide mostly different features. So until =kotlin-lsp= has matured I use them both together.
-
 #+begin_src elisp
   (use-package kotlin-ts-mode
     :ensure t
@@ -1308,13 +1306,16 @@ I find that [[https://github.com/fwcd/kotlin-language-server][kotlin-language-se
   	             '(kotlin-mode . "kotlin")
                    '(kotlin-ts-mode . "kotlin"))
 
+      (defun my/kotlin-lsp-server-start-fun (port)
+        (list "kotlin-lsp" "--socket" (number-to-string port)))
+
       (lsp-register-client
        (make-lsp-client
-        :new-connection (lsp-stdio-connection '("kotlin-lsp" "--stdio"))
+        :new-connection (lsp-tcp-connection 'my/kotlin-lsp-server-start-fun)
         :activation-fn (lsp-activate-on "kotlin")
         :major-modes '(kotlin-mode kotlin-ts-mode)
-        :priority 5
-        :server-id 'kotlin-jb-lsp))
+        :priority -1
+        :server-id 'kotlin-lsp))
 
       (lsp-register-custom-settings
        '(("jetbrains.kotlin.hints.settings.types.property" t)
