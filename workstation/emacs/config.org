@@ -2634,9 +2634,38 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
     :mode ("\\.pdf\\'" . pdf-view-mode)
     :bind
     ("C-M-A" . pdf-annot-add-highlight-markup-annotation)
+    (:map pdf-view-mode-map
+          ("S" . my/pdf-select-page))
     :config
     (require 'pdf-outline)
-    (pdf-loader-install))
+    (pdf-loader-install)
+
+    ;; Extract pages
+    (defvar-local my/pdf-selected-pages '()
+      "List of selected pages in the current PDF buffer.")
+
+    (defun my/pdf-select-page ()
+      "Add current page to list of selected pages."
+      (interactive)
+      (add-to-list 'my/pdf-selected-pages (pdf-view-current-page) t))
+
+    (defun my/pdf-extract-selected-pages (file)
+      "Save selected pages to FILE."
+      (interactive "FSave as: ")
+      (setq my/pdf-selected-pages (sort my/pdf-selected-pages #'<))
+      (start-process "pdfjam" "*pdfjam*"
+                     "pdfjam"
+                     (buffer-file-name)
+                     (mapconcat #'number-to-string
+                                my/pdf-selected-pages
+                                ",")
+                     "-o"
+                     (expand-file-name file)))
+
+    (defun my/pdf-clear-selected-pages ()
+      "Clear the list of selected pages."
+      (interactive)
+      (setq my/pdf-selected-pages '())))
 
 #+end_src
 
