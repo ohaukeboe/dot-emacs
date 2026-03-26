@@ -3436,6 +3436,7 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     (agent-shell-session-strategy 'new)
     (agent-shell-goose-authentication
      (agent-shell-make-goose-authentication :none t))
+    (agent-shell-anthropic-claude-acp-command '("claude-code-acp"))
     (agent-shell-mcp-servers
      `(((name . "serena")
         (type . "stdio")
