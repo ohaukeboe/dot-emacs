@@ -452,7 +452,20 @@ in
 
     "${config.xdg.configHome}/agents/AGENTS.md".source = ./agents-global.md;
     "${config.xdg.configHome}/opencode/AGENTS.md".source = ./agents-global.md;
-    "${config.xdg.configHome}/claude/CLAUDE.md".source = ./agents-global.md;
+    "${config.home.homeDirectory}/.claude/CLAUDE.md".source = ./agents-global.md;
+
+    "${config.home.homeDirectory}/.claude/skills" = {
+      source = ./skills;
+      recursive = true;
+    };
+    "${config.xdg.configHome}/opencode/skills" = {
+      source = ./skills;
+      recursive = true;
+    };
+    "${config.xdg.configHome}/agents/skills" = {
+      source = ./skills;
+      recursive = true;
+    };
 
     "${config.xdg.configHome}/opencode/opencode.json" = {
       text = builtins.toJSON {
