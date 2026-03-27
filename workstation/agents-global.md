@@ -7,6 +7,10 @@
 -   Proactively use MCP tools when they're relevant to the user's request
 -   If an MCP server is unavailable or fails, inform the user and suggest alternatives
 
+## System Environment
+
+-   The **nix package manager** is available on this system. If a command or program is not installed, you can run it via `nix-shell -p <packagename> --run '<command>'`
+
 ## Safety & Best Practices
 
 -   **Speak up when requested actions are inadvisable**
