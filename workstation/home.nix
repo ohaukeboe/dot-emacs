@@ -226,7 +226,6 @@ in
       mermaid-cli
 
       ### nix ###
-      nil # lsp
       nixfmt
 
       ### latex org ###
