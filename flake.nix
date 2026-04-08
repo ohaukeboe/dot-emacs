@@ -65,11 +65,6 @@
       url = "github:ohaukeboe/zotra-server-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    cutecosmic = {
-      url = "github:tenshou170/cutecosmic-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -91,7 +86,6 @@
       kotlin-lsp,
       calibre-plugins,
       zotra-server,
-      cutecosmic,
       ...
     }@inputs:
     let

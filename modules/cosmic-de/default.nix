@@ -38,7 +38,7 @@ in
 
     # COSMIC-specific packages
     environment.systemPackages = with pkgs; [
-      inputs.cutecosmic.packages.${pkgs.stdenv.hostPlatform.system}.default
+      cutecosmic
       adw-gtk3
     ];
 
