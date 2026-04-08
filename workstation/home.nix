@@ -140,11 +140,11 @@ in
 
       ### Coding agent ###
       claude-code
-      claude-code-acp
-      goose-cli
+      claude-agent-acp
       aider-chat-full # another AI thingy
       opencode
       playwright-mcp
+      rtk # CLI proxy for minimizing token use
 
       ### just ###
       just
@@ -250,9 +250,7 @@ in
       hunspellDicts.nb_NO
 
       ### node ###
-      nodePackages_latest.vscode-langservers-extracted
       nodejs
-      nodePackages.typescript-language-server
       typescript
       eslint
 
@@ -309,7 +307,6 @@ in
     nix-index.enableFishIntegration = true;
 
     zen-browser.enable = true;
-    zen-browser.suppressXdgMigrationWarning = true;
 
     # I mostly use fish, but since nix-shell uses bash it is nice to
     # also have it be managed by nix
@@ -521,6 +518,7 @@ in
 
   programs.git = {
     enable = true;
+    signing.format = null; # openpgp
 
     settings = {
       user = {
