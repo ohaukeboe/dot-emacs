@@ -44,10 +44,13 @@ The user will provide a path to a git repository (or you should use the current 
     -   **Use professional, non-technical-jargon language** appropriate for a resume
     -   Avoid referencing specific commit hashes or internal naming
 
-5.  **Present the results.** Output:
+5.  **Identify technologies.** Scan the commit messages and any changed file extensions or paths to compile a list of technologies, tools, frameworks, and languages that are resume-relevant. Include things like programming languages, frameworks, cloud platforms, databases, CI/CD tools, etc. Exclude internal project names or domain-specific jargon.
+
+6.  **Present the results.** Output:
 
     -   A brief summary line (repo name, date range, total commits analyzed)
     -   The categorized bullet points, ordered by significance
+    -   A comma-separated **Technologies** line listing all relevant technologies identified (e.g. `Technologies: TypeScript, React, PostgreSQL, GitHub Actions, Docker`)
     -   Optionally, a "raw themes" section listing the commit subjects grouped by category, so the user can refine
 
 ## Example Output
@@ -58,6 +61,8 @@ The user will provide a path to a git repository (or you should use the current 
 > -   Migrated the CI/CD pipeline from Jenkins to GitHub Actions, reducing build times by consolidating 12 workflow configurations
 > -   Improved API reliability by systematically resolving error-handling gaps across 8 service endpoints
 > -   Automated database migration tooling, enabling zero-downtime schema changes in production
+>
+> **Technologies:** Node.js, TypeScript, PostgreSQL, Jenkins, GitHub Actions, Docker, REST APIs
 
 ## Notes
 
