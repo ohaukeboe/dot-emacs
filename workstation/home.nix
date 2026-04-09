@@ -450,6 +450,8 @@ in
     "${config.xdg.configHome}/opencode/AGENTS.md".source = ./agents-global.md;
     "${config.home.homeDirectory}/.claude/CLAUDE.md".source = ./agents-global.md;
 
+    "${config.home.homeDirectory}/.claude/settings.json".source = ./claude-settings.json;
+
     "${config.home.homeDirectory}/.claude/skills" = {
       source = ./skills;
       recursive = true;
@@ -512,6 +514,11 @@ in
     copyMsmtpConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       $DRY_RUN_CMD cp ${./dotfiles/msmtprc.conf} $HOME/.msmtprc
       $DRY_RUN_CMD chmod 600 $HOME/.msmtprc
+    '';
+
+    rtkHook = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      $DRY_RUN_CMD ${pkgs.rtk}/bin/rtk init -g --hook-only
+      $DRY_RUN_CMD ${pkgs.rtk}/bin/rtk init -g --opencode --hook-only
     '';
   };
 
