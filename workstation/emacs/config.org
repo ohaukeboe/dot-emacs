@@ -2373,6 +2373,7 @@ Export dispatcher using pandoc
     (dired-listing-switches "-agohv")
     (dired-kill-when-opening-new-dired-buffer t)
     (dired-async-mode t)
+    (dired-dwim-target t)
 
     :config
     (defun my/dragon-drop-file ()
