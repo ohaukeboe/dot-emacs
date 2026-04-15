@@ -10,11 +10,23 @@ let
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
   system = pkgs.stdenv.hostPlatform.system;
+  anthropicsSkillsSubset = pkgs.linkFarm "anthropics-skills-subset" [
+    {
+      name = "pdf";
+      path = "${inputs.anthropics-skills}/skills/pdf";
+    }
+    {
+      name = "skill-creator";
+      path = "${inputs.anthropics-skills}/skills/skill-creator";
+    }
+  ];
+
   mergedSkills = pkgs.symlinkJoin {
     name = "merged-skills";
     paths = [
       ./skills
       "${inputs.emacs-skills}/skills"
+      anthropicsSkillsSubset
     ];
   };
 in

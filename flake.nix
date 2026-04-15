@@ -70,6 +70,11 @@
       url = "github:blader/humanizer";
       flake = false;
     };
+
+    anthropics-skills = {
+      url = "github:anthropics/skills";
+      flake = false;
+    };
   };
 
   outputs =
@@ -77,20 +82,14 @@
       self,
       nixpkgs,
       home-manager,
-      sops-nix,
       emacs-overlay,
-      emacs-skills,
       flatpaks,
       nixgl,
       mac-app-util,
       treefmt-nix,
       lanzaboote,
       nixos-hardware,
-      zen-browser,
       nix-index-database,
-      kotlin-lsp,
-      calibre-plugins,
-      zotra-server,
       ...
     }@inputs:
     let

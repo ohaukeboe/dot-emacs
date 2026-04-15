@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "anthropics-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776112662,
+        "narHash": "sha256-L/zqUOcZu0wE+Uw9shyA0jCFi8Ff0vj/ijj+KOjRkYI=",
+        "owner": "anthropics",
+        "repo": "skills",
+        "rev": "0f7c287eaf0d4fa511cb871bb55e2a7862251fbb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "anthropics",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "calibre-plugins": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -597,6 +613,7 @@
     },
     "root": {
       "inputs": {
+        "anthropics-skills": "anthropics-skills",
         "calibre-plugins": "calibre-plugins",
         "emacs-overlay": "emacs-overlay",
         "emacs-skills": "emacs-skills",
