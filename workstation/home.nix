@@ -10,6 +10,13 @@ let
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
   system = pkgs.stdenv.hostPlatform.system;
+  mergedSkills = pkgs.symlinkJoin {
+    name = "merged-skills";
+    paths = [
+      ./skills
+      "${inputs.emacs-skills}/skills"
+    ];
+  };
 in
 {
   imports = [
@@ -446,30 +453,24 @@ in
     ".aws/config".source = ../secrets/aws.config;
     ".config/scw/config.yaml".source = ../secrets/scaleway.yaml;
 
-    "${config.xdg.configHome}/agents/AGENTS.md".source = ./agents-global.md;
+    "${config.home.homeDirectory}/.agents/AGENTS.md".source = ./agents-global.md;
     "${config.xdg.configHome}/opencode/AGENTS.md".source = ./agents-global.md;
     "${config.home.homeDirectory}/.claude/CLAUDE.md".source = ./agents-global.md;
 
     "${config.home.homeDirectory}/.claude/settings.json".source = ./claude-settings.json;
 
     "${config.home.homeDirectory}/.claude/skills" = {
-      source = pkgs.symlinkJoin {
-        name = "claude-skills";
-        paths = [ ./skills "${inputs.emacs-skills}/skills" ];
-      };
+      source = mergedSkills;
       recursive = true;
     };
-    "${config.xdg.configHome}/opencode/skills" = {
-      source = ./skills;
+    "${config.home.homeDirectory}/.claude/skills/humanizer/SKILL.md".source =
+      "${inputs.humanizer-skill}/SKILL.md";
+    "${config.home.homeDirectory}/.agents/skills" = {
+      source = mergedSkills;
       recursive = true;
     };
-    "${config.xdg.configHome}/agents/skills" = {
-      source = ./skills;
-      recursive = true;
-    };
-    "${config.home.homeDirectory}/.claude/skills/humanizer/SKILL.md" = {
-      source = "${inputs.humanizer-skill}/SKILL.md";
-    };
+    "${config.home.homeDirectory}/.agents/skills/humanizer/SKILL.md".source =
+      "${inputs.humanizer-skill}/SKILL.md";
 
     "${config.xdg.configHome}/opencode/opencode.json" = {
       text = builtins.toJSON {
@@ -498,10 +499,6 @@ in
       weak-model = "openrouter/anthropic/claude-haiku-4.5";
     };
 
-    ".agents/skills" = {
-      source = "${inputs.emacs-skills}/skills";
-      recursive = true;
-    };
   };
 
   # Only create initial config if it doesn't exist
