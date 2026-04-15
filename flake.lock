@@ -277,6 +277,22 @@
         "type": "github"
       }
     },
+    "humanizer-skill": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1775020197,
+        "narHash": "sha256-3yO13MKUK/zF36Sq+CACMM401BhtmYz5cZmC5FX4VQw=",
+        "owner": "blader",
+        "repo": "humanizer",
+        "rev": "8b3a17889fbf12bedae20974a3c9f9de746ed754",
+        "type": "github"
+      },
+      "original": {
+        "owner": "blader",
+        "repo": "humanizer",
+        "type": "github"
+      }
+    },
     "kotlin-lsp": {
       "inputs": {
         "nixpkgs": [
@@ -586,6 +602,7 @@
         "emacs-skills": "emacs-skills",
         "flatpaks": "flatpaks",
         "home-manager": "home-manager",
+        "humanizer-skill": "humanizer-skill",
         "kotlin-lsp": "kotlin-lsp",
         "lanzaboote": "lanzaboote",
         "mac-app-util": "mac-app-util",

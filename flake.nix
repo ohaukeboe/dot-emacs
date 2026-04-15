@@ -21,11 +21,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    emacs-skills = {
-      url = "github:xenodium/emacs-skills";
-      flake = false;
-    };
-
     flatpaks.url = "github:gmodena/nix-flatpak/?ref=latest";
 
     lanzaboote = {
@@ -64,6 +59,16 @@
     zotra-server = {
       url = "github:ohaukeboe/zotra-server-flake";
       inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    emacs-skills = {
+      url = "github:xenodium/emacs-skills";
+      flake = false;
+    };
+
+    humanizer-skill = {
+      url = "github:blader/humanizer";
+      flake = false;
     };
   };
 

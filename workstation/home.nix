@@ -453,7 +453,10 @@ in
     "${config.home.homeDirectory}/.claude/settings.json".source = ./claude-settings.json;
 
     "${config.home.homeDirectory}/.claude/skills" = {
-      source = ./skills;
+      source = pkgs.symlinkJoin {
+        name = "claude-skills";
+        paths = [ ./skills "${inputs.emacs-skills}/skills" ];
+      };
       recursive = true;
     };
     "${config.xdg.configHome}/opencode/skills" = {
@@ -463,6 +466,9 @@ in
     "${config.xdg.configHome}/agents/skills" = {
       source = ./skills;
       recursive = true;
+    };
+    "${config.home.homeDirectory}/.claude/skills/humanizer/SKILL.md" = {
+      source = "${inputs.humanizer-skill}/SKILL.md";
     };
 
     "${config.xdg.configHome}/opencode/opencode.json" = {
