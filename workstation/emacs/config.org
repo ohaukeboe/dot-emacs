@@ -2744,7 +2744,7 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
 
   (use-package pgmacs
     :vc (:url "https://github.com/emarsden/pgmacs.git"
-              :rev "v0.27")
+              :rev "v0.30")
     :custom
     (pgmacs-row-colors `(,(face-background 'default) ,(face-background 'markdown-code-face)))
     (pgmacs-schemaspy-cmdline "podman run -v %D:/output --userns=keep-id --network=host docker.io/schemaspy/schemaspy:latest -t pgsql11 -host %h -port %P -u %u -p %p -db %d -imageformat svg")
@@ -3638,7 +3638,7 @@ And obviously I need consult integration as well
   (use-package consult-mu
     :after (consult mu4e)
     :vc (:url "https://github.com/armindarvish/consult-mu.git"
-              :rev "4958fb6")
+              :rev "8b54bbf")
     :bind
     (:map mu4e-search-minor-mode-map
           ("s" . consult-mu)))
