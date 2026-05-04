@@ -3438,21 +3438,16 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     (agent-shell-goose-authentication
      (agent-shell-make-goose-authentication :none t))
     (agent-shell-mcp-servers
-     `(((name . "serena")
+     `(((name . "context7")
         (type . "stdio")
-        (command . "nix")
-        (args . ("run" "github:oraios/serena" "--" "start-mcp-server"))
-        (env . []))
-       ((name . "context7")
-        (type . "stdio")
-        (command . "npx")
-        (args . ("-y" "@upstash/context7-mcp" "--api-key" ,(auth-source-pick-first-password :host "context7.com")))
-        (env . []))
-       ((name . "playwright")
-        (type . "stdio")
-        (command . "mcp-server-playwright")
-        (args . ("--headless"))
+        (command . "context7-mcp")
+        (args . ("--api-key" ,(auth-source-pick-first-password :host "context7.com")))
         (env . [])))))
+       ;; ((name . "serena")
+       ;;  (type . "stdio")
+       ;;  (command . "nix")
+       ;;  (args . ("run" "github:oraios/serena" "--" "start-mcp-server"))
+       ;;  (env . [])))))
 
   (use-package agent-review
     :disabled

@@ -1,6 +1,6 @@
 keys:
   # Hosts
-  - &desktop age1tpm1qt4ldukffnp9h3v30vu4wjthsprch8ae335kf7y2y2gytquruuuvkxtqqun
+  - &desktop age1yg0dffykts33c8wgkxhahhk4zhueqtx560afsy7ys0lm3scx2p7szgchcc
   - &work-laptop age1tpm1qwf7q7h905xcdv45mjus9pgjkg6tcx7ynxke4m622ewy0hr25y9cyxrj5s9
   - &work-tmp age1c72w86x4lalere2e44z59lmv70ydm3xv7vu5wta3znp9mgau5g2srsju65
 

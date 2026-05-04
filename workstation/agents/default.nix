@@ -40,6 +40,7 @@ in
     opencode
     playwright-mcp
     rtk # CLI proxy for minimizing token use
+    context7-mcp
   ];
 
   home.file = {
