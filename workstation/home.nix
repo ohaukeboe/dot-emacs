@@ -435,6 +435,7 @@ in
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
     ".aws/config".source = ../secrets/aws.config;
     ".config/scw/config.yaml".source = ../secrets/scaleway.yaml;
+    ".screenrc".text = "termcapinfo xterm*|rxvt*|kterm*|Eterm*|vterm* ti@:te@";
 
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";
 
