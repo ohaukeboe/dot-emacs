@@ -1914,7 +1914,7 @@ rather than files.  These modes usually use read-only buffers.
     (org-attach-dir-relative t)
     (org-startup-with-latex-preview t)
     (org-latex-prefer-user-labels t)
-    (org-ditaa-jar-path "~/.local/share/ditaa/ditaa.jar")
+    (org-ditaa-default-exec-mode 'ditaa)
     (org-latex-create-formula-image-program 'dvisvgm)
     (org-log-done 'time)
     (org-auto-align-tags t)
