@@ -2059,6 +2059,17 @@ Toggle the visibility of emphasis markers when the cursor is on the line.
     :hook (org-mode . org-appear-mode))
 #+end_src
 
+*** org-contrib
+
+#+begin_src elisp
+  (use-package ox-extra
+    :ensure org-contrib
+    :after org
+    :config
+    (require 'ox-extra)
+    (ox-extras-activate '(ignore-headlines)))
+#+end_src
+
 *** org-fragtog
 Automatically toggle =org-preview-latex-fragment= when the cursor is on the line.
 
