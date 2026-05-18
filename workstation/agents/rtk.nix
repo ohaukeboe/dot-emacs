@@ -4,6 +4,8 @@
   ...
 }:
 {
+  agents.extraClaudeDocs = [ ./rtk-docs.md ];
+
   home.packages = [ pkgs.rtk ];
 
   programs.claude-code.settings.hooks.PreToolUse = [
