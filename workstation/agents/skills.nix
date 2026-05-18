@@ -29,6 +29,16 @@ let
     ]
   );
 
+  cavekitSkills = pkgs.linkFarm "cavekit-skills" (
+    map (name: { inherit name; path = "${inputs.cavekit}/skills/${name}"; }) [
+      "backprop"
+      "build"
+      # "caveman"
+      "check"
+      "spec"
+    ]
+  );
+
   mergedSkills = pkgs.symlinkJoin {
     name = "merged-skills";
     paths = [
@@ -36,6 +46,7 @@ let
       "${inputs.emacs-skills}/skills"
       anthropicsSkillsSubset
       cavemanSkillsSubset
+      cavekitSkills
     ];
   };
 in

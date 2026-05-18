@@ -80,6 +80,11 @@
       url = "github:JuliusBrussee/caveman";
       flake = false;
     };
+
+    cavekit = {
+      url = "github:JuliusBrussee/cavekit";
+      flake = false;
+    };
   };
 
   outputs =

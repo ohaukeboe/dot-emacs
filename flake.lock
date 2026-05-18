@@ -34,6 +34,22 @@
         "type": "github"
       }
     },
+    "cavekit": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779057594,
+        "narHash": "sha256-v2PQLniihq8XOM6/GrIMlZ1gGR7gSkajU4SZgeMDwzo=",
+        "owner": "JuliusBrussee",
+        "repo": "cavekit",
+        "rev": "823ad0437d03134f1ce6eb46baeb2145e18e95ad",
+        "type": "github"
+      },
+      "original": {
+        "owner": "JuliusBrussee",
+        "repo": "cavekit",
+        "type": "github"
+      }
+    },
     "caveman": {
       "flake": false,
       "locked": {
@@ -631,6 +647,7 @@
       "inputs": {
         "anthropics-skills": "anthropics-skills",
         "calibre-plugins": "calibre-plugins",
+        "cavekit": "cavekit",
         "caveman": "caveman",
         "emacs-overlay": "emacs-overlay",
         "emacs-skills": "emacs-skills",
