@@ -20,6 +20,8 @@ LSP servers already configured in Emacs.
 | `lsp-signature-help`       | Signature(s) at a call site with per-parameter docs                  |
 | `lsp-inlay-hints`          | Inferred types and parameter names the server computed for a file    |
 | `lsp-document-highlight`   | Read/write occurrences of a symbol within the same file              |
+| `lsp-format-buffer`        | Format an entire file via LSP and save it                            |
+| `lsp-format-region`        | Format a region of a file via LSP and save it                        |
 
 All tools return JSON. Position tools return `{file, line, column}` arrays.
 `line` is 1-indexed; `column` is 0-indexed (LSP convention).
@@ -232,6 +234,28 @@ plain text reference:
 
 `kind` is `"read"`, `"write"`, or `"text"` (when the server does not
 distinguish).
+
+### `lsp-format-buffer`
+
+```
+file – absolute path to file
+```
+
+Formats the entire file using the LSP server (`textDocument/formatting`) and
+saves it. Returns `"formatted"`.
+
+### `lsp-format-region`
+
+```
+file         – absolute path to file
+start-line   – start line (1-indexed)
+start-column – start column (0-indexed)
+end-line     – end line (1-indexed)
+end-column   – end column (0-indexed)
+```
+
+Formats the specified region using the LSP server
+(`textDocument/rangeFormatting`) and saves the file. Returns `"formatted"`.
 
 ## Running tests
 

@@ -535,6 +535,48 @@ MCP Parameters:
                            (end-column  . ,(lsp-get end :character)))))
                      (append response nil)))))))))
 
+;;; Formatting tools
+
+(defun lsp-mcp--line-col-to-pos (line column)
+  "Return buffer position for LINE (1-indexed) and COLUMN (0-indexed)."
+  (save-excursion
+    (goto-char (point-min))
+    (forward-line (1- line))
+    (move-to-column column)
+    (point)))
+
+(defun lsp-mcp--format-buffer (file)
+  "Format FILE using the LSP server and save it.
+
+MCP Parameters:
+  file - Absolute path to the file"
+  (mcp-server-lib-with-error-handling
+    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
+      (with-current-buffer buf
+        (lsp-format-buffer)
+        (save-buffer))
+      "formatted")))
+
+(defun lsp-mcp--format-region (file start-line start-column end-line end-column)
+  "Format a region of FILE using the LSP server and save it.
+
+MCP Parameters:
+  file         - Absolute path to the file
+  start-line   - Start line (1-indexed)
+  start-column - Start column (0-indexed)
+  end-line     - End line (1-indexed)
+  end-column   - End column (0-indexed)"
+  (mcp-server-lib-with-error-handling
+    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
+      (with-current-buffer buf
+        (let ((s (lsp-mcp--line-col-to-pos (lsp-mcp--parse-int start-line)
+                                           (lsp-mcp--parse-int start-column)))
+              (e (lsp-mcp--line-col-to-pos (lsp-mcp--parse-int end-line)
+                                           (lsp-mcp--parse-int end-column))))
+          (lsp-format-region s e)
+          (save-buffer)))
+      "formatted")))
+
 ;;; Enable / Disable
 
 ;;;###autoload
@@ -612,7 +654,17 @@ MCP Parameters:
    :id "lsp-document-highlight"
    :server-id lsp-mcp--server-id
    :description "Get read/write highlights for the symbol at file:line:column within the same file. Returns JSON array of {kind, line, column, end-line, end-column}. kind is \"read\", \"write\", or \"text\"."
-   :read-only t))
+   :read-only t)
+  (mcp-server-lib-register-tool
+   #'lsp-mcp--format-buffer
+   :id "lsp-format-buffer"
+   :server-id lsp-mcp--server-id
+   :description "Format an entire file using the LSP server and save it. Returns \"formatted\".")
+  (mcp-server-lib-register-tool
+   #'lsp-mcp--format-region
+   :id "lsp-format-region"
+   :server-id lsp-mcp--server-id
+   :description "Format a region of a file using the LSP server and save it. start-line/end-line are 1-indexed, start-column/end-column are 0-indexed. Returns \"formatted\"."))
 
 ;;;###autoload
 (defun lsp-mcp-disable ()
@@ -621,7 +673,8 @@ MCP Parameters:
   (dolist (id '("lsp-find-definitions" "lsp-find-references" "lsp-hover"
                 "lsp-get-diagnostics" "lsp-workspace-symbols" "lsp-document-symbols"
                 "lsp-find-implementations" "lsp-find-type-definition" "lsp-call-hierarchy"
-                "lsp-signature-help" "lsp-inlay-hints" "lsp-document-highlight"))
+                "lsp-signature-help" "lsp-inlay-hints" "lsp-document-highlight"
+                "lsp-format-buffer" "lsp-format-region"))
     (mcp-server-lib-unregister-tool id lsp-mcp--server-id)))
 
 (provide 'lsp-mcp)

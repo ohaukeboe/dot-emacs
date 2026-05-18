@@ -179,7 +179,9 @@
     "lsp-call-hierarchy"
     "lsp-signature-help"
     "lsp-inlay-hints"
-    "lsp-document-highlight"))
+    "lsp-document-highlight"
+    "lsp-format-buffer"
+    "lsp-format-region"))
 
 (defun lsp-mcp-test--drain-registrations ()
   "Fully remove any lingering lsp-mcp registrations.
@@ -489,6 +491,69 @@ registration means a single `lsp-mcp-disable' would not remove the tool."
         (should (string= "/b.el"  (alist-get 'file entry)))
         ;; call-sites: fromRanges line 2 (0-indexed) → 3 (1-indexed)
         (should (equal [3] (alist-get 'call-sites entry)))))))
+
+
+;;; Formatting helpers
+
+(ert-deftest lsp-mcp-test-line-col-to-pos-first-line ()
+  (with-temp-buffer
+    (insert "hello\nworld\n")
+    (should (= 1 (lsp-mcp--line-col-to-pos 1 0)))
+    (should (= 3 (lsp-mcp--line-col-to-pos 1 2)))))
+
+(ert-deftest lsp-mcp-test-line-col-to-pos-second-line ()
+  (with-temp-buffer
+    (insert "hello\nworld\n")
+    ;; "hello\n" = 6 chars; line 2, col 0 = position 7
+    (should (= 7 (lsp-mcp--line-col-to-pos 2 0)))
+    (should (= 9 (lsp-mcp--line-col-to-pos 2 2)))))
+
+(ert-deftest lsp-mcp-test-format-buffer-calls-lsp-format-buffer ()
+  "lsp-mcp--format-buffer must call lsp-format-buffer and save-buffer."
+  (let (format-called save-called)
+    (cl-letf (((symbol-function 'lsp-mcp--ensure-lsp-buffer)
+               (lambda (_file) (current-buffer)))
+              ((symbol-function 'lsp-format-buffer)
+               (lambda () (setq format-called t)))
+              ((symbol-function 'save-buffer)
+               (lambda (&rest _) (setq save-called t))))
+      (should (string= "formatted" (lsp-mcp--format-buffer "fake.el")))
+      (should format-called)
+      (should save-called))))
+
+(ert-deftest lsp-mcp-test-format-region-calls-lsp-format-region ()
+  "lsp-mcp--format-region must call lsp-format-region with correct positions and save."
+  (let (region-start region-end save-called)
+    (cl-letf (((symbol-function 'lsp-mcp--ensure-lsp-buffer)
+               (lambda (_file) (current-buffer)))
+              ((symbol-function 'lsp-format-region)
+               (lambda (s e) (setq region-start s region-end e)))
+              ((symbol-function 'save-buffer)
+               (lambda (&rest _) (setq save-called t))))
+      (with-temp-buffer
+        (insert "line one\nline two\nline three\n")
+        (should (string= "formatted"
+                         (lsp-mcp--format-region "fake.el" 2 5 2 8)))
+        (should save-called)
+        ;; line 2, col 5 = position 15 ("line one\n" = 9 + 5 = 14 → 1-indexed = 15)
+        (should (= 15 region-start))
+        ;; line 2, col 8 = position 18
+        (should (= 18 region-end))))))
+
+(ert-deftest lsp-mcp-test-format-region-string-params ()
+  "start-line/end-line/col params may arrive as strings — must parse."
+  (let (region-start)
+    (cl-letf (((symbol-function 'lsp-mcp--ensure-lsp-buffer)
+               (lambda (_file) (current-buffer)))
+              ((symbol-function 'lsp-format-region)
+               (lambda (s _e) (setq region-start s)))
+              ((symbol-function 'save-buffer)
+               (lambda (&rest _))))
+      (with-temp-buffer
+        (insert "abc\ndef\n")
+        (lsp-mcp--format-region "fake.el" "2" "0" "2" "3")
+        ;; "abc\n" = 4 chars; line 2 col 0 = position 5
+        (should (= 5 region-start))))))
 
 
 (provide 'lsp-mcp-test)
