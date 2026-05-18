@@ -3451,8 +3451,8 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     (agent-shell-mcp-servers
      `(((name . "context7")
         (type . "stdio")
-        (command . "context7-mcp")
-        (args . ("--api-key" ,(auth-source-pick-first-password :host "context7.com")))
+        (command . "caveman-shrink")
+        (args . ("context7-mcp" "--api-key" ,(auth-source-pick-first-password :host "context7.com")))
         (env . [])))))
        ;; ((name . "serena")
        ;;  (type . "stdio")

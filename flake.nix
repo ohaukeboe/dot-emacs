@@ -75,6 +75,11 @@
       url = "github:anthropics/skills";
       flake = false;
     };
+
+    caveman = {
+      url = "github:JuliusBrussee/caveman";
+      flake = false;
+    };
   };
 
   outputs =
