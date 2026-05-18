@@ -3133,14 +3133,15 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
           (gptel-make-openai "OpenRouter"               ;Any name you want
             :host "openrouter.ai"
             :endpoint "/api/v1/chat/completions"
-            :stream t
+            ;; :stream t
             :key (auth-source-pick-first-password :host "openrouter.ai")
             :models '(anthropic/claude-sonnet-4.6
+                      anthropic/claude-opus-4.7
                       anthropic/claude-haiku-4.5)))
 
     (gptel-make-ollama "Ollama"
       :host "localhost:11434"
-      :stream t
+      ;; :stream t
       :models '(llama3.2:3b
                 llama3.1:8b))
 
