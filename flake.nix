@@ -90,6 +90,11 @@
       url = "github:mattpocock/skills";
       flake = false;
     };
+
+    llm-skills = {
+      url = "github:descoped/llm-skills";
+      flake = false;
+    };
   };
 
   outputs =

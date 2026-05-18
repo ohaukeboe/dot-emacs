@@ -385,6 +385,22 @@
         "type": "github"
       }
     },
+    "llm-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1776758213,
+        "narHash": "sha256-caunh5AEckzLQyQJqCmRWtKtbLZ9+QaMWDkrKZzt0e8=",
+        "owner": "descoped",
+        "repo": "llm-skills",
+        "rev": "be4a49d95a74d2f8772658b86db1df7ce62afc7e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "descoped",
+        "repo": "llm-skills",
+        "type": "github"
+      }
+    },
     "mac-app-util": {
       "inputs": {
         "cl-nix-lite": "cl-nix-lite",
@@ -672,6 +688,7 @@
         "humanizer-skill": "humanizer-skill",
         "kotlin-lsp": "kotlin-lsp",
         "lanzaboote": "lanzaboote",
+        "llm-skills": "llm-skills",
         "mac-app-util": "mac-app-util",
         "mattpocock-skills": "mattpocock-skills",
         "nix-index-database": "nix-index-database",

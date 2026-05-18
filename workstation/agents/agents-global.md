@@ -51,8 +51,8 @@
 ## File Editing
 
 After every file edit:
-1. Run `lsp-format-buffer` on the edited file via the LSP MCP tool
-2. Run `lsp-get-diagnostics` on the edited file and fix any errors or warnings before proceeding
+1. Run `lsp-format-buffer` on the edited file using the `lsp-mcp` MCP server
+2. Run `lsp-get-diagnostics` on the edited file using the `lsp-mcp` MCP server and fix any errors or warnings before proceeding
 
 
 

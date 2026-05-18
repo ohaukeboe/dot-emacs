@@ -56,6 +56,20 @@ let
     }
   ];
 
+  # descoped/llm-skills — comment out any you don't want
+  # domain-finder, github-issues-workflow, code-review, claude-settings,
+  # statusline, vite-chunk-split, slack-message, session-snapshot, claude-rules
+  llmSkillsSubset = pkgs.linkFarm "llm-skills-subset" (
+    map
+      (name: {
+        inherit name;
+        path = "${inputs.llm-skills}/plugins/${name}/skills/${name}";
+      })
+      [
+        "domain-finder"
+      ]
+  );
+
   # mattpocock/skills — comment out any you don't want
   # engineering: diagnose, grill-with-docs, improve-codebase-architecture,
   #              prototype, setup-matt-pocock-skills, tdd, to-issues,
@@ -150,6 +164,7 @@ let
       cavekitSkills
       humanizerSkill
       mattpocockSkillsSubset
+      llmSkillsSubset
     ];
   };
 in
