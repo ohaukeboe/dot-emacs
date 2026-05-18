@@ -3471,7 +3471,15 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
         (command . "caveman-shrink")
         (args . ("github-mcp-server" "stdio"))
         (env . (((name . "GITHUB_PERSONAL_ACCESS_TOKEN")
-                 (value .,(auth-source-pick-first-password :host "api.github.com")))))))))
+                 (value .,(auth-source-pick-first-password :host "api.github.com"))))))
+       ((name . "elisp-dev-mcp")
+        (type . "stdio")
+        (command . "caveman-shrink")
+        (args . (,(expand-file-name "~/.config/emacs/emacs-mcp-stdio.sh")
+                 "--init-function=elisp-dev-mcp-enable"
+                 "--stop-function=elisp-dev-mcp-disable"
+                 "--server-id=elisp-dev-mcp"))
+        (env . [])))))
        ;; ((name . "serena")
        ;;  (type . "stdio")
        ;;  (command . "nix")
@@ -3484,6 +3492,15 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
               :rev "df684c4")
     :bind
     ("C-c l p" . agent-review))
+#+end_src
+
+** elisp-dev-mcp
+
+#+begin_src elisp
+  (use-package elisp-dev-mcp
+    :ensure t
+    :config
+    (mcp-server-lib-start))
 #+end_src
 
 ** SICP
