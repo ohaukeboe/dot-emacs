@@ -18,25 +18,126 @@ let
   ];
 
   cavemanSkillsSubset = pkgs.linkFarm "caveman-skills-subset" (
-    map (name: { inherit name; path = "${inputs.caveman}/skills/${name}"; }) [
-      "caveman"
-      "caveman-commit"
-      "caveman-compress"
-      "caveman-help"
-      "caveman-review"
-      "caveman-stats"
-      "cavecrew"
-    ]
+    map
+      (name: {
+        inherit name;
+        path = "${inputs.caveman}/skills/${name}";
+      })
+      [
+        "caveman"
+        "caveman-commit"
+        "caveman-compress"
+        "caveman-help"
+        "caveman-review"
+        "caveman-stats"
+        "cavecrew"
+      ]
   );
 
   cavekitSkills = pkgs.linkFarm "cavekit-skills" (
-    map (name: { inherit name; path = "${inputs.cavekit}/skills/${name}"; }) [
-      "backprop"
-      "build"
-      # "caveman"
-      "check"
-      "spec"
-    ]
+    map
+      (name: {
+        inherit name;
+        path = "${inputs.cavekit}/skills/${name}";
+      })
+      [
+        "backprop"
+        "build"
+        # "caveman"
+        "check"
+        "spec"
+      ]
+  );
+
+  humanizerSkill = pkgs.linkFarm "humanizer-skill" [
+    {
+      name = "humanizer";
+      path = "${inputs.humanizer-skill}";
+    }
+  ];
+
+  # mattpocock/skills — comment out any you don't want
+  # engineering: diagnose, grill-with-docs, improve-codebase-architecture,
+  #              prototype, setup-matt-pocock-skills, tdd, to-issues,
+  #              to-prd, triage, zoom-out
+  # productivity: caveman, grill-me, handoff, write-a-skill
+  # misc:         git-guardrails-claude-code, migrate-to-shoehorn,
+  #               scaffold-exercises, setup-pre-commit
+  # personal:     edit-article, obsidian-vault
+  mattpocockSkillsSubset = pkgs.linkFarm "mattpocock-skills-subset" (
+    map
+      (
+        { name, subdir }:
+        {
+          inherit name;
+          path = "${inputs.mattpocock-skills}/skills/${subdir}/${name}";
+        }
+      )
+      [
+        # -- engineering --
+        {
+          name = "diagnose";
+          subdir = "engineering";
+        }
+        {
+          name = "grill-with-docs";
+          subdir = "engineering";
+        }
+        {
+          name = "improve-codebase-architecture";
+          subdir = "engineering";
+        }
+        {
+          name = "prototype";
+          subdir = "engineering";
+        }
+        {
+          name = "setup-matt-pocock-skills";
+          subdir = "engineering";
+        }
+        {
+          name = "tdd";
+          subdir = "engineering";
+        }
+        {
+          name = "to-issues";
+          subdir = "engineering";
+        }
+        {
+          name = "to-prd";
+          subdir = "engineering";
+        }
+        {
+          name = "triage";
+          subdir = "engineering";
+        }
+        {
+          name = "zoom-out";
+          subdir = "engineering";
+        }
+
+        # -- productivity --
+        # { name = "caveman";                         subdir = "productivity"; }
+        {
+          name = "grill-me";
+          subdir = "productivity";
+        }
+        {
+          name = "handoff";
+          subdir = "productivity";
+        }
+        # { name = "write-a-skill";                   subdir = "productivity"; }
+
+        # -- misc --
+        # { name = "git-guardrails-claude-code";      subdir = "misc"; }
+        # { name = "migrate-to-shoehorn";             subdir = "misc"; }
+        # { name = "scaffold-exercises";              subdir = "misc"; }
+        # { name = "setup-pre-commit";                subdir = "misc"; }
+
+        # -- personal --
+        # { name = "edit-article";                    subdir = "personal"; }
+        # { name = "obsidian-vault";                  subdir = "personal"; }
+      ]
   );
 
   mergedSkills = pkgs.symlinkJoin {
@@ -47,6 +148,8 @@ let
       anthropicsSkillsSubset
       cavemanSkillsSubset
       cavekitSkills
+      humanizerSkill
+      mattpocockSkillsSubset
     ];
   };
 in
@@ -56,14 +159,9 @@ in
       source = mergedSkills;
       recursive = true;
     };
-    "${config.home.homeDirectory}/.claude/skills/humanizer/SKILL.md".source =
-      "${inputs.humanizer-skill}/SKILL.md";
-
     "${config.home.homeDirectory}/.agents/skills" = {
       source = mergedSkills;
       recursive = true;
     };
-    "${config.home.homeDirectory}/.agents/skills/humanizer/SKILL.md".source =
-      "${inputs.humanizer-skill}/SKILL.md";
   };
 }

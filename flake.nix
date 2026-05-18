@@ -85,6 +85,11 @@
       url = "github:JuliusBrussee/cavekit";
       flake = false;
     };
+
+    mattpocock-skills = {
+      url = "github:mattpocock/skills";
+      flake = false;
+    };
   };
 
   outputs =
