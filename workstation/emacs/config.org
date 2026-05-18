@@ -3448,6 +3448,7 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     (agent-shell-session-strategy 'new)
     (agent-shell-goose-authentication
      (agent-shell-make-goose-authentication :none t))
+    (agent-shell-anthropic-default-session-mode-id "auto")
     (agent-shell-mcp-servers
      `(((name . "context7")
         (type . "stdio")
