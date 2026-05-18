@@ -272,7 +272,8 @@ MCP Parameters:
 
 (defun lsp-mcp--document-symbols-flatten (syms &optional parent-name)
   "Flatten DocumentSymbol tree SYMS into a list of alists.
-PARENT-NAME provides the breadcrumb prefix for nested symbols."
+PARENT-NAME provides the breadcrumb prefix for nested symbols.
+Parents appear before their children in the returned list."
   (let (result)
     (dolist (sym (append syms nil))
       (let* ((name (lsp-get sym :name))
@@ -289,9 +290,9 @@ PARENT-NAME provides the breadcrumb prefix for nested symbols."
                     `((detail . ,detail))))
               result)
         (when (and children (> (length children) 0))
-          (setq result (append result
-                               (lsp-mcp--document-symbols-flatten
-                                children full-name))))))
+          (dolist (child (lsp-mcp--document-symbols-flatten
+                          children full-name))
+            (push child result)))))
     (nreverse result)))
 
 (defun lsp-mcp--document-symbols (file)
@@ -322,6 +323,217 @@ MCP Parameters:
                                (line . ,(1+ (lsp-get start :line)))
                                (column . ,(lsp-get start :character)))))
                          items))))))))))
+
+;;; New navigation tools
+
+(defun lsp-mcp--find-implementations (file line column)
+  "Find implementations of the interface/abstract symbol at FILE LINE COLUMN.
+
+MCP Parameters:
+  file   - Absolute path to the file
+  line   - Line number (1-indexed)
+  column - Column number (0-indexed)"
+  (mcp-server-lib-with-error-handling
+    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
+          (params (lsp-mcp--position-params file
+                                            (lsp-mcp--parse-int line)
+                                            (lsp-mcp--parse-int column))))
+      (with-current-buffer buf
+        (json-encode (lsp-mcp--normalize-locations
+                      (lsp-request "textDocument/implementation" params)))))))
+
+(defun lsp-mcp--find-type-definition (file line column)
+  "Find the type definition of the symbol at FILE LINE COLUMN.
+
+MCP Parameters:
+  file   - Absolute path to the file
+  line   - Line number (1-indexed)
+  column - Column number (0-indexed)"
+  (mcp-server-lib-with-error-handling
+    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
+          (params (lsp-mcp--position-params file
+                                            (lsp-mcp--parse-int line)
+                                            (lsp-mcp--parse-int column))))
+      (with-current-buffer buf
+        (json-encode (lsp-mcp--normalize-locations
+                      (lsp-request "textDocument/typeDefinition" params)))))))
+
+(defun lsp-mcp--call-hierarchy-item-to-alist (item)
+  "Convert a CallHierarchyItem ITEM to an alist."
+  (let* ((uri  (lsp-get item :uri))
+         (kind (lsp-get item :kind))
+         (start (lsp-get (lsp-get item :range) :start)))
+    `((name . ,(lsp-get item :name))
+      (kind . ,(lsp-mcp--symbol-kind-name kind))
+      (file . ,(lsp--uri-to-path uri))
+      (line . ,(1+ (lsp-get start :line)))
+      (column . ,(lsp-get start :character)))))
+
+(defun lsp-mcp--call-hierarchy (file line column direction)
+  "Get call hierarchy for the symbol at FILE LINE COLUMN.
+DIRECTION is either \"incoming\" (callers) or \"outgoing\" (callees).
+
+MCP Parameters:
+  file      - Absolute path to the file
+  line      - Line number (1-indexed)
+  column    - Column number (0-indexed)
+  direction - \"incoming\" for callers, \"outgoing\" for callees"
+  (mcp-server-lib-with-error-handling
+    (let* ((buf (lsp-mcp--ensure-lsp-buffer file))
+           (params (lsp-mcp--position-params file
+                                             (lsp-mcp--parse-int line)
+                                             (lsp-mcp--parse-int column)))
+           (method (if (string= direction "outgoing")
+                       "callHierarchy/outgoingCalls"
+                     "callHierarchy/incomingCalls")))
+      (with-current-buffer buf
+        (let ((items (lsp-request "textDocument/prepareCallHierarchy" params)))
+          (if (or (null items) (= (length items) 0))
+              "[]"
+            (let* ((item (aref items 0))
+                   (calls (lsp-request method (list :item item))))
+              (if (or (null calls) (= (length calls) 0))
+                  "[]"
+                (json-encode
+                 (mapcar (lambda (call)
+                           (let* ((other-key (if (string= direction "outgoing") :to :from))
+                                  (other (lsp-get call other-key))
+                                  (ranges (lsp-get call :fromRanges))
+                                  (sites (when (and ranges (> (length ranges) 0))
+                                           (mapcar (lambda (r)
+                                                     (lsp-get (lsp-get r :start) :line))
+                                                   (append ranges nil)))))
+                             (append
+                              (lsp-mcp--call-hierarchy-item-to-alist other)
+                              (when sites
+                                `((call-sites . ,(vconcat (mapcar #'1+ sites))))))))
+                         (append calls nil)))))))))))
+
+(defun lsp-mcp--signature-help (file line column)
+  "Get signature help for the call at FILE LINE COLUMN via LSP.
+
+MCP Parameters:
+  file   - Absolute path to the file
+  line   - Line number (1-indexed)
+  column - Column number (0-indexed)"
+  (mcp-server-lib-with-error-handling
+    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
+          (params (lsp-mcp--position-params file
+                                            (lsp-mcp--parse-int line)
+                                            (lsp-mcp--parse-int column))))
+      (with-current-buffer buf
+        (let ((response (lsp-request "textDocument/signatureHelp" params)))
+          (if (null response)
+              "[]"
+            (let* ((sigs (lsp-get response :signatures))
+                   (active-sig (or (lsp-get response :activeSignature) 0))
+                   (active-param (lsp-get response :activeParameter)))
+              (if (or (null sigs) (= (length sigs) 0))
+                  "[]"
+                (json-encode
+                 (mapcar (lambda (sig)
+                           (let* ((label (lsp-get sig :label))
+                                  (doc   (lsp-get sig :documentation))
+                                  (doc-str (cond
+                                            ((null doc) nil)
+                                            ((stringp doc) doc)
+                                            (t (lsp-get doc :value))))
+                                  (params-raw (lsp-get sig :parameters))
+                                  (params-list
+                                   (when (and params-raw (> (length params-raw) 0))
+                                     (mapcar (lambda (p)
+                                               (let* ((plabel (lsp-get p :label))
+                                                      (pdoc   (lsp-get p :documentation))
+                                                      (pdoc-str (cond
+                                                                 ((null pdoc) nil)
+                                                                 ((stringp pdoc) pdoc)
+                                                                 (t (lsp-get pdoc :value)))))
+                                                 (append
+                                                  `((label . ,(if (vectorp plabel)
+                                                                  (substring label
+                                                                             (aref plabel 0)
+                                                                             (aref plabel 1))
+                                                                plabel)))
+                                                  (when pdoc-str `((documentation . ,pdoc-str))))))
+                                             (append params-raw nil)))))
+                             (append
+                              `((label . ,label))
+                              (when doc-str `((documentation . ,doc-str)))
+                              (when params-list `((parameters . ,(vconcat params-list))))
+                              `((active . ,(= (cl-position sig (append sigs nil)) active-sig)))
+                              (when active-param `((activeParameter . ,active-param))))))
+                         (append sigs nil)))))))))))
+
+(defun lsp-mcp--inlay-hints (file)
+  "Get inlay hints (inferred types, parameter names) for FILE via LSP.
+
+MCP Parameters:
+  file - Absolute path to the file"
+  (mcp-server-lib-with-error-handling
+    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
+      (with-current-buffer buf
+        (let* ((params
+                (list :textDocument
+                      (list :uri (lsp--path-to-uri (expand-file-name file)))
+                      :range
+                      (list :start (list :line 0 :character 0)
+                            :end   (list :line most-positive-fixnum :character 0))))
+               (response (lsp-request "textDocument/inlayHint" params)))
+          (if (or (null response) (= (length response) 0))
+              "[]"
+            (json-encode
+             (mapcar (lambda (hint)
+                       (let* ((pos  (lsp-get hint :position))
+                              (kind (lsp-get hint :kind))
+                              (kind-str (cond ((eq kind 1) "type")
+                                             ((eq kind 2) "parameter")
+                                             (t "other")))
+                              (label (lsp-get hint :label))
+                              (label-str (cond
+                                          ((stringp label) label)
+                                          ((vectorp label)
+                                           (mapconcat (lambda (part)
+                                                        (lsp-get part :value))
+                                                      (append label nil)
+                                                      ""))
+                                          (t (format "%s" label)))))
+                         `((line   . ,(1+ (lsp-get pos :line)))
+                           (column . ,(lsp-get pos :character))
+                           (kind   . ,kind-str)
+                           (label  . ,label-str))))
+                     (append response nil)))))))))
+
+(defun lsp-mcp--document-highlight (file line column)
+  "Get read/write highlights for the symbol at FILE LINE COLUMN.
+
+MCP Parameters:
+  file   - Absolute path to the file
+  line   - Line number (1-indexed)
+  column - Column number (0-indexed)"
+  (mcp-server-lib-with-error-handling
+    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
+          (params (lsp-mcp--position-params file
+                                            (lsp-mcp--parse-int line)
+                                            (lsp-mcp--parse-int column))))
+      (with-current-buffer buf
+        (let ((response (lsp-request "textDocument/documentHighlight" params)))
+          (if (or (null response) (= (length response) 0))
+              "[]"
+            (json-encode
+             (mapcar (lambda (hl)
+                       (let* ((start (lsp-get (lsp-get hl :range) :start))
+                              (end   (lsp-get (lsp-get hl :range) :end))
+                              (kind  (or (lsp-get hl :kind) 1))
+                              (kind-str (cond ((eq kind 1) "text")
+                                             ((eq kind 2) "read")
+                                             ((eq kind 3) "write")
+                                             (t "text"))))
+                         `((kind        . ,kind-str)
+                           (line        . ,(1+ (lsp-get start :line)))
+                           (column      . ,(lsp-get start :character))
+                           (end-line    . ,(1+ (lsp-get end :line)))
+                           (end-column  . ,(lsp-get end :character)))))
+                     (append response nil)))))))))
 
 ;;; Enable / Disable
 
@@ -364,6 +576,42 @@ MCP Parameters:
    :id "lsp-document-symbols"
    :server-id lsp-mcp--server-id
    :description "Get all symbols defined in a file via LSP. Returns JSON array of {name, kind, line, column, detail?}."
+   :read-only t)
+  (mcp-server-lib-register-tool
+   #'lsp-mcp--find-implementations
+   :id "lsp-find-implementations"
+   :server-id lsp-mcp--server-id
+   :description "Find concrete implementations of an interface or abstract method at file:line:column. Returns JSON array of {file, line, column}."
+   :read-only t)
+  (mcp-server-lib-register-tool
+   #'lsp-mcp--find-type-definition
+   :id "lsp-find-type-definition"
+   :server-id lsp-mcp--server-id
+   :description "Find the type definition of the symbol at file:line:column (e.g. the struct a function returns). Returns JSON array of {file, line, column}."
+   :read-only t)
+  (mcp-server-lib-register-tool
+   #'lsp-mcp--call-hierarchy
+   :id "lsp-call-hierarchy"
+   :server-id lsp-mcp--server-id
+   :description "Get callers or callees of the function at file:line:column. direction=\"incoming\" for callers, \"outgoing\" for callees. Returns JSON array of {name, kind, file, line, column, call-sites?}."
+   :read-only t)
+  (mcp-server-lib-register-tool
+   #'lsp-mcp--signature-help
+   :id "lsp-signature-help"
+   :server-id lsp-mcp--server-id
+   :description "Get function signature(s) at a call site at file:line:column. Returns JSON array of {label, documentation?, parameters?, active, activeParameter?}."
+   :read-only t)
+  (mcp-server-lib-register-tool
+   #'lsp-mcp--inlay-hints
+   :id "lsp-inlay-hints"
+   :server-id lsp-mcp--server-id
+   :description "Get inlay hints (inferred types, parameter names) for a file. Returns JSON array of {line, column, kind, label}."
+   :read-only t)
+  (mcp-server-lib-register-tool
+   #'lsp-mcp--document-highlight
+   :id "lsp-document-highlight"
+   :server-id lsp-mcp--server-id
+   :description "Get read/write highlights for the symbol at file:line:column within the same file. Returns JSON array of {kind, line, column, end-line, end-column}. kind is \"read\", \"write\", or \"text\"."
    :read-only t))
 
 ;;;###autoload
@@ -371,7 +619,9 @@ MCP Parameters:
   "Unregister LSP MCP tools from mcp-server-lib."
   (interactive)
   (dolist (id '("lsp-find-definitions" "lsp-find-references" "lsp-hover"
-                "lsp-get-diagnostics" "lsp-workspace-symbols" "lsp-document-symbols"))
+                "lsp-get-diagnostics" "lsp-workspace-symbols" "lsp-document-symbols"
+                "lsp-find-implementations" "lsp-find-type-definition" "lsp-call-hierarchy"
+                "lsp-signature-help" "lsp-inlay-hints" "lsp-document-highlight"))
     (mcp-server-lib-unregister-tool id lsp-mcp--server-id)))
 
 (provide 'lsp-mcp)
