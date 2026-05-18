@@ -8,14 +8,33 @@
 let
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
+  newline = pkgs.writeText "newline" "\n";
   combinedDocs = pkgs.concatText "agents-docs.md" (
-    [ ./agents-global.md ] ++ config.agents.extraClaudeDocs
+    [ ./agents-global.md ]
+    ++ lib.optionals (config.agents.extraClaudeDocs != [ ]) (
+      [ newline ] ++ config.agents.extraClaudeDocs
+    )
+  );
+  opencodeDocs = pkgs.concatText "opencode-docs.md" (
+    [ ./agents-global.md ]
+    ++ lib.optionals (config.agents.extraClaudeDocs != [ ]) (
+      [ newline ] ++ config.agents.extraClaudeDocs
+    )
+    ++ lib.optionals (config.agents.extraOpencodeDocs != [ ]) (
+      [ newline ] ++ config.agents.extraOpencodeDocs
+    )
   );
 in
 {
-  options.agents.extraClaudeDocs = lib.mkOption {
-    type = lib.types.listOf lib.types.path;
-    default = [ ];
+  options.agents = {
+    extraClaudeDocs = lib.mkOption {
+      type = lib.types.listOf lib.types.path;
+      default = [ ];
+    };
+    extraOpencodeDocs = lib.mkOption {
+      type = lib.types.listOf lib.types.path;
+      default = [ ];
+    };
   };
 
   imports = [
@@ -46,7 +65,7 @@ in
 
     home.file = {
       "${config.home.homeDirectory}/.agents/AGENTS.md".source = combinedDocs;
-      "${config.xdg.configHome}/opencode/AGENTS.md".source = combinedDocs;
+      "${config.xdg.configHome}/opencode/AGENTS.md".source = opencodeDocs;
       "${config.home.homeDirectory}/.claude/CLAUDE.md".source = combinedDocs;
 
       "${config.xdg.configHome}/opencode/opencode.json" = {

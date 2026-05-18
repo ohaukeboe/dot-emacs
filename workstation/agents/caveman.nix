@@ -19,20 +19,20 @@ let
     dontNpmBuild = true;
     preInstall = "mkdir -p node_modules";
     postPatch = ''
-      cat > package-lock.json << 'LOCKEOF'
-{
-  "name": "caveman-shrink",
-  "version": "0.1.0",
-  "lockfileVersion": 3,
-  "requires": true,
-  "packages": {
-    "": {
-      "name": "caveman-shrink",
-      "version": "0.1.0"
-    }
-  }
-}
-LOCKEOF
+            cat > package-lock.json << 'LOCKEOF'
+      {
+        "name": "caveman-shrink",
+        "version": "0.1.0",
+        "lockfileVersion": 3,
+        "requires": true,
+        "packages": {
+          "": {
+            "name": "caveman-shrink",
+            "version": "0.1.0"
+          }
+        }
+      }
+      LOCKEOF
     '';
   };
 
@@ -40,6 +40,8 @@ LOCKEOF
 in
 {
   home.packages = [ caveman-shrink ];
+
+  agents.extraOpencodeDocs = [ "${inputs.caveman}/src/rules/caveman-activate.md" ];
 
   programs.claude-code.settings = {
     hooks = {
@@ -78,7 +80,8 @@ in
     "${hooksDir}/package.json".source = "${inputs.caveman}/src/hooks/package.json";
     "${hooksDir}/caveman-config.js".source = "${inputs.caveman}/src/hooks/caveman-config.js";
     "${hooksDir}/caveman-activate.js".source = "${inputs.caveman}/src/hooks/caveman-activate.js";
-    "${hooksDir}/caveman-mode-tracker.js".source = "${inputs.caveman}/src/hooks/caveman-mode-tracker.js";
+    "${hooksDir}/caveman-mode-tracker.js".source =
+      "${inputs.caveman}/src/hooks/caveman-mode-tracker.js";
     "${hooksDir}/caveman-stats.js".source = "${inputs.caveman}/src/hooks/caveman-stats.js";
     "${hooksDir}/caveman-statusline.sh".source = "${inputs.caveman}/src/hooks/caveman-statusline.sh";
     "${hooksDir}/caveman-statusline.ps1".source = "${inputs.caveman}/src/hooks/caveman-statusline.ps1";
