@@ -37,6 +37,7 @@ in
       playwright-mcp
       context7-mcp
       mcp-nixos
+      github-mcp-server
     ];
 
     programs.claude-code.enable = true;
