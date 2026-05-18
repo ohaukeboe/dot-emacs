@@ -106,8 +106,11 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
     :config
     (load custom-file 'noerror)
     (server-start)
-    (add-to-list 'load-path
-                 (concat user-emacs-directory "packages"))
+    (let ((pkg-dir (concat user-emacs-directory "packages")))
+      (add-to-list 'load-path pkg-dir)
+      (dolist (subdir (directory-files pkg-dir t "^[^.]"))
+        (when (file-directory-p subdir)
+          (add-to-list 'load-path subdir))))
 
     (defvar my-font-name "RobotoMono Nerd Font"
       "Text font to use.")
@@ -3479,6 +3482,14 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
                  "--init-function=elisp-dev-mcp-enable"
                  "--stop-function=elisp-dev-mcp-disable"
                  "--server-id=elisp-dev-mcp"))
+        (env . []))
+       ((name . "lsp-mcp")
+        (type . "stdio")
+        (command . "caveman-shrink")
+        (args . (,(expand-file-name "~/.config/emacs/emacs-mcp-stdio.sh")
+                 "--init-function=lsp-mcp-enable"
+                 "--stop-function=lsp-mcp-disable"
+                 "--server-id=lsp-mcp"))
         (env . [])))))
        ;; ((name . "serena")
        ;;  (type . "stdio")
@@ -3501,6 +3512,14 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     :ensure t
     :config
     (mcp-server-lib-start))
+#+end_src
+
+** lsp-mcp
+
+#+begin_src elisp
+  (use-package lsp-mcp
+    :config
+    (lsp-mcp-enable))
 #+end_src
 
 ** SICP

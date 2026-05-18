@@ -217,6 +217,7 @@ in
 
       ### nix ###
       nixfmt
+      nixd
 
       ### latex org ###
       texlive.combined.scheme-full
