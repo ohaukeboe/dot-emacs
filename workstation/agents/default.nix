@@ -126,6 +126,7 @@ in
     rtk # CLI proxy for minimizing token use
     context7-mcp
     caveman-shrink
+    mcp-nixos
   ];
 
   home.file = {
