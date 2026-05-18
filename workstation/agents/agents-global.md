@@ -48,7 +48,13 @@
 -   Avoid reading entire files when you only need specific sections
 -   Use symbol-aware tools for code navigation instead of text-based search when possible
 
-## Error Handling
+## File Editing
+
+After every file edit:
+1. Run `lsp-format-buffer` on the edited file via the LSP MCP tool
+2. Run `lsp-get-diagnostics` on the edited file and fix any errors or warnings before proceeding
+
+
 
 -   If something fails, explain what happened and why
 -   Provide concrete next steps to resolve the issue

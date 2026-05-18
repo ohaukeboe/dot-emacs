@@ -33,9 +33,6 @@
 (defconst lsp-mcp--init-timeout 15
   "Seconds to wait for an LSP workspace to reach `initialized' status.")
 
-(defconst lsp-mcp--post-open-wait 1.0
-  "Seconds to wait after starting LSP so the server can publish initial state.")
-
 (defun lsp-mcp--workspaces-ready-p ()
   "Return non-nil when all workspaces for current buffer are initialized."
   (when-let ((workspaces (lsp-workspaces)))
@@ -51,40 +48,28 @@ Return non-nil if PREDICATE eventually held."
       (accept-process-output nil 0.1))
     (funcall predicate)))
 
-(defun lsp-mcp--start-lsp (file-path)
-  "Enable `lsp-mode' in the current buffer. Throws an MCP tool error on failure."
-  (condition-case err
-      (let ((lsp-enable-suggest-server-download nil)
-            (lsp-auto-guess-root t))
-        (lsp))
-    (error
-     (mcp-server-lib-tool-throw
-      (format "Failed to start lsp-mode in %s: %s"
-              file-path (error-message-string err))))))
-
 (defun lsp-mcp--ensure-lsp-buffer (file-path)
   "Return a buffer visiting FILE-PATH with `lsp-mode' active.
-Opens the file and starts LSP if needed, then waits for workspace
-initialization. Throws an MCP tool error if the file is missing, no LSP
-client matches the buffer's major mode, or initialization times out."
+Opens the file if needed but never starts LSP — relies on lsp-mode's own
+hooks to activate it.  Throws an MCP tool error if the file is missing,
+lsp-mode is not active after opening (i.e. not configured for this
+major-mode), or the workspace times out initializing."
   (unless (file-exists-p file-path)
     (mcp-server-lib-tool-throw (format "File not found: %s" file-path)))
   (let* ((abs (expand-file-name file-path))
          (existing (find-buffer-visiting abs))
-         (buf (or existing (find-file-noselect abs)))
-         (fresh nil))
+         (buf (or existing (find-file-noselect abs))))
     (with-current-buffer buf
       (unless (bound-and-true-p lsp-mode)
-        (lsp-mcp--start-lsp file-path)
-        (setq fresh t))
+        (mcp-server-lib-tool-throw
+         (format "lsp-mode is not active in %s (major-mode: %s)"
+                 file-path major-mode)))
       (unless (lsp-mcp--accept-output-until
                #'lsp-mcp--workspaces-ready-p
                lsp-mcp--init-timeout)
         (mcp-server-lib-tool-throw
          (format "Timed out after %ds waiting for LSP workspace in %s"
-                 lsp-mcp--init-timeout file-path)))
-      (when (or fresh (null existing))
-        (lsp-mcp--accept-output-until (lambda () nil) lsp-mcp--post-open-wait)))
+                 lsp-mcp--init-timeout file-path))))
     buf))
 
 (defun lsp-mcp--position-params (file-path line column)
