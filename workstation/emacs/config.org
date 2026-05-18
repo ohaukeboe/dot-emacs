@@ -1258,6 +1258,15 @@ For editing =.tsx= files, we'll use =jtsx=.
            (jtsx-tsx-mode . lsp-deferred)))
 #+end_src
 
+** TypeSpec
+
+#+begin_src elisp
+  (use-package typespec-ts-mode
+    :ensure t
+    :hook (typespec-ts-mode . lsp-deferred)
+    :mode "\\.tsp\\'")
+#+end_src
+
 ** HTML
 
 #+begin_src elisp
