@@ -3469,12 +3469,19 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
         (command . "caveman-shrink")
         (args . ("code-review-graph" "serve" "--auto-watch"))
         (env . []))
-       ((name . "github-mcp")
-        (type . "stdio")
-        (command . "caveman-shrink")
-        (args . ("github-mcp-server" "stdio"))
-        (env . (((name . "GITHUB_PERSONAL_ACCESS_TOKEN")
-                 (value .,(auth-source-pick-first-password :host "api.github.com"))))))
+        ((name . "github-mcp")
+         (type . "stdio")
+         (command . "caveman-shrink")
+         (args . ("github-mcp-server" "stdio"))
+         (env . (((name . "GITHUB_PERSONAL_ACCESS_TOKEN")
+                  (value .,(auth-source-pick-first-password :host "api.github.com"))))))
+        ;; TODO: uncomment this when it is publically available
+        ;; ((name . "kagimcp")
+        ;;  (type . "stdio")
+        ;;  (command . "caveman-shrink")
+        ;;  (args . ("uvx" "kagimcp"))
+        ;;  (env . (((name . "KAGI_API_KEY")
+        ;;           (value .,(auth-source-pick-first-password :host "kagi.com"))))))
        ((name . "elisp-dev-mcp")
         (type . "stdio")
         (command . "caveman-shrink")
@@ -3505,21 +3512,26 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     ("C-c l p" . agent-review))
 #+end_src
 
-** elisp-dev-mcp
+** MCP Server
 
 #+begin_src elisp
-  (use-package elisp-dev-mcp
+  (use-package mcp-server-lib
     :ensure t
     :config
     (mcp-server-lib-start))
 #+end_src
 
-** lsp-mcp
+*** elisp-dev-mcp
 
 #+begin_src elisp
-  (use-package lsp-mcp
-    :config
-    (lsp-mcp-enable))
+  (use-package elisp-dev-mcp
+    :ensure t)
+#+end_src
+
+*** lsp-mcp
+
+#+begin_src elisp
+  (use-package lsp-mcp)
 #+end_src
 
 ** SICP

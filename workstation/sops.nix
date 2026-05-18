@@ -50,6 +50,7 @@ in
     "authinfo/imap_knowit" = { };
     "authinfo/context7" = { };
     "authinfo/github_pat" = { };
+    "authinfo/kagi" = { };
   };
 
   sops.templates.authinfo = {
@@ -78,6 +79,7 @@ in
       }"
       machine context7.com password ${config.sops.placeholder."authinfo/context7"}
       machine githubpat password ${config.sops.placeholder."authinfo/github_pat"}
+      machine kagi.com password ${config.sops.placeholder."authinfo/kagi"}
     '';
   };
 }

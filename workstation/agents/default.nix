@@ -15,7 +15,7 @@ in
 {
   options.agents.extraClaudeDocs = lib.mkOption {
     type = lib.types.listOf lib.types.path;
-    default = [];
+    default = [ ];
   };
 
   imports = [
@@ -26,19 +26,21 @@ in
   ];
 
   config = {
-    home.packages = with pkgs; lib.lists.flatten [
-      (lib.optional isLinux wl-clipboard) # used by agent-shell
-      (lib.optional isDarwin pngpaste) # used by agent-shell
+    home.packages =
+      with pkgs;
+      lib.lists.flatten [
+        (lib.optional isLinux wl-clipboard) # used by agent-shell
+        (lib.optional isDarwin pngpaste) # used by agent-shell
 
-      ### Coding agent ###
-      claude-agent-acp
-      aider-chat-full # another AI thingy
-      opencode
-      playwright-mcp
-      context7-mcp
-      mcp-nixos
-      github-mcp-server
-    ];
+        ### Coding agent ###
+        claude-agent-acp
+        aider-chat-full # another AI thingy
+        opencode
+        playwright-mcp
+        context7-mcp
+        mcp-nixos
+        github-mcp-server
+      ];
 
     programs.claude-code.enable = true;
 
