@@ -12,6 +12,8 @@ in
 {
   imports = [
     ./caveman.nix
+    ./code-review-graph.nix
+    ./rtk.nix
     ./skills.nix
   ];
 
@@ -20,15 +22,15 @@ in
     (lib.optional isDarwin pngpaste) # used by agent-shell
 
     ### Coding agent ###
-    claude-code
     claude-agent-acp
     aider-chat-full # another AI thingy
     opencode
     playwright-mcp
-    rtk # CLI proxy for minimizing token use
     context7-mcp
     mcp-nixos
   ];
+
+  programs.claude-code.enable = true;
 
   home.file = {
     "${config.home.homeDirectory}/.agents/AGENTS.md".source = ./agents-global.md;
@@ -52,10 +54,5 @@ in
     };
   };
 
-  home.activation = {
-    rtkHook = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      $DRY_RUN_CMD ${pkgs.rtk}/bin/rtk init -g --hook-only
-      $DRY_RUN_CMD ${pkgs.rtk}/bin/rtk init -g --opencode --hook-only
-    '';
-  };
+
 }

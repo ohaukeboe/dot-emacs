@@ -37,15 +37,12 @@ LOCKEOF
   };
 
   hooksDir = "${config.home.homeDirectory}/.claude/hooks";
+in
+{
+  home.packages = [ caveman-shrink ];
 
-  claudeSettings = {
+  programs.claude-code.settings = {
     hooks = {
-      PreToolUse = [
-        {
-          matcher = "Bash";
-          hooks = [ { type = "command"; command = "rtk hook claude"; } ];
-        }
-      ];
       SessionStart = [
         {
           hooks = [
@@ -76,15 +73,8 @@ LOCKEOF
       command = ''bash "${hooksDir}/caveman-statusline.sh"'';
     };
   };
-in
-{
-  home.packages = [ caveman-shrink ];
 
   home.file = {
-    "${config.home.homeDirectory}/.claude/settings.json" = {
-      text = builtins.toJSON claudeSettings;
-    };
-
     "${hooksDir}/package.json".source = "${inputs.caveman}/src/hooks/package.json";
     "${hooksDir}/caveman-config.js".source = "${inputs.caveman}/src/hooks/caveman-config.js";
     "${hooksDir}/caveman-activate.js".source = "${inputs.caveman}/src/hooks/caveman-activate.js";
