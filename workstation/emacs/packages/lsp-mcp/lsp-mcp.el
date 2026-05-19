@@ -50,10 +50,11 @@ Return non-nil if PREDICATE eventually held."
 
 (defun lsp-mcp--ensure-lsp-buffer (file-path)
   "Return a buffer visiting FILE-PATH with `lsp-mode' active.
-Opens the file if needed but never starts LSP — relies on lsp-mode's own
-hooks to activate it.  Throws an MCP tool error if the file is missing,
-lsp-mode is not active after opening (i.e. not configured for this
-major-mode), or the workspace times out initializing."
+Opens the file if needed; calls `lsp' if lsp-mode is not yet active (e.g.
+when the buffer was opened via `find-file-noselect' and `lsp-deferred' is
+in use).  Throws an MCP tool error if the file is missing, lsp-mode fails
+to activate (i.e. not configured for this major-mode), or the workspace
+times out initializing."
   (unless (file-exists-p file-path)
     (mcp-server-lib-tool-throw (format "File not found: %s" file-path)))
   (let* ((abs (expand-file-name file-path))
@@ -61,6 +62,17 @@ major-mode), or the workspace times out initializing."
          (buf (or existing (find-file-noselect abs))))
     (with-current-buffer buf
       (unless (bound-and-true-p lsp-mode)
+        (let ((mode-hook (intern (concat (symbol-name major-mode) "-hook"))))
+          (if (and (boundp mode-hook)
+                   (or (memq 'lsp (symbol-value mode-hook))
+                       (memq 'lsp-deferred (symbol-value mode-hook))))
+              (lsp)
+            (mcp-server-lib-tool-throw
+             (format "lsp-mode is not active in %s (major-mode: %s)"
+                     file-path major-mode)))))
+      (unless (lsp-mcp--accept-output-until
+               (lambda () (bound-and-true-p lsp-mode))
+               lsp-mcp--init-timeout)
         (mcp-server-lib-tool-throw
          (format "lsp-mode is not active in %s (major-mode: %s)"
                  file-path major-mode)))
