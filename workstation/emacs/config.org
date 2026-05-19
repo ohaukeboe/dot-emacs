@@ -2876,6 +2876,7 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
              :action #'pgmacs-disconnect
              :help-echo "Close this connection to PostgreSQL"))))
 #+end_src
+
 ** Compile multi
 
 #+begin_src elisp
@@ -3478,9 +3479,6 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     (agent-shell-goose-authentication
      (agent-shell-make-goose-authentication :none t))
     (agent-shell-anthropic-default-session-mode-id "auto")
-    (agent-shell-anthropic-claude-environment
-     (agent-shell-make-environment-variables
-      "ANTHROPIC_MODEL" "opusplan"))
     (agent-shell-mcp-servers
      `(((name . "context7")
         (type . "stdio")
@@ -3527,6 +3525,9 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
                  "--server-id=lsp-mcp"))
         (env . []))))
     :config
+    (setq agent-shell-anthropic-claude-environment
+          (agent-shell-make-environment-variables
+           "ANTHROPIC_MODEL" "opusplan"))
     (advice-add 'agent-shell-other-buffer :around
                 (lambda (orig-fn &rest args)
                   (let (new-win)
