@@ -2537,6 +2537,7 @@ A terminal emulator
     :bind
     ("C-z" . toggle-vterm)
     ("M-z" . project-toggle-vterm)
+    ("C-c z" . my/consult-vterm)
     (:map vterm-mode-map
           ("C-z" . toggle-vterm)
           ("M-z" . project-toggle-vterm)
@@ -2555,63 +2556,62 @@ A terminal emulator
                           ("docker" "/bin/bash")))
 
     :preface
-    (defvar vterms nil)
+    (defun vterm-buffer-project-root (buffer)
+      "Return project root for BUFFER if it's a vterm in a project, else nil."
+      (when (and (buffer-live-p buffer)
+                 (eq (buffer-local-value 'major-mode buffer) 'vterm-mode))
+        (when-let* ((dd (buffer-local-value 'default-directory buffer))
+                    (proj (project-current nil dd)))
+          (project-root proj))))
 
-    (defun vterm-project-buffer-p (buffer)
-      "Return non-nil if BUFFER is a project vterm buffer."
-      (and (buffer-live-p buffer)
-           (project-current nil (buffer-local-value 'default-directory buffer))
-           (string-prefix-p (with-current-buffer buffer
-                              (project-prefixed-buffer-name "vterm"))
-                            (buffer-name buffer))))
+    (defun vterm-buffers-in-project (root)
+      "Return live vterm buffers whose project root equals ROOT."
+      (let ((root (file-name-as-directory root)))
+        (seq-filter (lambda (b)
+                      (when-let ((b-root (vterm-buffer-project-root b)))
+                        (equal (file-name-as-directory b-root) root)))
+                    (buffer-list))))
+
+    (defun vterm-buffers-global ()
+      "Return live vterm buffers not associated with any project."
+      (seq-filter (lambda (b)
+                    (and (eq (buffer-local-value 'major-mode b) 'vterm-mode)
+                         (not (vterm-buffer-project-root b))))
+                  (buffer-list)))
+
+    (defun vterm--spawn-fresh ()
+      "Spawn a new vterm buffer with a unique name."
+      (let ((vterm-buffer-name (generate-new-buffer-name "*vterm*")))
+        (vterm)))
 
     (defun project-toggle-vterm (&optional n)
       (interactive "P")
       (let* ((project (project-current t))
              (root (project-root project))
-             (prefix (project-prefixed-buffer-name "vterm"))
-             (project-vterms (seq-filter (lambda (b)
-                                           (and (buffer-live-p b)
-                                                (string-prefix-p prefix (buffer-name b))))
-                                         vterms))
-             (default-directory root)
-             (vterm-buffer-name prefix)
-             (num (cond ((numberp n) n)
-                        ((consp n) (1+ (length project-vterms)))
-                        (t nil))))
-        (cond ((numberp num) (push (vterm num) vterms))
-              ((null project-vterms) (push (vterm 1) vterms))
-              ((seq-contains-p project-vterms (current-buffer))
+             (project-vterms (vterm-buffers-in-project root))
+             (default-directory root))
+        (cond ((numberp n) (vterm n))
+              ((or (consp n) (null project-vterms)) (vterm--spawn-fresh))
+              ((memq (current-buffer) project-vterms)
                (switch-to-buffer (car (seq-difference (buffer-list) project-vterms))))
               (t (switch-to-buffer (car (seq-intersection (buffer-list) project-vterms)))))))
 
     (defun toggle-vterm (&optional n)
       (interactive "P")
-      (setq vterms (seq-filter 'buffer-live-p vterms))
-      (let* ((default-directory (or (vc-root-dir) default-directory))
-             (global-vterms (seq-remove 'vterm-project-buffer-p vterms))
-             (num (cond ((numberp n) n)
-                        ((consp n) (1+ (length global-vterms)))
-                        (t nil))))
-        (cond ((numberp num) (push (vterm num) vterms))
-              ((null global-vterms) (push (vterm 1) vterms))
-              ((seq-contains-p global-vterms (current-buffer))
+      (let* ((default-directory (expand-file-name "~"))
+             (global-vterms (vterm-buffers-global)))
+        (cond ((numberp n) (vterm n))
+              ((or (consp n) (null global-vterms)) (vterm--spawn-fresh))
+              ((memq (current-buffer) global-vterms)
                (switch-to-buffer (car (seq-difference (buffer-list) global-vterms))))
               (t (switch-to-buffer (car (seq-intersection (buffer-list) global-vterms)))))))
 
     (defun my/project-consult-vterm ()
       (interactive)
       (require 'consult)
-      (let* ((current-project (project-current))
-             (project-root (when current-project (expand-file-name
-                                                  (project-root current-project))))
-             (vterm-bufs (seq-filter
-                          (lambda (b)
-                            (with-current-buffer b
-                              (and (memq major-mode '(vterm-mode vterm-copy-mode))
-                                   (when project-root
-                                     (string-prefix-p project-root default-directory)))))
-                          (buffer-list)))
+      (let* ((project (project-current))
+             (root (when project (project-root project)))
+             (vterm-bufs (and root (vterm-buffers-in-project root)))
              (source `(:name "VTerm Buffers"
                              :narrow ?v
                              :category buffer
@@ -2621,6 +2621,21 @@ A terminal emulator
         (if vterm-bufs
             (consult-buffer (list source))
           (user-error "No vterm buffers for this project"))))
+
+    (defun my/consult-vterm ()
+      "Consult-style picker for global (non-project) vterm buffers."
+      (interactive)
+      (require 'consult)
+      (let* ((vterm-bufs (vterm-buffers-global))
+             (source `(:name "Global VTerm Buffers"
+                             :narrow ?v
+                             :category buffer
+                             :action ,#'switch-to-buffer
+                             :items ,(mapcar #'buffer-name vterm-bufs)
+                             :state ,#'consult--buffer-state)))
+        (if vterm-bufs
+            (consult-buffer (list source))
+          (user-error "No global vterm buffers"))))
 
     :init
     (add-to-list 'project-switch-commands '(project-toggle-vterm "Vterm" "t") t)
