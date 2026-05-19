@@ -3478,7 +3478,7 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     (agent-shell-session-strategy 'new)
     (agent-shell-goose-authentication
      (agent-shell-make-goose-authentication :none t))
-    (agent-shell-anthropic-default-session-mode-id "auto")
+    ;; (agent-shell-anthropic-default-session-mode-id "auto")
     (agent-shell-mcp-servers
      `(((name . "context7")
         (type . "stdio")
@@ -3527,7 +3527,8 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     :config
     (setq agent-shell-anthropic-claude-environment
           (agent-shell-make-environment-variables
-           "ANTHROPIC_MODEL" "opusplan"))
+           "ANTHROPIC_MODEL" "opusplan"
+           "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS" "1"))
     (advice-add 'agent-shell-other-buffer :around
                 (lambda (orig-fn &rest args)
                   (let (new-win)

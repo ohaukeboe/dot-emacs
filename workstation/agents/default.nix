@@ -15,6 +15,12 @@ let
       [ newline ] ++ config.agents.extraClaudeDocs
     )
   );
+  claudeDocs = pkgs.concatText "claude-docs.md" (
+    [ combinedDocs ]
+    ++ lib.optionals (config.agents.extraClaudeOnlyDocs != [ ]) (
+      [ newline ] ++ config.agents.extraClaudeOnlyDocs
+    )
+  );
   opencodeDocs = pkgs.concatText "opencode-docs.md" (
     [ ./agents-global.md ]
     ++ lib.optionals (config.agents.extraClaudeDocs != [ ]) (
@@ -35,6 +41,10 @@ in
       type = lib.types.listOf lib.types.path;
       default = [ ];
     };
+    extraClaudeOnlyDocs = lib.mkOption {
+      type = lib.types.listOf lib.types.path;
+      default = [ ];
+    };
   };
 
   imports = [
@@ -42,6 +52,7 @@ in
     ./code-review-graph.nix
     ./rtk.nix
     ./skills.nix
+    ./subagents.nix
   ];
 
   config = {
@@ -66,7 +77,7 @@ in
     home.file = {
       "${config.home.homeDirectory}/.agents/AGENTS.md".source = combinedDocs;
       "${config.xdg.configHome}/opencode/AGENTS.md".source = opencodeDocs;
-      "${config.home.homeDirectory}/.claude/CLAUDE.md".source = combinedDocs;
+      "${config.home.homeDirectory}/.claude/CLAUDE.md".source = claudeDocs;
 
       "${config.xdg.configHome}/opencode/opencode.json" = {
         text = builtins.toJSON {
