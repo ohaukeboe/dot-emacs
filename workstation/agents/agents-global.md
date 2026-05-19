@@ -29,7 +29,7 @@
 
 -   Be **concise but complete**
 -   Don't ask unnecessary clarifying questions if the intent is clear
--   When uncertain, state assumptions and proceed
+-   When intent is unclear, ask clarifying questions before proceeding
 -   Provide actionable responses, not just explanations
 -   Include relevant code, commands, or configurations directly in responses
 
