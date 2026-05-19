@@ -32,6 +32,7 @@ let
       tree-sitter
       tree-sitter-language-pack
       networkx
+      igraph
       watchdog
     ];
 
