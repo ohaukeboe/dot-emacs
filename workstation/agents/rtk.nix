@@ -11,7 +11,7 @@
   programs.claude-code.settings.hooks.PreToolUse = [
     {
       matcher = "Bash";
-      hooks = [ { type = "command"; command = "rtk hook claude"; } ];
+      hooks = [ { type = "command"; command = "${pkgs.rtk}/bin/rtk hook claude"; } ];
     }
   ];
 
