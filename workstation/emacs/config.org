@@ -3478,6 +3478,9 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     (agent-shell-goose-authentication
      (agent-shell-make-goose-authentication :none t))
     (agent-shell-anthropic-default-session-mode-id "auto")
+    (agent-shell-anthropic-claude-environment
+     (agent-shell-make-environment-variables
+      "ANTHROPIC_MODEL" "opusplan"))
     (agent-shell-mcp-servers
      `(((name . "context7")
         (type . "stdio")
@@ -3532,9 +3535,7 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
                                  (setq new-win (display-buffer buf)))))
                       (apply orig-fn args))
                     (when (window-live-p new-win)
-                      (select-window new-win)
-                      (with-current-buffer (window-buffer new-win)
-                        (local-set-key (kbd "q") (lambda () (interactive) (quit-window t)))))))))
+                      (select-window new-win))))))
        ;; ((name . "serena")
        ;;  (type . "stdio")
        ;;  (command . "nix")
