@@ -364,6 +364,7 @@ in
       enable = true;
       extensions = [
         "aeblfdkhhhdcdjpifhhbdiojplfjncoa" # 1password
+        "mmlmfjhmonkocbjadbfplnigmagldckm" # playwright
       ];
     };
   };

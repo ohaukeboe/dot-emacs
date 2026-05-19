@@ -165,11 +165,16 @@ let
       humanizerSkill
       mattpocockSkillsSubset
       llmSkillsSubset
-    ];
+    ] ++ config.agents.extraSkillPaths;
   };
 in
 {
-  home.file = {
+  options.agents.extraSkillPaths = lib.mkOption {
+    type = lib.types.listOf lib.types.package;
+    default = [ ];
+  };
+
+  config.home.file = {
     "${config.home.homeDirectory}/.claude/skills" = {
       source = mergedSkills;
       recursive = true;
