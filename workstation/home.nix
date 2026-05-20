@@ -124,6 +124,7 @@ in
       fd
       dragon-drop # drag-andn-drop from terminal
       screen
+      tmux
       sshfs
       ltex-ls-plus # languagetool lsp
       zoxide
