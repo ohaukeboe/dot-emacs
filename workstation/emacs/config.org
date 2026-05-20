@@ -3564,7 +3564,7 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     :custom
     (claude-code-ide-window-width 90)
     (claude-code-ide-enable-mcp-server t)
-    (claude-code-ide-cli-extra-flags "--remote-control")
+    ;; (claude-code-ide-cli-extra-flags "--remote-control")
     :config
     (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
 #+end_src

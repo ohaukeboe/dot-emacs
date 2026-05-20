@@ -102,6 +102,9 @@ in
     agents.extraSkillPaths = [ playwright-cli-skills ];
 
     programs.claude-code.enable = true;
+    programs.claude-code.settings.model = "opusplan";
+    programs.claude-code.settings.remoteControlAtStartup = true;
+    programs.claude-code.settings.skipAutoPermissionPrompt = true;
 
     home.file = {
       "${config.home.homeDirectory}/.agents/AGENTS.md".source = combinedDocs;
