@@ -44,7 +44,7 @@ in
 
   programs.claude-code.settings.mcpServers."code-review-graph" = {
     command = "${code-review-graph}/bin/code-review-graph";
-    args = [ "serve" ];
+    args = [ "serve" "--auto-watch" ];
     type = "stdio";
   };
 }

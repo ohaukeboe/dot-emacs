@@ -2559,7 +2559,8 @@ A terminal emulator
     (defun vterm-buffer-project-root (buffer)
       "Return project root for BUFFER if it's a vterm in a project, else nil."
       (when (and (buffer-live-p buffer)
-                 (eq (buffer-local-value 'major-mode buffer) 'vterm-mode))
+                 (eq (buffer-local-value 'major-mode buffer) 'vterm-mode)
+                 (not (string-prefix-p "*claude-code[" (buffer-name buffer))))
         (when-let* ((dd (buffer-local-value 'default-directory buffer))
                     (proj (project-current nil dd)))
           (project-root proj))))
@@ -2576,6 +2577,7 @@ A terminal emulator
       "Return live vterm buffers not associated with any project."
       (seq-filter (lambda (b)
                     (and (eq (buffer-local-value 'major-mode b) 'vterm-mode)
+                         (not (string-prefix-p "*claude-code[" (buffer-name b)))
                          (not (vterm-buffer-project-root b))))
                   (buffer-list)))
 
@@ -2721,7 +2723,7 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
     (nov-mode . olivetti-mode))
 #+end_src
 
-** Calibre
+** COMMENT Calibre
 
 #+begin_src elisp
   (use-package calibredb
@@ -3552,12 +3554,29 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     ("C-c l p" . agent-review))
 #+end_src
 
+** Claude Code
+
+#+begin_src elisp
+  (use-package claude-code-ide
+    :vc (:url "https://github.com/manzaltu/claude-code-ide.el"
+              :rev 56db02e)
+    :bind ("C-c o c" . claude-code-ide) ; Set your favorite keybinding
+    :custom
+    (claude-code-ide-window-width 90)
+    (claude-code-ide-enable-mcp-server t)
+    (claude-code-ide-cli-extra-flags "--remote-control")
+    :config
+    (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
+#+end_src
+
 ** MCP Server
 
 #+begin_src elisp
   (use-package mcp-server-lib
     :ensure t
     :config
+    (unless (file-exists-p (expand-file-name "emacs-mcp-stdio.sh" mcp-server-lib-install-directory))
+      (mcp-server-lib-install))
     (mcp-server-lib-start))
 #+end_src
 

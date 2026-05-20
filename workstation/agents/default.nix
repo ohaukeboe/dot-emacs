@@ -76,6 +76,7 @@ in
   imports = [
     ./caveman.nix
     ./code-review-graph.nix
+    ./mcp-servers.nix
     ./rtk.nix
     ./skills.nix
     ./subagents.nix
