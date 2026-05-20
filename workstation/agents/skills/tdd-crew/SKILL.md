@@ -25,18 +25,18 @@ Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in your environment. Confirm w
 
 Load these as needed — do not load all at once:
 
-| File | When to read |
-|---|---|
-| `references/role-selection.md` | Step 1 — pick the roster |
-| `references/tdd-contract.md` | Include verbatim in every implementer prompt |
-| `references/coordination.md` | Lead playbook for dispatch, gating, and shutdown |
-| `references/role-frontend-developer.md` | Include in Frontend Developer's prompt |
-| `references/role-backend-architect.md` | Include in Backend Architect's prompt |
-| `references/role-mobile-app-builder.md` | Include in Mobile App Builder's prompt |
-| `references/role-security-engineer.md` | Include in Security Engineer's prompt |
-| `references/role-evidence-collector.md` | Include in Evidence Collector's prompt |
-| `references/role-reality-checker.md` | Include in Reality Checker's prompt |
-| `references/role-api-tester.md` | Include in API Tester's prompt |
+| File                                    | When to read                                     |
+|-----------------------------------------|--------------------------------------------------|
+| `references/role-selection.md`          | Step 1 — pick the roster                         |
+| `references/tdd-contract.md`            | Include verbatim in every implementer prompt     |
+| `references/coordination.md`            | Lead playbook for dispatch, gating, and shutdown |
+| `references/role-frontend-developer.md` | Include in Frontend Developer's prompt           |
+| `references/role-backend-architect.md`  | Include in Backend Architect's prompt            |
+| `references/role-mobile-app-builder.md` | Include in Mobile App Builder's prompt           |
+| `references/role-security-engineer.md`  | Include in Security Engineer's prompt            |
+| `references/role-evidence-collector.md` | Include in Evidence Collector's prompt           |
+| `references/role-reality-checker.md`    | Include in Reality Checker's prompt              |
+| `references/role-api-tester.md`         | Include in API Tester's prompt                   |
 
 ---
 
@@ -81,110 +81,73 @@ Slicing rules (from `references/coordination.md`):
 
 ---
 
-## Step 2: Create the team
+## Step 2: Create the team and spawn full roster
 
-After user confirms:
+After user confirms, read `references/coordination.md` for the full spawn protocol. Then:
 
 ```
 TeamCreate: { team_name: "tdd-crew-[short-kebab-task-name]" }
 ```
 
-Do not spawn any teammates yet. The team exists; teammates are spawned per-dispatch in Step 4.
+Spawn **all teammates in a single message** (parallel `Agent` calls). Each implementer gets:
+
+- Full content of their `references/role-*.md`
+- Full content of `references/tdd-contract.md`
+- The complete slice list with owner labels (which slices belong to which role)
+- The message vocabulary block (see `references/coordination.md`)
+- If they consume an API: instruction to wait for `CONTRACT: <slice-name>` from Backend Architect before RED on dependent slices
+
+Spawn testers alongside implementers (not at the end):
+- Evidence Collector (if UI in roster): watches for `GREEN: <slice>` from Frontend/Mobile, verifies each slice as it lands
+- API Tester (if Backend in roster): watches for `GREEN: <slice>` from Backend Architect, tests each slice as it lands
+
+Reality Checker is **not** spawned yet — dispatched only when all per-slice PASS signals are in.
 
 ---
 
-## Step 3: TDD loop — one slice at a time
+## Step 3: Contract-first launch (Backend + API consumers)
 
-For each slice, in order:
+If the roster has Backend Architect **and** any API-consuming role (Frontend / Mobile):
 
-### Dispatch to implementer
+Backend Architect's prompt instructs it to:
+1. Draft endpoint contracts for all its owned slices first
+2. `SendMessage CONTRACT: <slice-name>` with endpoint signatures and request/response shapes to the team **before** writing any tests
+3. Then proceed with TDD on its own slices
 
-Read the relevant `references/role-*.md` and `references/tdd-contract.md`. Build the dispatch prompt:
+API-consuming implementers:
+- Start TDD immediately on slices that have no API dependency
+- For API-dependent slices: wait for the matching `CONTRACT:` message, then proceed with RED
 
-```
-[Full content of role-*.md]
-
----
-
-TDD CONTRACT (follow exactly):
-[Full content of tdd-contract.md]
-
----
-
-SLICE SPEC:
-Name: [slice name]
-Acceptance criteria:
-  - [concrete, testable behaviour]
-  - [concrete, testable behaviour]
-Context:
-  - Relevant files: [paths]
-  - Existing tests to be aware of: [paths or "none"]
-  - API contract: [relevant endpoints or "n/a"]
-
-Start with RED phase. Write failing tests before any production code.
-Report back using your role's output format when REFACTOR is done.
-```
-
-Spawn via:
-```
-Agent: {
-  team_name: "tdd-crew-[name]",
-  name: "[role-short-name]",
-  subagent_type: "general-purpose",
-  prompt: [dispatch prompt above]
-}
-```
-
-### Gate on handoff
-
-Do NOT dispatch the next slice until you receive a `[ROLE] DONE` report with:
-- Test file paths showing RED → GREEN
-- No failing tests
-- Refactor complete
-
-If you receive a refusal token:
-- `too-big.` — re-slice and re-dispatch
-- `regressed.` — read the report; fix regressions before proceeding
-- `ambiguous.` — clarify the slice spec and re-dispatch
-
-Repeat for each slice.
+If no API layer in roster: all implementers begin TDD on their slices simultaneously.
 
 ---
 
-## Step 4: Verification
+## Step 4: Parallel TDD + shadow verification
 
-After all implementer slices are green:
+Implementers run their own TDD loop (RED → GREEN → REFACTOR) concurrently. When a slice completes:
 
-### Evidence Collector (if UI is involved)
+```
+SendMessage: "GREEN: <slice-name>\nTests: [paths]\nDiff summary: [brief]"
+```
 
-Dispatch to Evidence Collector (`references/role-evidence-collector.md`) with:
-- All acceptance criteria from every slice
-- Paths to the implementation files
-- Request: capture screenshots and verify each criterion
+Shadow testers respond to each `GREEN:` message immediately:
+- Evidence Collector replies `EVIDENCE: <slice-name> PASS` or `EVIDENCE: <slice-name> FAIL — [notes]`
+- API Tester replies `API: <slice-name> PASS` or `API: <slice-name> FAIL — [findings]`
 
-Gate on `EVIDENCE COLLECTED — Overall: PASS` before continuing.
+**Lead watches** for abort tokens and tester FAIL reports:
+- `too-big.` — re-slice and re-dispatch that implementer
+- `regressed.` — read report; existing tests must be fixed before new work continues
+- `ambiguous.` — clarify spec; re-dispatch
+- `EVIDENCE: <slice> FAIL` or `API: <slice> FAIL` — re-dispatch the relevant implementer with the failure as a new slice spec; tester re-verifies after fix
 
-### API Tester (if new API endpoints were built)
+When all owned slices are GREEN + PASS: **dispatch Reality Checker** with all DONE, EVIDENCE, and API reports collected.
 
-Dispatch to API Tester (`references/role-api-tester.md`) with:
-- New/changed endpoint signatures from Backend Architect's reports
-- Request: security, performance, and contract testing
-
-Gate on `API TESTED — Overall: PASS` before continuing.
-
-### Reality Checker (for production-bound features)
-
-Dispatch to Reality Checker (`references/role-reality-checker.md`) with:
-- All `DONE` reports from implementer roles
-- All `COLLECTED` / `TESTED` reports from tester roles
-- Request: final end-to-end verification and Go / No-Go
-
-Gate on `Verdict: PASS` before declaring the feature done.
+Gate on `Verdict: PASS` before declaring done.
 
 If Reality Checker issues `NEEDS WORK` or `BLOCKED`:
 - Read the specific blockers
-- Re-dispatch the relevant implementer role with the blockers as new slice specs
-- Repeat verification after fix
+- Re-dispatch the relevant implementer with blockers as new slice specs
+- Shadow testers re-verify the fixed slices; Reality Checker runs again after
 
 ---
 
@@ -219,7 +182,7 @@ If any implementer role returns one of these as the very first token, stop and h
 ## Notes
 
 - **You are the lead.** You do not write application code.
-- **One slice at a time.** Parallel dispatching is tempting but breaks the TDD gate discipline.
-- **Teammates have no memory.** Every dispatch prompt must be self-contained: include the full persona and full TDD contract.
+- **Spawn in parallel.** All implementers and shadow testers start in one message. Sequential dispatch wastes the team feature.
+- **Teammates have no memory.** Every prompt must be self-contained: full persona, full TDD contract, full slice list, full message vocabulary.
 - **The global `/tdd` skill** is available to all teammates for deeper TDD guidance. They can consult it on hard design decisions.
 - **Token cost scales with team size.** Prefer the minimum roster; add roles only when genuinely needed.

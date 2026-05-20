@@ -6,10 +6,10 @@ You (the main thread) are the lead. You do not write application code. You orche
 
 1. Scope the task into 2–5 vertical slices (user-visible behaviours)
 2. Select and confirm roles with user (see `role-selection.md`)
-3. Create the team and spawn teammates
-4. Dispatch one slice at a time to the appropriate implementer role
-5. Gate progress: do not move to the next slice until the current one is GREEN and handed back
-6. After all slices are green, dispatch tester roles
+3. Create the team and spawn **all** implementers + shadow testers in parallel (single message)
+4. Watch the team channel for `GREEN:`, `EVIDENCE:`, `API:`, and abort tokens
+5. Handle abort tokens and tester FAIL reports immediately (re-slice / re-dispatch)
+6. Dispatch Reality Checker once every implementer's slices are GREEN and every shadow tester's per-slice report is PASS
 7. Gate on Reality Checker PASS before declaring the feature done
 8. Shut the team down and report to the user
 
@@ -31,24 +31,36 @@ Example — "add user profile editing":
 
 ## Spawning teammates
 
-Use `TeamCreate` once to create the team, then `Agent` for each teammate:
+Use `TeamCreate` once, then spawn **all** implementers and shadow testers **in a single message** (parallel `Agent` calls):
 
 ```
 TeamCreate: { team_name: "tdd-crew-[short-task-name]" }
 
-Agent: {
-  team_name: "tdd-crew-[short-task-name]",
-  name: "frontend",
-  subagent_type: "general-purpose",
-  prompt: [persona from role-frontend-developer.md] + [slice spec] + [tdd-contract.md]
-}
+// All in one message:
+Agent: { team_name: "...", name: "backend", subagent_type: "general-purpose", prompt: [...] }
+Agent: { team_name: "...", name: "frontend", subagent_type: "general-purpose", prompt: [...] }
+Agent: { team_name: "...", name: "evidence-collector", subagent_type: "general-purpose", prompt: [...] }
+// etc.
 ```
 
-Include the full content of the relevant `role-*.md` and `tdd-contract.md` in every implementer prompt. Teammates have no memory of prior turns.
+Each implementer prompt must include:
+- Full content of their `role-*.md`
+- Full content of `tdd-contract.md`
+- Complete slice list with owner labels (which slices belong to this role)
+- The message vocabulary block below
+- If API-consuming: instruction to wait for `CONTRACT: <slice>` before RED on dependent slices
+
+Each tester prompt must include:
+- Full content of their `role-*.md`
+- Which `GREEN:` messages to watch for and from whom
+- The message vocabulary block below
+- Instruction to send per-slice `EVIDENCE:` / `API:` reports immediately when triggered
+
+Teammates have no memory of prior turns — every prompt must be self-contained.
 
 ## Dispatch message format
 
-When handing a slice to an implementer:
+Implementer prompt:
 
 ```
 You are the [Role Name] on this team.
@@ -62,20 +74,67 @@ TDD CONTRACT (follow exactly):
 
 ---
 
-SLICE SPEC:
-[slice name]
-[acceptance criteria — concrete, testable behaviours]
-[relevant context: file paths, API contract, existing tests to be aware of]
+TEAM MESSAGE VOCABULARY:
+[paste message vocabulary section below]
 
-Start with the RED phase: write failing tests before any production code.
-Report back using your role's output format when the REFACTOR phase is done.
+---
+
+SLICE ASSIGNMENTS (your slices are marked ★):
+  ★ [slice N] — [acceptance criteria]
+    [slice M] — owned by [other role]
+  ...
+
+[If API-consuming:]
+Wait for `CONTRACT: <slice-name>` from Backend Architect before RED on any API-dependent slice.
+For slices with no API dependency, begin TDD immediately.
+
+[If Backend Architect:]
+Before writing any tests: draft endpoint contracts for all your slices, then SendMessage each as `CONTRACT: <slice-name>` with endpoint signatures and request/response shapes. Then proceed with TDD.
+
+When REFACTOR is done for a slice, send: `GREEN: <slice-name>` with test paths and a brief diff summary.
 ```
+
+Tester prompt:
+
+```
+You are the [Role Name] on this team.
+
+[paste role-*.md content]
+
+---
+
+TEAM MESSAGE VOCABULARY:
+[paste message vocabulary section below]
+
+---
+
+Watch for `GREEN: <slice-name>` messages from [specific implementer role(s)].
+For each GREEN message: verify that slice immediately and reply with your per-slice report:
+  `EVIDENCE: <slice-name> PASS` or `EVIDENCE: <slice-name> FAIL — [notes]`
+  (or `API:` prefix for API Tester)
+
+Do not wait for all slices — verify each one as it arrives.
+```
+
+## Message vocabulary
+
+All teammates use this vocabulary for `SendMessage`:
+
+| Sender | Prefix | Payload |
+|--------|--------|---------|
+| Backend Architect | `CONTRACT: <slice>` | Endpoint signatures, request/response shapes — sent before writing tests |
+| Any implementer | `GREEN: <slice>` | Test file paths, brief diff summary — sent when REFACTOR is done |
+| Evidence Collector | `EVIDENCE: <slice> PASS` or `EVIDENCE: <slice> FAIL — [notes]` | Screenshot paths or failure description |
+| API Tester | `API: <slice> PASS` or `API: <slice> FAIL — [findings]` | Per-criterion security/perf/contract findings |
+| Any teammate | `too-big.` / `regressed.` / `ambiguous.` | Abort tokens — lead handles immediately |
 
 ## Gating rules
 
-- Do not dispatch slice N+1 until slice N is GREEN and handed back
-- Do not dispatch tester roles until all implementer slices are GREEN
-- Do not declare done until Reality Checker issues PASS
+- Implementers run in parallel on their owned slices — no sequential gate between roles
+- API-consuming implementers wait only for the `CONTRACT:` message for their dependent slices, not for full GREEN from Backend
+- Shadow testers verify each slice as `GREEN:` arrives — no batch at end
+- Reality Checker is dispatched only after: every implementer has sent `GREEN:` for all its slices **and** every shadow tester has sent PASS for every slice
+- Do not declare done until Reality Checker issues `Verdict: PASS`
 
 ## Handling refusals
 
