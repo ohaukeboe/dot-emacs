@@ -2541,7 +2541,11 @@ A terminal emulator
     (:map vterm-mode-map
           ("C-z" . toggle-vterm)
           ("M-z" . project-toggle-vterm)
-          ("M-y" . vterm-yank-pop))
+          ("M-y" . vterm-yank-pop)
+          ("<S-left>"  . vterm--self-insert)
+          ("<S-right>" . vterm--self-insert)
+          ("<S-up>"    . vterm--self-insert)
+          ("<S-down>"  . vterm--self-insert))
     (:map project-prefix-map
           ("t" . my/project-consult-vterm))
 
