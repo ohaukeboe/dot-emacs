@@ -243,7 +243,7 @@ in
       ### node ###
       nodejs
       typescript
-      eslint
+      typescript-language-server
 
       ## mu4e (email)
       mu
