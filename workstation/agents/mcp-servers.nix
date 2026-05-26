@@ -4,9 +4,6 @@
   ...
 }:
 let
-  context7-wrapper = pkgs.writeShellScript "context7-mcp" ''
-    exec caveman-shrink context7-mcp --api-key "$(cat ${config.sops.secrets."authinfo/context7".path})" "$@"
-  '';
   github-mcp-wrapper = pkgs.writeShellScript "github-mcp" ''
     GITHUB_PERSONAL_ACCESS_TOKEN="$(cat ${config.sops.secrets."authinfo/github_pat".path})"
     export GITHUB_PERSONAL_ACCESS_TOKEN
@@ -16,10 +13,6 @@ let
 in
 {
   programs.claude-code.settings.mcpServers = {
-    "context7" = {
-      command = toString context7-wrapper;
-      type = "stdio";
-    };
     "mcp-nixos" = {
       command = "caveman-shrink";
       args = [ "mcp-nixos" ];

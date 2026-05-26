@@ -48,7 +48,6 @@ in
     "authinfo/codeberg" = { };
     "authinfo/imap_uio" = { };
     "authinfo/imap_knowit" = { };
-    "authinfo/context7" = { };
     "authinfo/github_pat" = { };
     "authinfo/kagi" = { };
   };
@@ -77,7 +76,6 @@ in
       machine localhost port 1026 login oskar.haukeboe@knowit.no/ password "${
         config.sops.placeholder."authinfo/imap_knowit"
       }"
-      machine context7.com password ${config.sops.placeholder."authinfo/context7"}
       machine githubpat password ${config.sops.placeholder."authinfo/github_pat"}
       machine kagi.com password ${config.sops.placeholder."authinfo/kagi"}
     '';

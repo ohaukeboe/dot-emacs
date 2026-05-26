@@ -116,7 +116,6 @@ in
         ### Agent Tools ###
         playwright-cli
         chrome-devtools-mcp
-        context7-mcp
         mcp-nixos
         github-mcp-server
       ];

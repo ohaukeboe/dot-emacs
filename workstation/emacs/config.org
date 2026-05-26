@@ -3376,10 +3376,6 @@ MCP support is also nice :)
                                 :roots ("/home/oskar/projects/" "/home/oskar/knowit/")))
                ;; ("playwright" . (:command "npx"
                ;; :args ("-y" "@playwright/mcp@latest" "--extension")))
-               ("context7" . (
-                              :command "npx"
-                              :args ("-y" "@upstash/context7-mcp" "--api-key"
-                                     ,(auth-source-pick-first-password :host "context7.com"))))
                ("github" . (
                             :command "npx"
                             :args ("-y" "@modelcontextprotocol/server-github")
@@ -3487,12 +3483,7 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     ;; (agent-shell-anthropic-default-model-id "opusplan")
     (agent-shell-anthropic-default-session-mode-id "auto")
     (agent-shell-mcp-servers
-     `(((name . "context7")
-        (type . "stdio")
-        (command . "caveman-shrink")
-        (args . ("context7-mcp" "--api-key" ,(auth-source-pick-first-password :host "context7.com")))
-        (env . []))
-       ((name . "mcp-nixos")
+     `(((name . "mcp-nixos")
         (type . "stdio")
         (command . "caveman-shrink")
         (args . ("mcp-nixos"))
