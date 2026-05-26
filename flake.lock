@@ -123,22 +123,6 @@
         "type": "github"
       }
     },
-    "emacs-skills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1778164401,
-        "narHash": "sha256-bWeSAq95/wxsM26JOYkw/RBEhdpFLlkphQq0VCdpIII=",
-        "owner": "xenodium",
-        "repo": "emacs-skills",
-        "rev": "e5fb3b94b32d87941e8c2734a1f4b3de77dc2502",
-        "type": "github"
-      },
-      "original": {
-        "owner": "xenodium",
-        "repo": "emacs-skills",
-        "type": "github"
-      }
-    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -682,7 +666,6 @@
         "cavekit": "cavekit",
         "caveman": "caveman",
         "emacs-overlay": "emacs-overlay",
-        "emacs-skills": "emacs-skills",
         "flatpaks": "flatpaks",
         "home-manager": "home-manager",
         "humanizer-skill": "humanizer-skill",

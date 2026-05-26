@@ -61,11 +61,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    emacs-skills = {
-      url = "github:xenodium/emacs-skills";
-      flake = false;
-    };
-
     humanizer-skill = {
       url = "github:blader/humanizer";
       flake = false;

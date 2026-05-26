@@ -158,14 +158,14 @@ let
     name = "merged-skills";
     paths = [
       ./skills
-      "${inputs.emacs-skills}/skills"
       anthropicsSkillsSubset
       cavemanSkillsSubset
       cavekitSkills
       humanizerSkill
       mattpocockSkillsSubset
       llmSkillsSubset
-    ] ++ config.agents.extraSkillPaths;
+    ]
+    ++ config.agents.extraSkillPaths;
   };
 in
 {
