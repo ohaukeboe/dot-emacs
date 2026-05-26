@@ -1,6 +1,7 @@
 ---
 name: list-contributions
 description: Generate a resume-ready summary of contributions to a git repository by analyzing its commit history. Use when the user wants to summarize their work on a project for a resume, LinkedIn, performance review, or similar — even if they don't use the word "contributions". Trigger on phrases like "what did I work on", "summarize my commits", "bullet points for my resume", "what have I done in this repo", or any request to extract professional accomplishments from git history.
+disable-model-invocation: true
 ---
 
 # Skill: List Contributions
