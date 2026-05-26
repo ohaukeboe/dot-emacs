@@ -68,7 +68,7 @@ in
 
   agents.extraSkillPaths = [ crgSkills ];
 
-  programs.claude-code.settings.mcpServers."code-review-graph" = {
+  programs.claude-code.mcpServers."code-review-graph" = {
     command = crg;
     args = [
       "serve"

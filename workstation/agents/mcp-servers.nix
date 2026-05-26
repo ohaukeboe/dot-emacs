@@ -12,7 +12,8 @@ let
   emacsConfig = "${config.xdg.configHome}/emacs";
 in
 {
-  programs.claude-code.settings.mcpServers = {
+  programs.claude-code.enableMcpIntegration = true;
+  programs.claude-code.mcpServers = {
     "mcp-nixos" = {
       command = "caveman-shrink";
       args = [ "mcp-nixos" ];
