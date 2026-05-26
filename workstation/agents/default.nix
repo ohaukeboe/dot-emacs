@@ -74,6 +74,7 @@ in
   };
 
   imports = [
+    ./beads.nix
     ./caveman.nix
     ./code-review-graph.nix
     ./mcp-servers.nix
@@ -99,7 +100,6 @@ in
         context7-mcp
         mcp-nixos
         github-mcp-server
-        beads
       ];
 
     agents.extraSkillPaths = [ playwright-cli-skills ];
