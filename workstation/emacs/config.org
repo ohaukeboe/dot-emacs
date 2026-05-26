@@ -1233,8 +1233,6 @@ According to the =treesit-auto= documentation, Emacs 30 will ship with better de
     :hook (typescript-ts-mode . lsp-deferred)
     :mode "\\.ts\\'"
     :custom
-    (tab-width 4)
-    (typescript-ts-mode-indent-offset 4)
     (lsp-javascript-display-parameter-name-hints "all")
     (lsp-javascript-display-enum-member-value-hints t)
     (lsp-javascript-display-parameter-type-hints t)
