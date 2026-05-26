@@ -29,6 +29,14 @@ in
       command = toString github-mcp-wrapper;
       type = "stdio";
     };
+    "chrome-devtools" = {
+      command = "caveman-shrink";
+      args = [
+        "chrome-devtools-mcp"
+        "--executablePath=${pkgs.chromium}/bin/chromium"
+      ];
+      type = "stdio";
+    };
     "elisp-dev-mcp" = {
       command = "caveman-shrink";
       args = [
