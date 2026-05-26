@@ -4,15 +4,17 @@
   ...
 }:
 let
-  code-review-graph = pkgs.python3Packages.buildPythonPackage rec {
+  version = "2.3.5";
+
+  code-review-graph = pkgs.python3Packages.buildPythonPackage {
     pname = "code-review-graph";
-    version = "2.3.3";
+    inherit version;
     pyproject = true;
 
     src = pkgs.fetchPypi {
       pname = "code_review_graph";
       inherit version;
-      hash = "sha256-cF/2RopuAx8UikOUi7nLv1oj3ST6uhjrzDsFdMGmofc=";
+      hash = "sha256-zXhk8fnObUzYU/nAS5dcaLfbLb58kueVbw5B8wMDurM=";
     };
 
     nativeBuildInputs = with pkgs.python3Packages; [
@@ -38,13 +40,43 @@ let
 
     doCheck = false;
   };
+
+  # Skills and hooks ship in the GitHub repo, not the PyPI sdist.
+  upstream = pkgs.fetchFromGitHub {
+    owner = "tirth8205";
+    repo = "code-review-graph";
+    rev = "v${version}";
+    hash = "sha256-dbtvtxSi4S42sBkCBLtYPH3ck6f1gKsmvGmcrcBqcdU=";
+  };
+
+  crg = "${code-review-graph}/bin/code-review-graph";
+
+  patchCommand = builtins.replaceStrings [ "code-review-graph" ] [ crg ];
+
+  patchHookEntries = map (entry: entry // {
+    hooks = map (h: h // { command = patchCommand h.command; }) entry.hooks;
+  });
+
+  upstreamHooks = builtins.fromJSON (builtins.readFile "${upstream}/hooks/hooks.json");
+
+  crgSkills = pkgs.runCommand "code-review-graph-skills" { } ''
+    cp -r ${upstream}/skills $out
+  '';
 in
 {
   home.packages = [ code-review-graph ];
 
+  agents.extraSkillPaths = [ crgSkills ];
+
   programs.claude-code.settings.mcpServers."code-review-graph" = {
-    command = "${code-review-graph}/bin/code-review-graph";
-    args = [ "serve" "--auto-watch" ];
+    command = crg;
+    args = [
+      "serve"
+      "--auto-watch"
+    ];
     type = "stdio";
   };
+
+  programs.claude-code.settings.hooks =
+    lib.mapAttrs (_: patchHookEntries) upstreamHooks;
 }

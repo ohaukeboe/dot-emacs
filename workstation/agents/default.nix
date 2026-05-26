@@ -93,10 +93,13 @@ in
         claude-agent-acp
         aider-chat-full # another AI thingy
         opencode
+
+        ### Agent Tools ###
         playwright-cli
         context7-mcp
         mcp-nixos
         github-mcp-server
+        beads
       ];
 
     agents.extraSkillPaths = [ playwright-cli-skills ];
