@@ -3559,7 +3559,24 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     :custom
     (claude-code-ide-enable-mcp-server t)
     :config
-    (claude-code-ide-emacs-tools-setup)) ; Optionally enable Emacs MCP tools
+    (claude-code-ide-emacs-tools-setup) ; Optionally enable Emacs MCP tools
+
+    (defun my/claude-code-ide--tmux-session-name ()
+      "Return a tmux-safe session name derived from the current project."
+      (let* ((proj (project-current))
+             (raw (if proj (project-name proj) "claude")))
+        (replace-regexp-in-string "[^A-Za-z0-9_-]" "_" raw)))
+
+    (defun my/claude-code-ide-tmux-wrap (cmd)
+      "Wrap CMD with `tmux new-session -A -s <project-name>'.
+  Attaches to an existing tmux session named after the project if one
+  exists, otherwise creates a new one running CMD."
+      (format "tmux new-session -A -s %s %s"
+              (shell-quote-argument (my/claude-code-ide--tmux-session-name))
+              (shell-quote-argument cmd)))
+
+    (advice-add 'claude-code-ide--build-claude-command
+                :filter-return #'my/claude-code-ide-tmux-wrap))
 #+end_src
 
 ** MCP Server
