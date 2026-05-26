@@ -43,7 +43,10 @@ let
   anthropicsSkillsSubset = pkgs.linkFarm "anthropics-skills-subset" (
     map (mkSkillEntry { repo = inputs.anthropics-skills; }) [
       { name = "pdf"; }
-      { name = "skill-creator"; }
+      {
+        name = "skill-creator";
+        disableAuto = true;
+      }
     ]
   );
 
@@ -72,7 +75,7 @@ let
   humanizerSkill = pkgs.linkFarm "humanizer-skill" [
     {
       name = "humanizer";
-      path = "${inputs.humanizer-skill}";
+      path = patchSkill "humanizer" "${inputs.humanizer-skill}";
     }
   ];
 
@@ -88,6 +91,7 @@ let
       {
         name = "domain-finder";
         subdir = "plugins/domain-finder/skills";
+        disableAuto = true;
       }
     ]
   );
@@ -104,15 +108,11 @@ let
   # Set `disableAuto = true;` on any entry to suppress automatic model
   # invocation (skill only runs on explicit user invocation).
   mattpocockSkillsSubset = pkgs.linkFarm "mattpocock-skills-subset" (
-    map
-      (
-        e:
-        mkSkillEntry { repo = inputs.mattpocock-skills; } (
-          e // { subdir = "skills/${e.subdir}"; }
-        )
-      )
+    map (e: mkSkillEntry { repo = inputs.mattpocock-skills; } (e // { subdir = "skills/${e.subdir}"; }))
       [
         # -- engineering --
+        # `diagnose` keeps auto-invocation: triggers on bug/test-failure
+        # reports — high-signal natural-language trigger.
         {
           name = "diagnose";
           subdir = "engineering";
@@ -120,38 +120,47 @@ let
         {
           name = "grill-with-docs";
           subdir = "engineering";
+          disableAuto = true;
         }
         {
           name = "improve-codebase-architecture";
           subdir = "engineering";
+          disableAuto = true;
         }
         {
           name = "prototype";
           subdir = "engineering";
+          disableAuto = true;
         }
         {
           name = "setup-matt-pocock-skills";
           subdir = "engineering";
+          disableAuto = true;
         }
         {
           name = "tdd";
           subdir = "engineering";
+          disableAuto = true;
         }
         {
           name = "to-issues";
           subdir = "engineering";
+          disableAuto = true;
         }
         {
           name = "to-prd";
           subdir = "engineering";
+          disableAuto = true;
         }
         {
           name = "triage";
           subdir = "engineering";
+          disableAuto = true;
         }
         {
           name = "zoom-out";
           subdir = "engineering";
+          disableAuto = true;
         }
 
         # -- productivity --
@@ -159,10 +168,12 @@ let
         {
           name = "grill-me";
           subdir = "productivity";
+          disableAuto = true;
         }
         {
           name = "handoff";
           subdir = "productivity";
+          disableAuto = true;
         }
         # { name = "write-a-skill";                   subdir = "productivity"; }
 
