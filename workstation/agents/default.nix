@@ -97,6 +97,7 @@ in
     programs.claude-code.settings.remoteControlAtStartup = true;
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+    programs.claude-code.settings.skillListingBudgetFraction = 0.02;
 
     home.file = {
       "${config.home.homeDirectory}/.agents/AGENTS.md".source = combinedDocs;
