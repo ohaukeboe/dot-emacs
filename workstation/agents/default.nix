@@ -9,32 +9,6 @@ let
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
   newline = pkgs.writeText "newline" "\n";
-  playwright-cli-skills = pkgs.linkFarm "playwright-cli-skills" [
-    {
-      name = "playwright-cli";
-      path = "${playwright-cli}/lib/node_modules/@playwright/cli/skills/playwright-cli";
-    }
-  ];
-  playwright-cli = pkgs.buildNpmPackage {
-    pname = "playwright-cli";
-    version = "0.1.13";
-    src = pkgs.fetchurl {
-      url = "https://registry.npmjs.org/@playwright/cli/-/cli-0.1.13.tgz";
-      hash = "sha256-c8apa6w20LlUtIkCu9zeAwwl3Wh+ak5QSNFGBCWxV3U=";
-    };
-    sourceRoot = "package";
-    npmDepsFetcherVersion = 2;
-    npmDepsHash = "sha256-bhqZJVzEylcrPhYzbadj/AR/tC6cXAOTkjGNvlgaj0Y=";
-    npmFlags = [ "--omit=dev" ];
-    dontNpmBuild = true;
-    preInstall = "mkdir -p node_modules";
-    postPatch = "cp ${./playwright-cli-lock.json} package-lock.json";
-    nativeBuildInputs = [ pkgs.makeWrapper ];
-    postInstall = lib.optionalString isLinux ''
-      wrapProgram $out/bin/playwright-cli \
-        --set PLAYWRIGHT_MCP_EXECUTABLE_PATH ${pkgs.chromium}/bin/chromium
-    '';
-  };
   chrome-devtools-mcp = pkgs.buildNpmPackage {
     pname = "chrome-devtools-mcp";
     version = "1.0.1";
@@ -114,13 +88,10 @@ in
         opencode
 
         ### Agent Tools ###
-        playwright-cli
         chrome-devtools-mcp
         mcp-nixos
         github-mcp-server
       ];
-
-    agents.extraSkillPaths = [ playwright-cli-skills ];
 
     programs.claude-code.enable = true;
     programs.claude-code.settings.remoteControlAtStartup = true;
