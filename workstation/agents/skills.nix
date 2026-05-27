@@ -189,6 +189,26 @@ let
       ]
   );
 
+  # Lum1104/Understand-Anything — uncomment skills you want
+  # All use plugin layout: understand-anything-plugin/skills/<name>
+  understandAnythingSkills = pkgs.linkFarm "understand-anything-skills" (
+    map
+      (mkSkillEntry {
+        repo = inputs.understand-anything;
+        defaultSubdir = "understand-anything-plugin/skills";
+      })
+      [
+        { name = "understand"; } # Analyze codebase → interactive knowledge graph
+        { name = "understand-chat"; } # Ask questions about a codebase using the knowledge graph
+        { name = "understand-dashboard"; } # Launch web dashboard to visualize codebase knowledge graph
+        { name = "understand-diff"; } # Analyze git diffs/PRs to understand what changed
+        { name = "understand-domain"; } # Extract business domain knowledge → interactive graph
+        { name = "understand-explain"; } # Deep-dive explanation of a specific file, function, or module
+        { name = "understand-knowledge"; } # Analyze Karpathy-pattern LLM wiki knowledge base
+        { name = "understand-onboard"; } # Generate onboarding guide for new team members
+      ]
+  );
+
   mergedSkills = pkgs.symlinkJoin {
     name = "merged-skills";
     paths = [
@@ -199,6 +219,7 @@ let
       humanizerSkill
       mattpocockSkillsSubset
       llmSkillsSubset
+      understandAnythingSkills
     ]
     ++ config.agents.extraSkillPaths;
   };

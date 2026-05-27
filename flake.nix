@@ -90,6 +90,11 @@
       url = "github:descoped/llm-skills";
       flake = false;
     };
+
+    understand-anything = {
+      url = "github:Lum1104/Understand-Anything";
+      flake = false;
+    };
   };
 
   outputs =

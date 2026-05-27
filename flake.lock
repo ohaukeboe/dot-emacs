@@ -680,6 +680,7 @@
         "nixpkgs": "nixpkgs_7",
         "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix_3",
+        "understand-anything": "understand-anything",
         "zen-browser": "zen-browser",
         "zotra-server": "zotra-server"
       }
@@ -836,6 +837,22 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "understand-anything": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779772197,
+        "narHash": "sha256-rLdYR0nUPGH19rvZWYsvHpPSytC/UEA5V68J6oxt72s=",
+        "owner": "Lum1104",
+        "repo": "Understand-Anything",
+        "rev": "26edf61856fa476e466bda1814819a266a293c47",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Lum1104",
+        "repo": "Understand-Anything",
         "type": "github"
       }
     },
