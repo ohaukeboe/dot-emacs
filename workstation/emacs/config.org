@@ -3413,7 +3413,7 @@ MCP support is also nice :)
     :ensure t
     :hook (magit-mode . gptel-magit-install)
     :custom
-    (gptel-magit-model "openrouter/google/gemini-3.1-flash-lite")
+    (gptel-magit-model "google/gemini-3.1-flash-lite")
     ;; (gptel-magit-backend (cdr (assoc "Ollama" gptel--known-backends)))
     (gptel-magit-prompt-conventional-commits
      "You are an expert at writing Git commits. Your job is to write a short clear commit message that summarizes the changes.
