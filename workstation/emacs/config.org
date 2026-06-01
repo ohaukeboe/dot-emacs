@@ -3758,7 +3758,8 @@ An RSS reader. [[https://feedsearch.dev][Feedsearch]] or [[https://lighthouseapp
                     ("https://samleathers.com/feed.xml" samleathers blog)
                     ("https://oddlama.org/rss.xml" oddlama nix blog)
                     ("https://determinate.systems/rss.xml" determinate-systems nix blog)
-                    ("https://bou.ke/feed.xml" bouke blog)))
+                    ("https://bou.ke/feed.xml" bouke blog)
+                    ("https://code.claude.com/docs/en/whats-new/rss.xml" claude)))
     :bind
     ("C-c o f" . 'elfeed)
     :config
