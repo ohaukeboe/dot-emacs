@@ -8,7 +8,6 @@
 let
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
-  newline = pkgs.writeText "newline" "\n";
   chrome-devtools-mcp = pkgs.buildNpmPackage {
     pname = "chrome-devtools-mcp";
     version = "1.0.1";
@@ -27,26 +26,13 @@ let
     preInstall = "mkdir -p node_modules";
     postPatch = "cp ${./chrome-devtools-mcp-lock.json} package-lock.json";
   };
-  combinedDocs = pkgs.concatText "agents-docs.md" (
-    [ ./agents-global.md ]
-    ++ lib.optionals (config.agents.extraClaudeDocs != [ ]) (
-      [ newline ] ++ config.agents.extraClaudeDocs
-    )
+  joinDocs = paths: lib.concatStringsSep "\n" (map (p: builtins.readFile p) paths);
+  combinedDocs = joinDocs ([ ./agents-global.md ] ++ config.agents.extraClaudeDocs);
+  claudeDocs = joinDocs (
+    [ ./agents-global.md ] ++ config.agents.extraClaudeDocs ++ config.agents.extraClaudeOnlyDocs
   );
-  claudeDocs = pkgs.concatText "claude-docs.md" (
-    [ combinedDocs ]
-    ++ lib.optionals (config.agents.extraClaudeOnlyDocs != [ ]) (
-      [ newline ] ++ config.agents.extraClaudeOnlyDocs
-    )
-  );
-  opencodeDocs = pkgs.concatText "opencode-docs.md" (
-    [ ./agents-global.md ]
-    ++ lib.optionals (config.agents.extraClaudeDocs != [ ]) (
-      [ newline ] ++ config.agents.extraClaudeDocs
-    )
-    ++ lib.optionals (config.agents.extraOpencodeDocs != [ ]) (
-      [ newline ] ++ config.agents.extraOpencodeDocs
-    )
+  opencodeDocs = joinDocs (
+    [ ./agents-global.md ] ++ config.agents.extraClaudeDocs ++ config.agents.extraOpencodeDocs
   );
 in
 {
@@ -85,7 +71,6 @@ in
         ### Coding agent ###
         claude-agent-acp
         aider-chat-full # another AI thingy
-        opencode
 
         ### Agent Tools ###
         chrome-devtools-mcp
@@ -98,18 +83,16 @@ in
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
     programs.claude-code.settings.skillListingBudgetFraction = 0.02;
+    programs.claude-code.context = claudeDocs;
+
+    programs.opencode.enable = true;
+    programs.opencode.settings = {
+      model = "openrouter/anthropic/claude-sonnet-4.6";
+    };
+    programs.opencode.context = opencodeDocs;
 
     home.file = {
-      "${config.home.homeDirectory}/.agents/AGENTS.md".source = combinedDocs;
-      "${config.xdg.configHome}/opencode/AGENTS.md".source = opencodeDocs;
-      "${config.home.homeDirectory}/.claude/CLAUDE.md".source = claudeDocs;
-
-      "${config.xdg.configHome}/opencode/opencode.json" = {
-        text = builtins.toJSON {
-          "$schema" = "https://opencode.ai/config.json";
-          model = "openrouter/anthropic/claude-sonnet-4.6";
-        };
-      };
+      "${config.home.homeDirectory}/.agents/AGENTS.md".text = combinedDocs;
 
       ".aider.conf.yml".source = (pkgs.formats.yaml { }).generate "aider-conf" {
         cache-prompts = true;

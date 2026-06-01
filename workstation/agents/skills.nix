@@ -231,12 +231,11 @@ in
     default = [ ];
   };
 
-  config.home.file = {
-    "${config.home.homeDirectory}/.claude/skills" = {
-      source = mergedSkills;
-      recursive = true;
-    };
-    "${config.home.homeDirectory}/.agents/skills" = {
+  config = {
+    programs.claude-code.skills = "${mergedSkills}";
+    programs.opencode.skills = "${mergedSkills}";
+
+    home.file."${config.home.homeDirectory}/.agents/skills" = {
       source = mergedSkills;
       recursive = true;
     };

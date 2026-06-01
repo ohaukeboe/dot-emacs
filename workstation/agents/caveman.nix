@@ -43,6 +43,8 @@ in
 
   agents.extraOpencodeDocs = [ "${inputs.caveman}/src/rules/caveman-activate.md" ];
 
+  programs.claude-code.hooksDir = "${inputs.caveman}/src/hooks";
+
   programs.claude-code.settings = {
     hooks = {
       SessionStart = [
@@ -74,16 +76,5 @@ in
       type = "command";
       command = ''bash "${hooksDir}/caveman-statusline.sh"'';
     };
-  };
-
-  home.file = {
-    "${hooksDir}/package.json".source = "${inputs.caveman}/src/hooks/package.json";
-    "${hooksDir}/caveman-config.js".source = "${inputs.caveman}/src/hooks/caveman-config.js";
-    "${hooksDir}/caveman-activate.js".source = "${inputs.caveman}/src/hooks/caveman-activate.js";
-    "${hooksDir}/caveman-mode-tracker.js".source =
-      "${inputs.caveman}/src/hooks/caveman-mode-tracker.js";
-    "${hooksDir}/caveman-stats.js".source = "${inputs.caveman}/src/hooks/caveman-stats.js";
-    "${hooksDir}/caveman-statusline.sh".source = "${inputs.caveman}/src/hooks/caveman-statusline.sh";
-    "${hooksDir}/caveman-statusline.ps1".source = "${inputs.caveman}/src/hooks/caveman-statusline.ps1";
   };
 }
