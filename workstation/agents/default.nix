@@ -128,7 +128,13 @@ in
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
     programs.claude-code.settings.skillListingBudgetFraction = 0.02;
     # Absorbed from former security-guidance.nix:
-    programs.claude-code.settings.enabledPlugins."security-guidance@claude-plugins-official" = true;
+    programs.claude-code.settings.enabledPlugins = {
+      "security-guidance@claude-plugins-official" = true;
+      "frontend-design@claude-plugins-official" = true;
+      "code-simplifier@claude-plugins-official" = true;
+      "claude-md-management@claude-plugins-official" = true;
+    };
+
     programs.claude-code.settings.hooks = lib.zipAttrsWith (_: lib.concatLists) (
       map (t: t.hooks) toolValues
     );
