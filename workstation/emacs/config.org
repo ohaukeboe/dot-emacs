@@ -1133,7 +1133,6 @@ Visualize the colors of color codes
 
 #+begin_src elisp
   (use-package editorconfig
-    :ensure t
     :after prog-mode
     :config
     (editorconfig-mode 1))
