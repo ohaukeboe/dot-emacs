@@ -57,6 +57,7 @@ in
     # ./code-review-graph.nix
     ./mcp-servers.nix
     ./rtk.nix
+    ./security-guidance.nix
     ./skills.nix
     ./subagents.nix
   ];
