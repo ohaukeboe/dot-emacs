@@ -6,6 +6,8 @@
   ...
 }:
 let
+  cfg = config.agents.tools.caveman;
+
   caveman-shrink = pkgs.buildNpmPackage {
     pname = "caveman-shrink";
     version = "0.1.0";
@@ -36,23 +38,20 @@ let
     '';
   };
 
-  hooksDir = "${config.home.homeDirectory}/.claude/hooks";
+  # Path the upstream hooksDir is symlinked to by programs.claude-code.hooksDir.
+  installedHooksDir = "${config.home.homeDirectory}/.claude/hooks";
 in
 {
-  home.packages = [ caveman-shrink ];
-
-  agents.extraOpencodeDocs = [ "${inputs.caveman}/src/rules/caveman-activate.md" ];
-
-  programs.claude-code.hooksDir = "${inputs.caveman}/src/hooks";
-
-  programs.claude-code.settings = {
+  agents.tools.caveman = {
+    packages = [ caveman-shrink ];
+    docs.opencodeOnly = [ "${inputs.caveman}/src/rules/caveman-activate.md" ];
     hooks = {
       SessionStart = [
         {
           hooks = [
             {
               type = "command";
-              command = ''${pkgs.nodejs}/bin/node "${hooksDir}/caveman-activate.js"'';
+              command = ''${pkgs.nodejs}/bin/node "${installedHooksDir}/caveman-activate.js"'';
               timeout = 5;
               statusMessage = "Loading caveman mode...";
             }
@@ -64,7 +63,7 @@ in
           hooks = [
             {
               type = "command";
-              command = ''${pkgs.nodejs}/bin/node "${hooksDir}/caveman-mode-tracker.js"'';
+              command = ''${pkgs.nodejs}/bin/node "${installedHooksDir}/caveman-mode-tracker.js"'';
               timeout = 5;
               statusMessage = "Tracking caveman mode...";
             }
@@ -72,9 +71,14 @@ in
         }
       ];
     };
-    statusLine = {
+  };
+
+  # Edge-case settings bypass the submodule shape — gated directly on enable.
+  programs.claude-code = lib.mkIf cfg.enable {
+    hooksDir = "${inputs.caveman}/src/hooks";
+    settings.statusLine = {
       type = "command";
-      command = ''bash "${hooksDir}/caveman-statusline.sh"'';
+      command = ''bash "${installedHooksDir}/caveman-statusline.sh"'';
     };
   };
 }

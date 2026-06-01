@@ -7,32 +7,32 @@ let
   '';
 in
 {
-  home.packages = [ pkgs.beads ];
-
-  agents.extraOpencodeDocs = [ beadsOpencodeDocs ];
-
-  programs.claude-code.settings.hooks = {
-    SessionStart = [
-      {
-        matcher = "";
-        hooks = [
-          {
-            type = "command";
-            command = "${bd} prime";
-          }
-        ];
-      }
-    ];
-    PreCompact = [
-      {
-        matcher = "";
-        hooks = [
-          {
-            type = "command";
-            command = "${bd} prime";
-          }
-        ];
-      }
-    ];
+  agents.tools.beads = {
+    packages = [ pkgs.beads ];
+    docs.opencodeOnly = [ beadsOpencodeDocs ];
+    hooks = {
+      SessionStart = [
+        {
+          matcher = "";
+          hooks = [
+            {
+              type = "command";
+              command = "${bd} prime";
+            }
+          ];
+        }
+      ];
+      PreCompact = [
+        {
+          matcher = "";
+          hooks = [
+            {
+              type = "command";
+              command = "${bd} prime";
+            }
+          ];
+        }
+      ];
+    };
   };
 }
