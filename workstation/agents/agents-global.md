@@ -11,6 +11,11 @@
 
 -   The **nix package manager** is available on this system. If a command or program is not installed, you can run it via `nix-shell -p <packagename> --run '<command>'`
 
+## Git Workflow
+
+-   **Never `git commit` or `git push` without explicit user instruction** — stage and summarize changes, then wait
+-   This applies to all commits, amends, force-pushes, and any operation that writes to git history or a remote
+
 ## Safety & Best Practices
 
 -   **Speak up when requested actions are inadvisable**
