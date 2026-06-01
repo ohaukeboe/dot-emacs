@@ -51,21 +51,21 @@ let
   emacsConfig = "${config.xdg.configHome}/emacs";
 in
 {
+  programs.mcp.enable = true;
   programs.claude-code.enableMcpIntegration = true;
-  programs.claude-code.mcpServers = {
+  programs.opencode.enableMcpIntegration = true;
+
+  programs.mcp.servers = {
     "mcp-nixos" = {
       command = "caveman-shrink";
       args = [ "mcp-nixos" ];
-      type = "stdio";
     };
     "github-mcp" = {
       command = toString github-mcp-wrapper;
-      type = "stdio";
     };
     "codebase-memory" = {
       command = "caveman-shrink";
       args = [ "${codebase-memory-mcp}/bin/codebase-memory-mcp" ];
-      type = "stdio";
     };
     "chrome-devtools" = {
       command = "caveman-shrink";
@@ -73,7 +73,6 @@ in
         "chrome-devtools-mcp"
         "--executablePath=${pkgs.chromium}/bin/chromium"
       ];
-      type = "stdio";
     };
     "elisp-dev-mcp" = {
       command = "caveman-shrink";
@@ -83,7 +82,6 @@ in
         "--stop-function=elisp-dev-mcp-disable"
         "--server-id=elisp-dev-mcp"
       ];
-      type = "stdio";
     };
     "lsp-mcp" = {
       command = "caveman-shrink";
@@ -93,11 +91,9 @@ in
         "--stop-function=lsp-mcp-disable"
         "--server-id=lsp-mcp"
       ];
-      type = "stdio";
     };
     "kagi" = {
       command = toString kagi-mcp-wrapper;
-      type = "stdio";
     };
   };
 
