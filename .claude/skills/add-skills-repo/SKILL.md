@@ -5,6 +5,19 @@ description: Add a GitHub skills repository to the Nix home-manager config (skil
 
 Add a GitHub skills repository to `flake.nix` (as a non-flake input) and `workstation/agents/skills.nix` (as a `linkFarm` entry).
 
+## When NOT to use this skill
+
+If the skills ship as part of a **tool integration** (i.e., they're tightly coupled to a CLI/MCP-server/hook bundle that already lives or will live in `workstation/agents/<tool>.nix`), wire them through that tool's submodule instead of `skills.nix`:
+
+```nix
+agents.tools.<toolName> = {
+  ...
+  skills = [ <skillsDerivation> ];   # collected into agents.extraSkillPaths via fold in default.nix
+};
+```
+
+Example: `workstation/agents/code-review-graph.nix` exposes its skills via `agents.tools.codeReviewGraph.skills`, so toggling `agents.tools.codeReviewGraph.enable = false;` removes the tool and its skills together. Use `skills.nix` only for **standalone skill repositories** with no associated tool.
+
 ## Step 1: Resolve the repo URL
 
 Accept any of these forms from the user:
@@ -133,6 +146,8 @@ mergedSkills = pkgs.symlinkJoin {
   ++ config.agents.extraSkillPaths;
 };
 ```
+
+Do **not** remove the `++ config.agents.extraSkillPaths;` tail — that's the seam tool integrations (e.g., `agents.tools.codeReviewGraph.skills`) flow through, populated by the fold in `default.nix`.
 
 ## Step 7: Apply and confirm
 
