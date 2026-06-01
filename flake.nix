@@ -103,6 +103,11 @@
       url = "github:DeusData/codebase-memory-mcp";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    kagimcp = {
+      url = "github:kagisearch/kagimcp";
+      flake = false;
+    };
   };
 
   outputs =

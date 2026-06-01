@@ -345,6 +345,22 @@
         "type": "github"
       }
     },
+    "kagimcp": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1779918047,
+        "narHash": "sha256-Pnx4riqIFLzJJY2P0VAEl6GBYjJo6gGWbt7gbLmOqmo=",
+        "owner": "kagisearch",
+        "repo": "kagimcp",
+        "rev": "7261eac2d3bfa41ce23928628ab84435da091acb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "kagisearch",
+        "repo": "kagimcp",
+        "type": "github"
+      }
+    },
     "kotlin-lsp": {
       "inputs": {
         "nixpkgs": [
@@ -695,6 +711,7 @@
         "flatpaks": "flatpaks",
         "home-manager": "home-manager",
         "humanizer-skill": "humanizer-skill",
+        "kagimcp": "kagimcp",
         "kotlin-lsp": "kotlin-lsp",
         "lanzaboote": "lanzaboote",
         "llm-skills": "llm-skills",
