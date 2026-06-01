@@ -29,7 +29,10 @@
     };
 
     # for list of hardware modules: https://github.com/NixOS/nixos-hardware#list-of-profiles
-    nixos-hardware.url = "github:NixOS/nixos-hardware/master";
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     zen-browser = {
       url = "github:0xc000022070/zen-browser-flake";
