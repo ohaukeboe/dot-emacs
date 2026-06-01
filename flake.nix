@@ -94,6 +94,11 @@
       flake = false;
     };
 
+    anthropic-cybersecurity-skills = {
+      url = "github:mukul975/Anthropic-Cybersecurity-Skills";
+      flake = false;
+    };
+
     understand-anything = {
       url = "github:Lum1104/Understand-Anything";
       flake = false;

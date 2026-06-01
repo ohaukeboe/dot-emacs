@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "anthropic-cybersecurity-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780308947,
+        "narHash": "sha256-BF1lZIjDOhOVXhGWD7rS5SlwOT6enwoZuRgoEmQIqNQ=",
+        "owner": "mukul975",
+        "repo": "Anthropic-Cybersecurity-Skills",
+        "rev": "04450304b12645cb2b974ab96d28c0664758a88d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mukul975",
+        "repo": "Anthropic-Cybersecurity-Skills",
+        "type": "github"
+      }
+    },
     "anthropics-skills": {
       "flake": false,
       "locked": {
@@ -702,6 +718,7 @@
     },
     "root": {
       "inputs": {
+        "anthropic-cybersecurity-skills": "anthropic-cybersecurity-skills",
         "anthropics-skills": "anthropics-skills",
         "calibre-plugins": "calibre-plugins",
         "cavekit": "cavekit",

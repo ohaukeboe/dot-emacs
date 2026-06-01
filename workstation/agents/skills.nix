@@ -220,6 +220,7 @@ let
       mattpocockSkillsSubset
       llmSkillsSubset
       understandAnythingSkills
+      "${inputs.anthropic-cybersecurity-skills}/skills"
     ]
     ++ config.agents.extraSkillPaths;
   };
