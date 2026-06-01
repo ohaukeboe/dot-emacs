@@ -232,12 +232,12 @@ in
   };
 
   config = {
-    programs.claude-code.skills = "${mergedSkills}";
-    programs.opencode.skills = "${mergedSkills}";
-
-    home.file."${config.home.homeDirectory}/.agents/skills" = {
-      source = mergedSkills;
-      recursive = true;
-    };
+    # Bypass programs.claude-code.skills / programs.opencode.skills — both
+    # upstream modules hardcode `recursive = true` on the resulting home.file
+    # entry, which fans ~13k symlinks out on every activation once many
+    # skills (e.g. anthropic-cybersecurity-skills) are merged in.
+    home.file."${config.home.homeDirectory}/.claude/skills".source = mergedSkills;
+    xdg.configFile."opencode/skills".source = mergedSkills;
+    home.file."${config.home.homeDirectory}/.agents/skills".source = mergedSkills;
   };
 }
