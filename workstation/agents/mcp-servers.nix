@@ -6,94 +6,117 @@
   ...
 }:
 let
-  github-mcp-wrapper = pkgs.writeShellScript "github-mcp" ''
-    GITHUB_PERSONAL_ACCESS_TOKEN="$(cat ${config.sops.secrets."authinfo/github_pat".path})"
-    export GITHUB_PERSONAL_ACCESS_TOKEN
-    exec caveman-shrink github-mcp-server stdio "$@"
-  '';
-  # Upstream kagisearch/kagimcp built from source. Tracks the kagimcp
-  # input pinned in the top-level flake.nix (currently main branch).
-  #
-  # cfn-lint override: fastmcp's transitive test dep chain
-  # (py-key-value-aio → aiobotocore → types-aiobotocore-dynamodb → cfn-lint)
-  # has failing integration tests in the pinned nixpkgs revision. Skip
-  # cfn-lint's own checks so the chain builds. Remove when nixpkgs ships a fix.
-  kagimcpPython = pkgs.python312.override {
-    packageOverrides = pyfinal: pyprev: {
-      cfn-lint = pyprev.cfn-lint.overridePythonAttrs (_: {
-        doCheck = false;
-      });
-    };
-  };
-  kagimcp = kagimcpPython.pkgs.buildPythonApplication {
-    pname = "kagimcp";
-    version = "1.0.0";
-    pyproject = true;
-    src = inputs.kagimcp;
-    build-system = with kagimcpPython.pkgs; [ hatchling ];
-    dependencies = with kagimcpPython.pkgs; [
-      fastmcp
-      pydantic
-      urllib3
-      python-dateutil
-      typing-extensions
-    ];
-    doCheck = false;
-  };
-  kagi-mcp-wrapper = pkgs.writeShellScript "kagi-mcp" ''
-    KAGI_API_KEY="$(cat ${config.sops.secrets."authinfo/kagi".path})"
-    export KAGI_API_KEY
-    exec ${kagimcp}/bin/kagimcp "$@"
-  '';
-  # Built from source via the upstream flake (PR #265). Tracks the
-  # codebase-memory-mcp input pinned in the top-level flake.nix.
+  chrome-devtools-mcp = pkgs.callPackage ./packages/chrome-devtools-mcp.nix { };
+  kagimcp = pkgs.callPackage ./packages/kagimcp.nix { src = inputs.kagimcp; };
   codebase-memory-mcp = inputs.codebase-memory-mcp.packages.${pkgs.system}.default;
   emacsConfig = "${config.xdg.configHome}/emacs";
+
+  # Wraps an MCP server with optional caveman-shrink token compression and/or
+  # secret-env-from-file injection. Returns an attrset shaped for
+  # `programs.mcp.servers.<name>`.
+  mkMcpServer =
+    {
+      name,
+      command,
+      args ? [ ],
+      env ? { },
+      secretEnvFiles ? { },
+      shrink ? false,
+    }:
+    let
+      hasSecrets = secretEnvFiles != { };
+      cmdAndArgs = (lib.optional shrink "caveman-shrink") ++ [ command ] ++ args;
+      wrapper = pkgs.writeShellScript "${name}-mcp" ''
+        ${lib.concatStringsSep "\n" (
+          lib.mapAttrsToList (var: path: ''
+            ${var}="$(cat ${path})"
+            export ${var}
+          '') secretEnvFiles
+        )}
+        exec ${lib.escapeShellArgs cmdAndArgs} "$@"
+      '';
+    in
+    if hasSecrets then
+      {
+        command = toString wrapper;
+      }
+      // lib.optionalAttrs (env != { }) { inherit env; }
+    else if shrink then
+      {
+        command = "caveman-shrink";
+        args = [ command ] ++ args;
+      }
+      // lib.optionalAttrs (env != { }) { inherit env; }
+    else
+      { inherit command args; } // lib.optionalAttrs (env != { }) { inherit env; };
+
+  # Emacs MCP stdio servers all share the same launcher script and arg shape.
+  mkEmacsStdioServer =
+    {
+      name,
+      initFunction,
+      stopFunction,
+      shrink ? true,
+    }:
+    mkMcpServer {
+      inherit name shrink;
+      command = "${emacsConfig}/emacs-mcp-stdio.sh";
+      args = [
+        "--init-function=${initFunction}"
+        "--stop-function=${stopFunction}"
+        "--server-id=${name}"
+      ];
+    };
 in
 {
   programs.mcp.enable = true;
   programs.claude-code.enableMcpIntegration = true;
   programs.opencode.enableMcpIntegration = true;
 
+  home.packages = [
+    chrome-devtools-mcp
+    pkgs.mcp-nixos
+    pkgs.github-mcp-server
+  ];
+
   programs.mcp.servers = {
-    "mcp-nixos" = {
-      command = "caveman-shrink";
-      args = [ "mcp-nixos" ];
+    "mcp-nixos" = mkMcpServer {
+      name = "mcp-nixos";
+      command = "mcp-nixos";
+      shrink = true;
     };
-    "github-mcp" = {
-      command = toString github-mcp-wrapper;
+    "github-mcp" = mkMcpServer {
+      name = "github-mcp";
+      command = "github-mcp-server";
+      args = [ "stdio" ];
+      secretEnvFiles.GITHUB_PERSONAL_ACCESS_TOKEN = config.sops.secrets."authinfo/github_pat".path;
+      shrink = true;
     };
-    "codebase-memory" = {
-      command = "caveman-shrink";
-      args = [ "${codebase-memory-mcp}/bin/codebase-memory-mcp" ];
+    "codebase-memory" = mkMcpServer {
+      name = "codebase-memory";
+      command = "${codebase-memory-mcp}/bin/codebase-memory-mcp";
+      shrink = true;
     };
-    "chrome-devtools" = {
-      command = "caveman-shrink";
-      args = [
-        "chrome-devtools-mcp"
-        "--executablePath=${pkgs.chromium}/bin/chromium"
-      ];
+    "chrome-devtools" = mkMcpServer {
+      name = "chrome-devtools";
+      command = "chrome-devtools-mcp";
+      args = [ "--executablePath=${pkgs.chromium}/bin/chromium" ];
+      shrink = true;
     };
-    "elisp-dev-mcp" = {
-      command = "caveman-shrink";
-      args = [
-        "${emacsConfig}/emacs-mcp-stdio.sh"
-        "--init-function=elisp-dev-mcp-enable"
-        "--stop-function=elisp-dev-mcp-disable"
-        "--server-id=elisp-dev-mcp"
-      ];
+    "elisp-dev-mcp" = mkEmacsStdioServer {
+      name = "elisp-dev-mcp";
+      initFunction = "elisp-dev-mcp-enable";
+      stopFunction = "elisp-dev-mcp-disable";
     };
-    "lsp-mcp" = {
-      command = "caveman-shrink";
-      args = [
-        "${emacsConfig}/emacs-mcp-stdio.sh"
-        "--init-function=lsp-mcp-enable"
-        "--stop-function=lsp-mcp-disable"
-        "--server-id=lsp-mcp"
-      ];
+    "lsp-mcp" = mkEmacsStdioServer {
+      name = "lsp-mcp";
+      initFunction = "lsp-mcp-enable";
+      stopFunction = "lsp-mcp-disable";
     };
-    "kagi" = {
-      command = toString kagi-mcp-wrapper;
+    "kagi" = mkMcpServer {
+      name = "kagi";
+      command = "${kagimcp}/bin/kagimcp";
+      secretEnvFiles.KAGI_API_KEY = config.sops.secrets."authinfo/kagi".path;
     };
   };
 
