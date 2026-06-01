@@ -1,5 +1,7 @@
 {
   config,
+  inputs,
+  lib,
   pkgs,
   ...
 }:
@@ -9,6 +11,9 @@ let
     export GITHUB_PERSONAL_ACCESS_TOKEN
     exec caveman-shrink github-mcp-server stdio "$@"
   '';
+  # Built from source via the upstream flake (PR #265). Tracks the
+  # codebase-memory-mcp input pinned in the top-level flake.nix.
+  codebase-memory-mcp = inputs.codebase-memory-mcp.packages.${pkgs.system}.default;
   emacsConfig = "${config.xdg.configHome}/emacs";
 in
 {
@@ -21,6 +26,11 @@ in
     };
     "github-mcp" = {
       command = toString github-mcp-wrapper;
+      type = "stdio";
+    };
+    "codebase-memory" = {
+      command = "caveman-shrink";
+      args = [ "${codebase-memory-mcp}/bin/codebase-memory-mcp" ];
       type = "stdio";
     };
     "chrome-devtools" = {
@@ -52,4 +62,10 @@ in
       type = "stdio";
     };
   };
+
+  # auto_index lives in the server's SQLite config (CBM_CACHE_DIR), not in any
+  # declarative file, so flip it via the CLI on activation. Idempotent.
+  home.activation.codebaseMemoryAutoIndex = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run ${codebase-memory-mcp}/bin/codebase-memory-mcp config set auto_index true
+  '';
 }

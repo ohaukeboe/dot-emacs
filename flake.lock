@@ -87,6 +87,26 @@
         "type": "github"
       }
     },
+    "codebase-memory-mcp": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1780269408,
+        "narHash": "sha256-qV4IhpXYwlzX3Dx0UEXuT6MnKh2oenEWwiJuml8V1Ak=",
+        "owner": "DeusData",
+        "repo": "codebase-memory-mcp",
+        "rev": "f42d77244ac01b9ff37390b2a6376637d81662df",
+        "type": "github"
+      },
+      "original": {
+        "owner": "DeusData",
+        "repo": "codebase-memory-mcp",
+        "type": "github"
+      }
+    },
     "crane": {
       "locked": {
         "lastModified": 1765145449,
@@ -670,6 +690,7 @@
         "calibre-plugins": "calibre-plugins",
         "cavekit": "cavekit",
         "caveman": "caveman",
+        "codebase-memory-mcp": "codebase-memory-mcp",
         "emacs-overlay": "emacs-overlay",
         "flatpaks": "flatpaks",
         "home-manager": "home-manager",

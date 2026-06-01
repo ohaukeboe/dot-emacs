@@ -98,6 +98,11 @@
       url = "github:Lum1104/Understand-Anything";
       flake = false;
     };
+
+    codebase-memory-mcp = {
+      url = "github:DeusData/codebase-memory-mcp";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

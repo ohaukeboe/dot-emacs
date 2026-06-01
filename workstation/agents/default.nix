@@ -68,7 +68,7 @@ in
   imports = [
     ./beads.nix
     ./caveman.nix
-    ./code-review-graph.nix
+    # ./code-review-graph.nix
     ./mcp-servers.nix
     ./rtk.nix
     ./skills.nix
