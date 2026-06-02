@@ -485,23 +485,6 @@
         "type": "github"
       }
     },
-    "lsp-ltex-plus-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1737628929,
-        "narHash": "sha256-va0+w5ZUiaSASH2JDPRM0R4rwXCnRQKZw62Ftu3Ypfw=",
-        "owner": "emacs-languagetool",
-        "repo": "lsp-ltex-plus",
-        "rev": "a68eaacf7535f5e4969e3a7922f822717ee86e87",
-        "type": "github"
-      },
-      "original": {
-        "owner": "emacs-languagetool",
-        "ref": "0.3.0",
-        "repo": "lsp-ltex-plus",
-        "type": "github"
-      }
-    },
     "mac-app-util": {
       "inputs": {
         "cl-nix-lite": "cl-nix-lite",
@@ -758,23 +741,6 @@
         "type": "github"
       }
     },
-    "pgmacs-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1774794322,
-        "narHash": "sha256-zJtVRcz3AOaNxYGLaa5PiptnN5/Bigg5PjRZMatalTg=",
-        "owner": "emarsden",
-        "repo": "pgmacs",
-        "rev": "d01264612ca5c98c02d8a52fad76618d3af1c0b4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "emarsden",
-        "ref": "v0.30",
-        "repo": "pgmacs",
-        "type": "github"
-      }
-    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -817,14 +783,12 @@
         "kotlin-lsp": "kotlin-lsp",
         "lanzaboote": "lanzaboote",
         "llm-skills": "llm-skills",
-        "lsp-ltex-plus-src": "lsp-ltex-plus-src",
         "mac-app-util": "mac-app-util",
         "mattpocock-skills": "mattpocock-skills",
         "nix-index-database": "nix-index-database",
         "nixgl": "nixgl",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_7",
-        "pgmacs-src": "pgmacs-src",
         "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix_3",
         "understand-anything": "understand-anything",

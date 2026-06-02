@@ -1,0 +1,110 @@
+{
+    "calibre-open-with": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "calibre-open-with",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-aky+oCiMnTm2Seayn1VC1PbtlnG/ZFxvEX6q/yp4iNM=",
+            "type": "url",
+            "url": "https://github.com/kiwidude68/calibre_plugins/releases/download/open_with-1.8.5/open_with-1.8.5.zip"
+        },
+        "version": "open_with-1.8.5"
+    },
+    "caveman-shrink": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "caveman-shrink",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-K0DszONf6M4UXmwC/gLRkiNatlXLNhQkTKmBiMBPh6c=",
+            "type": "url",
+            "url": "https://registry.npmjs.org/caveman-shrink/-/caveman-shrink-0.1.0.tgz"
+        },
+        "version": "0.1.0"
+    },
+    "chrome-devtools-mcp": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "chrome-devtools-mcp",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-dljKBMgor370c16Dsp6ATFox0xCOiaeHLGo5EpNV8QQ=",
+            "type": "url",
+            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.1.1.tgz"
+        },
+        "version": "1.1.1"
+    },
+    "code-review-graph": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "code-review-graph",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "tirth8205",
+            "repo": "code-review-graph",
+            "rev": "v2.3.5",
+            "sha256": "sha256-dbtvtxSi4S42sBkCBLtYPH3ck6f1gKsmvGmcrcBqcdU=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v2.3.5"
+    },
+    "lsp-ltex-plus": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "lsp-ltex-plus",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "emacs-languagetool",
+            "repo": "lsp-ltex-plus",
+            "rev": "0.3.0",
+            "sha256": "sha256-va0+w5ZUiaSASH2JDPRM0R4rwXCnRQKZw62Ftu3Ypfw=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "0.3.0"
+    },
+    "pgmacs": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "pgmacs",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "emarsden",
+            "repo": "pgmacs",
+            "rev": "v0.42",
+            "sha256": "sha256-AjhtU+YfEeYL/soJTB5o2vHYXyewwtsOoS6oCYnxyF0=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v0.42"
+    }
+}

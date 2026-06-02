@@ -10,11 +10,8 @@ let
 
   caveman-shrink = pkgs.buildNpmPackage {
     pname = "caveman-shrink";
-    version = "0.1.0";
-    src = pkgs.fetchurl {
-      url = "https://registry.npmjs.org/caveman-shrink/-/caveman-shrink-0.1.0.tgz";
-      hash = "sha256-K0DszONf6M4UXmwC/gLRkiNatlXLNhQkTKmBiMBPh6c=";
-    };
+    version = pkgs.nvSources.caveman-shrink.version;
+    src = pkgs.nvSources.caveman-shrink.src;
     sourceRoot = "package";
     forceEmptyCache = true;
     npmDepsHash = "sha256-Rx3AlLPKduQJ1ZRh7BKe3O5HX896BAJm+hLgi5tuh+k=";

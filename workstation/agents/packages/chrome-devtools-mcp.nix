@@ -1,15 +1,12 @@
-{ buildNpmPackage, fetchurl }:
+{ buildNpmPackage, nvSources }:
 
 buildNpmPackage {
   pname = "chrome-devtools-mcp";
-  version = "1.0.1";
-  src = fetchurl {
-    url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.0.1.tgz";
-    hash = "sha256-8CyjSlq3caR9BbfmKJsAfSjVcMsNdwIlTeRctEaDra8=";
-  };
+  version = nvSources.chrome-devtools-mcp.version;
+  src = nvSources.chrome-devtools-mcp.src;
   sourceRoot = "package";
   npmDepsFetcherVersion = 2;
-  npmDepsHash = "sha256-v6ZX9uqsEtYwiDRLa95SieDu+5fzuZcJEHeNhoCmNSo=";
+  npmDepsHash = "sha256-jJMiMqGrLeB5fICYaWwMomwjvRiHA7wPZYXVREnPVQw=";
   npmFlags = [
     "--omit=dev"
     "--ignore-scripts"

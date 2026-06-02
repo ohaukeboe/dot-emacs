@@ -3,3 +3,4 @@ default:
   @just --list
 
 import 'just/sops.just'
+import 'just/nvfetcher.just'

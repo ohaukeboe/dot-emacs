@@ -129,16 +129,6 @@
       url = "github:armindarvish/consult-mu";
       flake = false;
     };
-
-    pgmacs-src = {
-      url = "github:emarsden/pgmacs?ref=v0.30";
-      flake = false;
-    };
-
-    lsp-ltex-plus-src = {
-      url = "github:emacs-languagetool/lsp-ltex-plus?ref=0.3.0";
-      flake = false;
-    };
   };
 
   outputs =

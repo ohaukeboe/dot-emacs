@@ -21,6 +21,8 @@ let
       emacs-overlay.overlay
       # Only add nixGL overlay for Linux
       (final: prev: if builtins.match ".*linux" system != null then (nixgl.overlay final prev) else { })
+      # nvfetcher-managed sources (see nvfetcher.toml), exposed as pkgs.nvSources
+      (final: prev: { nvSources = final.callPackage ../_sources/generated.nix { }; })
     ];
   };
   lib = nixpkgs.lib;

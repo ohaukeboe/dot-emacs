@@ -114,9 +114,10 @@ in
             }))
 
             # Packages previously installed via use-package :vc, now built from
-            # flake inputs. The release-pinned ones (pgmacs, lsp-ltex-plus) only
-            # move when their `?ref=` is bumped; the rest track branch HEAD and
-            # advance on `nix flake update`.
+            # source. The branch-HEAD ones (claude-code-ide, gptel-quick,
+            # consult-mu) are flake inputs advancing on `nix flake update`; the
+            # version-pinned ones (pgmacs, lsp-ltex-plus) come from nvfetcher
+            # (pkgs.nvSources) and move on `just update-sources`.
             (epkgs.trivialBuild {
               pname = "claude-code-ide";
               version = inputs.claude-code-ide-src.shortRev or "unstable";
@@ -148,14 +149,14 @@ in
             })
             (epkgs.trivialBuild {
               pname = "pgmacs";
-              version = "v0.30";
-              src = inputs.pgmacs-src;
+              version = pkgs.nvSources.pgmacs.version;
+              src = pkgs.nvSources.pgmacs.src;
               packageRequires = [ pg ];
             })
             (epkgs.trivialBuild {
               pname = "lsp-ltex-plus";
-              version = "0.3.0";
-              src = inputs.lsp-ltex-plus-src;
+              version = pkgs.nvSources.lsp-ltex-plus.version;
+              src = pkgs.nvSources.lsp-ltex-plus.src;
               packageRequires = [ lspModePlist ];
             })
           ];

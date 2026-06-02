@@ -1,0 +1,39 @@
+# Version-pinned external sources, managed by nvfetcher.
+# Regenerate _sources/generated.nix with:  just update-sources
+# Consumed in Nix via the `pkgs.nvSources` overlay (see lib/mkHomeConfiguration.nix).
+
+# Calibre "Open With" plugin. The upstream repo is a monorepo of many plugins,
+# each tagged `<plugin>-X.Y.Z`; include_regex keeps us on open_with tags only.
+# The release asset is a zip named after the tag, so fetch.url reuses $ver.
+[calibre-open-with]
+fetch.url = "https://github.com/kiwidude68/calibre_plugins/releases/download/$ver/$ver.zip"
+src.github_tag = "kiwidude68/calibre_plugins"
+src.include_regex = "open_with-.*"
+
+# npm packages: no native npm source, so track latest via `npm view` (the
+# update-sources recipe puts nodejs on PATH). nvfetcher hashes the tarball;
+# buildNpmPackage's npmDepsHash still has to be bumped by hand.
+[caveman-shrink]
+fetch.url = "https://registry.npmjs.org/caveman-shrink/-/caveman-shrink-$ver.tgz"
+src.cmd = "npm view caveman-shrink version"
+
+[chrome-devtools-mcp]
+fetch.url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-$ver.tgz"
+src.cmd = "npm view chrome-devtools-mcp version"
+
+# Python tool. Built from the GitHub source (not the PyPI sdist) so the skills/
+# hooks that only ship in the repo come from the same tree, in lockstep.
+[code-review-graph]
+fetch.github = "tirth8205/code-review-graph"
+src.github_tag = "tirth8205/code-review-graph"
+
+# lsp-ltex-plus publishes GitHub releases -> github (latest release).
+[lsp-ltex-plus]
+fetch.github = "emacs-languagetool/lsp-ltex-plus"
+src.github = "emacs-languagetool/lsp-ltex-plus"
+
+# Emacs packages (built via epkgs.trivialBuild in workstation/home.nix).
+# pgmacs publishes no GitHub releases, only tags -> github_tag.
+[pgmacs]
+fetch.github = "emarsden/pgmacs"
+src.github_tag = "emarsden/pgmacs"

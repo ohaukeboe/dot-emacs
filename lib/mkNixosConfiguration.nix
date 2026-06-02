@@ -29,7 +29,11 @@ let
       imports = [
         home-manager.nixosModules.home-manager
         {
-          nixpkgs.overlays = [ emacs-overlay.overlays.default ];
+          nixpkgs.overlays = [
+            emacs-overlay.overlays.default
+            # nvfetcher-managed sources (see nvfetcher.toml), exposed as pkgs.nvSources
+            (final: prev: { nvSources = final.callPackage ../_sources/generated.nix { }; })
+          ];
           nixpkgs.config.allowUnfreePredicate = import ../common/unfree-predicates.nix {
             inherit (nixpkgs) lib;
           };
