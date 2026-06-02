@@ -50,20 +50,34 @@ bd close <id>         # Complete work
 <!-- END BEADS INTEGRATION -->
 
 
+## Project
+
+Personal **NixOS + Home Manager** config (flakes). Started as an Emacs config
+(hence the repo name); Emacs is literate org-mode in
+`workstation/emacs/config.org` (133K) — **edit the `.org`, never generated `.el`**.
+
+See **`AGENTS.md`** for the full guide (code style, module/machine patterns, structure).
+
 ## Build & Test
 
-_Add your build and test commands here_
-
 ```bash
-# Example:
-# npm install
-# npm test
+nix fmt                                              # format (nixfmt/shfmt/toml-sort) — run before commit
+nix flake check                                      # validate flake
+nix build .#homeConfigurations.default.activationPackage  # test build, no activate
 ```
 
-## Architecture Overview
+## Deploy
 
-_Add a brief overview of your project architecture_
+```bash
+home-manager switch --flake .#default --impure -b backup  # standalone home-manager
+sudo nixos-rebuild switch --flake .#<hostname>            # hosts: x13-laptop, work-laptop, desktop
+```
 
-## Conventions & Patterns
+## Key Paths
 
-_Add your project-specific conventions here_
+- `flake.nix` — entry point
+- `workstation/home.nix` — main user config
+- `workstation/emacs/config.org` — literate Emacs (source of truth)
+- `machines/machines.nix` — machine registry
+- `modules/` — optional feature modules (gaming, cosmic-de, secure-boot, sshd)
+- secrets via **SOPS** (`workstation/sops.nix`, `sops/`)

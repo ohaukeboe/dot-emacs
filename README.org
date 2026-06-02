@@ -23,7 +23,7 @@ Where ~<hostname>~ is: ~x13-laptop~, ~work-laptop~, or ~x1laptop~
 - Literate Emacs configuration in org-mode
 - COSMIC desktop environment on NixOS
 - Rootless Docker and Podman
-- Git-crypt for secrets management
+- SOPS (age) for secrets, git-crypt for low-sensitivity private files
 - Fish shell with starship, zoxide, and atuin
 - AI coding assistants (Claude Code, Aider, Goose, OpenCode)
 

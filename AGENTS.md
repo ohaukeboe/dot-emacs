@@ -208,7 +208,8 @@ build: Update flake dependencies and fix platform references
 3. Register in `machines/machines.nix`
 
 #### Managing Secrets
-- Use git-crypt for `secrets/secrets.json`
+- **SOPS** (`sops/home/*`, age-encrypted) for actual secrets — keys/recipients in `.sops.yaml`, wired via `workstation/sops.nix`
+- **git-crypt** (`secrets/**`, see `.gitattributes`) for low-sensitivity private info worth keeping out of public view
 - Never commit unencrypted secrets
 - Reference via `secrets` parameter passed to configurations
 
