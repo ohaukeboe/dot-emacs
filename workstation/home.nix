@@ -56,19 +56,26 @@ in
         alwaysEnsure = false;
         alwaysTangle = true;
         extraEmacsPackages =
-          epkgs: with epkgs; [
+          epkgs:
+          with epkgs;
+          let
+            # Shared so lsp-ltex-plus reuses the exact same derivation and we
+            # don't end up with two lsp-mode copies of the same version.
+            lspModePlist = lsp-mode.overrideAttrs (p: {
+              buildPhase = ''
+                export LSP_USE_PLISTS=true;
+              ''
+              + p.buildPhase;
+            });
+          in
+          [
             treesit-grammars.with-all-grammars
             edit-indirect # Edit codeblocks in markdown
             copilot
             jinx
             cdlatex
             auctex
-            (lsp-mode.overrideAttrs (p: {
-              buildPhase = ''
-                export LSP_USE_PLISTS=true;
-              ''
-              + p.buildPhase;
-            }))
+            lspModePlist
             (lsp-ui.overrideAttrs (p: {
               buildPhase = ''
                 export LSP_USE_PLISTS=true;
@@ -105,6 +112,52 @@ in
               ''
               + p.buildPhase;
             }))
+
+            # Packages previously installed via use-package :vc, now built from
+            # flake inputs. The release-pinned ones (pgmacs, lsp-ltex-plus) only
+            # move when their `?ref=` is bumped; the rest track branch HEAD and
+            # advance on `nix flake update`.
+            (epkgs.trivialBuild {
+              pname = "claude-code-ide";
+              version = inputs.claude-code-ide-src.shortRev or "unstable";
+              src = inputs.claude-code-ide-src;
+              packageRequires = [
+                websocket
+                transient
+                web-server
+              ];
+            })
+            (epkgs.trivialBuild {
+              pname = "gptel-quick";
+              version = inputs.gptel-quick-src.shortRev or "unstable";
+              src = inputs.gptel-quick-src;
+              packageRequires = [
+                compat
+                gptel
+              ];
+            })
+            (epkgs.trivialBuild {
+              pname = "consult-mu";
+              version = inputs.consult-mu-src.shortRev or "unstable";
+              src = inputs.consult-mu-src;
+              packageRequires = [
+                consult
+                embark
+                mu4e
+              ];
+            })
+            (epkgs.trivialBuild {
+              pname = "pgmacs";
+              version = "v0.30";
+              src = inputs.pgmacs-src;
+              packageRequires = [ pg ];
+            })
+            (epkgs.trivialBuild {
+              pname = "lsp-ltex-plus";
+              version = "0.3.0";
+              src = inputs.lsp-ltex-plus-src;
+              packageRequires = [ lspModePlist ];
+            })
           ];
       }
     );

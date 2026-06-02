@@ -103,6 +103,22 @@
         "type": "github"
       }
     },
+    "claude-code-ide-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780335122,
+        "narHash": "sha256-6kaTPI2CCsdxxiCpZ7qqciv/HJCQRsJ8084+SqW8Idc=",
+        "owner": "manzaltu",
+        "repo": "claude-code-ide.el",
+        "rev": "a9485f766ea69f6cb3a3f08dea20d44fd6596673",
+        "type": "github"
+      },
+      "original": {
+        "owner": "manzaltu",
+        "repo": "claude-code-ide.el",
+        "type": "github"
+      }
+    },
     "codebase-memory-mcp": {
       "inputs": {
         "nixpkgs": [
@@ -120,6 +136,22 @@
       "original": {
         "owner": "DeusData",
         "repo": "codebase-memory-mcp",
+        "type": "github"
+      }
+    },
+    "consult-mu-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1764718976,
+        "narHash": "sha256-nxutBOEO6qiPjSo7y3t1KWYb0n0AMKGl943N+uGTTjQ=",
+        "owner": "armindarvish",
+        "repo": "consult-mu",
+        "rev": "8b54bbf86c2f112e3520eeeefb70d509b4590385",
+        "type": "github"
+      },
+      "original": {
+        "owner": "armindarvish",
+        "repo": "consult-mu",
         "type": "github"
       }
     },
@@ -304,6 +336,22 @@
         "type": "github"
       }
     },
+    "gptel-quick-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1762372717,
+        "narHash": "sha256-7a5+YQifwtVYHP6qQXS1yxA42bVGXmErirra0TrSSQ0=",
+        "owner": "karthink",
+        "repo": "gptel-quick",
+        "rev": "018ff2be8f860a1e8fe3966eec418ad635620c38",
+        "type": "github"
+      },
+      "original": {
+        "owner": "karthink",
+        "repo": "gptel-quick",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -434,6 +482,23 @@
       "original": {
         "owner": "descoped",
         "repo": "llm-skills",
+        "type": "github"
+      }
+    },
+    "lsp-ltex-plus-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1737628929,
+        "narHash": "sha256-va0+w5ZUiaSASH2JDPRM0R4rwXCnRQKZw62Ftu3Ypfw=",
+        "owner": "emacs-languagetool",
+        "repo": "lsp-ltex-plus",
+        "rev": "a68eaacf7535f5e4969e3a7922f822717ee86e87",
+        "type": "github"
+      },
+      "original": {
+        "owner": "emacs-languagetool",
+        "ref": "0.3.0",
+        "repo": "lsp-ltex-plus",
         "type": "github"
       }
     },
@@ -693,6 +758,23 @@
         "type": "github"
       }
     },
+    "pgmacs-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1774794322,
+        "narHash": "sha256-zJtVRcz3AOaNxYGLaa5PiptnN5/Bigg5PjRZMatalTg=",
+        "owner": "emarsden",
+        "repo": "pgmacs",
+        "rev": "d01264612ca5c98c02d8a52fad76618d3af1c0b4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "emarsden",
+        "ref": "v0.30",
+        "repo": "pgmacs",
+        "type": "github"
+      }
+    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -723,21 +805,26 @@
         "calibre-plugins": "calibre-plugins",
         "cavekit": "cavekit",
         "caveman": "caveman",
+        "claude-code-ide-src": "claude-code-ide-src",
         "codebase-memory-mcp": "codebase-memory-mcp",
+        "consult-mu-src": "consult-mu-src",
         "emacs-overlay": "emacs-overlay",
         "flatpaks": "flatpaks",
+        "gptel-quick-src": "gptel-quick-src",
         "home-manager": "home-manager",
         "humanizer-skill": "humanizer-skill",
         "kagimcp": "kagimcp",
         "kotlin-lsp": "kotlin-lsp",
         "lanzaboote": "lanzaboote",
         "llm-skills": "llm-skills",
+        "lsp-ltex-plus-src": "lsp-ltex-plus-src",
         "mac-app-util": "mac-app-util",
         "mattpocock-skills": "mattpocock-skills",
         "nix-index-database": "nix-index-database",
         "nixgl": "nixgl",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_7",
+        "pgmacs-src": "pgmacs-src",
         "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix_3",
         "understand-anything": "understand-anything",

@@ -2784,8 +2784,6 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
     :after pgmacs)
 
   (use-package pgmacs
-    :vc (:url "https://github.com/emarsden/pgmacs.git"
-              :rev "v0.30")
     :custom
     (pgmacs-row-colors `(,(face-background 'default) ,(face-background 'markdown-code-face)))
     (pgmacs-schemaspy-cmdline "podman run -v %D:/output --userns=keep-id --network=host docker.io/schemaspy/schemaspy:latest -t pgsql11 -host %h -port %P -u %u -p %p -db %d -imageformat svg")
@@ -3393,8 +3391,6 @@ MCP support is also nice :)
 #+begin_src elisp
   (use-package gptel-quick
     :after embark
-    :vc (:url "https://github.com/karthink/gptel-quick.git"
-              :rev "018ff2b")
     :custom
     (gptel-quick-backend (alist-get "OpenRouter" gptel--known-backends nil nil #'string=))
     (gptel-quick-model "anthropic/claude-haiku-4.5")
@@ -3511,8 +3507,6 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
 
 #+begin_src elisp
   (use-package claude-code-ide
-    :vc (:url "https://github.com/manzaltu/claude-code-ide.el"
-              :rev 56db02e)
     :bind ("C-c o c" . claude-code-ide) ; Set your favorite keybinding
     :custom
     (claude-code-ide-enable-mcp-server t)
@@ -3730,8 +3724,6 @@ And obviously I need consult integration as well
 #+begin_src elisp
   (use-package consult-mu
     :after (consult mu4e)
-    :vc (:url "https://github.com/armindarvish/consult-mu.git"
-              :rev "8b54bbf")
     :bind
     (:map mu4e-search-minor-mode-map
           ("s" . consult-mu)))
@@ -3879,8 +3871,6 @@ This sets up spell-checking using both English and Norwegian dictionaries togeth
 
 #+begin_src elisp
   (use-package lsp-ltex-plus
-    :vc (:url  "https://github.com/emacs-languagetool/lsp-ltex-plus.git"
-               :rev "0.3.0")
     :bind
     (:map text-mode-map
           ("C-c t l" . lsp-deferred))
