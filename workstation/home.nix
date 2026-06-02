@@ -10,6 +10,19 @@ let
   isLinux = pkgs.stdenv.isLinux;
   isDarwin = pkgs.stdenv.isDarwin;
   system = pkgs.stdenv.hostPlatform.system;
+
+  # $EDITOR wrapper: reuse the current Emacs frame when launched from a
+  # terminal living inside Emacs (vterm or ghostel); otherwise pop a fresh
+  # frame. INSIDE_EMACS is "<version>,vterm" for vterm and "ghostel" for
+  # ghostel.
+  emacsEditor = pkgs.writeShellScript "emacs-editor" ''
+    case "$INSIDE_EMACS" in
+      *vterm*|*ghostel*)
+        exec ${config.programs.emacs.finalPackage}/bin/emacsclient "$@" ;;
+      *)
+        exec ${config.programs.emacs.finalPackage}/bin/emacsclient -c -a "" "$@" ;;
+    esac
+  '';
 in
 {
   imports = [
@@ -390,8 +403,13 @@ in
       shellInitLast = ''
         if test "$INSIDE_EMACS" = 'vterm'; and test -n "$EMACS_VTERM_PATH"; and test -f "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
           source "$EMACS_VTERM_PATH/etc/emacs-vterm.fish"
-          set EDITOR emacsclient
         end
+
+        # Set EDITOR here, not via home.sessionVariables: a shell spawned inside
+        # an already-running Emacs (vterm/ghostel buffer) inherits the exported
+        # __HM_SESS_VARS_SOURCED guard, so hm-session-vars.fish short-circuits
+        # and never re-exports EDITOR. This runs unconditionally, every shell.
+        set -gx EDITOR ${emacsEditor}
 
         # make fish update fish_complete_path when XDG_DATA_DIRS
         # changes. This is necessary to make fish apply shell
@@ -598,7 +616,7 @@ in
   };
 
   home.sessionVariables = {
-    EDITOR = "vim";
+    EDITOR = "${emacsEditor}";
     LSP_USE_PLISTS = "true";
   };
 

@@ -2567,6 +2567,11 @@ A terminal emulator
 #+begin_src elisp
   (use-package ghostel
     :ensure t
+    :custom
+    ;; Make $EDITOR inside ghostel buffers (e.g. claude-code-ide, which execs
+    ;; the editor directly without going through interactive fish) reuse the
+    ;; current Emacs frame instead of falling back to the stale inherited vim.
+    (ghostel-environment '("EDITOR=emacsclient" "VISUAL=emacsclient"))
     :bind
     ("C-z" . toggle-ghostel)
     ("M-z" . project-toggle-ghostel)
@@ -3529,6 +3534,7 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
     :bind ("C-c o c" . claude-code-ide) ; Set your favorite keybinding
     :custom
     (claude-code-ide-enable-mcp-server t)
+    (claude-code-ide-terminal-backend 'ghostel)
     :config
     (claude-code-ide-emacs-tools-setup) ; Optionally enable Emacs MCP tools
 
