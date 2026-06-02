@@ -2529,22 +2529,18 @@ A terminal emulator
 ** vterm
 
 #+begin_src elisp
+  ;; vterm is kept installed and usable via `M-x vterm', but its global
+  ;; keybinds and the project-aware buffer-management layer now live under
+  ;; ghostel (see below). Only intra-buffer conveniences remain here.
   (use-package vterm
     :ensure t
     :bind
-    ("C-z" . toggle-vterm)
-    ("M-z" . project-toggle-vterm)
-    ("C-c z" . my/consult-vterm)
     (:map vterm-mode-map
-          ("C-z" . toggle-vterm)
-          ("M-z" . project-toggle-vterm)
           ("M-y" . vterm-yank-pop)
           ("<S-left>"  . vterm--self-insert)
           ("<S-right>" . vterm--self-insert)
           ("<S-up>"    . vterm--self-insert)
           ("<S-down>"  . vterm--self-insert))
-    (:map project-prefix-map
-          ("t" . my/project-consult-vterm))
 
     :hook
     (vterm-mode . (lambda () (visual-line-mode t)))
@@ -2556,94 +2552,6 @@ A terminal emulator
                           ("podman" "/bin/bash")
                           ("docker" "/bin/bash")))
 
-    :preface
-    (defun vterm-buffer-project-root (buffer)
-      "Return project root for BUFFER if it's a vterm in a project, else nil."
-      (when (and (buffer-live-p buffer)
-                 (eq (buffer-local-value 'major-mode buffer) 'vterm-mode)
-                 (not (string-prefix-p "*claude-code[" (buffer-name buffer))))
-        (when-let* ((dd (buffer-local-value 'default-directory buffer))
-                    (proj (project-current nil dd)))
-          (project-root proj))))
-
-    (defun vterm-buffers-in-project (root)
-      "Return live vterm buffers whose project root equals ROOT."
-      (let ((root (file-name-as-directory root)))
-        (seq-filter (lambda (b)
-                      (when-let ((b-root (vterm-buffer-project-root b)))
-                        (equal (file-name-as-directory b-root) root)))
-                    (buffer-list))))
-
-    (defun vterm-buffers-global ()
-      "Return live vterm buffers not associated with any project."
-      (seq-filter (lambda (b)
-                    (and (eq (buffer-local-value 'major-mode b) 'vterm-mode)
-                         (not (string-prefix-p "*claude-code[" (buffer-name b)))
-                         (not (vterm-buffer-project-root b))))
-                  (buffer-list)))
-
-    (defun vterm--spawn-fresh ()
-      "Spawn a new vterm buffer with a unique name."
-      (let ((vterm-buffer-name (generate-new-buffer-name "*vterm*")))
-        (vterm)))
-
-    (defun project-toggle-vterm (&optional n)
-      (interactive "P")
-      (let* ((project (project-current t))
-             (root (project-root project))
-             (project-vterms (vterm-buffers-in-project root))
-             (default-directory root))
-        (cond ((numberp n) (vterm n))
-              ((or (consp n) (null project-vterms)) (vterm--spawn-fresh))
-              ((memq (current-buffer) project-vterms)
-               (switch-to-buffer (car (seq-difference (buffer-list) project-vterms))))
-              (t (switch-to-buffer (car (seq-intersection (buffer-list) project-vterms)))))))
-
-    (defun toggle-vterm (&optional n)
-      (interactive "P")
-      (let* ((default-directory (expand-file-name "~"))
-             (global-vterms (vterm-buffers-global)))
-        (cond ((numberp n) (vterm n))
-              ((or (consp n) (null global-vterms)) (vterm--spawn-fresh))
-              ((memq (current-buffer) global-vterms)
-               (switch-to-buffer (car (seq-difference (buffer-list) global-vterms))))
-              (t (switch-to-buffer (car (seq-intersection (buffer-list) global-vterms)))))))
-
-    (defun my/project-consult-vterm ()
-      (interactive)
-      (require 'consult)
-      (let* ((project (project-current))
-             (root (when project (project-root project)))
-             (vterm-bufs (and root (vterm-buffers-in-project root)))
-             (source `(:name "VTerm Buffers"
-                             :narrow ?v
-                             :category buffer
-                             :action ,#'switch-to-buffer
-                             :items ,(mapcar #'buffer-name vterm-bufs)
-                             :state ,#'consult--buffer-state)))
-        (if vterm-bufs
-            (consult-buffer (list source))
-          (user-error "No vterm buffers for this project"))))
-
-    (defun my/consult-vterm ()
-      "Consult-style picker for global (non-project) vterm buffers."
-      (interactive)
-      (require 'consult)
-      (let* ((vterm-bufs (vterm-buffers-global))
-             (source `(:name "Global VTerm Buffers"
-                             :narrow ?v
-                             :category buffer
-                             :action ,#'switch-to-buffer
-                             :items ,(mapcar #'buffer-name vterm-bufs)
-                             :state ,#'consult--buffer-state)))
-        (if vterm-bufs
-            (consult-buffer (list source))
-          (user-error "No global vterm buffers"))))
-
-    :init
-    (add-to-list 'project-switch-commands '(project-toggle-vterm "Vterm" "t") t)
-    (add-to-list 'project-kill-buffer-conditions '(major-mode . vterm-mode))
-
     :config
     (defun my-vterm-no-query-on-exit (buffer)
       "Set vterm process to not query on exit."
@@ -2652,6 +2560,117 @@ A terminal emulator
       buffer)
     (advice-add 'vterm :filter-return #'my-vterm-no-query-on-exit))
 
+#+end_src
+
+** ghostel
+
+#+begin_src elisp
+  (use-package ghostel
+    :ensure t
+    :bind
+    ("C-z" . toggle-ghostel)
+    ("M-z" . project-toggle-ghostel)
+    ("C-c z" . my/consult-ghostel)
+    (:map ghostel-mode-map
+          ("C-z" . toggle-ghostel)
+          ("M-z" . project-toggle-ghostel))
+    (:map ghostel-semi-char-mode-map
+          ("C-z" . toggle-ghostel)
+          ("M-z" . project-toggle-ghostel))
+    (:map project-prefix-map
+          ("t" . my/project-consult-ghostel))
+
+    ;; :hook
+    ;; (ghostel-mode . (lambda () (visual-line-mode t)))
+
+    :preface
+    (defun ghostel-buffer-project-root (buffer)
+      "Return project root for BUFFER if it's a ghostel in a project, else nil."
+      (when (and (buffer-live-p buffer)
+                 (with-current-buffer buffer (derived-mode-p 'ghostel-mode))
+                 (not (string-prefix-p "*claude-code[" (buffer-name buffer))))
+        (when-let* ((dd (buffer-local-value 'default-directory buffer))
+                    (proj (project-current nil dd)))
+          (project-root proj))))
+
+    (defun ghostel-buffers-in-project (root)
+      "Return live ghostel buffers whose project root equals ROOT."
+      (let ((root (file-name-as-directory root)))
+        (seq-filter (lambda (b)
+                      (when-let ((b-root (ghostel-buffer-project-root b)))
+                        (equal (file-name-as-directory b-root) root)))
+                    (buffer-list))))
+
+    (defun ghostel-buffers-global ()
+      "Return live ghostel buffers not associated with any project."
+      (seq-filter (lambda (b)
+                    (and (with-current-buffer b (derived-mode-p 'ghostel-mode))
+                         (not (string-prefix-p "*claude-code[" (buffer-name b)))
+                         (not (ghostel-buffer-project-root b))))
+                  (buffer-list)))
+
+    (defun project-toggle-ghostel (&optional n)
+      "Toggle a project-scoped ghostel terminal.
+  A non-numeric prefix arg (e.g. \\[universal-argument]) spawns a fresh
+  one; a numeric prefix switches to that numbered project buffer."
+      (interactive "P")
+      (let* ((project (project-current t))
+             (root (project-root project))
+             (project-ghostels (ghostel-buffers-in-project root))
+             (default-directory root))
+        (cond ((numberp n) (ghostel-project n))
+              ((or (consp n) (null project-ghostels)) (ghostel-project '(4)))
+              ((memq (current-buffer) project-ghostels)
+               (switch-to-buffer (car (seq-difference (buffer-list) project-ghostels))))
+              (t (switch-to-buffer (car (seq-intersection (buffer-list) project-ghostels)))))))
+
+    (defun toggle-ghostel (&optional n)
+      "Toggle a global (non-project) ghostel terminal.
+  A non-numeric prefix arg (e.g. \\[universal-argument]) spawns a fresh
+  one; a numeric prefix switches to that numbered buffer."
+      (interactive "P")
+      (let* ((default-directory (expand-file-name "~"))
+             (global-ghostels (ghostel-buffers-global)))
+        (cond ((numberp n) (ghostel n))
+              ((or (consp n) (null global-ghostels)) (ghostel '(4)))
+              ((memq (current-buffer) global-ghostels)
+               (switch-to-buffer (car (seq-difference (buffer-list) global-ghostels))))
+              (t (switch-to-buffer (car (seq-intersection (buffer-list) global-ghostels)))))))
+
+    (defun my/project-consult-ghostel ()
+      (interactive)
+      (require 'consult)
+      (let* ((project (project-current))
+             (root (when project (project-root project)))
+             (ghostel-bufs (and root (ghostel-buffers-in-project root)))
+             (source `(:name "Ghostel Buffers"
+                             :narrow ?g
+                             :category buffer
+                             :action ,#'switch-to-buffer
+                             :items ,(mapcar #'buffer-name ghostel-bufs)
+                             :state ,#'consult--buffer-state)))
+        (if ghostel-bufs
+            (consult-buffer (list source))
+          (user-error "No ghostel buffers for this project"))))
+
+    (defun my/consult-ghostel ()
+      "Consult-style picker for global (non-project) ghostel buffers."
+      (interactive)
+      (require 'consult)
+      (let* ((ghostel-bufs (ghostel-buffers-global))
+             (source `(:name "Global Ghostel Buffers"
+                             :narrow ?g
+                             :category buffer
+                             :action ,#'switch-to-buffer
+                             :items ,(mapcar #'buffer-name ghostel-bufs)
+                             :state ,#'consult--buffer-state)))
+        (if ghostel-bufs
+            (consult-buffer (list source))
+          (user-error "No global ghostel buffers"))))
+
+    :init
+    (add-to-list 'project-switch-commands '(project-toggle-ghostel "Ghostel" "t") t)
+    (add-to-list 'project-kill-buffer-conditions '(major-mode . ghostel-mode)))
 #+end_src
 
 ** Direnv
