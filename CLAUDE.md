@@ -81,3 +81,10 @@ sudo nixos-rebuild switch --flake .#<hostname>            # hosts: x13-laptop, w
 - `machines/machines.nix` — machine registry
 - `modules/` — optional feature modules (gaming, cosmic-de, secure-boot, sshd)
 - secrets via **SOPS** (`workstation/sops.nix`, `sops/`)
+
+## Gotchas
+
+- Flake sees only **git-tracked** files — `git add` new files before `nix build`/`nix flake check` (else `"... is not tracked by Git"`).
+- `default`/`oskar` config aliases use `builtins.currentSystem` (needs `--impure`); for a clean test build a concrete attr: `nix build '.#homeConfigurations."oskar@x86_64-linux".activationPackage'`.
+- `nix fmt` runs treefmt across **all** files — may reformat unrelated ones; revert stray churn before committing.
+- `just update-sources` regenerates nvfetcher sources (`nvfetcher.toml` → `_sources/`), consumed via the `pkgs.nvSources` overlay. npm pkgs still need a manual `npmDepsHash` bump.
