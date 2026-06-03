@@ -988,6 +988,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-idle-delay 0.0)
 
     (lsp-inlay-hint-enable t)
+    (lsp-format-buffer-on-save t)
 
     :preface
     (defun my/lsp-mode-setup-completion ()
@@ -1039,6 +1040,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
           ("M-g M-f" . consult-lsp-diagnostics)
           ("M-g M-s" . consult-lsp-file-symbols)))
 #+end_src
+
 ** lsp-booster
 
 [[https://github.com/blahgeek/emacs-lsp-booster][emacs-lsp-booster]] is a wrapper executable which helps improve the performance of lsp-mode and eglot. This here is the configuration needed for using it with lsp-mode

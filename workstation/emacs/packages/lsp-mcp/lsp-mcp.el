@@ -544,18 +544,20 @@ MCP Parameters:
 
 (defun lsp-mcp--format-buffer (file)
   "Format FILE using the LSP server and save it.
+Skips formatting if `lsp-format-buffer-on-save' is nil in the buffer.
 
 MCP Parameters:
   file - Absolute path to the file"
   (mcp-server-lib-with-error-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
      (with-current-buffer buf
-       (lsp-format-buffer)
-       (save-buffer))
-     "formatted")))
+       (if lsp-format-buffer-on-save
+           (progn (lsp-format-buffer) (save-buffer) "formatted")
+         "skipped (lsp-format-buffer-on-save is nil)")))))
 
 (defun lsp-mcp--format-region (file start-line start-column end-line end-column)
   "Format a region of FILE using the LSP server and save it.
+Skips formatting if `lsp-format-buffer-on-save' is nil in the buffer.
 
 MCP Parameters:
   file         - Absolute path to the file
@@ -566,13 +568,15 @@ MCP Parameters:
   (mcp-server-lib-with-error-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
      (with-current-buffer buf
-       (let ((s (lsp-mcp--line-col-to-pos (lsp-mcp--parse-int start-line)
-                                          (lsp-mcp--parse-int start-column)))
-             (e (lsp-mcp--line-col-to-pos (lsp-mcp--parse-int end-line)
-                                          (lsp-mcp--parse-int end-column))))
-         (lsp-format-region s e)
-         (save-buffer)))
-     "formatted")))
+       (if lsp-format-buffer-on-save
+           (let ((s (lsp-mcp--line-col-to-pos (lsp-mcp--parse-int start-line)
+                                              (lsp-mcp--parse-int start-column)))
+                 (e (lsp-mcp--line-col-to-pos (lsp-mcp--parse-int end-line)
+                                              (lsp-mcp--parse-int end-column))))
+             (lsp-format-region s e)
+             (save-buffer)
+             "formatted")
+         "skipped (lsp-format-buffer-on-save is nil)")))))
 
 ;;; Enable / Disable
 
