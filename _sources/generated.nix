@@ -6,6 +6,17 @@
   dockerTools,
 }:
 {
+  beads = {
+    pname = "beads";
+    version = "v1.0.4";
+    src = fetchFromGitHub {
+      owner = "steveyegge";
+      repo = "beads";
+      rev = "v1.0.4";
+      fetchSubmodules = false;
+      sha256 = "sha256-a356lk3dWJg2VzXmvBL0xVYUMgICDY/6s6A5km8cjBU=";
+    };
+  };
   calibre-open-with = {
     pname = "calibre-open-with";
     version = "open_with-1.8.5";

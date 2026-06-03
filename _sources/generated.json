@@ -1,4 +1,25 @@
 {
+    "beads": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "beads",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "steveyegge",
+            "repo": "beads",
+            "rev": "v1.0.4",
+            "sha256": "sha256-a356lk3dWJg2VzXmvBL0xVYUMgICDY/6s6A5km8cjBU=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v1.0.4"
+    },
     "calibre-open-with": {
         "cargoLock": null,
         "date": null,

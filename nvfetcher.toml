@@ -2,6 +2,14 @@
 # Regenerate _sources/generated.nix with:  just update-sources
 # Consumed in Nix via the `pkgs.nvSources` overlay (see lib/mkHomeConfiguration.nix).
 
+# beads issue tracker. The repo doubles as a Claude Code plugin marketplace
+# (.claude-plugin/marketplace.json -> plugins/beads). We vendor the release tree
+# to register that marketplace; the `bd` CLI itself comes from pkgs.beads.
+# Publishes GitHub releases -> github (latest release).
+[beads]
+fetch.github = "steveyegge/beads"
+src.github = "steveyegge/beads"
+
 # Calibre "Open With" plugin. The upstream repo is a monorepo of many plugins,
 # each tagged `<plugin>-X.Y.Z`; include_regex keeps us on open_with tags only.
 # The release asset is a zip named after the tag, so fetch.url reuses $ver.
