@@ -879,16 +879,63 @@ Make magit integrate with github and other git hosting services.
 ** Project.el
 
 #+begin_src elisp
+  (defvar my/project-parent-dirs '("~/projects"
+                                   "~/knowit")
+    "Parent directories that contain my projects.
+  Used both to seed `project.el' and as clone targets for
+  `my/clone-project'.")
+
   (use-package project
     :custom
     (project-vc-ignore "^/var/home")
+    :bind
+    (:map project-prefix-map
+          ("G" . my/clone-project))
     :config
     (require 'f)
-    (let ((proj-dirs
-           (seq-filter #'f-dir? '("~/projects"
-                                  "~/knowit"))))
-      (mapc #'project-remember-projects-under proj-dirs)))
+    (mapc #'project-remember-projects-under
+          (seq-filter #'f-dir? my/project-parent-dirs)))
 #+End_src
+
+** Clone project
+
+Clone a GitHub repo into one of my project directories. Suggests my own repos
+(from =consult-gh-favorite-orgs-list=) for completion, but also accepts an
+arbitrary =owner/repo= or a full URL. Cloning goes through =gh= (via consult-gh's
+clone engine), so github.com repos use SSH per my =gh= host config. After
+cloning, the new project is registered with =project.el= and opened in dired.
+
+#+begin_src elisp
+  (defun my/clone-project--candidates ()
+    "Return \"owner/name\" repo strings across my favorite orgs."
+    (cl-loop for org in consult-gh-favorite-orgs-list
+             append (ignore-errors
+                      (process-lines "gh" "repo" "list" org
+                                     "--limit" "200"
+                                     "--json" "nameWithOwner"
+                                     "--jq" ".[].nameWithOwner"))))
+
+  (defun my/clone-project--repo-name (input)
+    "Local directory name from INPUT (owner/repo, https URL, or git@ URL)."
+    (replace-regexp-in-string
+     "\\.git\\'" ""
+     (file-name-nondirectory (directory-file-name input))))
+
+  (defun my/clone-project (repo dir)
+    "Clone REPO into parent DIR, register it, and open it in dired.
+  REPO may be \"owner/name\", an https URL, or an ssh URL.  Cloning goes
+  through `gh' so github.com repos use ssh per the `gh' host config."
+    (interactive
+     (list (completing-read "Clone repo (owner/repo or URL): "
+                            (my/clone-project--candidates))
+           (completing-read "Into directory: " my/project-parent-dirs
+                            nil nil nil nil (car my/project-parent-dirs))))
+    (let* ((target (expand-file-name dir))
+           (name   (my/clone-project--repo-name repo))
+           (path   (consult-gh--repo-clone repo name target)))
+      (project-remember-projects-under target)
+      (dired path)))
+#+end_src
 
 ** Projection
 
