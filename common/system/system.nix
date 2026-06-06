@@ -16,6 +16,13 @@
 
   boot.kernelPackages = pkgs.linuxPackages_zen;
 
+  # Compressed RAM swap (zram) — faster than disk swap, reduces SSD wear.
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd";
+    memoryPercent = 50;
+  };
+
   # Use the systemd-boot EFI boot loader.
   boot.loader = {
     systemd-boot = {
