@@ -54,15 +54,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    # openldap 2.6.13 has a flaky timing-sensitive syncreplication test;
-    # skip checks to unblock lutris which depends on it via its FHS env.
-    nixpkgs.overlays = [
-      (final: prev: {
-        openldap = prev.openldap.overrideAttrs (_: {
-          doCheck = false;
-        });
-      })
-    ];
     # Enable Steam
     programs = {
       steam = {
