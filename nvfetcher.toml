@@ -7,8 +7,8 @@
 # to register that marketplace; the `bd` CLI itself comes from pkgs.beads.
 # Publishes GitHub releases -> github (latest release).
 [beads]
-fetch.github = "steveyegge/beads"
-src.github = "steveyegge/beads"
+fetch.github = "gastownhall/beads"
+src.github = "gastownhall/beads"
 
 # Calibre "Open With" plugin. The upstream repo is a monorepo of many plugins,
 # each tagged `<plugin>-X.Y.Z`; include_regex keeps us on open_with tags only.
