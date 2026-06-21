@@ -1,22 +1,22 @@
 keys:
-  # Hosts
-  - &desktop age1yg0dffykts33c8wgkxhahhk4zhueqtx560afsy7ys0lm3scx2p7szgchcc
-  - &work-laptop age1tpm1qwf7q7h905xcdv45mjus9pgjkg6tcx7ynxke4m622ewy0hr25y9cyxrj5s9
-  - &work-tmp age1c72w86x4lalere2e44z59lmv70ydm3xv7vu5wta3znp9mgau5g2srsju65
+    # Hosts
+    - &desktop age1yg0dffykts33c8wgkxhahhk4zhueqtx560afsy7ys0lm3scx2p7szgchcc
+    - &work-laptop age189uraa4pzngexqfda0l2kjszcknxd7f59m6kcpu0tu070vajl3vqtrlvnx
+    - &work-tmp age1c72w86x4lalere2e44z59lmv70ydm3xv7vu5wta3znp9mgau5g2srsju65
 
-  # FIDO keys
-  - &wallet_key age1yubikey1qwqkymath4fcdgfyx5vdy7z7z7n70xr7gekvtld9tfflzjgnk27ljm838l9
+    # FIDO keys
+    - &wallet_key age1yubikey1qwqkymath4fcdgfyx5vdy7z7z7n70xr7gekvtld9tfflzjgnk27ljm838l9
 
 creation_rules:
-  # - path_regex: sops/system/[^/]+\.(yaml|json|env|ini)$
-  #   key_groups:
-  #     - age:
-  #       - *wallet_key
-  #       - *desktop
-  - path_regex: sops/home/[^/]+\.(yaml|json|env|ini)$
-    key_groups:
-      - age:
-        - *wallet_key
-        - *desktop
-        - *work-laptop
-        - *work-tmp
+    # - path_regex: sops/system/[^/]+\.(yaml|json|env|ini)$
+    #   key_groups:
+    #     - age:
+    #       - *wallet_key
+    #       - *desktop
+    - path_regex: sops/home/[^/]+\.(yaml|json|env|ini)$
+      key_groups:
+          - age:
+                - *wallet_key
+                - *desktop
+                - *work-laptop
+                - *work-tmp
