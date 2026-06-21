@@ -5,14 +5,17 @@
 
 # Upstream kagisearch/kagimcp built from source.
 #
-# cfn-lint override: fastmcp's transitive test dep chain
-# (py-key-value-aio → aiobotocore → types-aiobotocore-dynamodb → cfn-lint)
-# has failing integration tests in the pinned nixpkgs revision. Skip
-# cfn-lint's own checks so the chain builds. Remove when nixpkgs ships a fix.
+# Test overrides for fastmcp's transitive test dep chain in the pinned nixpkgs revision:
+#   - cfn-lint (via py-key-value-aio → aiobotocore → types-aiobotocore-dynamodb): failing integration tests.
+#   - inquirer (via py-key-value-aio → aioboto3 → chalice): flaky pexpect TIMEOUTs in acceptance tests.
+# Remove when nixpkgs ships fixes.
 let
   pythonOverridden = python312.override {
     packageOverrides = pyfinal: pyprev: {
       cfn-lint = pyprev.cfn-lint.overridePythonAttrs (_: {
+        doCheck = false;
+      });
+      inquirer = pyprev.inquirer.overridePythonAttrs (_: {
         doCheck = false;
       });
     };
