@@ -1358,6 +1358,8 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     :custom
     (lsp-kotlin-compiler-jvm-target "21")
     (lsp-idle-delay 0.4)
+    :config
+    (add-to-list 'warning-suppress-types '(treesit treesit-font-lock-rules-mismatch))
     :init
     (with-eval-after-load 'lsp-mode
       (add-to-list 'lsp-language-id-configuration
@@ -1373,6 +1375,7 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
         :activation-fn (lsp-activate-on "kotlin")
         :major-modes '(kotlin-mode kotlin-ts-mode)
         :priority -1
+        :notification-handlers (ht ("intellij/ready-for-test" #'ignore))
         :server-id 'kotlin-lsp))
 
       (lsp-register-custom-settings
