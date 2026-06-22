@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t; -*-
+
 ;; Since nix/emacs-overlay struggles with nerd-fonts, I move these to
 ;; a separate file
 

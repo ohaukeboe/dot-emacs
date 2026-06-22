@@ -13,6 +13,7 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
 * Personal information
 
 #+begin_src elisp
+  ;; -*- lexical-binding: t; -*-
   (setq user-full-name "Oskar Haukebøe"
         user-mail-address "ohaukeboe@pm.me")
 #+end_src
@@ -104,6 +105,8 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
     (italic ((t (:foreground "#b294bb"))))
 
     :config
+    (require 'package)
+    (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
     (load custom-file 'noerror)
     (server-start)
     (let ((pkg-dir (concat user-emacs-directory "packages")))
@@ -130,7 +133,6 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
            (add-to-list 'initial-frame-alist `(width  . 180))))
 
     :preface
-    (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
     (add-to-list 'display-buffer-alist
                '("\\*Async Shell Command\\*" display-buffer-no-window (allow-no-window . t)))
 
@@ -155,6 +157,14 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
 #+end_src
 
 #+begin_src elisp :tangle early-init.el
+  ;; -*- lexical-binding: t; -*-
+  ;; Nix's subdirs.el already puts all package dirs on load-path; prevent
+  ;; package.el from treating the Nix store paths as system package dirs,
+  ;; which would cause "activated too late" warnings for every Nix package.
+  (setq package-directory-list nil)
+  ;; All packages are Nix-managed; :ensure t in use-package blocks should be
+  ;; a no-op rather than triggering MELPA downloads.
+  (setq use-package-ensure-function 'ignore)
   (push '(tool-bar-lines . 0) default-frame-alist)
   (push '(menu-bar-lines . 0) default-frame-alist)
   (push '(vertical-scroll-bars) default-frame-alist)
@@ -407,18 +417,8 @@ Corfu is a completion framework that provides a horizontal completion UI. It is 
 
     :config
     (global-corfu-mode 1)
+    (require 'corfu-popupinfo)
     (corfu-popupinfo-mode 1))
-#+end_src
-
-It is also possible to use Corfu in the terminal. This requires the =corfu-terminal= package to be installed.
-
-#+begin_src elisp
-  (use-package corfu-terminal
-    :ensure t
-    :after corfu
-    :config
-    (unless (display-graphic-p)
-      (corfu-terminal-mode +1)))
 #+end_src
 
 Make Corfu sort by last selected candidates.
@@ -560,7 +560,7 @@ Marginalia is a package that displays additional information about the candidate
     ;; `completion-list-mode-map'.
     :bind (:map minibuffer-local-map
            ("M-A" . marginalia-cycle))
-    :init
+    :config
     (marginalia-mode))
 #+end_src
 
@@ -1720,6 +1720,7 @@ Some other zotero plugins I use are:
     (org-cite-activate-processor 'citar)
 
     :config
+    (require 'citar-capf)
     (setq citar-templates
           '((main . "${author editor:30%sn}     ${date year issued:4}     ${title:48}")
             (suffix . "    ${=key= id:15}    ${=type=:12}    ${number:8}    ${tags keywords:*}")
@@ -2835,22 +2836,6 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
     :config
     (global-anzu-mode 1))
 #+end_src
-** wgrep
-
-=wgrep= makes it possible to edit the results from the grep command, just like you can in occur-mode. This is built into emacs 31, so it can be safely removed once I update.
-
-#+begin_src elisp
-  (use-package wgrep
-    :ensure t
-    :after grep
-    :bind
-    (:map grep-mode-map
-          ("e" . wgrep-change-to-wgrep-mode))
-    :init
-    (when (>= emacs-major-version 31)
-      (warn "wgrep configuration can be safely removed in Emacs 31+")))
-#+end_src
-
 ** Postgresql
 
 #+begin_src elisp
@@ -2989,7 +2974,7 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
 #+begin_src elisp
   (use-package yasnippet
     :ensure t
-    :init
+    :config
     (yas-global-mode 1))
 #+end_src
 ** Smartparens
@@ -3231,6 +3216,8 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
         gptel-buffer))
 
     :config
+    (require 'gptel-openai)
+    (require 'gptel-ollama)
     ;; OpenRouter offers an OpenAI compatible API
     (setq gptel-model 'anthropic/claude-sonnet-4.6
           gptel-backend
@@ -3602,6 +3589,7 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
   (use-package mcp-server-lib
     :ensure t
     :config
+    (require 'mcp-server-lib-commands)
     (unless (file-exists-p (expand-file-name "emacs-mcp-stdio.sh" mcp-server-lib-install-directory))
       (mcp-server-lib-install))
     (mcp-server-lib-start))

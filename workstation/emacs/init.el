@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;; Emacs init file responsible for either loading a pre-compiled configuration
 ;; file or tangling and loading a literate org configuration file.
 

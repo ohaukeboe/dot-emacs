@@ -1,4 +1,5 @@
-;;; nix-init.el --- Utilities for working with Nix-shell -*- lexical-binding: t; -*-
+;; -*- lexical-binding: t; -*-
+;;; nix-init.el --- Utilities for working with Nix-shell
 
 ;;; Commentary:
 

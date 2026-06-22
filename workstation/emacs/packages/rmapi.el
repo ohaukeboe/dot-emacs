@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (require 'elfeed)
 (require 'org)
 (require 'async)
