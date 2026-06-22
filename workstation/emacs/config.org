@@ -158,10 +158,12 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
 
 #+begin_src elisp :tangle early-init.el
   ;; -*- lexical-binding: t; -*-
-  ;; Nix's subdirs.el already puts all package dirs on load-path; prevent
-  ;; package.el from treating the Nix store paths as system package dirs,
-  ;; which would cause "activated too late" warnings for every Nix package.
-  (setq package-directory-list nil)
+  ;; In Emacs 31, package-activate-1 warns when a Nix package overrides a
+  ;; built-in (org, seq, eldoc, …) because subdirs.el already put it on
+  ;; load-path before package.el activates it.  The warning is harmless —
+  ;; autoloads still load — so suppress it rather than nulling out
+  ;; package-directory-list, which would prevent all autoload loading.
+  (add-to-list 'warning-suppress-types '(package))
   ;; All packages are Nix-managed; :ensure t in use-package blocks should be
   ;; a no-op rather than triggering MELPA downloads.
   (setq use-package-ensure-function 'ignore)
@@ -244,17 +246,6 @@ This package provides a set of icons for Emacs.
     :ensure t
     :custom
     (nerd-icons-nerd-font-font-family "Symbols Nerd Font Mono"))
-#+end_src
-
-Adds nerd-icons to completion menus. It works well with Marginalia
-
-#+begin_src elisp
-  (use-package nerd-icons-completion
-    :ensure t
-    :after marginalia
-    :config
-    (nerd-icons-completion-mode)
-    (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
 #+end_src
 
 And to add them to corfu:
@@ -560,7 +551,7 @@ Marginalia is a package that displays additional information about the candidate
     ;; `completion-list-mode-map'.
     :bind (:map minibuffer-local-map
            ("M-A" . marginalia-cycle))
-    :config
+    :init
     (marginalia-mode))
 #+end_src
 
@@ -572,8 +563,9 @@ It's also nice to have some nice looking icons for the completion candidates. Th
     :after marginalia
     :hook
     (marginalia-mode . nerd-icons-completion-marginalia-setup)
-    :config
-    (nerd-icons-completion-mode))
+    :init
+    (nerd-icons-completion-mode)
+    (nerd-icons-completion-marginalia-setup))
 #+end_src
 
 ** Consult
@@ -2977,7 +2969,7 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
 #+begin_src elisp
   (use-package yasnippet
     :ensure t
-    :config
+    :init
     (yas-global-mode 1))
 #+end_src
 ** Smartparens
