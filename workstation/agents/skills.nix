@@ -157,11 +157,6 @@ let
           subdir = "engineering";
           disableAuto = true;
         }
-        {
-          name = "zoom-out";
-          subdir = "engineering";
-          disableAuto = true;
-        }
 
         # -- productivity --
         # { name = "caveman";                         subdir = "productivity"; }

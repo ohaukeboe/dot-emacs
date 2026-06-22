@@ -1669,9 +1669,11 @@ Some other zotero plugins I use are:
 
 #+begin_src elisp
   (use-package org-cite-overlay
+    :disabled t
     :ensure t)
 
   (use-package org-cite-overlay-sidecar
+    :disabled t
     :ensure t
     :bind
     (:map org-mode-map
