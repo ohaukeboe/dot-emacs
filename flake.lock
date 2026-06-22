@@ -432,11 +432,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777446393,
-        "narHash": "sha256-daR3zGC8oz5C1RURSoDz9wiZ+/xk2EKdfC7lVPdJjmM=",
+        "lastModified": 1782110800,
+        "narHash": "sha256-9xVA4T/n+TWgmeNQjTfKnI8oEvJHo8pVBuZ7931u5PU=",
         "owner": "ohaukeboe",
         "repo": "kotlin-lsp-flake",
-        "rev": "24dd91eac43f8eae984ad0067d5d1a2b626a3a91",
+        "rev": "c319bdc9ff2783100d9d758b07d9403d3eebb7df",
         "type": "github"
       },
       "original": {
