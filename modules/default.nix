@@ -8,6 +8,7 @@
     ./sshd
     ./secure-boot
     ./ollama
+    ./sleep-then-hibernate
     ./sops
   ];
 }
