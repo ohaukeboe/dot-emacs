@@ -164,6 +164,8 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
   ;; autoloads still load — so suppress it rather than nulling out
   ;; package-directory-list, which would prevent all autoload loading.
   (add-to-list 'warning-suppress-types '(package))
+  ;; kotlin-ts-mode grammar/mode version skew — grammar is ahead of mode
+  (add-to-list 'warning-suppress-types '(treesit-font-lock-rules-mismatch))
   ;; All packages are Nix-managed; :ensure t in use-package blocks should be
   ;; a no-op rather than triggering MELPA downloads.
   (setq use-package-ensure-function 'ignore)
@@ -1350,8 +1352,6 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
     :custom
     (lsp-kotlin-compiler-jvm-target "21")
     (lsp-idle-delay 0.4)
-    :config
-    (add-to-list 'warning-suppress-types '(treesit treesit-font-lock-rules-mismatch))
     :init
     (with-eval-after-load 'lsp-mode
       (add-to-list 'lsp-language-id-configuration
