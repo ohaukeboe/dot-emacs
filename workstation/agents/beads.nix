@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, ... }:
 let
   bd = "${pkgs.beads}/bin/bd";
 
@@ -13,6 +13,8 @@ in
   # The `bd` CLI the plugin's hooks invoke still comes from pkgs.beads on PATH.
   programs.claude-code.marketplaces.beads-marketplace = pkgs.nvSources.beads.src;
   programs.claude-code.settings.enabledPlugins."beads@beads-marketplace" = true;
+  # Prevent stale .backup files from blocking future switches
+  home.file."${config.home.homeDirectory}/.claude/plugins/known_marketplaces.json".force = true;
 
   agents.tools.beads = {
     packages = [ pkgs.beads ];
