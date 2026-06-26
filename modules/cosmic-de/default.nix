@@ -60,8 +60,6 @@ in
         "org.gtk.Gtk3theme.adw-gtk3"
         "org.gtk.Gtk3theme.adw-gtk3-dark"
         "io.github.nwxnw.cosmic-ext-connected"
-        "io.github.cosmic_utils.cosmic-ext-applet-clipboard-manager"
-        "io.github.TopiCsarno.YapCap"
       ];
 
       # Fallback polkit agent (cosmic-osd's built-in agent crashes)
