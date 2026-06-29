@@ -10,7 +10,7 @@
     pname = "beads";
     version = "v1.0.4";
     src = fetchFromGitHub {
-      owner = "steveyegge";
+      owner = "gastownhall";
       repo = "beads";
       rev = "v1.0.4";
       fetchSubmodules = false;
@@ -35,21 +35,21 @@
   };
   chrome-devtools-mcp = {
     pname = "chrome-devtools-mcp";
-    version = "1.1.1";
+    version = "1.4.0";
     src = fetchurl {
-      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.1.1.tgz";
-      sha256 = "sha256-dljKBMgor370c16Dsp6ATFox0xCOiaeHLGo5EpNV8QQ=";
+      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.4.0.tgz";
+      sha256 = "sha256-0tRNmnPaSZIILB8WhfvEoTaUF2cNSplI0w7L70FBmZk=";
     };
   };
   code-review-graph = {
     pname = "code-review-graph";
-    version = "v2.3.5";
+    version = "v2.3.6";
     src = fetchFromGitHub {
       owner = "tirth8205";
       repo = "code-review-graph";
-      rev = "v2.3.5";
+      rev = "v2.3.6";
       fetchSubmodules = false;
-      sha256 = "sha256-dbtvtxSi4S42sBkCBLtYPH3ck6f1gKsmvGmcrcBqcdU=";
+      sha256 = "sha256-akuk4UHOTfw66dnuAeqoCkqF/JzsHqSzoTk5MQhEd0o=";
     };
   };
   lsp-ltex-plus = {

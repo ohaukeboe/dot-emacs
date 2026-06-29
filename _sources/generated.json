@@ -11,7 +11,7 @@
             "fetchSubmodules": false,
             "leaveDotGit": false,
             "name": null,
-            "owner": "steveyegge",
+            "owner": "gastownhall",
             "repo": "beads",
             "rev": "v1.0.4",
             "sha256": "sha256-a356lk3dWJg2VzXmvBL0xVYUMgICDY/6s6A5km8cjBU=",
@@ -59,11 +59,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-dljKBMgor370c16Dsp6ATFox0xCOiaeHLGo5EpNV8QQ=",
+            "sha256": "sha256-0tRNmnPaSZIILB8WhfvEoTaUF2cNSplI0w7L70FBmZk=",
             "type": "url",
-            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.1.1.tgz"
+            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.4.0.tgz"
         },
-        "version": "1.1.1"
+        "version": "1.4.0"
     },
     "code-review-graph": {
         "cargoLock": null,
@@ -79,12 +79,33 @@
             "name": null,
             "owner": "tirth8205",
             "repo": "code-review-graph",
-            "rev": "v2.3.5",
-            "sha256": "sha256-dbtvtxSi4S42sBkCBLtYPH3ck6f1gKsmvGmcrcBqcdU=",
+            "rev": "v2.3.6",
+            "sha256": "sha256-akuk4UHOTfw66dnuAeqoCkqF/JzsHqSzoTk5MQhEd0o=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v2.3.5"
+        "version": "v2.3.6"
+    },
+    "lanzaboote": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "lanzaboote",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "nix-community",
+            "repo": "lanzaboote",
+            "rev": "v1.1.0",
+            "sha256": "sha256-hqijVSEETttmo8Okql9/LG0Ua34hdciKW1a5zzlj8mU=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v1.1.0"
     },
     "lsp-ltex-plus": {
         "cargoLock": null,

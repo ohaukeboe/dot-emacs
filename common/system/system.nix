@@ -15,6 +15,7 @@
   nix.settings.auto-optimise-store = true;
 
   boot.kernelPackages = pkgs.linuxPackages_zen;
+  system.boot.loader.kernelFile = "vmlinuz";
 
   # Compressed RAM swap (zram) — faster than disk swap, reduces SSD wear.
   zramSwap = {
