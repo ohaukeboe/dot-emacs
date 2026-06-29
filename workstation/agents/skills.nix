@@ -143,6 +143,10 @@ let
           disableAuto = true;
         }
         {
+          name = "domain-modeling";
+          subdir = "engineering";
+        }
+        {
           name = "to-issues";
           subdir = "engineering";
           disableAuto = true;
