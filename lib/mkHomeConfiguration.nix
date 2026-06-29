@@ -19,8 +19,24 @@ let
     };
     overlays = [
       emacs-overlay.overlay
-      # Only add nixGL overlay for Linux
-      (final: prev: if builtins.match ".*linux" system != null then (nixgl.overlay final prev) else { })
+      # Only add nixGL overlay for Linux. Inline nixgl.overlay logic to avoid
+      # final.system (deprecated; nixgl upstream uses it in their overlay).
+      (
+        final: prev:
+        if builtins.match ".*linux" system != null then
+          let
+            isIntelX86Platform = final.stdenv.hostPlatform.system == "x86_64-linux";
+          in
+          {
+            nixgl = import "${nixgl}/default.nix" {
+              pkgs = final;
+              enable32bits = isIntelX86Platform;
+              enableIntelX86Extensions = isIntelX86Platform;
+            };
+          }
+        else
+          { }
+      )
       # nvfetcher-managed sources (see nvfetcher.toml), exposed as pkgs.nvSources
       (final: prev: { nvSources = final.callPackage ../_sources/generated.nix { }; })
     ];
