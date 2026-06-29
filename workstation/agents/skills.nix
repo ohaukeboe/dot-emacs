@@ -97,10 +97,14 @@ let
   );
 
   # mattpocock/skills — comment out any you don't want
-  # engineering: diagnose, grill-with-docs, improve-codebase-architecture,
-  #              prototype, setup-matt-pocock-skills, tdd, to-issues,
-  #              to-prd, triage, zoom-out
-  # productivity: caveman, grill-me, handoff, write-a-skill
+  # engineering: ask-matt, codebase-design, diagnosing-bugs,
+  #              domain-modeling, grill-with-docs, implement,
+  #              improve-codebase-architecture, prototype,
+  #              resolving-merge-conflicts, setup-matt-pocock-skills,
+  #              tdd, to-issues, to-prd, triage
+  # productivity: grill-me, grilling, handoff, teach, writing-great-skills
+  # in-progress:  decision-mapping, loop-me, review, writing-beats,
+  #               writing-fragments, writing-shape
   # misc:         git-guardrails-claude-code, migrate-to-shoehorn,
   #               scaffold-exercises, setup-pre-commit
   # personal:     edit-article, obsidian-vault
@@ -111,14 +115,34 @@ let
     map (e: mkSkillEntry { repo = inputs.mattpocock-skills; } (e // { subdir = "skills/${e.subdir}"; }))
       [
         # -- engineering --
-        # `diagnose` keeps auto-invocation: triggers on bug/test-failure
-        # reports — high-signal natural-language trigger.
+        # auto-invoked: diagnosing-bugs (bug/failure reports),
+        #               codebase-design (module design vocabulary),
+        #               resolving-merge-conflicts (merge/rebase conflicts)
         {
-          name = "diagnose";
+          name = "ask-matt";
+          subdir = "engineering";
+          disableAuto = true;
+        }
+        {
+          name = "codebase-design";
           subdir = "engineering";
         }
         {
+          name = "diagnosing-bugs";
+          subdir = "engineering";
+        }
+        {
+          name = "domain-modeling";
+          subdir = "engineering";
+          disableAuto = true;
+        }
+        {
           name = "grill-with-docs";
+          subdir = "engineering";
+          disableAuto = true;
+        }
+        {
+          name = "implement";
           subdir = "engineering";
           disableAuto = true;
         }
@@ -133,6 +157,10 @@ let
           disableAuto = true;
         }
         {
+          name = "resolving-merge-conflicts";
+          subdir = "engineering";
+        }
+        {
           name = "setup-matt-pocock-skills";
           subdir = "engineering";
           disableAuto = true;
@@ -141,10 +169,6 @@ let
           name = "tdd";
           subdir = "engineering";
           disableAuto = true;
-        }
-        {
-          name = "domain-modeling";
-          subdir = "engineering";
         }
         {
           name = "to-issues";
@@ -163,9 +187,14 @@ let
         }
 
         # -- productivity --
-        # { name = "caveman";                         subdir = "productivity"; }
+        # { name = "caveman";          subdir = "productivity"; }
         {
           name = "grill-me";
+          subdir = "productivity";
+          disableAuto = true;
+        }
+        {
+          name = "grilling";
           subdir = "productivity";
           disableAuto = true;
         }
@@ -174,17 +203,58 @@ let
           subdir = "productivity";
           disableAuto = true;
         }
-        # { name = "write-a-skill";                   subdir = "productivity"; }
+        {
+          name = "teach";
+          subdir = "productivity";
+          disableAuto = true;
+        }
+        {
+          name = "writing-great-skills";
+          subdir = "productivity";
+          disableAuto = true;
+        }
+
+        # -- in-progress --
+        # auto-invoked: review (branch/PR/diff review)
+        {
+          name = "decision-mapping";
+          subdir = "in-progress";
+          disableAuto = true;
+        }
+        {
+          name = "loop-me";
+          subdir = "in-progress";
+          disableAuto = true;
+        }
+        {
+          name = "review";
+          subdir = "in-progress";
+        }
+        {
+          name = "writing-beats";
+          subdir = "in-progress";
+          disableAuto = true;
+        }
+        {
+          name = "writing-fragments";
+          subdir = "in-progress";
+          disableAuto = true;
+        }
+        {
+          name = "writing-shape";
+          subdir = "in-progress";
+          disableAuto = true;
+        }
 
         # -- misc --
-        # { name = "git-guardrails-claude-code";      subdir = "misc"; }
-        # { name = "migrate-to-shoehorn";             subdir = "misc"; }
-        # { name = "scaffold-exercises";              subdir = "misc"; }
-        # { name = "setup-pre-commit";                subdir = "misc"; }
+        # { name = "git-guardrails-claude-code"; subdir = "misc"; }
+        # { name = "migrate-to-shoehorn";        subdir = "misc"; }
+        # { name = "scaffold-exercises";         subdir = "misc"; }
+        # { name = "setup-pre-commit";           subdir = "misc"; }
 
         # -- personal --
-        # { name = "edit-article";                    subdir = "personal"; }
-        # { name = "obsidian-vault";                  subdir = "personal"; }
+        # { name = "edit-article";  subdir = "personal"; }
+        # { name = "obsidian-vault"; subdir = "personal"; }
       ]
   );
 
