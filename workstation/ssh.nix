@@ -11,99 +11,99 @@ in
     enable = true;
     enableDefaultConfig = false;
 
-    matchBlocks = {
+    settings = {
       "*" = {
-        serverAliveInterval = 30;
-        serverAliveCountMax = 3;
-        controlMaster = "auto";
-        controlPath = "/tmp/ssh-%u-%r@%h:%p";
-        controlPersist = "10m";
+        ServerAliveInterval = 30;
+        ServerAliveCountMax = 3;
+        ControlMaster = "auto";
+        ControlPath = "/tmp/ssh-%u-%r@%h:%p";
+        ControlPersist = "10m";
         # TODO: make this dynamic based on the environment
-        identityAgent = "~/.1password/agent.sock";
-        identitiesOnly = true;
+        IdentityAgent = "~/.1password/agent.sock";
+        IdentitiesOnly = true;
       };
       "desktop" = {
-        hostname = secrets.ssh_host.desktop;
-        user = "oskar";
-        identityFile = "~/${mainKey}";
-        forwardAgent = true;
+        HostName = secrets.ssh_host.desktop;
+        User = "oskar";
+        IdentityFile = "~/${mainKey}";
+        ForwardAgent = true;
       };
 
       "work-laptop" = {
-        hostname = secrets.ssh_host.work-laptop;
-        user = "oskar";
-        identityFile = "~/${mainKey}";
-        forwardAgent = true;
+        HostName = secrets.ssh_host.work-laptop;
+        User = "oskar";
+        IdentityFile = "~/${mainKey}";
+        ForwardAgent = true;
       };
 
       "killono" = {
-        hostname = secrets.ssh_host.killono;
-        user = "oskar";
-        identityFile = "~/${oldKey}";
+        HostName = secrets.ssh_host.killono;
+        User = "oskar";
+        IdentityFile = "~/${oldKey}";
       };
 
       "deepthought" = {
-        hostname = secrets.ssh_host.deepthought;
-        user = "deepthought";
-        identityFile = "~/${mainKey}";
+        HostName = secrets.ssh_host.deepthought;
+        User = "deepthought";
+        IdentityFile = "~/${mainKey}";
       };
 
       "deploy-deepthought" = {
-        hostname = secrets.ssh_host.deepthought;
-        user = "root";
-        identityFile = "~/${mainKey}";
+        HostName = secrets.ssh_host.deepthought;
+        User = "root";
+        IdentityFile = "~/${mainKey}";
       };
 
       "uio" = {
-        hostname = "login.uio.no";
-        user = "oskah";
-        identityFile = "~/${mainKey}";
-        forwardX11 = true;
-        forwardX11Trusted = true;
+        HostName = "login.uio.no";
+        User = "oskah";
+        IdentityFile = "~/${mainKey}";
+        ForwardX11 = true;
+        ForwardX11Trusted = true;
       };
 
       "ifi" = {
-        hostname = "login.ifi.uio.no";
-        user = "oskah";
-        identityFile = "~/${mainKey}";
-        proxyJump = "uio";
-        forwardX11 = true;
-        forwardX11Trusted = true;
+        HostName = "login.ifi.uio.no";
+        User = "oskah";
+        IdentityFile = "~/${mainKey}";
+        ProxyJump = "uio";
+        ForwardX11 = true;
+        ForwardX11Trusted = true;
       };
 
       "bayer" = {
-        hostname = secrets.ssh_host.bayer;
-        user = "drift";
-        identityFile = "~/${trashcanKey}";
+        HostName = secrets.ssh_host.bayer;
+        User = "drift";
+        IdentityFile = "~/${trashcanKey}";
       };
 
       "joe" = {
-        hostname = secrets.ssh_host.joe;
-        user = "drift";
-        identityFile = "~/${trashcanKey}";
+        HostName = secrets.ssh_host.joe;
+        User = "drift";
+        IdentityFile = "~/${trashcanKey}";
       };
 
       "github.com" = {
-        hostname = "github.com";
-        identityFile = "~/${mainKey}";
+        HostName = "github.com";
+        IdentityFile = "~/${mainKey}";
       };
 
       "github.uio.no" = {
-        hostname = "github.uio.no";
-        identityFile = "~/${oldKey}";
+        HostName = "github.uio.no";
+        IdentityFile = "~/${oldKey}";
       };
 
       "pi" = {
-        hostname = secrets.ssh_host.pi;
-        user = "oskar";
-        identityFile = "~/${piKey}";
+        HostName = secrets.ssh_host.pi;
+        User = "oskar";
+        IdentityFile = "~/${piKey}";
       };
 
       "laptop" = {
-        hostname = secrets.ssh_host.laptop;
-        user = "oskar";
-        identityFile = "~/${mainKey}";
-        forwardAgent = true;
+        HostName = secrets.ssh_host.laptop;
+        User = "oskar";
+        IdentityFile = "~/${mainKey}";
+        ForwardAgent = true;
       };
     };
   };

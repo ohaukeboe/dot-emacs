@@ -8,7 +8,8 @@
 let
   chrome-devtools-mcp = pkgs.callPackage ./packages/chrome-devtools-mcp.nix { };
   kagimcp = pkgs.callPackage ./packages/kagimcp.nix { src = inputs.kagimcp; };
-  codebase-memory-mcp = inputs.codebase-memory-mcp.packages.${pkgs.system}.default;
+  codebase-memory-mcp =
+    inputs.codebase-memory-mcp.packages.${pkgs.stdenv.hostPlatform.system}.default;
   emacsConfig = "${config.xdg.configHome}/emacs";
 
   # Wraps an MCP server with optional caveman-shrink token compression and/or
