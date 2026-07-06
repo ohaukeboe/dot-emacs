@@ -290,6 +290,10 @@ let
       llmSkillsSubset
       understandAnythingSkills
       "${inputs.anthropic-cybersecurity-skills}/skills"
+      # privacy-data-protection-skills — 282 skills via privacy-skills-complete
+      # plugin (superset of all 20 individual plugins in the repo).
+      # All are auto-invoked; set CLAUDE_SKILL_FILTER to limit if needed.
+      "${inputs.privacy-data-protection-skills}/plugins/privacy-skills-complete/skills"
     ]
     ++ config.agents.extraSkillPaths;
   };

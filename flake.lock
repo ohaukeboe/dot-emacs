@@ -764,6 +764,22 @@
         "type": "github"
       }
     },
+    "privacy-data-protection-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1773691611,
+        "narHash": "sha256-G5Vh/KW0rdAtfanLMBA+UISLT4Ir1giKVEzyJ1T5joI=",
+        "owner": "mukul975",
+        "repo": "privacy-data-protection-skills",
+        "rev": "9b2ef9eae161c00a17241d42a388571321b33e9f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mukul975",
+        "repo": "privacy-data-protection-skills",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "anthropic-cybersecurity-skills": "anthropic-cybersecurity-skills",
@@ -789,6 +805,7 @@
         "nixgl": "nixgl",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_7",
+        "privacy-data-protection-skills": "privacy-data-protection-skills",
         "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix_3",
         "understand-anything": "understand-anything",

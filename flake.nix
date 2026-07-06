@@ -104,6 +104,11 @@
       flake = false;
     };
 
+    privacy-data-protection-skills = {
+      url = "github:mukul975/privacy-data-protection-skills";
+      flake = false;
+    };
+
     codebase-memory-mcp = {
       url = "github:DeusData/codebase-memory-mcp";
       inputs.nixpkgs.follows = "nixpkgs";
