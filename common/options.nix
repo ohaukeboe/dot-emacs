@@ -46,6 +46,24 @@ with lib;
     };
 
     system = {
+      audio.echoCancel.enable = mkOption {
+        type = types.bool;
+        default = true;
+        description = ''
+          Enable system-wide acoustic echo cancellation (AEC) via PipeWire's
+          libpipewire-module-echo-cancel with the WebRTC backend.
+
+          Uses monitor.mode so all speaker output is used as the cancellation
+          reference and removed from the microphone, letting you use speakers
+          during online calls. Select the "Echo Cancellation Source" device as
+          your microphone in call apps.
+
+          Follows the default sink across device swaps. If it misbehaves with a
+          particular Bluetooth headset, set this to false for that host.
+          See docs/aec-research.md for details.
+        '';
+      };
+
       audio.allowedSampleRates = mkOption {
         type = types.nullOr (types.listOf types.int);
         default = null;

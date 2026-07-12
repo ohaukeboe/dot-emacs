@@ -65,15 +65,46 @@
     pulse.enable = true;
     # If you want to use JACK applications, uncomment the following
     #jack.enable = true;
-    extraConfig.pipewire = lib.mkIf (config.system.audio.allowedSampleRates != null) {
-      "allowed-samplerates" = {
-        "context.properties" = {
-          # "default.clock.rate" = 192000;
-          # These can be found using 'grep -E 'Codec|Audio Output|rates' /proc/asound/card*/codec#*'
-          "default.clock.allowed-rates" = config.system.audio.allowedSampleRates;
+    extraConfig.pipewire = lib.mkMerge [
+      (lib.mkIf (config.system.audio.allowedSampleRates != null) {
+        "allowed-samplerates" = {
+          "context.properties" = {
+            # "default.clock.rate" = 192000;
+            # These can be found using 'grep -E 'Codec|Audio Output|rates' /proc/asound/card*/codec#*'
+            "default.clock.allowed-rates" = config.system.audio.allowedSampleRates;
+          };
         };
-      };
-    };
+      })
+      # System-wide acoustic echo cancellation: subtract all speaker output from
+      # the microphone so speakers are usable during calls. monitor.mode taps the
+      # monitor of the current default sink as the reference, so every playback is
+      # cancelled without routing apps through a virtual sink, and it follows the
+      # default sink across device swaps (BT headset, USB mic, headphone jack).
+      # Select "Echo Cancellation Source" as the microphone in call apps.
+      # See docs/aec-research.md for the rationale and the Topology-A alternative.
+      (lib.mkIf config.system.audio.echoCancel.enable {
+        "60-echo-cancel" = {
+          "context.modules" = [
+            {
+              name = "libpipewire-module-echo-cancel";
+              args = {
+                # Omitting capture/sink node.target -> follow the default source/sink.
+                "monitor.mode" = true;
+                "library.name" = "aec/libspa-aec-webrtc";
+                "source.props" = {
+                  "node.name" = "echo-cancel-source";
+                  "node.description" = "Echo Cancellation Source";
+                };
+                "aec.args" = {
+                  "webrtc.gain_control" = false;
+                  "webrtc.extended_filter" = true;
+                };
+              };
+            }
+          ];
+        };
+      })
+    ];
   };
 
   services.avahi = {
