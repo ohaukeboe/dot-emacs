@@ -13,12 +13,12 @@
             "name": null,
             "owner": "gastownhall",
             "repo": "beads",
-            "rev": "v1.0.4",
-            "sha256": "sha256-a356lk3dWJg2VzXmvBL0xVYUMgICDY/6s6A5km8cjBU=",
+            "rev": "v1.1.0",
+            "sha256": "sha256-+dFV//0N8ZDw9BHOJOoWZ+BvLmJKlnGtONHIYPRhfBE=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v1.0.4"
+        "version": "v1.1.0"
     },
     "calibre-open-with": {
         "cargoLock": null,
@@ -59,11 +59,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-0tRNmnPaSZIILB8WhfvEoTaUF2cNSplI0w7L70FBmZk=",
+            "sha256": "sha256-BleI0nVVF0iPnzYrXu9DFmB9E4NIwjZB/hcPhSA8VFc=",
             "type": "url",
-            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.4.0.tgz"
+            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.5.0.tgz"
         },
-        "version": "1.4.0"
+        "version": "1.5.0"
     },
     "code-review-graph": {
         "cargoLock": null,
@@ -85,27 +85,6 @@
             "type": "github"
         },
         "version": "v2.3.6"
-    },
-    "lanzaboote": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "lanzaboote",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "deepClone": false,
-            "fetchSubmodules": false,
-            "leaveDotGit": false,
-            "name": null,
-            "owner": "nix-community",
-            "repo": "lanzaboote",
-            "rev": "v1.1.0",
-            "sha256": "sha256-hqijVSEETttmo8Okql9/LG0Ua34hdciKW1a5zzlj8mU=",
-            "sparseCheckout": [],
-            "type": "github"
-        },
-        "version": "v1.1.0"
     },
     "lsp-ltex-plus": {
         "cargoLock": null,

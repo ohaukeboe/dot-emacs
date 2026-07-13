@@ -15,7 +15,9 @@
   nix.settings.auto-optimise-store = true;
 
   boot.kernelPackages = pkgs.linuxPackages_zen;
-  system.boot.loader.kernelFile = "vmlinuz";
+  # linuxPackages_zen ≥ 7.1.2 installs the image as `bzImage` (older zen shipped
+  # `vmlinuz`); must match the kernel's actual output or the loader check fails.
+  system.boot.loader.kernelFile = "bzImage";
 
   # Compressed RAM swap (zram) — faster than disk swap, reduces SSD wear.
   zramSwap = {

@@ -259,7 +259,13 @@ in
           matplotlib
           scipy
           pandas
-          pandas-stubs
+          # pandas-stubs' build-time pytest suite fails against current numpy
+          # (deprecated 'generic' timedelta unit, dropped FutureWarnings).
+          # Upstream packaging lag; stubs themselves are fine, so skip checks.
+          (pandas-stubs.overridePythonAttrs (_: {
+            doCheck = false;
+            pythonImportsCheck = [ ];
+          }))
         ]
       ))
 

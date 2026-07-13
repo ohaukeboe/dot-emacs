@@ -8,13 +8,13 @@
 {
   beads = {
     pname = "beads";
-    version = "v1.0.4";
+    version = "v1.1.0";
     src = fetchFromGitHub {
       owner = "gastownhall";
       repo = "beads";
-      rev = "v1.0.4";
+      rev = "v1.1.0";
       fetchSubmodules = false;
-      sha256 = "sha256-a356lk3dWJg2VzXmvBL0xVYUMgICDY/6s6A5km8cjBU=";
+      sha256 = "sha256-+dFV//0N8ZDw9BHOJOoWZ+BvLmJKlnGtONHIYPRhfBE=";
     };
   };
   calibre-open-with = {
@@ -35,10 +35,10 @@
   };
   chrome-devtools-mcp = {
     pname = "chrome-devtools-mcp";
-    version = "1.4.0";
+    version = "1.5.0";
     src = fetchurl {
-      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.4.0.tgz";
-      sha256 = "sha256-0tRNmnPaSZIILB8WhfvEoTaUF2cNSplI0w7L70FBmZk=";
+      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.5.0.tgz";
+      sha256 = "sha256-BleI0nVVF0iPnzYrXu9DFmB9E4NIwjZB/hcPhSA8VFc=";
     };
   };
   code-review-graph = {

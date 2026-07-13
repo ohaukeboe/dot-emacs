@@ -96,166 +96,42 @@ let
     ]
   );
 
-  # mattpocock/skills — comment out any you don't want
-  # engineering: ask-matt, codebase-design, diagnosing-bugs,
-  #              domain-modeling, grill-with-docs, implement,
-  #              improve-codebase-architecture, prototype,
-  #              resolving-merge-conflicts, setup-matt-pocock-skills,
-  #              tdd, to-issues, to-prd, triage
-  # productivity: grill-me, grilling, handoff, teach, writing-great-skills
-  # in-progress:  decision-mapping, loop-me, review, writing-beats,
-  #               writing-fragments, writing-shape
-  # misc:         git-guardrails-claude-code, migrate-to-shoehorn,
-  #               scaffold-exercises, setup-pre-commit
-  # personal:     edit-article, obsidian-vault
-  # mattpocock layout: skills/<subdir>/<name> — pass per-entry `subdir`.
-  # Set `disableAuto = true;` on any entry to suppress automatic model
-  # invocation (skill only runs on explicit user invocation).
-  mattpocockSkillsSubset = pkgs.linkFarm "mattpocock-skills-subset" (
-    map (e: mkSkillEntry { repo = inputs.mattpocock-skills; } (e // { subdir = "skills/${e.subdir}"; }))
-      [
-        # -- engineering --
-        # auto-invoked: diagnosing-bugs (bug/failure reports),
-        #               codebase-design (module design vocabulary),
-        #               resolving-merge-conflicts (merge/rebase conflicts)
-        {
-          name = "ask-matt";
-          subdir = "engineering";
-          disableAuto = true;
+  # mattpocock/skills — install ALL skills, enumerated dynamically from the
+  # repo so new upstream skills appear automatically on input bump. Layout:
+  # skills/<category>/<name>. Categories below are scanned; `deprecated` is
+  # intentionally skipped (upstream-retired skills).
+  #
+  # Every skill defaults to explicit-invocation only (disableAuto). Skills in
+  # `mattpocockAutoInvoke` keep automatic model invocation.
+  mattpocockAutoInvoke = [
+    "codebase-design" # module design vocabulary
+    "code-review" # branch/PR/diff review
+    "diagnosing-bugs" # bug/failure reports
+    "resolving-merge-conflicts" # merge/rebase conflicts
+  ];
+  mattpocockCategories = [
+    "engineering"
+    "in-progress"
+    "misc"
+    "personal"
+    "productivity"
+  ];
+  mattpocockSkills = pkgs.linkFarm "mattpocock-skills" (
+    lib.concatMap (
+      category:
+      let
+        dir = "${inputs.mattpocock-skills}/skills/${category}";
+        names = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir dir));
+      in
+      map (
+        name:
+        mkSkillEntry { repo = inputs.mattpocock-skills; } {
+          inherit name;
+          subdir = "skills/${category}";
+          disableAuto = !(builtins.elem name mattpocockAutoInvoke);
         }
-        {
-          name = "codebase-design";
-          subdir = "engineering";
-        }
-        {
-          name = "diagnosing-bugs";
-          subdir = "engineering";
-        }
-        {
-          name = "domain-modeling";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-        {
-          name = "grill-with-docs";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-        {
-          name = "implement";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-        {
-          name = "improve-codebase-architecture";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-        {
-          name = "prototype";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-        {
-          name = "resolving-merge-conflicts";
-          subdir = "engineering";
-        }
-        {
-          name = "setup-matt-pocock-skills";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-        {
-          name = "tdd";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-        {
-          name = "to-issues";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-        {
-          name = "to-prd";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-        {
-          name = "triage";
-          subdir = "engineering";
-          disableAuto = true;
-        }
-
-        # -- productivity --
-        # { name = "caveman";          subdir = "productivity"; }
-        {
-          name = "grill-me";
-          subdir = "productivity";
-          disableAuto = true;
-        }
-        {
-          name = "grilling";
-          subdir = "productivity";
-          disableAuto = true;
-        }
-        {
-          name = "handoff";
-          subdir = "productivity";
-          disableAuto = true;
-        }
-        {
-          name = "teach";
-          subdir = "productivity";
-          disableAuto = true;
-        }
-        {
-          name = "writing-great-skills";
-          subdir = "productivity";
-          disableAuto = true;
-        }
-
-        # -- in-progress --
-        # auto-invoked: review (branch/PR/diff review)
-        {
-          name = "decision-mapping";
-          subdir = "in-progress";
-          disableAuto = true;
-        }
-        {
-          name = "loop-me";
-          subdir = "in-progress";
-          disableAuto = true;
-        }
-        {
-          name = "review";
-          subdir = "in-progress";
-        }
-        {
-          name = "writing-beats";
-          subdir = "in-progress";
-          disableAuto = true;
-        }
-        {
-          name = "writing-fragments";
-          subdir = "in-progress";
-          disableAuto = true;
-        }
-        {
-          name = "writing-shape";
-          subdir = "in-progress";
-          disableAuto = true;
-        }
-
-        # -- misc --
-        # { name = "git-guardrails-claude-code"; subdir = "misc"; }
-        # { name = "migrate-to-shoehorn";        subdir = "misc"; }
-        # { name = "scaffold-exercises";         subdir = "misc"; }
-        # { name = "setup-pre-commit";           subdir = "misc"; }
-
-        # -- personal --
-        # { name = "edit-article";  subdir = "personal"; }
-        # { name = "obsidian-vault"; subdir = "personal"; }
-      ]
+      ) names
+    ) mattpocockCategories
   );
 
   # Lum1104/Understand-Anything — uncomment skills you want
@@ -286,7 +162,7 @@ let
       cavemanSkillsSubset
       cavekitSkills
       humanizerSkill
-      mattpocockSkillsSubset
+      mattpocockSkills
       llmSkillsSubset
       understandAnythingSkills
       "${inputs.anthropic-cybersecurity-skills}/skills"
@@ -304,13 +180,39 @@ in
     default = [ ];
   };
 
-  config = {
-    # Bypass programs.claude-code.skills / programs.opencode.skills — both
-    # upstream modules hardcode `recursive = true` on the resulting home.file
-    # entry, which fans ~13k symlinks out on every activation once many
-    # skills (e.g. anthropic-cybersecurity-skills) are merged in.
-    home.file."${config.home.homeDirectory}/.claude/skills".source = mergedSkills;
-    xdg.configFile."opencode/skills".source = mergedSkills;
-    home.file."${config.home.homeDirectory}/.agents/skills".source = mergedSkills;
-  };
+  config =
+    let
+      # The programs.claude-code module (personal-plugin support, claude-code
+      # ≥ 2.1.157) installs its generated MCP/LSP plugin as a *child* home.file
+      # at `.claude/skills/claude-code-home-manager`. That child cannot coexist
+      # with our single dir-symlink at `.claude/skills` (home-manager aborts with
+      # "installing file ... outside $HOME"), and making the parent `recursive`
+      # would fan ~thousands of per-file symlinks out on every activation — the
+      # very thing this monolithic symlink exists to avoid.
+      #
+      # Instead: fold the module's generated plugin into the merged store dir so
+      # a single symlink still serves everything, then suppress the module's
+      # separate child entry. MCP/LSP registration keeps working because the
+      # plugin lands at the same path claude-code expects.
+      ccPluginKey = "${config.home.homeDirectory}/.claude/skills/claude-code-home-manager";
+      ccPluginSource = config.home.file.${ccPluginKey}.source;
+      skillsWithPlugin = pkgs.symlinkJoin {
+        name = "claude-skills-with-plugin";
+        paths = [
+          mergedSkills
+          (pkgs.linkFarm "claude-code-hm-plugin-skill" [
+            {
+              name = "claude-code-home-manager";
+              path = ccPluginSource;
+            }
+          ])
+        ];
+      };
+    in
+    {
+      home.file.${ccPluginKey}.enable = lib.mkForce false;
+      home.file."${config.home.homeDirectory}/.claude/skills".source = skillsWithPlugin;
+      xdg.configFile."opencode/skills".source = mergedSkills;
+      home.file."${config.home.homeDirectory}/.agents/skills".source = mergedSkills;
+    };
 }
