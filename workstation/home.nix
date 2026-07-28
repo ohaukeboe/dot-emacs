@@ -35,17 +35,9 @@ in
 
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username =
-    let
-      user = builtins.getEnv "USER";
-    in
-    if user != "" then user else "oskar";
+  home.username = "oskar";
 
-  home.homeDirectory =
-    let
-      home = builtins.getEnv "HOME";
-    in
-    if home != "" then home else "/home/oskar";
+  home.homeDirectory = "/home/oskar";
 
   manual.manpages.enable = false;
 
