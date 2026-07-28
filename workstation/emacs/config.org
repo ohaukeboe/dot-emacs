@@ -3773,6 +3773,7 @@ Org-msg allows for composing the mail using orgmode, and then send it as beautif
 
 #+begin_src elisp
   (use-package mu4e-marker-icons
+    :disabled ;; TODO Failed to acces repo. Try again in the future
     :ensure t
     :after mu4e
     :init (mu4e-marker-icons-mode 1))

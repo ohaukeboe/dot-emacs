@@ -13,12 +13,12 @@
             "name": null,
             "owner": "gastownhall",
             "repo": "beads",
-            "rev": "v1.1.0",
-            "sha256": "sha256-+dFV//0N8ZDw9BHOJOoWZ+BvLmJKlnGtONHIYPRhfBE=",
+            "rev": "v1.1.2",
+            "sha256": "sha256-5oDI2MunHrOKx1m5mC0ZaIqZ9+f1YBQotMBUj6U5H1I=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v1.1.0"
+        "version": "v1.1.2"
     },
     "calibre-open-with": {
         "cargoLock": null,
@@ -59,11 +59,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-BleI0nVVF0iPnzYrXu9DFmB9E4NIwjZB/hcPhSA8VFc=",
+            "sha256": "sha256-HmMsLZcUtPgrTPq077nOV1CFx1/+XpdyODEprwEsnIQ=",
             "type": "url",
-            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.5.0.tgz"
+            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.6.0.tgz"
         },
-        "version": "1.5.0"
+        "version": "1.6.0"
     },
     "code-review-graph": {
         "cargoLock": null,
@@ -79,12 +79,12 @@
             "name": null,
             "owner": "tirth8205",
             "repo": "code-review-graph",
-            "rev": "v2.3.6",
-            "sha256": "sha256-akuk4UHOTfw66dnuAeqoCkqF/JzsHqSzoTk5MQhEd0o=",
+            "rev": "v2.3.7",
+            "sha256": "sha256-xxKEH4JJY2jTNqNSmzkX9D5/7aC+OqhN+rDeb2AO/5c=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v2.3.6"
+        "version": "v2.3.7"
     },
     "lsp-ltex-plus": {
         "cargoLock": null,
