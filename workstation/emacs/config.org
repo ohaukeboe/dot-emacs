@@ -2795,24 +2795,6 @@ Integrate [[https://direnv.net/][direnv]] in emacs.
     (nov-mode . olivetti-mode))
 #+end_src
 
-** COMMENT Calibre
-
-#+begin_src elisp
-  (use-package calibredb
-    :ensure t
-    :bind ("C-c o c" . calibredb)
-    :custom
-    (calibredb-format-nerd-icons t)
-
-    :config
-    (setq calibredb-root-dir "~/Nextcloud/calibre_library/")
-    ;; for folder driver metadata: it should be .metadata.calibre
-    (setq calibredb-db-dir (expand-file-name "metadata.db" calibredb-root-dir))
-    (setq calibredb-ref-default-bibliography (concat (file-name-as-directory calibredb-root-dir) "calibre-catalog.bib"))
-
-    (add-to-list 'oh/bib-files calibredb-ref-default-bibliography))
-#+end_src
-
 * Misc
 ** Visual replace
 

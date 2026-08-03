@@ -30,7 +30,6 @@ in
     ./sops.nix
     ./agents
     inputs.zen-browser.homeModules.beta
-    ./calibre
   ];
 
   # Home Manager needs a bit of information about you and the paths it should

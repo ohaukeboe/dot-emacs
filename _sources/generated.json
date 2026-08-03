@@ -20,21 +20,6 @@
         },
         "version": "v1.1.2"
     },
-    "calibre-open-with": {
-        "cargoLock": null,
-        "date": null,
-        "extract": null,
-        "name": "calibre-open-with",
-        "passthru": null,
-        "pinned": false,
-        "src": {
-            "name": null,
-            "sha256": "sha256-aky+oCiMnTm2Seayn1VC1PbtlnG/ZFxvEX6q/yp4iNM=",
-            "type": "url",
-            "url": "https://github.com/kiwidude68/calibre_plugins/releases/download/open_with-1.8.5/open_with-1.8.5.zip"
-        },
-        "version": "open_with-1.8.5"
-    },
     "caveman-shrink": {
         "cargoLock": null,
         "date": null,

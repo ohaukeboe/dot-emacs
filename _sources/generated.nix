@@ -17,14 +17,6 @@
       sha256 = "sha256-5oDI2MunHrOKx1m5mC0ZaIqZ9+f1YBQotMBUj6U5H1I=";
     };
   };
-  calibre-open-with = {
-    pname = "calibre-open-with";
-    version = "open_with-1.8.5";
-    src = fetchurl {
-      url = "https://github.com/kiwidude68/calibre_plugins/releases/download/open_with-1.8.5/open_with-1.8.5.zip";
-      sha256 = "sha256-aky+oCiMnTm2Seayn1VC1PbtlnG/ZFxvEX6q/yp4iNM=";
-    };
-  };
   caveman-shrink = {
     pname = "caveman-shrink";
     version = "0.1.0";
