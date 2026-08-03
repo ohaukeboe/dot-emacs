@@ -9,6 +9,7 @@
 #   - cfn-lint (via py-key-value-aio → aiobotocore → types-aiobotocore-dynamodb): failing integration tests.
 #   - inquirer (via py-key-value-aio → aioboto3 → chalice): flaky pexpect TIMEOUTs in acceptance tests.
 #   - inline-snapshot (via http-snapshot → openai/mocket): test_docs.py black-formatting assertions fail.
+#   - cyclopts (via fastmcp): flaky pexpect TIMEOUT in test_behavior[zsh-literal-positional].
 # Remove when nixpkgs ships fixes.
 let
   pythonOverridden = python312.override {
@@ -20,6 +21,9 @@ let
         doCheck = false;
       });
       inline-snapshot = pyprev.inline-snapshot.overridePythonAttrs (_: {
+        doCheck = false;
+      });
+      cyclopts = pyprev.cyclopts.overridePythonAttrs (_: {
         doCheck = false;
       });
     };

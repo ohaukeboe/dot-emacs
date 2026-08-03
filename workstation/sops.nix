@@ -52,6 +52,14 @@ in
     "authinfo/kagi" = { };
   };
 
+  sops.templates."nix-github-token" = {
+    path = "${homeDir}/.config/nix/github-token.conf";
+    mode = "0600";
+    content = ''
+      access-tokens = github.com=${config.sops.placeholder."authinfo/github_pat"}
+    '';
+  };
+
   sops.templates.authinfo = {
     path = "${homeDir}/.authinfo";
     mode = "0600";

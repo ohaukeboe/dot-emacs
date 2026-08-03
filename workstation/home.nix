@@ -193,7 +193,6 @@ in
       gh # github cli
       emacs-lsp-booster
       trash-cli
-      winboat
       yaml-language-server
       ### just ###
       just
@@ -244,7 +243,9 @@ in
       (python313.withPackages (
         ps: with ps; [
           python-lsp-server
-          python-lsp-ruff
+          # python-lsp-ruff's test suite flakily fails asserting 'E402' diagnostic
+          # ordering (test_ruff_settings/test_notebook_input); plugin itself works.
+          (python-lsp-ruff.overridePythonAttrs (_: { doCheck = false; }))
 
           # I want these globally for use in org-mode
           matplotlib
@@ -627,4 +628,10 @@ in
     "nix-command"
     "flakes"
   ];
+
+  # Raises GitHub's anonymous API rate limit for flake input fetches (nix flake update, nix build).
+  # Token lives in a sops-rendered, untracked file — never inline it here.
+  nix.extraOptions = ''
+    !include ${config.sops.templates."nix-github-token".path}
+  '';
 }
