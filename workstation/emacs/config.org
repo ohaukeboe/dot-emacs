@@ -1112,7 +1112,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
                (not (functionp 'json-rpc-connection))  ;; native json-rpc
                (executable-find "emacs-lsp-booster"))
           (progn
-            (when-let ((command-from-exec-path (executable-find (car orig-result))))  ;; resolve command from exec-path (in case not found in $PATH)
+            (when-let* ((command-from-exec-path (executable-find (car orig-result))))  ;; resolve command from exec-path (in case not found in $PATH)
               (setcar orig-result command-from-exec-path))
             (message "Using emacs-lsp-booster for %s!" orig-result)
             (cons "emacs-lsp-booster" orig-result))
@@ -2458,7 +2458,7 @@ Export dispatcher using pandoc
     ;; Kill the buffer belonging to the deleted file or directory
     (advice-add 'dired-delete-file :before
                 (lambda (file &rest rest)
-                  (when-let ((buf (get-file-buffer file)))
+                  (when-let* ((buf (get-file-buffer file)))
                     (kill-buffer buf)))))
     ;; :general
     ;; (oh/leader-key
@@ -2649,7 +2649,7 @@ A terminal emulator
       "Return live ghostel buffers whose project root equals ROOT."
       (let ((root (file-name-as-directory root)))
         (seq-filter (lambda (b)
-                      (when-let ((b-root (ghostel-buffer-project-root b)))
+                      (when-let* ((b-root (ghostel-buffer-project-root b)))
                         (equal (file-name-as-directory b-root) root)))
                     (buffer-list))))
 
@@ -3239,7 +3239,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     (gptel-make-tool
      :name "git_tracked_files"
      :function (lambda ()
-                 (when-let ((proj (project-current)))
+                 (when-let* ((proj (project-current)))
                    (let* ((default-directory (project-root proj))
                           (output (shell-command-to-string "git ls-files")))
                      (if (string-empty-p output)
@@ -3252,7 +3252,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     (gptel-make-tool
      :name "read_project_file"
      :function (lambda (file-path)
-                 (when-let ((proj (project-current)))
+                 (when-let* ((proj (project-current)))
                    (let ((full-path (expand-file-name file-path (project-root proj))))
                      (if (file-exists-p full-path)
                          (with-temp-buffer
@@ -3378,7 +3378,7 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     (gptel-make-tool
      :name "get_documentation"
      :function (lambda (symbol-name)
-                 (when-let ((sym (intern-soft symbol-name)))
+                 (when-let* ((sym (intern-soft symbol-name)))
                    (cond
                     ((fboundp sym)
                      (concat
