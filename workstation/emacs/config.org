@@ -228,7 +228,24 @@ I keep most of my things in Nextcloud, and this config relies a lot on me having
                                              :background unspecified))))
     (hl-line ((t (:background "#202020"))))
     :config
-    (load-theme 'doom-tomorrow-night t))
+    (load-theme 'doom-tomorrow-night t)
+
+    ;; doom-themes-base maps gnus-group-news-low-empty -> :inherit
+    ;; gnus-group-news-low, while Emacs' own defface maps gnus-group-news-low ->
+    ;; :inherit gnus-group-news-low-empty.  Whenever one of the two resolves via
+    ;; the theme spec and the other via its defface, realizing the face signals
+    ;; "inheritance cycle: gnus-group-news-low".  Point the -empty face at the
+    ;; same face doom uses for gnus-group-mail-low-empty to break the loop;
+    ;; visually equivalent (both end at base5).
+    ;; The faces only exist once gnus is loaded, hence the indirection.
+    (defun my/doom-themes-break-gnus-face-cycle ()
+      (when (facep 'gnus-group-news-low-empty)
+        (set-face-attribute 'gnus-group-news-low-empty nil
+                            :inherit 'gnus-group-mail-1-empty)))
+
+    (my/doom-themes-break-gnus-face-cycle)
+    (with-eval-after-load 'gnus
+      (my/doom-themes-break-gnus-face-cycle)))
 #+end_src
 
 ** Spacious padding
@@ -2004,8 +2021,19 @@ rather than files.  These modes usually use read-only buffers.
     ;; Make sure org opens pdfs inside emacs
     (setf (alist-get "\\.pdf\\'" org-file-apps nil nil #'equal) 'emacs)
 
-    (setq org-format-latex-options
-          (plist-put org-format-latex-options :scale (/ 185 (org--get-display-dpi))))
+    ;; `org--get-display-dpi' signals on a non-graphic display, so defer the
+    ;; scale calculation until a graphical frame exists (tty/daemon startup).
+    (defun my/org-set-latex-scale (&optional frame)
+      (when (display-graphic-p frame)
+        (with-selected-frame (or frame (selected-frame))
+          (setq org-format-latex-options
+                (plist-put org-format-latex-options
+                           :scale (/ 185 (org--get-display-dpi)))))
+        (remove-hook 'after-make-frame-functions #'my/org-set-latex-scale)))
+
+    (if (display-graphic-p)
+        (my/org-set-latex-scale)
+      (add-hook 'after-make-frame-functions #'my/org-set-latex-scale))
 
     ;; Pretty bullets
     ;; (font-lock-add-keywords 'org-mode
