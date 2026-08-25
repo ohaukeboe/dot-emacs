@@ -44,9 +44,7 @@ in
     "authinfo/azure" = { };
     "authinfo/github" = { };
     "authinfo/gitlab" = { };
-    "authinfo/github_uio" = { };
     "authinfo/codeberg" = { };
-    "authinfo/imap_uio" = { };
     "authinfo/imap_knowit" = { };
     "authinfo/github_pat" = { };
     "authinfo/kagi" = { };
