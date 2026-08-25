@@ -113,7 +113,6 @@ let
     "engineering"
     "in-progress"
     "misc"
-    "personal"
     "productivity"
   ];
   mattpocockSkills = pkgs.linkFarm "mattpocock-skills" (
