@@ -72,14 +72,8 @@ in
       machine gitlab.com/api/v4 login ohaukeboe^forge password ${
         config.sops.placeholder."authinfo/gitlab"
       }
-      machine api.github.uio.no login oskah^forge password ${
-        config.sops.placeholder."authinfo/github_uio"
-      }
       machine codeberg.org/api/v1 login ohaukeboe^forge password ${
         config.sops.placeholder."authinfo/codeberg"
-      }
-      machine localhost port 1026 login oskah@uio.no/ password ${
-        config.sops.placeholder."authinfo/imap_uio"
       }
       machine localhost port 1026 login oskar.haukeboe@knowit.no/ password "${
         config.sops.placeholder."authinfo/imap_knowit"
