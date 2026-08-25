@@ -172,7 +172,8 @@ in
     with pkgs;
     lib.lists.flatten [
       # pympress # pdf presenter
-      git-crypt
+      git-agecrypt # age-encrypted git filter for private/**
+      git-crypt # only needed to read pre-git-agecrypt history
 
       ### fish ###
       babelfish
@@ -245,7 +246,9 @@ in
           python-lsp-server
           # python-lsp-ruff's test suite flakily fails asserting 'E402' diagnostic
           # ordering (test_ruff_settings/test_notebook_input); plugin itself works.
-          (python-lsp-ruff.overridePythonAttrs (_: { doCheck = false; }))
+          (python-lsp-ruff.overridePythonAttrs (_: {
+            doCheck = false;
+          }))
 
           # I want these globally for use in org-mode
           matplotlib
@@ -505,7 +508,7 @@ in
   # plain files is through 'home.file'.
   home.file = {
     ".mbsyncrc".source = ./dotfiles/mbsyncrc.conf;
-    ".aws/config".source = ../secrets/aws.config;
+    ".aws/config".source = ../private/aws.config;
     ".screenrc".text = "termcapinfo xterm*|rxvt*|kterm*|Eterm*|vterm* ti@:te@";
 
     ".local/share/ditaa/ditaa.jar".source = "${pkgs.ditaa}/lib/ditaa.jar";

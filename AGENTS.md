@@ -208,10 +208,23 @@ build: Update flake dependencies and fix platform references
 3. Register in `machines/machines.nix`
 
 #### Managing Secrets
-- **SOPS** (`sops/home/*`, age-encrypted) for actual secrets — keys/recipients in `.sops.yaml`, wired via `workstation/sops.nix`
-- **git-crypt** (`secrets/**`, see `.gitattributes`) for low-sensitivity private info worth keeping out of public view
+Two tiers, both encrypted to the same age recipients listed in `.sops.yaml`:
+
+- **Secrets** — SOPS (`sops/home/*`), wired via `workstation/sops.nix`. Decrypted at
+  activation time to runtime paths outside the Nix store. Use this for anything whose
+  disclosure is actually harmful (tokens, passwords, API keys).
+- **Private data** — git-agecrypt (`private/**`, see `.gitattributes` and
+  `git-agecrypt.toml`). Encrypted in git, plaintext in the working tree, and therefore
+  **world-readable in the Nix store**. Use this only for information that is merely
+  private rather than secret — SSH host addresses, AWS SSO profile config.
 - Never commit unencrypted secrets
-- Reference via `secrets` parameter passed to configurations
+- `private/hosts.json` is parsed in `flake.nix` and passed to configurations as the
+  `private` parameter (e.g. `private.ssh_host.desktop` in `workstation/ssh.nix`)
+- Recipients for `private/**` live in the tracked `git-agecrypt.toml`; decryption
+  identities live in untracked `.git/config`, so a fresh checkout needs
+  `just agecrypt-init` before `private/**` can be read
+- After adding a recipient to `git-agecrypt.toml`, run `just agecrypt-updatekeys`
+  (and `just sops-updatekeys` for `sops/**`)
 
 ## Tools & Resources
 

@@ -4,3 +4,4 @@ default:
 
 import 'just/sops.just'
 import 'just/nvfetcher.just'
+import 'just/agecrypt.just'

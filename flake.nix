@@ -161,7 +161,7 @@
 
       treefmtEval = forAllSystems (system: treefmt-nix.lib.evalModule nixpkgsFor.${system} ./treefmt.nix);
 
-      secrets = builtins.fromJSON (builtins.readFile "${self}/secrets/secrets.json");
+      private = builtins.fromJSON (builtins.readFile "${self}/private/hosts.json");
 
       defaultConfig =
         {
@@ -181,7 +181,7 @@
           nixgl
           mac-app-util
           flatpaks
-          secrets
+          private
           nix-index-database
           ;
       };
@@ -196,7 +196,7 @@
           flatpaks
           lanzaboote
           nix-index-database
-          secrets
+          private
           ;
       };
 

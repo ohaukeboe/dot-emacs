@@ -1,4 +1,4 @@
-{ secrets, pkgs, ... }:
+{ private, pkgs, ... }:
 
 let
   mainKey = ".ssh/pubkeys/main.pub";
@@ -23,33 +23,33 @@ in
         IdentitiesOnly = true;
       };
       "desktop" = {
-        HostName = secrets.ssh_host.desktop;
+        HostName = private.ssh_host.desktop;
         User = "oskar";
         IdentityFile = "~/${mainKey}";
         ForwardAgent = true;
       };
 
       "work-laptop" = {
-        HostName = secrets.ssh_host.work-laptop;
+        HostName = private.ssh_host.work-laptop;
         User = "oskar";
         IdentityFile = "~/${mainKey}";
         ForwardAgent = true;
       };
 
       "killono" = {
-        HostName = secrets.ssh_host.killono;
+        HostName = private.ssh_host.killono;
         User = "oskar";
         IdentityFile = "~/${oldKey}";
       };
 
       "deepthought" = {
-        HostName = secrets.ssh_host.deepthought;
+        HostName = private.ssh_host.deepthought;
         User = "deepthought";
         IdentityFile = "~/${mainKey}";
       };
 
       "deploy-deepthought" = {
-        HostName = secrets.ssh_host.deepthought;
+        HostName = private.ssh_host.deepthought;
         User = "root";
         IdentityFile = "~/${mainKey}";
       };
@@ -72,13 +72,13 @@ in
       };
 
       "bayer" = {
-        HostName = secrets.ssh_host.bayer;
+        HostName = private.ssh_host.bayer;
         User = "drift";
         IdentityFile = "~/${trashcanKey}";
       };
 
       "joe" = {
-        HostName = secrets.ssh_host.joe;
+        HostName = private.ssh_host.joe;
         User = "drift";
         IdentityFile = "~/${trashcanKey}";
       };
@@ -94,13 +94,13 @@ in
       };
 
       "pi" = {
-        HostName = secrets.ssh_host.pi;
+        HostName = private.ssh_host.pi;
         User = "oskar";
         IdentityFile = "~/${piKey}";
       };
 
       "laptop" = {
-        HostName = secrets.ssh_host.laptop;
+        HostName = private.ssh_host.laptop;
         User = "oskar";
         IdentityFile = "~/${mainKey}";
         ForwardAgent = true;

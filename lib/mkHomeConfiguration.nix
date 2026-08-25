@@ -6,7 +6,7 @@
   flatpaks,
   nixgl,
   mac-app-util,
-  secrets,
+  private,
   nix-index-database,
 }:
 
@@ -60,7 +60,7 @@ home-manager.lib.homeManagerConfiguration {
     mac-app-util.homeManagerModules.default
   ];
   extraSpecialArgs = {
-    inherit inputs secrets;
+    inherit inputs private;
     isNixos = false;
   };
 }

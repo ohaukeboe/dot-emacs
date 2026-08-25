@@ -6,7 +6,7 @@
   lib,
   pkgs,
   modulesPath,
-  secrets,
+  private,
   ...
 }:
 

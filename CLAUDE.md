@@ -80,7 +80,8 @@ sudo nixos-rebuild switch --flake .#<hostname>            # hosts: x13-laptop, w
 - `workstation/emacs/config.org` — literate Emacs (source of truth)
 - `machines/machines.nix` — machine registry
 - `modules/` — optional feature modules (gaming, cosmic-de, secure-boot, sshd)
-- secrets via **SOPS** (`workstation/sops.nix`, `sops/`)
+- secrets via **SOPS** (`workstation/sops.nix`, `sops/`); low-sensitivity private
+  data via **git-agecrypt** (`private/`, `git-agecrypt.toml`) using the same age keys
 
 ## Gotchas
 

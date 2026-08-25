@@ -6,7 +6,7 @@
   flatpaks,
   lanzaboote,
   nix-index-database,
-  secrets,
+  private,
 }:
 
 {
@@ -46,7 +46,7 @@ let
           };
           home-manager.backupFileExtension = "backup";
           home-manager.extraSpecialArgs = {
-            inherit inputs secrets;
+            inherit inputs private;
             isNixos = true;
           };
         }
