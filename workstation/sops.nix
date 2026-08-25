@@ -11,6 +11,8 @@ with lib;
 let
   homeDir = config.home.homeDirectory;
   ageKeyDir = "${homeDir}/.config/sops/age";
+  # "default" is the shared host key, identical on every machine and installed
+  # from sops/bootstrap/host-key.yaml. The hardware entries are escape hatches.
   ageKeyFiles = {
     default = "${ageKeyDir}/keys.txt";
     tpm = "${ageKeyDir}/tpm-identity.txt";
@@ -31,9 +33,10 @@ in
     ++ lib.optionals (!pkgs.stdenv.isDarwin) [ age-plugin-tpm ];
 
   sops.age.keyFile = ageKeyFiles.${config.sops.ageKey};
-  # Only auto-generate a key for the "default" case (user-managed age key).
-  # YubiKey and TPM keys are hardware-backed and must be provisioned externally.
-  sops.age.generateKey = config.sops.ageKey == "default";
+  # Never auto-generate. There is a single shared host key, installed by
+  # `just bootstrap-host-key`; a freshly generated key would be a recipient of
+  # nothing and would fail at decryption time instead of at setup time.
+  sops.age.generateKey = false;
   sops.age.sshKeyPaths = [ ];
   sops.defaultSopsFile = ../sops/home/secrets.yaml;
 

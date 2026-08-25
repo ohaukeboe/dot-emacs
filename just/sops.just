@@ -1,13 +1,51 @@
 # Secrets Management with SOPS, YubiKey, and TPM 2.0
-# Maybe redundant, but this was used to generate the key on the system that is actually
-# managing secrets.yaml. If you don't want to use existing ssh key
+#
+# There is exactly one host age key, shared by every machine. Its private
+# material is committed as sops/bootstrap/host-key.yaml, encrypted to the
+# YubiKey (and to itself). To set up a new machine use `just bootstrap`, not the
+# rotation recipe below.
 
-# Generate a sops age key at `~/.config/sops/age/keys.txt`
-sops-init:
-    mkdir -p ~/.config/sops/age
-    nix-shell -p age --run "age-keygen -o ~/.config/sops/age/keys.txt"
-    sudo mkdir -p /var/lib/sops-nix
-    sudo cp ~/.config/sops/age/keys.txt /var/lib/sops-nix/
+# Rotate the shared host key: new keypair, re-encrypt every secret to it
+sops-rotate-host-key:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "This replaces the age key used by ALL machines. Every machine then"
+    echo "needs 'just bootstrap-host-key' again, with the YubiKey present."
+    read -rp "Continue? [y/N] " ans
+    [[ "$ans" == "y" || "$ans" == "Y" ]] || exit 1
+
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    nix-shell -p age --run "age-keygen -o $tmp/keys.txt"
+    pub=$(grep 'public key:' "$tmp/keys.txt" | sed 's/.*: //')
+    echo "New shared host key: $pub"
+
+    # Decrypt every secret with the *current* key before swapping recipients.
+    old_key=~/.config/sops/age/keys.txt
+
+    # Point .sops.yaml and git-agecrypt.toml at the new public key.
+    old_pub=$(grep 'public key:' "$old_key" | sed 's/.*: //')
+    sed -i "s|$old_pub|$pub|g" .sops.yaml git-agecrypt.toml
+
+    SOPS_AGE_KEY_FILE="$old_key" \
+      nix-shell -p sops age age-plugin-yubikey --run "sops updatekeys -y sops/home/*"
+
+    # Rewrite the bootstrap file itself with the new private key.
+    {
+      echo "# Shared host age identity, installed as ~/.config/sops/age/keys.txt and"
+      echo "# /var/lib/sops-nix/keys.txt on every machine by \`just bootstrap-host-key\`."
+      echo "host_age_key: |"
+      sed 's/^/  /' "$tmp/keys.txt"
+    } >sops/bootstrap/host-key.yaml
+    nix-shell -p sops age age-plugin-yubikey --run "sops encrypt -i sops/bootstrap/host-key.yaml"
+
+    ./scripts/agecrypt-rekey.sh
+
+    install -m600 "$tmp/keys.txt" ~/.config/sops/age/keys.txt
+    sudo install -m600 -D "$tmp/keys.txt" /var/lib/sops-nix/keys.txt
+    echo ""
+    echo "Rotated. Commit the result, then run 'just bootstrap-host-key' on every"
+    echo "other machine."
 
 # Re-encrypt secrets.yaml after adding new keys to .sops.yaml
 sops-updatekeys identity="auto":

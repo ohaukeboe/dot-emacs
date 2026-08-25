@@ -22,6 +22,8 @@ in
   config =
     let
       ageKeyDir = "/var/lib/sops-nix";
+      # "default" is the shared host key, identical on every machine and
+      # installed from sops/bootstrap/host-key.yaml by `just bootstrap-host-key`.
       ageKeyFiles = {
         default = "${ageKeyDir}/keys.txt";
         tpm = "${ageKeyDir}/tpm-identity.txt";

@@ -82,6 +82,9 @@ sudo nixos-rebuild switch --flake .#<hostname>            # hosts: x13-laptop, w
 - `modules/` — optional feature modules (gaming, cosmic-de, secure-boot, sshd)
 - secrets via **SOPS** (`workstation/sops.nix`, `sops/`); low-sensitivity private
   data via **git-agecrypt** (`private/`, `git-agecrypt.toml`) using the same age keys
+- one shared host age key for all machines, committed encrypted as
+  `sops/bootstrap/host-key.yaml`; `just bootstrap` provisions a new machine (only
+  step needing the YubiKey)
 
 ## Gotchas
 

@@ -40,6 +40,15 @@ with lib;
           Each context resolves this to its own directory:
             NixOS system:  /var/lib/sops-nix/<key>.txt  (default -> keys.txt)
             Home Manager:  ~/.config/sops/age/<key>.txt  (default -> keys.txt)
+
+          Leave this at "default": that is the single shared host key, the same
+          private key on every machine, installed by `just bootstrap-host-key`
+          from sops/bootstrap/host-key.yaml. Machines are not individually
+          enrolled as recipients any more.
+
+          "yubikey-*" and "tpm" decrypt directly with the hardware key instead,
+          which means a touch or PIN on every activation. They exist for
+          recovery and for a machine that must not hold the shared key on disk.
           Note: "tpm" is only functional on NixOS/Linux with a TPM.
         '';
       };

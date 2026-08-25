@@ -1,22 +1,21 @@
 keys:
-    # Hosts
-    - &desktop age1yg0dffykts33c8wgkxhahhk4zhueqtx560afsy7ys0lm3scx2p7szgchcc
-    - &work-laptop age189uraa4pzngexqfda0l2kjszcknxd7f59m6kcpu0tu070vajl3vqtrlvnx
-    - &work-tmp age1c72w86x4lalere2e44z59lmv70ydm3xv7vu5wta3znp9mgau5g2srsju65
+    # Shared host key. The same private key is installed on every machine, so
+    # adding a machine never means adding a recipient here. The private material
+    # is committed as sops/bootstrap/host-key.yaml; `just bootstrap-host-key`
+    # decrypts it with the YubiKey and installs it locally.
+    - &host age16fr85m3cp4g92mpyrzl6p3lldqzqlfc5nnkxn9tv6qaszjhrj3dqusgece
 
-    # FIDO keys
+    # FIDO keys — the root of trust. Required to provision a new machine and to
+    # recover if the shared host key ever has to be rotated.
     - &wallet_key age1yubikey1qwqkymath4fcdgfyx5vdy7z7z7n70xr7gekvtld9tfflzjgnk27ljm838l9
 
 creation_rules:
-    # - path_regex: sops/system/[^/]+\.(yaml|json|env|ini)$
-    #   key_groups:
-    #     - age:
-    #       - *wallet_key
-    #       - *desktop
-    - path_regex: sops/home/[^/]+\.(yaml|json|env|ini)$
+    # Everything under sops/, including the bootstrap file holding the shared
+    # host key itself. Listing *host as a recipient of its own key file is an
+    # information no-op (whoever can read it already holds the key) and lets an
+    # already-provisioned machine re-run `sops updatekeys` without the YubiKey.
+    - path_regex: sops/(home|bootstrap)/[^/]+\.(yaml|json|env|ini)$
       key_groups:
           - age:
                 - *wallet_key
-                - *desktop
-                - *work-laptop
-                - *work-tmp
+                - *host

@@ -1,13 +1,13 @@
+# Recipients mirror the `sops/**` recipients in .sops.yaml: the YubiKey plus the
+# single shared host age key. Adding a machine needs no change here — run
+# `just bootstrap-host-key` on it instead.
+
 [config]
 "private/aws.config" = [
   "age1yubikey1qwqkymath4fcdgfyx5vdy7z7z7n70xr7gekvtld9tfflzjgnk27ljm838l9",
-  "age1yg0dffykts33c8wgkxhahhk4zhueqtx560afsy7ys0lm3scx2p7szgchcc",
-  "age189uraa4pzngexqfda0l2kjszcknxd7f59m6kcpu0tu070vajl3vqtrlvnx",
-  "age1c72w86x4lalere2e44z59lmv70ydm3xv7vu5wta3znp9mgau5g2srsju65"
+  "age16fr85m3cp4g92mpyrzl6p3lldqzqlfc5nnkxn9tv6qaszjhrj3dqusgece"
 ]
 "private/hosts.json" = [
   "age1yubikey1qwqkymath4fcdgfyx5vdy7z7z7n70xr7gekvtld9tfflzjgnk27ljm838l9",
-  "age1yg0dffykts33c8wgkxhahhk4zhueqtx560afsy7ys0lm3scx2p7szgchcc",
-  "age189uraa4pzngexqfda0l2kjszcknxd7f59m6kcpu0tu070vajl3vqtrlvnx",
-  "age1c72w86x4lalere2e44z59lmv70ydm3xv7vu5wta3znp9mgau5g2srsju65"
+  "age16fr85m3cp4g92mpyrzl6p3lldqzqlfc5nnkxn9tv6qaszjhrj3dqusgece"
 ]

@@ -206,8 +206,18 @@ build: Update flake dependencies and fix platform references
 1. Create `machines/hostname/` directory
 2. Add `default.nix`, `hardware-configuration.nix`, optional `config.nix`
 3. Register in `machines/machines.nix`
+4. On the machine itself, run `just bootstrap` once with the "wallet" YubiKey
+   inserted. No key material is per-machine, so nothing about secrets has to be
+   edited when a machine is added or retired.
 
 #### Managing Secrets
+There is exactly **one host age key**, shared by every machine. Its private
+material is committed as `sops/bootstrap/host-key.yaml`, encrypted with SOPS to
+the YubiKey (and to itself). `just bootstrap-host-key` decrypts it — the only
+step that needs the YubiKey — and installs it to `~/.config/sops/age/keys.txt`
+and `/var/lib/sops-nix/keys.txt`. Everything else then decrypts with no hardware
+present. Machines are never enrolled as individual recipients.
+
 Two tiers, both encrypted to the same age recipients listed in `.sops.yaml`:
 
 - **Secrets** — SOPS (`sops/home/*`), wired via `workstation/sops.nix`. Decrypted at
@@ -223,8 +233,14 @@ Two tiers, both encrypted to the same age recipients listed in `.sops.yaml`:
 - Recipients for `private/**` live in the tracked `git-agecrypt.toml`; decryption
   identities live in untracked `.git/config`, so a fresh checkout needs
   `just agecrypt-init` before `private/**` can be read
-- After adding a recipient to `git-agecrypt.toml`, run `just agecrypt-updatekeys`
-  (and `just sops-updatekeys` for `sops/**`)
+- After changing recipients in `git-agecrypt.toml`, run `just agecrypt-updatekeys`
+  (and `just sops-updatekeys` for `sops/**`), then **commit immediately**
+- `just agecrypt-updatekeys` deliberately bypasses the clean filter: git-agecrypt
+  reuses the ciphertext already in `HEAD` whenever a configured identity can
+  still decrypt it, so `git add --renormalize` silently ignores a recipient
+  change. See `scripts/agecrypt-rekey.sh`
+- To rotate the shared host key: `just sops-rotate-host-key`, commit, then
+  `just bootstrap-host-key` on every other machine
 
 ## Tools & Resources
 

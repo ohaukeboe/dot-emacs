@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Helper script to resolve SOPS age identity files
 # Usage: source scripts/sops-identity.sh <identity>
-# Where identity is: default, tpm, yubikey-chain, yubikey-home, all, or auto
+# Where identity is: default, tpm, yubikey-wallet, yubikey-home, all, or auto
 # After sourcing, SOPS_AGE_KEY_FILE will be set
 
 set -euo pipefail
@@ -42,7 +42,7 @@ combine_identities() {
   fi
 
   if [[ -f $DEFAULT_KEY ]]; then
-    echo "  + Default age key"
+    echo "  + Shared host key"
     cat "$DEFAULT_KEY" >>"$COMBINED_KEY"
     echo "" >>"$COMBINED_KEY"
     found=1
@@ -58,7 +58,7 @@ combine_identities() {
 resolve_identity() {
   case "$IDENTITY" in
   default)
-    echo "Using default age key: $DEFAULT_KEY"
+    echo "Using shared host key: $DEFAULT_KEY"
     export SOPS_AGE_KEY_FILE="$DEFAULT_KEY"
     ;;
   tpm)
@@ -84,26 +84,25 @@ resolve_identity() {
     fi
     ;;
   auto)
-    # Auto-detect: prefer TPM > YubiKey (wallet) > YubiKey (home) > default
-    if [[ -f $TPM_KEY ]]; then
-      echo "Auto-detected TPM identity: $TPM_KEY"
-      export SOPS_AGE_KEY_FILE="$TPM_KEY"
+    # Prefer the shared host key: it needs no hardware present and is a
+    # recipient of everything. Hardware identities are the fallback for a
+    # machine that has not been bootstrapped yet.
+    if [[ -f $DEFAULT_KEY ]]; then
+      echo "Auto-detected shared host key: $DEFAULT_KEY"
+      export SOPS_AGE_KEY_FILE="$DEFAULT_KEY"
     elif [[ -f $YUBIKEY_WALLET_KEY ]]; then
       echo "Auto-detected YubiKey (wallet) identity: $YUBIKEY_WALLET_KEY"
       export SOPS_AGE_KEY_FILE="$YUBIKEY_WALLET_KEY"
     elif [[ -f $YUBIKEY_HOME_KEY ]]; then
       echo "Auto-detected YubiKey (home) identity: $YUBIKEY_HOME_KEY"
       export SOPS_AGE_KEY_FILE="$YUBIKEY_HOME_KEY"
-    elif [[ -f $DEFAULT_KEY ]]; then
-      echo "Auto-detected default age key: $DEFAULT_KEY"
-      export SOPS_AGE_KEY_FILE="$DEFAULT_KEY"
+    elif [[ -f $TPM_KEY ]]; then
+      echo "Auto-detected TPM identity: $TPM_KEY"
+      export SOPS_AGE_KEY_FILE="$TPM_KEY"
     else
       echo "Error: No identity files found in $SOPS_AGE_DIR"
-      echo "Run one of these commands first:"
-      echo "  just sops-init                    (default age key)"
-      echo "  just tpm-save-identity            (TPM identity)"
-      echo "  just yubikey-save-identity wallet  (YubiKey wallet)"
-      echo "  just yubikey-save-identity home   (YubiKey home)"
+      echo "Run 'just bootstrap-host-key' (YubiKey required) to install the"
+      echo "shared host key on this machine."
       exit 1
     fi
     ;;
@@ -117,7 +116,7 @@ resolve_identity() {
   if [[ $IDENTITY != "all" && ! -f $SOPS_AGE_KEY_FILE ]]; then
     echo "Error: Identity file not found: $SOPS_AGE_KEY_FILE"
     echo "Run the appropriate setup command first:"
-    echo "  default:       just sops-init"
+    echo "  default:       just bootstrap-host-key"
     echo "  tpm:           just tpm-save-identity"
     echo "  yubikey-wallet: just yubikey-save-identity wallet"
     echo "  yubikey-home:  just yubikey-save-identity home"

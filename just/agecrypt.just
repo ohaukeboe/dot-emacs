@@ -13,10 +13,28 @@ agecrypt-init:
     git config filter.git-agecrypt.clean "git-agecrypt clean -f %f"
     git config diff.git-agecrypt.textconv "git-agecrypt textconv"
     # Identities live in .git/config so each checkout can point at its own keys.
+    # The shared host key comes first so decryption never touches the YubiKey.
+    # `git-agecrypt config add` errors on an already-registered identity, so this
+    # stays re-runnable by checking .git/config first.
+    registered=$(git config --get-all git-agecrypt.config.identity || true)
     for f in ~/.config/sops/age/keys.txt ~/.config/sops/age/yubikey-*.txt ~/.config/sops/age/tpm-identity.txt; do
       [[ -f "$f" ]] || continue
+      if grep -qxF "$f" <<<"$registered"; then
+        echo "already registered: $f"
+        continue
+      fi
       nix-shell -p git-agecrypt --run "git-agecrypt config add -i $f"
     done
+    # A fresh clone checked private/** out before the filters existed, so the
+    # working tree still holds ciphertext. Force a re-checkout through smudge.
+    # Refuse if that would throw away uncommitted plaintext edits.
+    if [[ -n "$(git diff --name-only -- private)" ]]; then
+      echo "private/** has unstaged changes; refusing to re-checkout." >&2
+      echo "Commit or stash them, then re-run." >&2
+      exit 1
+    fi
+    rm -f private/*
+    git checkout -- private
     nix-shell -p git-agecrypt --run "git-agecrypt status"
 
 # Show git-agecrypt filter state, configured identities and recipients
@@ -26,12 +44,10 @@ agecrypt-status:
     @echo "=== Recipients per path (git-agecrypt.toml) ==="
     nix-shell -p git-agecrypt --run "git-agecrypt config list"
 
+# Bypasses the clean filter on purpose: git-agecrypt reuses the ciphertext in
+# HEAD whenever a configured identity can still decrypt it, which silently
+# ignores recipient changes. See scripts/agecrypt-rekey.sh. Commit right after.
+
 # Re-encrypt private/** after changing recipients in git-agecrypt.toml
 agecrypt-updatekeys:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # git-agecrypt caches a blake3 hash of each plaintext and reuses the stored
-    # ciphertext while the hash matches, so the cache has to go for a re-encrypt.
-    rm -rf .git/git-agecrypt
-    nix-shell -p git-agecrypt --run "git add --renormalize private"
-    git status --short -- private
+    ./scripts/agecrypt-rekey.sh
