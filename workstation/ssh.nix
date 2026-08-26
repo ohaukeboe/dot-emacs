@@ -54,23 +54,6 @@ in
         IdentityFile = "~/${mainKey}";
       };
 
-      "uio" = {
-        HostName = "login.uio.no";
-        User = "oskah";
-        IdentityFile = "~/${mainKey}";
-        ForwardX11 = true;
-        ForwardX11Trusted = true;
-      };
-
-      "ifi" = {
-        HostName = "login.ifi.uio.no";
-        User = "oskah";
-        IdentityFile = "~/${mainKey}";
-        ProxyJump = "uio";
-        ForwardX11 = true;
-        ForwardX11Trusted = true;
-      };
-
       "bayer" = {
         HostName = private.ssh_host.bayer;
         User = "drift";
@@ -86,17 +69,6 @@ in
       "github.com" = {
         HostName = "github.com";
         IdentityFile = "~/${mainKey}";
-      };
-
-      "github.uio.no" = {
-        HostName = "github.uio.no";
-        IdentityFile = "~/${oldKey}";
-      };
-
-      "pi" = {
-        HostName = private.ssh_host.pi;
-        User = "oskar";
-        IdentityFile = "~/${piKey}";
       };
 
       "laptop" = {
@@ -117,8 +89,6 @@ in
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKf4tcGBaTRbaBzgy7QbGcbL5E0ShA2EC0C5OwhZukkl";
     "${trashcanKey}".text =
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWtqnZik41LZmBiVQK/d46GpuZT23uhpplZmcHBFOSC";
-    "${piKey}".text =
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJuhePKrlYe5FtKa8SA2thRyezpLu8WrNJq1AqsNsN/P";
 
     ".config/1Password/ssh/agent.toml".source = (pkgs.formats.toml { }).generate "1password-agent" {
       ssh-keys = [
