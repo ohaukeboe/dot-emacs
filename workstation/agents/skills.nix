@@ -101,8 +101,16 @@ let
   # skills/<category>/<name>. Categories below are scanned; `deprecated` is
   # intentionally skipped (upstream-retired skills).
   #
-  # Every skill defaults to explicit-invocation only (disableAuto). Skills in
-  # `mattpocockAutoInvoke` keep automatic model invocation.
+  # Every skill defaults to explicit-invocation only (disableAuto), with two
+  # exceptions that stay model-invocable:
+  #
+  #   1. `mattpocockAutoInvoke` — skills we want the model to reach for on its
+  #      own, without the user typing a slash command.
+  #   2. Skills that other mattpocock skills *call* via the Skill tool. These
+  #      are composed, not entered directly: `/grill-with-docs` is a two-line
+  #      body that tells the model to call "grilling" and "domain-modeling".
+  #      Marking a callee `disable-model-invocation: true` breaks every caller,
+  #      so callees are detected below and left auto-invocable.
   mattpocockAutoInvoke = [
     "codebase-design" # module design vocabulary
     "code-review" # branch/PR/diff review
@@ -115,22 +123,36 @@ let
     "misc"
     "productivity"
   ];
+
+  # [{ name, subdir, body }] for every skill in the scanned categories.
+  mattpocockAll = lib.concatMap (
+    category:
+    let
+      subdir = "skills/${category}";
+      dir = "${inputs.mattpocock-skills}/${subdir}";
+      names = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir dir));
+    in
+    map (name: {
+      inherit name subdir;
+      body = builtins.readFile "${dir}/${name}/SKILL.md";
+    }) names
+  ) mattpocockCategories;
+
+  # A skill is a "callee" if some *other* skill's body names it in quotes, the
+  # form every `call the Skill tool with "x"` instruction upstream uses.
+  mattpocockCallees = builtins.filter (
+    name:
+    builtins.any (other: other.name != name && lib.hasInfix ''"${name}"'' other.body) mattpocockAll
+  ) (map (s: s.name) mattpocockAll);
+
   mattpocockSkills = pkgs.linkFarm "mattpocock-skills" (
-    lib.concatMap (
-      category:
-      let
-        dir = "${inputs.mattpocock-skills}/skills/${category}";
-        names = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir dir));
-      in
-      map (
-        name:
-        mkSkillEntry { repo = inputs.mattpocock-skills; } {
-          inherit name;
-          subdir = "skills/${category}";
-          disableAuto = !(builtins.elem name mattpocockAutoInvoke);
-        }
-      ) names
-    ) mattpocockCategories
+    map (
+      { name, subdir, ... }:
+      mkSkillEntry { repo = inputs.mattpocock-skills; } {
+        inherit name subdir;
+        disableAuto = !(builtins.elem name (mattpocockAutoInvoke ++ mattpocockCallees));
+      }
+    ) mattpocockAll
   );
 
   # Lum1104/Understand-Anything — uncomment skills you want
