@@ -8,10 +8,13 @@ agecrypt-init:
     set -euo pipefail
     nix-shell -p git-agecrypt --run "git-agecrypt init"
     # git-agecrypt init records an absolute /nix/store path, which breaks once
-    # that store path is garbage collected. Resolve the binary via PATH instead.
-    git config filter.git-agecrypt.smudge "git-agecrypt smudge -f %f"
-    git config filter.git-agecrypt.clean "git-agecrypt clean -f %f"
-    git config diff.git-agecrypt.textconv "git-agecrypt textconv"
+    # that store path is garbage collected. Point at a wrapper instead, which
+    # also covers the bootstrap case where git-agecrypt is not yet on PATH.
+    # Git runs filter and textconv commands from the top of the worktree, so a
+    # relative path here survives the repo being moved.
+    git config filter.git-agecrypt.smudge "./scripts/git-agecrypt.sh smudge -f %f"
+    git config filter.git-agecrypt.clean "./scripts/git-agecrypt.sh clean -f %f"
+    git config diff.git-agecrypt.textconv "./scripts/git-agecrypt.sh textconv"
     # Identities live in .git/config so each checkout can point at its own keys.
     # The shared host key comes first so decryption never touches the YubiKey.
     # `git-agecrypt config add` errors on an already-registered identity, so this
@@ -27,8 +30,10 @@ agecrypt-init:
     done
     # A fresh clone checked private/** out before the filters existed, so the
     # working tree still holds ciphertext. Force a re-checkout through smudge.
-    # Refuse if that would throw away uncommitted plaintext edits.
-    if [[ -n "$(git diff --name-only -- private)" ]]; then
+    # Refuse if that would throw away uncommitted plaintext edits. Deletions are
+    # excluded (--diff-filter=d): they hold no content to lose, and a run that
+    # died between the rm and the checkout below would otherwise be unrepeatable.
+    if [[ -n "$(git diff --name-only --diff-filter=d -- private)" ]]; then
       echo "private/** has unstaged changes; refusing to re-checkout." >&2
       echo "Commit or stash them, then re-run." >&2
       exit 1
