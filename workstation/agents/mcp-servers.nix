@@ -123,7 +123,13 @@ in
 
   # auto_index lives in the server's SQLite config (CBM_CACHE_DIR), not in any
   # declarative file, so flip it via the CLI on activation. Idempotent.
+  # The CLI refuses to start while another CBM process holds the cache with a
+  # different build hash — which is exactly the case during a rebuild that
+  # updates the server while an editor session still runs the old one. That is
+  # not worth failing the whole activation over, so warn and move on; the next
+  # activation with no session running sets it.
   home.activation.codebaseMemoryAutoIndex = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${codebase-memory-mcp}/bin/codebase-memory-mcp config set auto_index true
+    run ${codebase-memory-mcp}/bin/codebase-memory-mcp config set auto_index true \
+      || warnEcho "codebase-memory-mcp: could not set auto_index (a CBM session is likely running); skipping."
   '';
 }
