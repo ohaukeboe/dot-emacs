@@ -25,8 +25,8 @@ let
   '';
 
   # Hotkey-driven Proton Pass search: wofi picker over pass-cli, copying the
-  # chosen field to the clipboard. Bound to Super+space in the COSMIC custom
-  # shortcuts (~/.config/cosmic/com.system76.CosmicSettings.Shortcuts/v1/custom).
+  # chosen field to the clipboard. Bound to Super+space by the COSMIC custom
+  # shortcuts declared in modules/cosmic-de/default.nix.
   protonpassWofi = pkgs.writeShellApplication {
     name = "protonpass-wofi";
     runtimeInputs = with pkgs; [

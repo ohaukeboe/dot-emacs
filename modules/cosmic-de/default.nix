@@ -79,6 +79,41 @@ in
           )
         '';
         "cosmic/com.system76.CosmicBackground/v1/same-on-all".text = "true";
+
+        # Keyboard: EU layout, Caps Lock as an extra Ctrl, faster repeat.
+        "cosmic/com.system76.CosmicComp/v1/xkb_config".text = ''
+          (
+              rules: "",
+              model: "pc104",
+              layout: "eu",
+              variant: "",
+              options: Some("terminate:ctrl_alt_bksp,caps:ctrl_modifier"),
+              repeat_delay: 600,
+              repeat_rate: 25,
+          )
+        '';
+
+        # Custom keyboard shortcuts. Super+space opens the Proton Pass wofi
+        # picker declared in workstation/home.nix.
+        "cosmic/com.system76.CosmicSettings.Shortcuts/v1/custom".text = ''
+          {
+              (
+                  modifiers: [
+                      Super,
+                  ],
+                  key: "space",
+                  description: Some("proton pass"),
+              ): Spawn("protonpass-wofi"),
+              (
+                  modifiers: [
+                      Super,
+                      Shift,
+                  ],
+                  key: "space",
+                  description: Some("1password"),
+              ): Spawn("1password --quick-access"),
+          }
+        '';
       };
 
       # Fallback polkit agent (cosmic-osd's built-in agent crashes)
