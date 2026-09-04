@@ -59,6 +59,8 @@ nixpkgs.lib.nixosSystem {
   };
   modules = [
     inputs.sops-nix.nixosModules.sops
+    # Inert unless the machine declares disko.devices (machines/<host>/disk.nix).
+    inputs.disko.nixosModules.disko
     {
       system.stateVersion = stateVersion;
       networking.hostName = hostname;

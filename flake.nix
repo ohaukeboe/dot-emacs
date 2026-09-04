@@ -28,6 +28,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Declarative disk partitioning, used by machines provisioned after the
+    # first three. See lib/disk-layouts/luks-btrfs.nix and docs/new-machine.md.
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # for list of hardware modules: https://github.com/NixOS/nixos-hardware#list-of-profiles
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware/master";
