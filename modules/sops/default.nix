@@ -52,6 +52,36 @@ in
         pkgs.age-plugin-tpm
       ];
 
+      # Hand the shared host key to the user, so Home Manager does not need a
+      # copy of it in the home directory. The bootstrap file lists that same key
+      # as a recipient of itself (see .sops.yaml), so the system key installed
+      # at ${ageKeyFiles.default} can decrypt it.
+      #
+      # Only meaningful for the shared key: the yubikey/tpm settings decrypt
+      # with the hardware key directly and have nothing to hand over.
+      #
+      # Left at the default /run/secrets/<name> path on purpose.
+      # sops-install-secrets creates missing parent directories as root, so
+      # aiming this at ~/.config/sops/age/ would leave a root-owned ~/.config
+      # for Home Manager to fight over.
+      sops.secrets = mkIf (config.sops.ageKey == "default") {
+        host-age-key = {
+          sopsFile = ../../sops/bootstrap/host-key.yaml;
+          key = "host_age_key";
+          owner = config.user.username;
+          mode = "0400";
+        };
+      };
+
+      # Point Home Manager at it under the same condition. This has to be
+      # driven from here rather than from workstation/sops.nix: `sops.ageKey`
+      # exists separately in each module tree, so the Home Manager side cannot
+      # see that this machine decrypts with the shared key. When it does not,
+      # Home Manager keeps its own default of ~/.config/sops/age/keys.txt.
+      home-manager.users.${config.user.username}.sops.age.keyFile = mkIf (
+        config.sops.ageKey == "default"
+      ) config.sops.secrets.host-age-key.path;
+
       # This is the actual specification of the secrets.
       # sops.secrets.example_key = { };
     };

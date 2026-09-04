@@ -32,7 +32,9 @@ in
     ]
     ++ lib.optionals (!pkgs.stdenv.isDarwin) [ age-plugin-tpm ];
 
-  sops.age.keyFile = ageKeyFiles.${config.sops.ageKey};
+  # mkDefault so a NixOS host can point this at the copy modules/sops hands
+  # over as a secret, sparing every machine an age key in the home directory.
+  sops.age.keyFile = mkDefault ageKeyFiles.${config.sops.ageKey};
   # Never auto-generate. There is a single shared host key, installed by
   # `just bootstrap-host-key`; a freshly generated key would be a recipient of
   # nothing and would fail at decryption time instead of at setup time.
