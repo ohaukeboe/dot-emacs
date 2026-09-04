@@ -198,6 +198,8 @@ in
       ### just ###
       just
       just-lsp
+      proton-pass
+      proton-pass-cli
 
       ### terraform ###
       terraform
