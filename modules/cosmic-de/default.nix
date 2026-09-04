@@ -93,6 +93,20 @@ in
           )
         '';
 
+        # Tiling and workspace behaviour: autotile per workspace, vertical
+        # per-output workspaces, focus following the cursor and back.
+        "cosmic/com.system76.CosmicComp/v1/autotile".text = "true";
+        "cosmic/com.system76.CosmicComp/v1/autotile_behavior".text = "PerWorkspace";
+        "cosmic/com.system76.CosmicComp/v1/cursor_follows_focus".text = "true";
+        "cosmic/com.system76.CosmicComp/v1/focus_follows_cursor".text = "true";
+        "cosmic/com.system76.CosmicComp/v1/focus_follows_cursor_delay".text = "20";
+        "cosmic/com.system76.CosmicComp/v1/workspaces".text = ''
+          (
+              workspace_mode: OutputBound,
+              workspace_layout: Vertical,
+          )
+        '';
+
         # Custom keyboard shortcuts. Super+space opens the Proton Pass wofi
         # picker declared in workstation/home.nix.
         "cosmic/com.system76.CosmicSettings.Shortcuts/v1/custom".text = ''
