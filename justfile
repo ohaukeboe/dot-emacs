@@ -3,6 +3,7 @@ default:
   @just --list
 
 import 'just/bootstrap.just'
+import 'just/machine.just'
 import 'just/sops.just'
 import 'just/nvfetcher.just'
 import 'just/agecrypt.just'
