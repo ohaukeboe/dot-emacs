@@ -203,12 +203,49 @@ build: Update flake dependencies and fix platform references
 4. Import automatically via `modules/default.nix`
 
 #### Adding a New Machine
-1. Create `machines/hostname/` directory
-2. Add `default.nix`, `hardware-configuration.nix`, optional `config.nix`
-3. Register in `machines/machines.nix`
-4. On the machine itself, run `just bootstrap` once with the "wallet" YubiKey
+Installing on fresh hardware is a full procedure with two unforgiving steps —
+follow **`docs/new-machine.md`**, not this summary.
+
+1. On the machine itself, run `just bootstrap` once with the "wallet" YubiKey
    inserted. No key material is per-machine, so nothing about secrets has to be
-   edited when a machine is added or retired.
+   edited when a machine is added or retired. This has to happen before any
+   evaluation of the flake: `flake.nix` reads `private/hosts.json`, which is
+   ciphertext until `agecrypt-init` has run.
+2. `just new-machine <hostname> <device>` creates `machines/<hostname>/` with a
+   `disk.nix`, a filesystem-free `hardware-configuration.nix` and a
+   `default.nix`, registers the machine in `machines/machines.nix`, and git adds
+   the result.
+3. Edit `machines/machines.nix` for the modules this machine wants. Anything
+   machine-specific that is not a module toggle goes in `machines/<hostname>/config.nix`
+   (see `work-laptop`).
+4. `just install-machine <hostname>` partitions, installs, sets the user
+   password and seeds the age key. It takes no device argument — it reads one
+   from `disk.nix` — and refuses on a machine with no disko layout, an untracked
+   machine directory, a missing `/var/lib/sops-nix/keys.txt`, or a disk with
+   mounted partitions. `just install-machine <hostname> mount` retries a failed
+   install without reformatting.
+5. After the first boot, `just finish-install <hostname>` (re-runnable, nothing
+   destructive).
+
+TPM-backed LUKS unlock is opt-in per machine via
+`modules.secure-boot.measuredBoot.enable`, which turns on lanzaboote's
+systemd-pcrlock support so the volume is bound to a policy rather than to static
+PCR values — lanzaboote refreshes it on every rebuild, so enrolment happens once
+instead of after every firmware or Secure Boot key change. Enabling it forces
+`configurationLimit` down to 8, a systemd-pcrlock limit. Enrolment itself stays
+manual (`systemd-cryptenroll --tpm2-pcrlock`, with a PIN) — see
+`docs/new-machine.md` step 8.
+
+Disk layout is declared, not hand-partitioned: `machines/<hostname>/disk.nix`
+imports `lib/disk-layouts/luks-btrfs.nix` (GPT + ESP + LUKS2 + btrfs subvolumes
+`@`, `@home`, `@nix`, `@snapshots`, `@swap`), applied by disko at install time.
+The LUKS mapper is named `crypted` because `modules/sleep-then-hibernate`
+defaults `boot.resumeDevice` to `/dev/mapper/crypted`.
+
+`desktop`, `work-laptop` and `x13-laptop` predate disko and keep their generated
+`hardware-configuration.nix`. Do not add a `disk.nix` to them without stripping
+the filesystem, LUKS and swap stanzas in the same change — disko defines those
+same options and the two collide.
 
 #### Managing Secrets
 There is exactly **one host age key**, shared by every machine. Its private
@@ -217,6 +254,15 @@ the YubiKey (and to itself). `just bootstrap-host-key` decrypts it — the only
 step that needs the YubiKey — and installs it to `~/.config/sops/age/keys.txt`
 and `/var/lib/sops-nix/keys.txt`. Everything else then decrypts with no hardware
 present. Machines are never enrolled as individual recipients.
+
+On NixOS that is the *only* key placed by hand. `modules/sops` declares the same
+shared key as `sops.secrets.host-age-key` (owner: the primary user) and points
+`home-manager.users.<user>.sops.age.keyFile` at `/run/secrets/host-age-key`, so
+no age key is needed in the home directory. This works because
+`sops/bootstrap/host-key.yaml` lists the shared key as a recipient of itself.
+Both fall back to `~/.config/sops/age/keys.txt` for standalone Home Manager and
+whenever `sops.ageKey` is a `tpm`/`yubikey-*` value, since the bootstrap file is
+not encrypted to those.
 
 Two tiers, both encrypted to the same age recipients listed in `.sops.yaml`:
 

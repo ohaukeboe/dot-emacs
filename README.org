@@ -15,7 +15,15 @@ home-manager switch --flake .#default --impure -b backup
 sudo nixos-rebuild switch --flake .#<hostname>
 #+end_src
 
-Where ~<hostname>~ is: ~x13-laptop~, ~work-laptop~, or ~x1laptop~
+Where ~<hostname>~ is one of the machines in [[file:machines/machines.nix][machines/machines.nix]]: ~x13-laptop~,
+~work-laptop~, or ~desktop~.
+
+** New Machine
+
+Installing on fresh hardware is a separate procedure — see
+[[file:docs/new-machine.md][docs/new-machine.md]]. Two of its steps (putting firmware into Secure Boot
+Setup Mode, and setting a password before the first reboot) leave you with an
+unusable install if skipped, so read it through first.
 
 * Features
 
@@ -80,8 +88,10 @@ Also, in order to get the 1password browser extension to talk to the program eve
 * Structure
 
 - ~flake.nix~ - Main entry point
-- ~system/~ - NixOS system configuration
 - ~workstation/~ - Home Manager user configuration
-- ~machines/~ - Hardware-specific configurations
-- ~common/~ - Shared modules (caches, secure boot, unfree packages)
-- ~lib/~ - Helper functions
+- ~machines/~ - Per-machine configurations and the machine registry
+- ~modules/~ - Optional feature modules (gaming, cosmic-de, secure-boot, sshd, ...)
+- ~common/~ - Shared NixOS defaults, caches, custom options, unfree predicates
+- ~lib/~ - Helper functions and the shared disko disk layout
+- ~just/~ - just recipes (bootstrap, sops, nvfetcher, git-agecrypt, new-machine)
+- ~docs/~ - Runbooks and architecture decision records
