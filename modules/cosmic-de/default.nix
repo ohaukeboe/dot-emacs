@@ -62,6 +62,25 @@ in
         "io.github.nwxnw.cosmic-ext-connected"
       ];
 
+      # Wallpaper: flat dark color on every output. Declared here so new
+      # machines come up with the same background instead of the COSMIC
+      # default image. Note these files become read-only symlinks, so the
+      # wallpaper can only be changed by editing this module.
+      xdg.configFile = {
+        "cosmic/com.system76.CosmicBackground/v1/all".text = ''
+          (
+              output: "all",
+              source: Color(Single((0.09, 0.09, 0.09))),
+              filter_by_theme: false,
+              rotation_frequency: 900,
+              filter_method: Lanczos,
+              scaling_mode: Zoom,
+              sampling_method: Alphanumeric,
+          )
+        '';
+        "cosmic/com.system76.CosmicBackground/v1/same-on-all".text = "true";
+      };
+
       # Fallback polkit agent (cosmic-osd's built-in agent crashes)
       systemd.user.services.polkit-agent = {
         Unit = {
