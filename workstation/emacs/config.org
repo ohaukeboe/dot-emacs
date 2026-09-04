@@ -3101,6 +3101,14 @@ Next up, the =docker= package is good at handling containers.
     ;; (oh/leader-key
     ;;   "cb" '(makefile-executor-execute-project-target :wk "Run make command")))
 #+end_src
+** Sops
+
+#+begin_src elisp
+  (use-package sops
+    :ensure t
+    :init
+    (global-sops-mode 1))
+#+end_src
 
 ** Copilot
 
