@@ -23,6 +23,23 @@ let
         exec ${config.programs.emacs.finalPackage}/bin/emacsclient -c -a "" "$@" ;;
     esac
   '';
+
+  # Hotkey-driven Proton Pass search: wofi picker over pass-cli, copying the
+  # chosen field to the clipboard. Bound to Super+space in the COSMIC custom
+  # shortcuts (~/.config/cosmic/com.system76.CosmicSettings.Shortcuts/v1/custom).
+  protonpassWofi = pkgs.writeShellApplication {
+    name = "protonpass-wofi";
+    runtimeInputs = with pkgs; [
+      coreutils
+      jq
+      libnotify
+      proton-pass-cli
+      util-linux # flock, setsid
+      wl-clipboard
+      wofi
+    ];
+    text = builtins.readFile ./scripts/protonpass-wofi.sh;
+  };
 in
 {
   imports = [
@@ -333,6 +350,7 @@ in
         vlc
         # python313Packages.weasyprint # website to pdf converter. Seems to be broken on mac
         tailscale
+        protonpassWofi
 
         ### nixGL ###
         (lib.optional (!isNixos) pkgs.nixgl.nixVulkanIntel)
