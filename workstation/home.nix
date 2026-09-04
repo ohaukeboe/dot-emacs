@@ -572,11 +572,8 @@ in
       gpg.format = "ssh";
       commit.gpgsign = true;
       credential.helper = "store";
-      "gpg \"ssh\"".program =
-        if isLinux then
-          "${pkgs._1password-gui}/bin/op-ssh-sign"
-        else
-          "/Applications/1Password.app/Contents/MacOS/op-ssh-sign";
+      # OpenSSH's own signer; the key comes from sops, not the 1Password agent.
+      user.signingKey = config.sops.secrets."ssh/main".path;
 
     };
 

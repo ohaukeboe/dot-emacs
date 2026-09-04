@@ -41,6 +41,15 @@ in
   sops.defaultSopsFile = ../sops/home/secrets.yaml;
 
   sops.secrets = {
+    # Main SSH private key. Left at the default path
+    # (${config.xdg.configHome}/sops-nix/secrets/ssh/main, a symlink into the
+    # per-user runtime tmpfs) and the default mode 0400, which already passes
+    # OpenSSH's strict permission check. Do not point `path` into ~/.ssh: that
+    # only adds a symlink chain that dangles until sops-nix.service has run.
+    "ssh/main" = { };
+    "ssh/old" = { };
+    "ssh/trashcan" = { };
+
     "authinfo/openai" = { };
     "authinfo/anthropic" = { };
     "authinfo/openrouter" = { };

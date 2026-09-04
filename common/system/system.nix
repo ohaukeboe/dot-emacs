@@ -198,6 +198,10 @@
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.user.username} = {
     isNormalUser = true;
+    # Declarative `loginctl enable-linger`: the user's systemd manager and
+    # /run/user/$UID come up at boot, so sops-nix.service has decrypted the SSH
+    # key before the first SSH login -- no interactive session required.
+    linger = true;
     extraGroups = [
       "wheel"
       "networkmanager"

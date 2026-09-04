@@ -1,12 +1,48 @@
-{ private, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  private,
+  ...
+}:
 
 let
-  mainKey = ".ssh/pubkeys/main.pub";
-  oldKey = ".ssh/pubkeys/old.pub";
-  trashcanKey = ".ssh/pubkeys/trashcan.pub";
-  piKey = ".ssh/pubkeys/pi.pub";
+  isLinux = pkgs.stdenv.hostPlatform.isLinux;
+  # Decrypted by sops-nix at runtime; never present in the Nix store.
+  mainKey = config.sops.secrets."ssh/main".path;
+  oldKey = config.sops.secrets."ssh/old".path;
+  trashcanKey = config.sops.secrets."ssh/trashcan".path;
 in
 {
+  # A plain ssh-agent with no GUI, desktop-session or biometric dependency, so
+  # it works over a bare TTY or an incoming SSH login. Home Manager only sets
+  # SSH_AUTH_SOCK when SSH_CONNECTION is unset, so a forwarded agent still wins.
+  services.ssh-agent.enable = true;
+
+  # sops-nix decrypts in a systemd user oneshot, so ssh-add must be ordered
+  # after it. Needs a lingering user for the keys to be loaded before the first
+  # interactive login on a freshly booted machine; on NixOS that comes from
+  # `users.users.<name>.linger`, elsewhere from `loginctl enable-linger`.
+  systemd.user.services.ssh-add-keys = lib.mkIf isLinux {
+    Unit = {
+      Description = "Load SSH keys into the agent";
+      After = [
+        "sops-nix.service"
+        "ssh-agent.service"
+      ];
+      Wants = [
+        "sops-nix.service"
+        "ssh-agent.service"
+      ];
+    };
+    Service = {
+      Type = "oneshot";
+      Environment = [ "SSH_AUTH_SOCK=%t/${config.services.ssh-agent.socket}" ];
+      ExecStart = "${lib.getExe' pkgs.openssh "ssh-add"} ${mainKey} ${oldKey} ${trashcanKey}";
+    };
+    Install.WantedBy = [ "default.target" ];
+  };
+
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
@@ -18,84 +54,63 @@ in
         ControlMaster = "auto";
         ControlPath = "/tmp/ssh-%u-%r@%h:%p";
         ControlPersist = "10m";
-        # TODO: make this dynamic based on the environment
-        IdentityAgent = "~/.1password/agent.sock";
         IdentitiesOnly = true;
+        # No IdentityAgent: it would override SSH_AUTH_SOCK on every machine
+        # this config is deployed to, discarding forwarded agents on arrival.
+        AddKeysToAgent = "yes";
       };
       "desktop" = {
         HostName = private.ssh_host.desktop;
         User = "oskar";
-        IdentityFile = "~/${mainKey}";
-        ForwardAgent = true;
-      };
-
-      "work-laptop" = {
-        HostName = private.ssh_host.work-laptop;
-        User = "oskar";
-        IdentityFile = "~/${mainKey}";
-        ForwardAgent = true;
-      };
-
-      "killono" = {
-        HostName = private.ssh_host.killono;
-        User = "oskar";
-        IdentityFile = "~/${oldKey}";
-      };
-
-      "deepthought" = {
-        HostName = private.ssh_host.deepthought;
-        User = "deepthought";
-        IdentityFile = "~/${mainKey}";
-      };
-
-      "deploy-deepthought" = {
-        HostName = private.ssh_host.deepthought;
-        User = "root";
-        IdentityFile = "~/${mainKey}";
-      };
-
-      "bayer" = {
-        HostName = private.ssh_host.bayer;
-        User = "drift";
-        IdentityFile = "~/${trashcanKey}";
-      };
-
-      "joe" = {
-        HostName = private.ssh_host.joe;
-        User = "drift";
-        IdentityFile = "~/${trashcanKey}";
-      };
-
-      "github.com" = {
-        HostName = "github.com";
-        IdentityFile = "~/${mainKey}";
+        IdentityFile = mainKey;
       };
 
       "laptop" = {
         HostName = private.ssh_host.laptop;
         User = "oskar";
-        IdentityFile = "~/${mainKey}";
-        ForwardAgent = true;
+        IdentityFile = mainKey;
       };
-    };
-  };
 
-  home.file = {
-    # These are the public keys used to identify what key to use. The
-    # private keys are stored in 1Password
-    "${mainKey}".text =
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILToVl9RmOhn1TaQHiDPIS1/TGbHeA6ssTTocJmv5Yvf";
-    "${oldKey}".text =
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKf4tcGBaTRbaBzgy7QbGcbL5E0ShA2EC0C5OwhZukkl";
-    "${trashcanKey}".text =
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBWtqnZik41LZmBiVQK/d46GpuZT23uhpplZmcHBFOSC";
+      "work-laptop" = {
+        HostName = private.ssh_host.work-laptop;
+        User = "oskar";
+        IdentityFile = mainKey;
+      };
 
-    ".config/1Password/ssh/agent.toml".source = (pkgs.formats.toml { }).generate "1password-agent" {
-      ssh-keys = [
-        { vault = "Private"; }
-        { vault = "Employee"; }
-        { vault = "320-Drift"; }
-      ];
+      "killono" = {
+        HostName = private.ssh_host.killono;
+        User = "oskar";
+        IdentityFile = oldKey;
+      };
+
+      "deepthought" = {
+        HostName = private.ssh_host.deepthought;
+        User = "deepthought";
+        IdentityFile = mainKey;
+      };
+
+      "deploy-deepthought" = {
+        HostName = private.ssh_host.deepthought;
+        User = "root";
+        IdentityFile = mainKey;
+      };
+
+      "bayer" = {
+        HostName = private.ssh_host.bayer;
+        User = "drift";
+        IdentityFile = trashcanKey;
+      };
+
+      "joe" = {
+        HostName = private.ssh_host.joe;
+        User = "drift";
+        IdentityFile = trashcanKey;
+      };
+
+      "github.com" = {
+        HostName = "github.com";
+        IdentityFile = mainKey;
+      };
     };
   };
 }
