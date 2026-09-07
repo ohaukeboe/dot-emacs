@@ -234,18 +234,25 @@
   };
 
   # Let `nixos-rebuild switch` work without `--flake .#<hostname>`. It resolves
-  # this symlink and rebuilds the directory it lands in, taking the attribute
-  # from the hostname -- which is how nixosConfigurations are keyed.
+  # /etc/nixos/flake.nix and rebuilds the directory it lands in, taking the
+  # attribute from the hostname -- which is how nixosConfigurations are keyed.
   #
   # A tmpfiles rule rather than environment.etc: that would copy flake.nix into
   # the store, and nixos-rebuild would then resolve to the store path and
   # silently rebuild a frozen snapshot instead of the working checkout.
   #
-  # Only flake.nix, not the whole directory. Both resolve to the same flake, but
-  # making /etc/nixos itself the repo means anything writing there --
-  # nixos-generate-config most obviously -- lands in the working tree.
+  # Link the directory, not flake.nix inside it. Targeting
+  # /etc/nixos/flake.nix breaks badly on a machine where /etc/nixos is already a
+  # symlink to the checkout: the path resolves through it to the repo's own
+  # flake.nix, which the rule then replaces with a symlink to itself.
+  #
+  # `L` and not `L+`. The + variant deletes whatever is in the way, directories
+  # included (tmpfiles.d(5)), which here would mean deleting a real /etc/nixos.
+  # Plain `L` leaves an existing path alone, so a machine that already has this
+  # set up by hand is untouched, and one that has a real /etc/nixos directory
+  # keeps it and simply needs `--flake` until it is cleared by hand.
   systemd.tmpfiles.rules = [
-    "L+ /etc/nixos/flake.nix - - - - ${config.system.flakePath}/flake.nix"
+    "L /etc/nixos - - - - ${config.system.flakePath}"
   ];
 
   programs.fish.enable = true;

@@ -61,8 +61,8 @@ with lib;
         description = ''
           Absolute path of the checkout this machine rebuilds from.
 
-          Symlinked to as /etc/nixos/flake.nix, which is how `nixos-rebuild`
-          finds a flake without being given `--flake`: it resolves that symlink
+          Symlinked to as /etc/nixos, which is how `nixos-rebuild` finds a
+          flake without being given `--flake`: it resolves /etc/nixos/flake.nix
           and uses the directory it lands in, with the attribute taken from the
           hostname. `scripts/install-machine.sh` puts the checkout here.
 
