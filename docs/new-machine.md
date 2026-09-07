@@ -152,6 +152,10 @@ Tailscale, rebuilds in place, and reports `bootctl status` and `sbctl verify`.
 Expect `Secure Boot: enabled (user)`. Anything else means the firmware was not
 in Setup Mode — see below.
 
+From here on the machine rebuilds itself with a bare `sudo nixos-rebuild switch`
+(or the `nrs` alias) from any directory: `/etc/nixos/flake.nix` points at this
+checkout and the attribute comes from the hostname.
+
 **If Secure Boot enrollment failed**, the firmware was not in Setup Mode.
 Register the machine with
 

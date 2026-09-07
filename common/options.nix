@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ config, lib, ... }:
 
 with lib;
 
@@ -55,6 +55,23 @@ with lib;
     };
 
     system = {
+      flakePath = mkOption {
+        type = types.str;
+        default = "/home/${config.user.username}/projects/dot-emacs";
+        description = ''
+          Absolute path of the checkout this machine rebuilds from.
+
+          Symlinked to as /etc/nixos/flake.nix, which is how `nixos-rebuild`
+          finds a flake without being given `--flake`: it resolves that symlink
+          and uses the directory it lands in, with the attribute taken from the
+          hostname. `scripts/install-machine.sh` puts the checkout here.
+
+          Only the symlink target -- nothing evaluates this, so a machine whose
+          checkout lives elsewhere just gets a dead symlink and has to pass
+          `--flake` as before.
+        '';
+      };
+
       audio.echoCancel.enable = mkOption {
         type = types.bool;
         default = true;

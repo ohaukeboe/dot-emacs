@@ -12,6 +12,15 @@ home-manager switch --flake .#default --impure -b backup
 
 ** NixOS System
 #+begin_src sh
+sudo nixos-rebuild switch
+#+end_src
+
+~/etc/nixos/flake.nix~ is symlinked to this checkout (see ~system.flakePath~), so
+~nixos-rebuild~ finds the flake on its own and takes the attribute from the
+hostname. The fish alias ~nrs~ does the same. To rebuild a *different* machine,
+or from a checkout that is not the symlinked one, be explicit:
+
+#+begin_src sh
 sudo nixos-rebuild switch --flake .#<hostname>
 #+end_src
 

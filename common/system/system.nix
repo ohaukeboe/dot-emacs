@@ -233,6 +233,21 @@
     };
   };
 
+  # Let `nixos-rebuild switch` work without `--flake .#<hostname>`. It resolves
+  # this symlink and rebuilds the directory it lands in, taking the attribute
+  # from the hostname -- which is how nixosConfigurations are keyed.
+  #
+  # A tmpfiles rule rather than environment.etc: that would copy flake.nix into
+  # the store, and nixos-rebuild would then resolve to the store path and
+  # silently rebuild a frozen snapshot instead of the working checkout.
+  #
+  # Only flake.nix, not the whole directory. Both resolve to the same flake, but
+  # making /etc/nixos itself the repo means anything writing there --
+  # nixos-generate-config most obviously -- lands in the working tree.
+  systemd.tmpfiles.rules = [
+    "L+ /etc/nixos/flake.nix - - - - ${config.system.flakePath}/flake.nix"
+  ];
+
   programs.fish.enable = true;
   users.defaultUserShell = pkgs.fish;
 

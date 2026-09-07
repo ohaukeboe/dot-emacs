@@ -406,6 +406,12 @@ in
       shellAliases = {
         hs = "home-manager switch --flake .#default --impure -b backup";
         edit = "emacsclient -r -n";
+      }
+      // lib.optionalAttrs isNixos {
+        # No --flake needed: common/system/system.nix symlinks the checkout's
+        # flake.nix to /etc/nixos/flake.nix, which nixos-rebuild resolves, and
+        # the attribute comes from the hostname. Works from any directory.
+        nrs = "sudo nixos-rebuild switch";
       };
 
       shellInit = ''
