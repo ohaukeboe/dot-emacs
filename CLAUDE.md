@@ -64,6 +64,7 @@ See **`AGENTS.md`** for the full guide (code style, module/machine patterns, str
 nix fmt                                              # format (nixfmt/shfmt/toml-sort) — run before commit
 nix flake check                                      # validate flake
 nix build .#homeConfigurations.default.activationPackage  # test build, no activate
+nix build .#test-disk-layout -L                      # VM test of the disko layout (slow)
 ```
 
 ## Deploy

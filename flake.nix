@@ -225,9 +225,20 @@
         "default" = self.homeConfigurations.${defaultConfig};
       };
 
-      packages = forAllSystems (system: {
-        default = self.homeConfigurations."oskar@${system}".activationPackage;
-      });
+      packages = forAllSystems (
+        system:
+        {
+          default = self.homeConfigurations."oskar@${system}".activationPackage;
+        }
+        # Deliberately a package rather than a check: `nix flake check` runs
+        # before every commit and a VM test would add minutes to that loop.
+        #   nix build .#test-disk-layout -L
+        // nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "linux" system) {
+          test-disk-layout = nixpkgsFor.${system}.callPackage ./tests/disk-layout.nix {
+            diskoLib = inputs.disko.lib;
+          };
+        }
+      );
 
       checks = forAllSystems (system: {
         formatting = treefmtEval.${system}.config.build.check self;

@@ -236,6 +236,12 @@ instead of after every firmware or Secure Boot key change. Enabling it forces
 manual (`systemd-cryptenroll --tpm2-pcrlock`, with a PIN) — see
 `docs/new-machine.md` step 8.
 
+`tests/disk-layout.nix` exercises the layout in a VM: it formats a virtual
+disk, installs, reboots and asserts the mapper name, every subvolume and every
+mountpoint against the running system. Run it with `nix build .#test-disk-layout
+-L` after touching `lib/disk-layouts/`. It is a package rather than a flake
+check on purpose, so `nix flake check` stays fast enough to run before a commit.
+
 Disk layout is declared, not hand-partitioned: `machines/<hostname>/disk.nix`
 imports `lib/disk-layouts/luks-btrfs.nix` (GPT + ESP + LUKS2 + btrfs subvolumes
 `@`, `@home`, `@nix`, `@snapshots`, `@swap`), applied by disko at install time.
