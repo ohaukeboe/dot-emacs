@@ -8,13 +8,13 @@
 {
   beads = {
     pname = "beads";
-    version = "v1.1.2";
+    version = "v1.2.2";
     src = fetchFromGitHub {
       owner = "gastownhall";
       repo = "beads";
-      rev = "v1.1.2";
+      rev = "v1.2.2";
       fetchSubmodules = false;
-      sha256 = "sha256-5oDI2MunHrOKx1m5mC0ZaIqZ9+f1YBQotMBUj6U5H1I=";
+      sha256 = "sha256-HSZ1z4WaHQDPomW6nNs8iUnld36BuHnOVaODD5mxY00=";
     };
   };
   caveman-shrink = {
@@ -27,21 +27,21 @@
   };
   chrome-devtools-mcp = {
     pname = "chrome-devtools-mcp";
-    version = "1.6.0";
+    version = "1.8.0";
     src = fetchurl {
-      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.6.0.tgz";
-      sha256 = "sha256-HmMsLZcUtPgrTPq077nOV1CFx1/+XpdyODEprwEsnIQ=";
+      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.8.0.tgz";
+      sha256 = "sha256-rAM0QQzqddEaXrtVX7sBOaSjlN412YzCo7wKlZ8ATN0=";
     };
   };
   code-review-graph = {
     pname = "code-review-graph";
-    version = "v2.3.7";
+    version = "v2.3.8";
     src = fetchFromGitHub {
       owner = "tirth8205";
       repo = "code-review-graph";
-      rev = "v2.3.7";
+      rev = "v2.3.8";
       fetchSubmodules = false;
-      sha256 = "sha256-xxKEH4JJY2jTNqNSmzkX9D5/7aC+OqhN+rDeb2AO/5c=";
+      sha256 = "sha256-NhssTYN0McUEpxAlb4bWDrdlCA6jFmXj9Cn9IxdkcUg=";
     };
   };
   lsp-ltex-plus = {
