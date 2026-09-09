@@ -308,7 +308,13 @@ in
       nixd
 
       ### latex org ###
-      texlive.combined.scheme-full
+      # tectonic bundles its own TeX distribution and fetches packages on
+      # demand, so no texlive scheme is needed. dvisvgm used to come along
+      # with texlive and is still needed to turn org's LaTeX previews into
+      # SVG. Its `out' output has to be requested explicitly, because
+      # texlive packages leave `meta.outputsToInstall' empty.
+      tectonic
+      texlivePackages.dvisvgm.out
 
       ## org-inline-pdf
       pdf2svg

@@ -1567,6 +1567,10 @@ I use =python-lsp-server= (pylsp) together with =ruff= and =ty= as the language 
     (TeX-auto-save t)
     (TeX-parse-self t)
     (TeX-master nil)
+    ;; tectonic is a XeTeX engine, so the file is compiled by xelatex under
+    ;; the hood. This keeps AUCTeX's macro expansion and font handling in
+    ;; sync with what actually runs.
+    (TeX-engine 'xetex)
     :config
     ;; (load "auctex.el" nil t t)
     ;; Use pdf-tools to open PDF files
@@ -1574,6 +1578,18 @@ I use =python-lsp-server= (pylsp) together with =ruff= and =ty= as the language 
     ;; Update PDF buffers after successful LaTeX runs
     (add-hook 'TeX-after-compilation-finished-functions
                #'TeX-revert-document-buffer))
+
+  ;; texlive was replaced by tectonic, so neither `latexmk' nor `pdflatex'
+  ;; exists anymore. Tectonic handles reruns, biber and package downloads by
+  ;; itself, which makes the "LaTeX" -> "BibTeX" -> "LaTeX" dance AUCTeX
+  ;; normally drives unnecessary.
+  (with-eval-after-load 'tex
+    (add-to-list 'TeX-command-list
+                 '("Tectonic" "tectonic --keep-logs --synctex %t"
+                   TeX-run-TeX nil (LaTeX-mode docTeX-mode)
+                   :help "Compile the document with tectonic"))
+    (add-hook 'LaTeX-mode-hook
+              (lambda () (setq TeX-command-default "Tectonic"))))
 #+end_src
 
 CDLatex makes writing math a pleasure.
@@ -1989,6 +2005,16 @@ rather than files.  These modes usually use read-only buffers.
     (org-latex-prefer-user-labels t)
     (org-ditaa-default-exec-mode 'ditaa)
     (org-latex-create-formula-image-program 'dvisvgm)
+    ;; tectonic is a XeTeX engine, so declare xelatex as the compiler. This
+    ;; keeps org from injecting the pdflatex-only `inputenc'/`fontenc'
+    ;; packages, which XeTeX does not want.
+    (org-latex-compiler "xelatex")
+    ;; tectonic resolves reruns, bibtex/biber and package downloads itself,
+    ;; so it replaces the whole latexmk invocation. Unlike latexmk, tectonic
+    ;; stops at the first recoverable TeX error, so `-Z continue-on-errors'
+    ;; restores the `-f -interaction=nonstopmode' behaviour we had before.
+    (org-latex-pdf-process
+     '("tectonic -Z continue-on-errors --outdir %o --keep-logs --synctex %f"))
     (org-log-done 'time)
     (org-auto-align-tags t)
     (org-tags-column 5)
@@ -2039,6 +2065,47 @@ rather than files.  These modes usually use read-only buffers.
     ;; (font-lock-add-keywords 'org-mode
     ;;                         '(("^ *\\([-]\\) "
     ;;                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+    ;; LaTeX previews now go through tectonic as well. tectonic can emit XDV,
+    ;; but dvisvgm would then have to find the fonts itself through kpathsea,
+    ;; which only works with a TeX distribution installed. Going through PDF
+    ;; instead keeps everything self-contained, because tectonic embeds every
+    ;; font it used into the PDF.
+    ;;
+    ;; dvisvgm's `--exact-bbox' only applies to DVI input, so with a PDF it
+    ;; would hand us a whole letter-sized page. Ghostscript measures the ink
+    ;; and sets a CropBox, which dvisvgm does honour, giving the same tight
+    ;; images `--exact-bbox' used to produce. Cropping to the ink rather than
+    ;; to a TeX box is what keeps display math from being as wide as
+    ;; \textwidth, which would overflow the olivetti body width.
+    ;;
+    ;; `\pagecolor' has to go: a painted page is ink as far as ghostscript is
+    ;; concerned, so the crop would always be the full page. The previews come
+    ;; out transparent instead and simply show the buffer background, which
+    ;; also means they survive a theme change.
+    (unless (string-match-p "pagecolor" org-format-latex-header)
+      (setq org-format-latex-header
+            (concat org-format-latex-header
+                    "\n\\makeatletter"
+                    "\n\\AtBeginDocument{\\let\\pagecolor\\@gobble}"
+                    "\n\\makeatother")))
+
+    (setf (alist-get 'dvisvgm org-preview-latex-process-alist)
+          '(:programs ("tectonic" "gs" "dvisvgm")
+            :description "pdf > svg"
+            :message "you need to install the programs: tectonic, ghostscript and dvisvgm."
+            :image-input-type "pdf"
+            :image-output-type "svg"
+            :image-size-adjust (1.7 . 1.5)
+            :post-clean (".dvi" ".xdv" ".pdf" ".tex" ".aux" ".log"
+                         ".svg" ".png" ".jpg" ".jpeg" ".out" "-crop.pdf")
+            :latex-compiler ("tectonic -Z continue-on-errors --outdir %o --chatter minimal --untrusted %f")
+            ;; Org runs these through `shell-file-name', which is fish here,
+            ;; so the pipeline is handed to `sh' as a single-quoted script
+            ;; with the file names passed as positional arguments. That keeps
+            ;; it free of both fish-isms and nested quoting.
+            :image-converter
+            ("sh -c 'bb=$(gs -q -dBATCH -dNOPAUSE -sDEVICE=bbox \"$1\" 2>&1 | sed -n \"s/.*HiResBoundingBox: //p\") && gs -q -o \"$2\" -sDEVICE=pdfwrite -c \"[/CropBox [$bb] /PAGES pdfmark\" -f \"$1\" && dvisvgm --pdf \"$2\" --no-fonts --scale=\"$3\" --output=\"$4\"' sh %f %o%b-crop.pdf %S %O")))
+
     (add-to-list 'org-latex-packages-alist '("" "listings"))
     (add-to-list 'org-latex-packages-alist '("" "amsmath"))
     ;; It is also possible to use `obeyFinal' to include todonotes more often
