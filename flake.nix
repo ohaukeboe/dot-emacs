@@ -3,7 +3,10 @@
 
   inputs = {
     # Specify the source of Home Manager and Nixpkgs.
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    # Official channel tarball instead of github: zstd-compressed (~20% smaller),
+    # no GitHub rate limits, IPv6, ships the command-not-found database.
+    # https://discourse.nixos.org/t/psa-use-nixos-org-tarballs-for-your-flake-inputs/79950
+    nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
     home-manager = {
       url = "github:nix-community/home-manager";
