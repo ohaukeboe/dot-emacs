@@ -55,6 +55,14 @@
       sha256 = "sha256-va0+w5ZUiaSASH2JDPRM0R4rwXCnRQKZw62Ftu3Ypfw=";
     };
   };
+  mobile-mcp = {
+    pname = "mobile-mcp";
+    version = "1.0.4";
+    src = fetchurl {
+      url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.4.tgz";
+      sha256 = "sha256-aAMy0WTEP+Yh4y7GdSSnasCA0KevVc3363BNFb94JBk=";
+    };
+  };
   pgmacs = {
     pname = "pgmacs";
     version = "v0.42";

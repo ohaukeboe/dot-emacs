@@ -8,6 +8,7 @@
 let
   chrome-devtools-mcp = pkgs.callPackage ./packages/chrome-devtools-mcp.nix { };
   kagimcp = pkgs.callPackage ./packages/kagimcp.nix { src = inputs.kagimcp; };
+  mobile-mcp = pkgs.callPackage ./packages/mobile-mcp.nix { };
   codebase-memory-mcp =
     inputs.codebase-memory-mcp.packages.${pkgs.stdenv.hostPlatform.system}.default;
   emacsConfig = "${config.xdg.configHome}/emacs";
@@ -76,6 +77,7 @@ in
 
   home.packages = [
     chrome-devtools-mcp
+    mobile-mcp
     pkgs.mcp-nixos
     pkgs.github-mcp-server
   ];
@@ -113,6 +115,11 @@ in
       name = "lsp-mcp";
       initFunction = "lsp-mcp-enable";
       stopFunction = "lsp-mcp-disable";
+    };
+    "mobile-mcp" = mkMcpServer {
+      name = "mobile-mcp";
+      command = "mcp-server-mobile";
+      shrink = true;
     };
     "kagi" = mkMcpServer {
       name = "kagi";

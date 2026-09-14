@@ -32,6 +32,10 @@ src.github_tag = "tirth8205/code-review-graph"
 fetch.github = "emacs-languagetool/lsp-ltex-plus"
 src.github = "emacs-languagetool/lsp-ltex-plus"
 
+[mobile-mcp]
+fetch.url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-$ver.tgz"
+src.cmd = "npm view @mobilenext/mobile-mcp version"
+
 # Emacs packages (built via epkgs.trivialBuild in workstation/home.nix).
 # pgmacs publishes no GitHub releases, only tags -> github_tag.
 [pgmacs]

@@ -92,6 +92,21 @@
         },
         "version": "0.3.0"
     },
+    "mobile-mcp": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "mobile-mcp",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "name": null,
+            "sha256": "sha256-aAMy0WTEP+Yh4y7GdSSnasCA0KevVc3363BNFb94JBk=",
+            "type": "url",
+            "url": "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.4.tgz"
+        },
+        "version": "1.0.4"
+    },
     "pgmacs": {
         "cargoLock": null,
         "date": null,
