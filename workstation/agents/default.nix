@@ -131,7 +131,7 @@ in
     programs.claude-code.settings.enabledPlugins = {
       "security-guidance@claude-plugins-official" = true;
       "claude-security@claude-plugins-official" = true;
-      "frontend-design@claude-plugins-official" = true;
+      "frontend-design@claude-plugins-official" = false;
       "code-simplifier@claude-plugins-official" = true;
       "claude-md-management@claude-plugins-official" = true;
     };
