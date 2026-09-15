@@ -21,7 +21,10 @@ sops-rotate-host-key:
     echo "New shared host key: $pub"
 
     # Decrypt every secret with the *current* key before swapping recipients.
-    old_key=~/.config/sops/age/keys.txt
+    # Resolved through sops-identity.sh: on a NixOS host that is
+    # /run/secrets/host-age-key, elsewhere ~/.config/sops/age/keys.txt.
+    source scripts/sops-identity.sh default
+    old_key=$SOPS_AGE_KEY_FILE
 
     # Point .sops.yaml and git-agecrypt.toml at the new public key.
     old_pub=$(grep 'public key:' "$old_key" | sed 's/.*: //')
@@ -32,8 +35,9 @@ sops-rotate-host-key:
 
     # Rewrite the bootstrap file itself with the new private key.
     {
-      echo "# Shared host age identity, installed as ~/.config/sops/age/keys.txt and"
-      echo "# /var/lib/sops-nix/keys.txt on every machine by \`just bootstrap-host-key\`."
+      echo "# Shared host age identity, installed as /var/lib/sops-nix/keys.txt on every"
+      echo "# machine by \`just bootstrap-host-key\` (and as ~/.config/sops/age/keys.txt"
+      echo "# where Home Manager runs standalone)."
       echo "host_age_key: |"
       sed 's/^/  /' "$tmp/keys.txt"
     } >sops/bootstrap/host-key.yaml
@@ -41,7 +45,9 @@ sops-rotate-host-key:
 
     ./scripts/agecrypt-rekey.sh
 
-    install -m600 "$tmp/keys.txt" ~/.config/sops/age/keys.txt
+    # -D: a NixOS host has no ~/.config/sops/age/ (the old key came from
+    # /run/secrets/host-age-key), and everything above is already rewritten.
+    install -m600 -D "$tmp/keys.txt" ~/.config/sops/age/keys.txt
     sudo install -m600 -D "$tmp/keys.txt" /var/lib/sops-nix/keys.txt
     echo ""
     echo "Rotated. Commit the result, then run 'just bootstrap-host-key' on every"
@@ -70,13 +76,15 @@ sops-info:
     echo "=== Available Identity Files ==="
     shopt -s nullglob
     found=0
-    for f in "$SOPS_AGE_DIR"/*.txt; do
-      name=$(basename "$f")
+    # /run/secrets/host-age-key is where a NixOS host gets the shared key
+    # (modules/sops); it is the fallback sops-identity.sh uses.
+    for f in "$SOPS_AGE_DIR"/*.txt /run/secrets/host-age-key; do
+      [[ -r $f ]] || continue
       pubkey=$(grep -E "^age1|public key:|Recipient:" "$f" 2>/dev/null | head -1 | sed 's/.*: //' | tr -d ' ')
-      echo "  $name: ${pubkey:0:20}..."
+      echo "  $f: ${pubkey:0:20}..."
       found=1
     done
-    [[ $found -eq 0 ]] && echo "  No identity files found in $SOPS_AGE_DIR"
+    [[ $found -eq 0 ]] && echo "  No identity files found in $SOPS_AGE_DIR or /run/secrets/host-age-key"
 
     echo ""
     echo "=== Keys in .sops.yaml ==="

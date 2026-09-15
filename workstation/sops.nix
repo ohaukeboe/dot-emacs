@@ -40,6 +40,11 @@ in
   # nothing and would fail at decryption time instead of at setup time.
   sops.age.generateKey = false;
   sops.age.sshKeyPaths = [ ];
+  # The sops CLI looks for ~/.config/sops/age/keys.txt unless told otherwise.
+  # On a NixOS host that file does not exist (see modules/sops), so point the
+  # CLI at whatever sops-nix itself decrypts with. The shared host key is a
+  # recipient of everything under sops/, so one identity is enough.
+  home.sessionVariables.SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
   sops.defaultSopsFile = ../sops/home/secrets.yaml;
 
   sops.secrets = {

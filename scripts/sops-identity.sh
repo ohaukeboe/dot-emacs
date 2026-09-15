@@ -11,6 +11,15 @@ IDENTITY="${1:-auto}"
 
 # Identity file paths
 DEFAULT_KEY="$SOPS_AGE_DIR/keys.txt"
+# On an installed NixOS machine the shared host key reaches the user only as
+# /run/secrets/host-age-key: modules/sops hands it over from
+# /var/lib/sops-nix/keys.txt, and nothing puts a copy in the home directory.
+# Fall back to it so the sops CLI works there without `just bootstrap-host-key`.
+# Same ordering as agecrypt-init in just/agecrypt.just.
+HOST_AGE_KEY=/run/secrets/host-age-key
+if [[ ! -r $DEFAULT_KEY && -r $HOST_AGE_KEY ]]; then
+  DEFAULT_KEY="$HOST_AGE_KEY"
+fi
 TPM_KEY="$SOPS_AGE_DIR/tpm-identity.txt"
 YUBIKEY_WALLET_KEY="$SOPS_AGE_DIR/yubikey-wallet.txt"
 YUBIKEY_HOME_KEY="$SOPS_AGE_DIR/yubikey-home.txt"
@@ -18,7 +27,10 @@ COMBINED_KEY="$SOPS_AGE_DIR/combined-identities.txt"
 
 combine_identities() {
   local found=0
-  : >"$COMBINED_KEY"
+  # The directory may not exist on a NixOS host (see DEFAULT_KEY above), and
+  # the combined file carries private material, so create it 0600.
+  mkdir -p "$SOPS_AGE_DIR"
+  (umask 077 && : >"$COMBINED_KEY")
 
   if [[ -f $TPM_KEY ]]; then
     echo "  + TPM identity"
@@ -79,7 +91,7 @@ resolve_identity() {
       export SOPS_AGE_KEY_FILE="$COMBINED_KEY"
       echo "Using combined identities: $COMBINED_KEY"
     else
-      echo "Error: No identity files found in $SOPS_AGE_DIR"
+      echo "Error: No identity files found in $SOPS_AGE_DIR or $HOST_AGE_KEY"
       exit 1
     fi
     ;;
@@ -100,7 +112,7 @@ resolve_identity() {
       echo "Auto-detected TPM identity: $TPM_KEY"
       export SOPS_AGE_KEY_FILE="$TPM_KEY"
     else
-      echo "Error: No identity files found in $SOPS_AGE_DIR"
+      echo "Error: No identity files found in $SOPS_AGE_DIR or $HOST_AGE_KEY"
       echo "Run 'just bootstrap-host-key' (YubiKey required) to install the"
       echo "shared host key on this machine."
       exit 1

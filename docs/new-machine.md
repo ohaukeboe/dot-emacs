@@ -244,6 +244,13 @@ decrypt its own key material and hand a user-readable copy over as a secret:
 
 `modules/sops` points `home-manager.users.<user>.sops.age.keyFile` at that,
 which is why a NixOS machine needs no age key in the home directory at all.
+The CLI side follows the same path: `workstation/sops.nix` exports
+`SOPS_AGE_KEY_FILE` from that option for bare `sops` invocations, and
+`scripts/sops-identity.sh` (behind the `just sops-*` recipes) falls back to
+`/run/secrets/host-age-key` when `~/.config/sops/age/keys.txt` is absent. So on
+an installed machine `just bootstrap-host-key` is only needed again after
+`just sops-rotate-host-key`, when `/var/lib/sops-nix/keys.txt` still holds the
+old key; otherwise re-running it is harmless but pointless.
 
 Two cases keep the older home-directory layout:
 
