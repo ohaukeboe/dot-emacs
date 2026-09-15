@@ -22,12 +22,58 @@ SYSTEM_KEY=/var/lib/sops-nix/keys.txt
   exit 1
 }
 
+TMP=$(mktemp -d)
+PCSCD_PID=""
+
+cleanup() {
+  rm -rf "$TMP"
+  if [[ -n $PCSCD_PID ]]; then
+    sudo kill "$PCSCD_PID" 2>/dev/null || true
+    echo "Stopped the temporary pcscd."
+  fi
+}
+trap cleanup EXIT
+
+# The YubiKey is reached through pcscd. On a fresh machine it is not running:
+# services.pcscd.enable lives in modules/sops, which only takes effect after the
+# first nixos-rebuild — and that rebuild needs the key this script installs. So
+# start the daemon here, either through systemd or as a temporary process.
+ensure_pcscd() {
+  [[ -e /run/pcscd/pcscd.comm ]] && return 0
+
+  echo "pcscd is not running; the YubiKey needs it."
+  sudo -v
+  if sudo systemctl start pcscd.socket 2>/dev/null && [[ -e /run/pcscd/pcscd.comm ]]; then
+    echo "Started pcscd.socket."
+    return 0
+  fi
+
+  echo "Starting a temporary pcscd for this run."
+  local ccid pcscd_bin
+  ccid=$(nix-build --no-out-link '<nixpkgs>' -A ccid)
+  pcscd_bin=$(nix-build --no-out-link '<nixpkgs>' -A pcsclite)/bin/pcscd
+  sudo env PCSCLITE_HP_DROPDIR="$ccid/pcsc/drivers" "$pcscd_bin" --foreground &
+  PCSCD_PID=$!
+
+  for _ in {1..20}; do
+    [[ -e /run/pcscd/pcscd.comm ]] && return 0
+    sleep 0.5
+  done
+
+  echo "error: pcscd did not come up (no /run/pcscd/pcscd.comm)" >&2
+  exit 1
+}
+
 # If the key is already installed we do not need the YubiKey at all — the shared
 # host key is a recipient of its own key file.
 if [[ -f $USER_KEY ]]; then
   echo "Existing identity found at $USER_KEY; using it instead of the YubiKey."
   export SOPS_AGE_KEY_FILE="$USER_KEY"
 else
+  ensure_pcscd
+  # gpg's scdaemon can hold the card exclusively and hide it from the plugin.
+  command -v gpgconf >/dev/null && gpgconf --kill scdaemon >/dev/null 2>&1 || true
+
   YUBIKEY_ID="$HOME/.config/sops/age/yubikey-wallet.txt"
   if [[ ! -f $YUBIKEY_ID ]]; then
     echo "No identity file yet — deriving one from the connected YubiKey."
@@ -38,9 +84,6 @@ else
   fi
   export SOPS_AGE_KEY_FILE="$YUBIKEY_ID"
 fi
-
-TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
 
 nix-shell -p sops age age-plugin-yubikey --run \
   "sops decrypt --extract '[\"host_age_key\"]' $ENC_FILE" >"$TMP/keys.txt"

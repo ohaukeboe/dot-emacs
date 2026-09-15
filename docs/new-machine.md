@@ -58,6 +58,13 @@ Insert the wallet YubiKey when prompted. This decrypts
 `/var/lib/sops-nix/keys.txt`, then installs the git-agecrypt filters and
 re-checks out `private/**` as plaintext.
 
+The YubiKey is read through `pcscd`, which the installer image does not run and
+which `services.pcscd.enable` only turns on after the first `nixos-rebuild`. The
+script handles that itself: it starts `pcscd.socket` if the unit exists, else
+runs a temporary `pcscd` from nixpkgs (with the `ccid` driver directory) and
+stops it again on exit. If the card is still not found, something else holds it
+— `gpgconf --kill scdaemon` and retry.
+
 **This must happen before any `nix build` or `nix eval` against the flake.**
 `flake.nix` reads `private/hosts.json` with `builtins.fromJSON` at evaluation
 time; while that file is still ciphertext, every evaluation fails.
