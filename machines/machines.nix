@@ -49,6 +49,7 @@
         modules.sleep-then-hibernate.enable = true;
         modules.sleep-then-hibernate.swapSize = 40960; # 40 GiB (RAM = 32 GiB + headroom)
       }
+      { modules.secure-boot.measuredBoot.enable = true; }
     ];
   };
 }
