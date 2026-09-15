@@ -24,7 +24,7 @@ in
 
     swapFile = mkOption {
       type = types.str;
-      default = "/swapfile";
+      default = "/swap/swapfile";
       description = ''
         Path of the swapfile. On btrfs it must live on a NoCOW location; NixOS
         sets NoCOW automatically when creating a swapfile via `size`.

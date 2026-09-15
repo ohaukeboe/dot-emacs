@@ -88,13 +88,7 @@ This creates `machines/<hostname>/` with:
 and registers the machine in `machines/machines.nix` with `cosmic-de` enabled.
 
 Now edit `machines/machines.nix` for what this machine actually wants —
-`gaming`, `sshd`, `sleep-then-hibernate`, a `nixos-hardware` profile. If you
-enable `sleep-then-hibernate`, also point its swapfile at the dedicated
-subvolume so no snapshot ever covers it:
-
-```nix
-modules.sleep-then-hibernate.swapFile = "/swap/swapfile";
-```
+`gaming`, `sshd`, `sleep-then-hibernate`, a `nixos-hardware` profile.
 
 Then:
 

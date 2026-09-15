@@ -80,11 +80,9 @@
                     mountOptions = opts;
                   };
                   # Somewhere to put a hibernation swapfile that no snapshot
-                  # will ever cover. A machine enabling
-                  # modules.sleep-then-hibernate should point swapFile here:
-                  #   modules.sleep-then-hibernate.swapFile = "/swap/swapfile";
-                  # NixOS sets NoCOW on a btrfs swapfile itself, so the
-                  # compress=zstd above does not apply to it.
+                  # will ever cover — where modules.sleep-then-hibernate puts
+                  # one by default. NixOS sets NoCOW on a btrfs swapfile
+                  # itself, so the compress=zstd above does not apply to it.
                   "@swap" = {
                     mountpoint = "/swap";
                     mountOptions = [ "noatime" ];
