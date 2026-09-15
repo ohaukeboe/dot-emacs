@@ -22,6 +22,12 @@ in
     services.desktopManager.cosmic.enable = true;
     services.system76-scheduler.enable = true;
     services.gnome.gnome-keyring.enable = true;
+    # gnome-keyring pulls in gcr-ssh-agent by default, whose socket unit runs
+    # `systemctl --user set-environment SSH_AUTH_SOCK=%t/gcr/ssh` and so
+    # hijacks the session away from the Home Manager ssh-agent that
+    # ssh-add-keys loads the sops keys into. Result: an empty agent and
+    # `error: Couldn't find key in agent?` on every signed git commit.
+    services.gnome.gcr-ssh-agent.enable = false;
 
     # Qt theming for COSMIC
     environment.sessionVariables = {

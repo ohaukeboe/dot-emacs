@@ -604,8 +604,6 @@ in
       gpg.format = "ssh";
       commit.gpgsign = true;
       credential.helper = "store";
-      # OpenSSH's own signer; the key comes from sops, not the 1Password agent.
-      user.signingKey = config.sops.secrets."ssh/main".path;
 
     };
 
