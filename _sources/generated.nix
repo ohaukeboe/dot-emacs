@@ -19,18 +19,18 @@
   };
   caveman-shrink = {
     pname = "caveman-shrink";
-    version = "0.1.0";
+    version = "0.1.1";
     src = fetchurl {
-      url = "https://registry.npmjs.org/caveman-shrink/-/caveman-shrink-0.1.0.tgz";
-      sha256 = "sha256-K0DszONf6M4UXmwC/gLRkiNatlXLNhQkTKmBiMBPh6c=";
+      url = "https://registry.npmjs.org/caveman-shrink/-/caveman-shrink-0.1.1.tgz";
+      sha256 = "sha256-aQ7biix+i3jBpCCb1fc+hbFP3Fwq1pQ0eauz2dow9ZM=";
     };
   };
   chrome-devtools-mcp = {
     pname = "chrome-devtools-mcp";
-    version = "1.8.0";
+    version = "1.9.0";
     src = fetchurl {
-      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.8.0.tgz";
-      sha256 = "sha256-rAM0QQzqddEaXrtVX7sBOaSjlN412YzCo7wKlZ8ATN0=";
+      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.9.0.tgz";
+      sha256 = "sha256-X3U7HL9XdcjkNxE1Is0QwfDO/RZSHgVyVA1XhgVWwTM=";
     };
   };
   code-review-graph = {

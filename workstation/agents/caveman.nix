@@ -14,20 +14,20 @@ let
     src = pkgs.nvSources.caveman-shrink.src;
     sourceRoot = "package";
     forceEmptyCache = true;
-    npmDepsHash = "sha256-Rx3AlLPKduQJ1ZRh7BKe3O5HX896BAJm+hLgi5tuh+k=";
+    npmDepsHash = "sha256-zwmQFXAy1jNftdZjHNmogMlO9VNC5fHqvcwVfcpTc8Q=";
     dontNpmBuild = true;
     preInstall = "mkdir -p node_modules";
     postPatch = ''
             cat > package-lock.json << 'LOCKEOF'
       {
         "name": "caveman-shrink",
-        "version": "0.1.0",
+        "version": "${pkgs.nvSources.caveman-shrink.version}",
         "lockfileVersion": 3,
         "requires": true,
         "packages": {
           "": {
             "name": "caveman-shrink",
-            "version": "0.1.0"
+            "version": "${pkgs.nvSources.caveman-shrink.version}"
           }
         }
       }
