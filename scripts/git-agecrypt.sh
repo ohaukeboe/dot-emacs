@@ -17,4 +17,7 @@ if command -v git-agecrypt >/dev/null 2>&1; then
   exec git-agecrypt "$@"
 fi
 
-exec nix-shell -p git-agecrypt --run "git-agecrypt $(printf '%q ' "$@")"
+# age-plugin-yubikey comes along because a registered yubikey-*.txt identity
+# cannot be parsed without it.
+exec nix-shell -p git-agecrypt age-plugin-yubikey \
+  --run "git-agecrypt $(printf '%q ' "$@")"

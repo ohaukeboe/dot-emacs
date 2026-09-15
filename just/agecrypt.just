@@ -26,7 +26,9 @@ agecrypt-init:
         echo "already registered: $f"
         continue
       fi
-      nix-shell -p git-agecrypt --run "git-agecrypt config add -i $f"
+      # age-plugin-yubikey is needed to parse the yubikey-*.txt identities, and
+      # it only reaches PATH once home-manager has run — which is after this.
+      nix-shell -p git-agecrypt age-plugin-yubikey --run "git-agecrypt config add -i $f"
     done
     # A fresh clone checked private/** out before the filters existed, so the
     # working tree still holds ciphertext. Force a re-checkout through smudge.
