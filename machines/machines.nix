@@ -40,4 +40,15 @@
       # { sops.ageKey = "tpm"; }
     ];
   };
+
+  flow-x13 = {
+    stateVersion = "26.11";
+    modules = [
+      { modules.cosmic-de.enable = true; }
+      {
+        modules.sleep-then-hibernate.enable = true;
+        modules.sleep-then-hibernate.swapSize = 40960; # 40 GiB (RAM = 32 GiB + headroom)
+      }
+    ];
+  };
 }
