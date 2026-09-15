@@ -76,7 +76,14 @@ gen=(nixos-generate-config --show-hardware-config --no-filesystems)
 
 # Registering is otherwise a judgement call (which modules this machine wants),
 # so write the minimum and leave the rest to the operator.
-python3 - "$hostname" <<'PY'
+# The installer ISO has no python3, and this script runs from it — fall back to
+# nix-shell, the same way scripts/agecrypt-rekey.sh does.
+py=(python3 - "$hostname")
+if ! command -v python3 >/dev/null 2>&1; then
+  py=(nix-shell -p python3 --run "python3 - $(printf '%q' "$hostname")")
+fi
+
+"${py[@]}" <<'PY'
 import re
 import sys
 import pathlib
