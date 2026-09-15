@@ -113,13 +113,16 @@ disagree with the config — then:
    format a disk with mounted partitions, which is what a wrong device in
    `disk.nix` looks like. Everything that can fail, fails before the disk is
    touched.
-2. Shows the disk and asks you to type the hostname to confirm.
-3. `disko --mode destroy,format,mount` — prompts for the LUKS passphrase twice.
-4. `nixos-install` — prompts for a root password at the end. Set one; it is your
-   way back in if the user account or the greeter misbehaves.
-5. `passwd <user>` inside the new root. `nixos-install` only sets root's and
-   `common/system/system.nix` declares no user password, so without this the
-   machine boots to a login prompt you cannot get past.
+2. Shows the disk, asks you to type the hostname to confirm, then collects the
+   LUKS passphrase, the root password and the user password. Nothing after this
+   point prompts, so the long part of the install runs unattended.
+3. `disko --mode destroy,format,mount`, with the passphrase handed over through
+   the layout's `passwordFile` (removed again when the script exits).
+4. `nixos-install --no-root-passwd`.
+5. Sets both passwords inside the new root. Root's is your way back in if the
+   user account or the greeter misbehaves; without the user's the machine boots
+   to a login prompt you cannot get past, since `common/system/system.nix`
+   declares no password.
 6. Copies `/var/lib/sops-nix/keys.txt` onto the new root, and this checkout to
    `~/projects/dot-emacs`.
 7. Unmounts.

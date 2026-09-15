@@ -13,6 +13,12 @@
   # lanzaboote writes one unified kernel image per generation and
   # common/system/system.nix keeps 10 of them, so the usual 512M ESP runs out.
   espSize ? "2G",
+  # scripts/install-machine.sh writes the passphrase here right before it runs
+  # disko, which uses it both to format and to open the volume — that is what
+  # lets the install run unattended. Running disko by hand therefore needs this
+  # file to exist first. The VM test is unaffected: it injects settings.keyFile,
+  # which disko prefers over passwordFile.
+  passwordFile ? "/tmp/disko-luks-password",
 }:
 
 {
@@ -46,6 +52,7 @@
             # /dev/mapper/crypted, and the pre-disko machines use the same
             # name. Renaming this breaks hibernation resume.
             name = "crypted";
+            inherit passwordFile;
             settings.allowDiscards = true;
 
             content = {

@@ -46,6 +46,25 @@ die() {
   exit 1
 }
 
+# Read a secret twice and refuse mismatches and empty input, so a typo cannot
+# end up as the LUKS passphrase of a machine that just spent an hour installing.
+ask_secret() { # $1 prompt, $2 name of the variable to set
+  local first again
+  while true; do
+    read -rsp "$1: " first
+    echo >&2
+    [[ -n $first ]] || {
+      echo "Empty, try again." >&2
+      continue
+    }
+    read -rsp "$1 (again): " again
+    echo >&2
+    [[ $first == "$again" ]] && break
+    echo "Mismatch, try again." >&2
+  done
+  printf -v "$2" '%s' "$first"
+}
+
 ########################################
 # Preflight — everything that can fail must fail before the disk is touched.
 ########################################
@@ -69,6 +88,12 @@ config that does not describe it. desktop, work-laptop and x13-laptop predate
 disko and must be installed by hand — see docs/new-machine.md."
 
 username=$(nix eval --raw ".#nixosConfigurations.\"$host\".config.user.username")
+
+# Where the disko layout expects the LUKS passphrase (lib/disk-layouts/
+# luks-btrfs.nix). Reading it from the config keeps the two in one place.
+passfile=$(nix eval --raw \
+  ".#nixosConfigurations.\"$host\".config.disko.devices.disk.main.content.partitions.luks.content.passwordFile" 2>/dev/null) ||
+  die "the disko layout of $host declares no passwordFile; cannot install unattended"
 
 [[ -b $device ]] || die "$device (from machines/$host/disk.nix) is not a block device"
 
@@ -114,36 +139,57 @@ read -rp "Type the hostname ($host) to continue: " confirm
 [[ $confirm == "$host" ]] || die "aborted"
 
 ########################################
+# Collect every input now — nothing below prompts, so the long part of the
+# install can run unattended.
+########################################
+
+echo
+luks_pw='' root_pw='' user_pw=''
+ask_secret "LUKS passphrase (unlocks the disk at every boot)" luks_pw
+ask_secret "root password" root_pw
+ask_secret "password for $username" user_pw
+
+# No trailing newline: cryptsetup takes the file bytes verbatim, and the
+# interactive unlock prompt at boot strips its newline. Removed again on exit,
+# whatever happens in between.
+trap 'rm -f "$passfile"' EXIT
+(
+  umask 077
+  printf '%s' "$luks_pw" >"$passfile"
+)
+
+########################################
 # Partition and install
 ########################################
 
 if [[ $mode == format ]]; then
   echo
-  echo "==> Partitioning (you will be asked for the LUKS passphrase twice)"
+  echo "==> Partitioning"
   as_root nix run "$DISKO" -- --mode destroy,format,mount --flake ".#$host"
 else
   echo
-  echo "==> Mounting (you will be asked for the LUKS passphrase)"
+  echo "==> Mounting"
   as_root nix run "$DISKO" -- --mode mount --flake ".#$host"
 fi
 
 mountpoint -q /mnt || die "disko did not leave a filesystem mounted at /mnt"
 
 echo
-echo "==> Installing (this takes a while; it asks for a root password at the end)"
-as_root nixos-install --flake ".#$host" --root /mnt
+echo "==> Installing (this takes a while; no input needed from here on)"
+as_root nixos-install --no-root-passwd --flake ".#$host" --root /mnt
 
 ########################################
 # Seed the new root before it is unmounted
 ########################################
 
 echo
-echo "==> Setting the password for $username"
-# nixos-install only sets root's. Without this there is no way in as the
-# ordinary user, and the cosmic greeter offers no other account.
-until as_root nixos-enter --root /mnt -c "passwd $username"; do
-  echo "passwd failed; try again."
-done
+echo "==> Setting the passwords collected at the start"
+# --no-root-passwd left root locked, and nothing sets the user's:
+# common/system/system.nix declares no password and the cosmic greeter offers
+# no other account. chpasswd splits on the first colon only, so colons in the
+# passwords are fine.
+printf 'root:%s\n%s:%s\n' "$root_pw" "$username" "$user_pw" |
+  as_root nixos-enter --root /mnt -c chpasswd
 
 echo
 echo "==> Installing the shared host age key"
