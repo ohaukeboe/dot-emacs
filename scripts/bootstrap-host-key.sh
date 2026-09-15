@@ -8,7 +8,9 @@
 #   ~/.config/sops/age/keys.txt   Home Manager (workstation/sops.nix)
 #   /var/lib/sops-nix/keys.txt    NixOS (modules/sops)
 #
-# After this, sops/** and private/** decrypt with no YubiKey present.
+# After this, sops/** and private/** decrypt with no YubiKey present. Re-runs
+# need it only when no installed copy can decrypt the bootstrap file any more,
+# i.e. after `just sops-rotate-host-key` on another machine.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -64,12 +66,30 @@ ensure_pcscd() {
   exit 1
 }
 
+decrypt_with() {
+  SOPS_AGE_KEY_FILE="$1" nix-shell -p sops age age-plugin-yubikey --run \
+    "sops decrypt --extract '[\"host_age_key\"]' $ENC_FILE" >"$TMP/keys.txt"
+}
+
 # If the key is already installed we do not need the YubiKey at all — the shared
-# host key is a recipient of its own key file.
-if [[ -f $USER_KEY ]]; then
-  echo "Existing identity found at $USER_KEY; using it instead of the YubiKey."
-  export SOPS_AGE_KEY_FILE="$USER_KEY"
-else
+# host key is a recipient of its own key file. On a NixOS host the installed
+# copy is /run/secrets/host-age-key (modules/sops hands it over), not anything
+# in the home directory. An installed copy that fails to decrypt is the old key
+# after a rotation; then fall through to the YubiKey.
+HOST_AGE_KEY=/run/secrets/host-age-key
+decrypted=0
+for id in "$USER_KEY" "$HOST_AGE_KEY"; do
+  [[ -r $id ]] || continue
+  if decrypt_with "$id" 2>"$TMP/err"; then
+    echo "Decrypted with the existing identity at $id; no YubiKey needed."
+    decrypted=1
+    break
+  fi
+  echo "Existing identity at $id cannot decrypt $ENC_FILE (rotated?):"
+  head -3 "$TMP/err" | sed 's/^/  /'
+done
+
+if ((! decrypted)); then
   ensure_pcscd
   # gpg's scdaemon can hold the card exclusively and hide it from the plugin.
   command -v gpgconf >/dev/null && gpgconf --kill scdaemon >/dev/null 2>&1 || true
@@ -82,11 +102,9 @@ else
     nix-shell -p age-plugin-yubikey --run \
       "age-plugin-yubikey --identity --slot 1" >"$YUBIKEY_ID"
   fi
-  export SOPS_AGE_KEY_FILE="$YUBIKEY_ID"
+  # stderr stays on the terminal: the plugin prints the touch prompt there.
+  decrypt_with "$YUBIKEY_ID"
 fi
-
-nix-shell -p sops age age-plugin-yubikey --run \
-  "sops decrypt --extract '[\"host_age_key\"]' $ENC_FILE" >"$TMP/keys.txt"
 
 grep -q '^AGE-SECRET-KEY-' "$TMP/keys.txt" || {
   echo "error: decrypted material does not look like an age identity" >&2
