@@ -79,13 +79,32 @@ gen=(nixos-generate-config --show-hardware-config --no-filesystems)
   exit 1
 }
 
+# stateVersion is the release this machine is installed with, so take it from
+# the nixpkgs the flake pins rather than whatever the installer image runs.
+# Reading .inputs does not force the flake outputs, which keeps this cheap and
+# independent of private/hosts.json being decrypted.
+state_version=$(nix eval --raw --impure --expr \
+  '(builtins.getFlake (toString ./.)).inputs.nixpkgs.lib.trivial.release' 2>/dev/null || true)
+source="the flake's nixpkgs"
+# A flake that will not evaluate is worth falling back from rather than failing
+# on: the running system's release is close enough to start from.
+if [[ -z $state_version ]]; then
+  state_version=$(nixos-version 2>/dev/null | cut -d. -f1,2)
+  source="nixos-version — the flake would not evaluate"
+fi
+[[ $state_version =~ ^[0-9]{2}\.[0-9]{2}$ ]] || {
+  echo "error: could not determine a nixpkgs release for stateVersion" >&2
+  exit 1
+}
+echo "stateVersion: $state_version (from $source)"
+
 # Registering is otherwise a judgement call (which modules this machine wants),
 # so write the minimum and leave the rest to the operator.
 # The installer ISO has no python3, and this script runs from it — fall back to
 # nix-shell, the same way scripts/agecrypt-rekey.sh does.
-py=(python3 - "$hostname")
+py=(python3 - "$hostname" "$state_version")
 if ! command -v python3 >/dev/null 2>&1; then
-  py=(nix-shell -p python3 --run "python3 - $(printf '%q' "$hostname")")
+  py=(nix-shell -p python3 --run "python3 - $(printf '%q ' "$hostname" "$state_version")")
 fi
 
 "${py[@]}" <<'PY'
@@ -94,6 +113,7 @@ import sys
 import pathlib
 
 host = sys.argv[1]
+state_version = sys.argv[2]
 path = pathlib.Path("machines/machines.nix")
 src = path.read_text()
 
@@ -107,7 +127,7 @@ assert body.endswith("}"), "unexpected machines.nix shape; register the machine 
 entry = "\n".join([
     "",
     f"  {host} = " + "{",
-    '    stateVersion = "24.11";',
+    f'    stateVersion = "{state_version}";',
     "    modules = [",
     "      { modules.cosmic-de.enable = true; }",
     "    ];",

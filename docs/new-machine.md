@@ -85,7 +85,8 @@ This creates `machines/<hostname>/` with:
   mapping; leaving the generated stanzas in would collide with it.
 - `default.nix` importing both
 
-and registers the machine in `machines/machines.nix` with `cosmic-de` enabled.
+and registers the machine in `machines/machines.nix` with `cosmic-de` enabled
+and `stateVersion` set to the release of the nixpkgs this flake pins.
 
 Now edit `machines/machines.nix` for what this machine actually wants —
 `gaming`, `sshd`, `sleep-then-hibernate`, a `nixos-hardware` profile.
