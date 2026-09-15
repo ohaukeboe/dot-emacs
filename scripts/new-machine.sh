@@ -35,7 +35,12 @@ dir="machines/$hostname"
 
 mkdir -p "$dir"
 # Leave nothing half-written behind if a later step fails; the caller reruns.
-cleanup() { [[ -n ${scaffolded:-} ]] && rm -rf "$dir"; }
+# The `return 0` matters: bash takes the EXIT trap's last status as the script's
+# exit status, so a false test here would report failure after a clean run.
+cleanup() {
+  [[ -n ${scaffolded:-} ]] && rm -rf "$dir"
+  return 0
+}
 scaffolded=1
 trap cleanup EXIT
 
