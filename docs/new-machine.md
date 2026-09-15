@@ -149,9 +149,11 @@ cd ~/projects/dot-emacs
 just finish-install <hostname>
 ```
 
-Re-runnable, and nothing in it is destructive. It runs `just agecrypt-init` (the
-identities live in `.git/config`, which is per-checkout and did not survive the
-copy), switches `origin` from HTTPS to SSH now that a key is decryptable, joins
+Re-runnable, and nothing in it is destructive. It runs `just agecrypt-init`
+(the identities live in `.git/config`, and the copy carried over the
+installer's root-owned paths, which this user cannot read; the recipe drops
+those and registers `/run/secrets/host-age-key` instead), switches `origin`
+from HTTPS to SSH now that a key is decryptable, joins
 Tailscale, rebuilds in place, and reports `bootctl status` and `sbctl verify`.
 
 Expect `Secure Boot: enabled (user)`. Anything else means the firmware was not

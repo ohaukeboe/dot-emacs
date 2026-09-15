@@ -16,12 +16,23 @@ agecrypt-init:
     git config filter.git-agecrypt.clean "./scripts/git-agecrypt.sh clean -f %f"
     git config diff.git-agecrypt.textconv "./scripts/git-agecrypt.sh textconv"
     # Identities live in .git/config so each checkout can point at its own keys.
+    # `scripts/install-machine.sh` copies the checkout with `cp -a`, so a fresh
+    # machine inherits whatever the installer registered — typically
+    # /root/.config/sops/age/*, which the new user cannot read. git-agecrypt
+    # aborts on the first unreadable identity, so drop those before adding.
+    while IFS= read -r f; do
+      [[ -n "$f" && ! -r "$f" ]] || continue
+      echo "dropping unreadable identity: $f"
+      nix-shell -p git-agecrypt age-plugin-yubikey --run "git-agecrypt config remove -i $f"
+    done < <(git config --get-all git-agecrypt.config.identity || true)
     # The shared host key comes first so decryption never touches the YubiKey.
+    # On an installed NixOS machine there is no key in the home directory:
+    # modules/sops hands the shared key over as /run/secrets/host-age-key.
     # `git-agecrypt config add` errors on an already-registered identity, so this
     # stays re-runnable by checking .git/config first.
     registered=$(git config --get-all git-agecrypt.config.identity || true)
-    for f in ~/.config/sops/age/keys.txt ~/.config/sops/age/yubikey-*.txt ~/.config/sops/age/tpm-identity.txt; do
-      [[ -f "$f" ]] || continue
+    for f in ~/.config/sops/age/keys.txt /run/secrets/host-age-key ~/.config/sops/age/yubikey-*.txt ~/.config/sops/age/tpm-identity.txt; do
+      [[ -r "$f" ]] || continue
       if grep -qxF "$f" <<<"$registered"; then
         echo "already registered: $f"
         continue
@@ -30,6 +41,12 @@ agecrypt-init:
       # it only reaches PATH once home-manager has run — which is after this.
       nix-shell -p git-agecrypt age-plugin-yubikey --run "git-agecrypt config add -i $f"
     done
+    # Without an identity the re-checkout below fails inside the smudge filter,
+    # where the error says nothing about the missing key.
+    if [[ -z "$(git config --get-all git-agecrypt.config.identity || true)" ]]; then
+      echo "no age identity is readable; run 'just bootstrap-host-key' first." >&2
+      exit 1
+    fi
     # A fresh clone checked private/** out before the filters existed, so the
     # working tree still holds ciphertext. Force a re-checkout through smudge.
     # Refuse if that would throw away uncommitted plaintext edits. Deletions are
