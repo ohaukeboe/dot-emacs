@@ -47,9 +47,6 @@ agecrypt-init:
 # Show git-agecrypt filter state, configured identities and recipients
 agecrypt-status:
     nix-shell -p git-agecrypt age-plugin-yubikey --run "git-agecrypt status"
-    @echo ""
-    @echo "=== Recipients per path (git-agecrypt.toml) ==="
-    nix-shell -p git-agecrypt age-plugin-yubikey --run "git-agecrypt config list"
 
 # Bypasses the clean filter on purpose: git-agecrypt reuses the ciphertext in
 # HEAD whenever a configured identity can still decrypt it, which silently
