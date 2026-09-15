@@ -35,8 +35,20 @@ agecrypt-init:
     # Refuse if that would throw away uncommitted plaintext edits. Deletions are
     # excluded (--diff-filter=d): they hold no content to lose, and a run that
     # died between the rm and the checkout below would otherwise be unrepeatable.
-    if [[ -n "$(git diff --name-only --diff-filter=d -- private)" ]]; then
+    #
+    # `git diff` alone cannot tell the two apart: with the filters now installed
+    # it runs clean over the untouched ciphertext and so reports every file as
+    # modified. A file whose bytes still equal its blob in HEAD was never
+    # smudged and holds no plaintext to lose; only the rest counts as dirty.
+    dirty=()
+    while IFS= read -r f; do
+      [[ -f "$f" ]] || continue
+      cmp -s "$f" <(git cat-file blob "HEAD:$f" 2>/dev/null) && continue
+      dirty+=("$f")
+    done < <(git diff --name-only --diff-filter=d -- private)
+    if [[ ${#dirty[@]} -gt 0 ]]; then
       echo "private/** has unstaged changes; refusing to re-checkout." >&2
+      printf '  %s\n' "${dirty[@]}" >&2
       echo "Commit or stash them, then re-run." >&2
       exit 1
     fi
