@@ -84,7 +84,8 @@ sudo nixos-rebuild switch --flake .#<hostname>            # hosts: x13-laptop, w
 - secrets via **SOPS** (`workstation/sops.nix`, `sops/`); low-sensitivity private
   data via **git-agecrypt** (`private/`, `git-agecrypt.toml`) using the same age keys
 - one shared host age key for all machines, committed encrypted as
-  `sops/bootstrap/host-key.yaml`; `just bootstrap` provisions a new machine (only
+  `sops/bootstrap/host-key.yaml`; `nix run github:ohaukeboe/dot-emacs#install`
+  from the installer ISO runs the whole install; `just bootstrap` provisions a new machine (only
   step needing the YubiKey)
 
 ## Gotchas

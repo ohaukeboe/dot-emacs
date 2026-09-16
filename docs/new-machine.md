@@ -1,8 +1,8 @@
 # Provisioning a new NixOS machine
 
-From bare hardware to a machine that rebuilds itself from this flake. Four
-commands do the work — `just bootstrap`, `just new-machine`, `just
-install-machine`, `just finish-install` — but read step 1 before touching the
+From bare hardware to a machine that rebuilds itself from this flake. Two
+commands do the work — the installer entrypoint on the ISO, `just
+finish-install` after the first boot — but read step 1 before touching the
 machine. Preparing the firmware is the one thing no recipe can do for you, and
 skipping it is not recoverable in place.
 
@@ -33,9 +33,48 @@ holds the vendor PK cannot complete enrollment. See the fallback at the end of
 step 7 if
 your firmware has no way to clear it.
 
-## 2. Boot the installer and get the repo
+## 2. Boot the installer and run the entrypoint
 
 Boot the NixOS minimal or graphical ISO, get on the network, then:
+
+```sh
+nix --extra-experimental-features 'nix-command flakes' \
+  run github:ohaukeboe/dot-emacs#install
+```
+
+The `--extra-experimental-features` part is only needed on images that do not
+enable flakes already. The entrypoint (`scripts/installer.sh`) re-runs itself as
+root, clones this repo over HTTPS to `/root/dot-emacs`, and then walks through
+steps 3 to 5 in order:
+
+1. `just bootstrap` — insert the wallet YubiKey when asked (step 3).
+2. Asks for the hostname. A new one also asks for the disk, then runs
+   `just new-machine` (step 4). A registered machine with a `disk.nix` goes
+   straight to the install, which is how an existing machine is reinstalled; one
+   without a disko layout is refused.
+3. Offers to open `machines/machines.nix` in vim. After you save it runs
+   `nix fmt`, `git add` and evaluates the machine, and reopens vim if that
+   fails.
+4. Offers to join the tailnet (skipped if already joined).
+5. `just install-machine` (step 5). If a disk already carries this layout, it
+   asks whether to keep the partitioning, which is the retry after a failed
+   install.
+
+Re-running the same command resumes: an existing `/root/dot-emacs` is reused
+as it is (never pulled over), bootstrap is skipped once the key is installed,
+and a registered machine is not scaffolded again. Options:
+
+```
+--ref <branch>      install from another branch
+--hostname <name>   skip the hostname question
+--disk <device>     skip the disk question (new machines only)
+--mount             keep the existing partitioning
+--no-tailnet        do not offer the tailnet
+--dry-run           print each stage, change nothing
+```
+
+The rest of this section and steps 3 to 5 describe what the entrypoint runs,
+and are the way to do it by hand if you need to.
 
 ```sh
 sudo -i
@@ -95,9 +134,9 @@ asks whether the disk should unlock with the TPM at boot. Answering yes adds
 the disk — see step 8 for what that means.
 
 `modules.attic.push.enable` makes the machine upload what it builds instead of
-only pulling. **Remove that line if this is a work machine** — the push hook
-uploads everything the Nix daemon builds, dependencies fetched with work
-credentials included.
+only pulling. The script asks whether this is a work machine and **leaves that
+line out if it is** — the push hook uploads everything the Nix daemon builds,
+dependencies fetched with work credentials included.
 
 Now edit `machines/machines.nix` for what this machine actually wants —
 `gaming`, `sshd`, `sleep-then-hibernate`, a `nixos-hardware` profile.
@@ -217,6 +256,10 @@ install that, then clear the platform key from firmware, drop the line, and
 `nixos-rebuild switch`. `enableSecureBoot` is a parameter of
 `lib/mkNixosConfiguration.nix`, so it goes alongside `stateVersion` rather than
 inside `modules`.
+
+A machine scaffolded on the installer is not in git history yet: its files
+arrive as uncommitted changes in this checkout, and `finish-install` says so.
+Commit and push them, or no other checkout knows the machine exists.
 
 What is left is restoring whatever this flake does not manage — Nextcloud,
 1Password, mail.

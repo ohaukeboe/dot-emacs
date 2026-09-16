@@ -116,13 +116,21 @@ else
   echo "TPM unlock not offered: systemd-pcrlock is-supported says '${supported:-nothing}'"
 fi
 
+# A work machine must not push to the attic cache: the hook uploads everything
+# the daemon builds, dependencies fetched with work credentials included.
+# modules/attic/default.nix has the reasoning. Asked because the line is on by
+# default and forgetting to remove it is the failure that matters.
+push=true
+read -rp "Is this a work machine (pull-only, never pushes to the attic cache)? [y/N] " answer
+if [[ $answer == [yY]* ]]; then push=false; fi
+
 # Registering is otherwise a judgement call (which modules this machine wants),
 # so write the minimum and leave the rest to the operator.
 # The installer ISO has no python3, and this script runs from it — fall back to
 # nix-shell, the same way scripts/agecrypt-rekey.sh does.
-py=(python3 - "$hostname" "$state_version" "$measured_boot")
+py=(python3 - "$hostname" "$state_version" "$measured_boot" "$push")
 if ! command -v python3 >/dev/null 2>&1; then
-  py=(nix-shell -p python3 --run "python3 - $(printf '%q ' "$hostname" "$state_version" "$measured_boot")")
+  py=(nix-shell -p python3 --run "python3 - $(printf '%q ' "$hostname" "$state_version" "$measured_boot" "$push")")
 fi
 
 "${py[@]}" <<'PY'
@@ -133,6 +141,7 @@ import pathlib
 host = sys.argv[1]
 state_version = sys.argv[2]
 measured_boot = sys.argv[3] == "true"
+push = sys.argv[4] == "true"
 path = pathlib.Path("machines/machines.nix")
 src = path.read_text()
 
@@ -143,18 +152,17 @@ if re.search(rf"^\s*{re.escape(host)}\s*=", src, re.M):
 body = src.rstrip()
 assert body.endswith("}"), "unexpected machines.nix shape; register the machine by hand"
 
-# Pushing to the attic cache is on by default here because a machine that only
-# pulls is a machine whose builds nothing else can reuse, and forgetting the
-# line is easier than noticing it is missing. Drop it for a work machine: the
-# hook uploads everything the daemon builds, dependencies fetched with work
-# credentials included. modules/attic/default.nix has the reasoning.
+# Pushing to the attic cache is on unless this is a work machine: a machine that
+# only pulls is a machine whose builds nothing else can reuse.
 entry = "\n".join([
     "",
     f"  {host} = " + "{",
     f'    stateVersion = "{state_version}";',
     "    modules = [",
-    "      # Remove this on a work machine — see modules/attic/default.nix.",
-    "      { modules.attic.push.enable = true; }",
+    *([
+        "      # Remove this on a work machine — see modules/attic/default.nix.",
+        "      { modules.attic.push.enable = true; }",
+    ] if push else []),
     "      { modules.cosmic-de.enable = true; }",
     *(["      { modules.secure-boot.measuredBoot.enable = true; }"] if measured_boot else []),
     "    ];",

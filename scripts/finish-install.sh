@@ -74,3 +74,13 @@ Done. What is left:
 
   Restore anything not covered by this flake (Nextcloud, 1Password, mail).
 EOF
+
+# A machine scaffolded on the installer exists only in this checkout until it
+# is committed; another machine's rebuild or a fresh clone would not know it.
+if [[ -n $(git status --porcelain -- machines/) ]]; then
+  cat <<EOF
+
+  Commit and push the machine registration, which is not in git history yet:
+    git status -- machines/
+EOF
+fi

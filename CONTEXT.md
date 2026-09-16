@@ -112,6 +112,27 @@ A secret that reaches only the one child process asked for it, via
 `sops exec-env` or `secretspec run`. The sops and secretspec backends work
 this way.
 
+### Provisioning
+
+**Installer entrypoint**:
+The single command run from a booted NixOS installer that takes a machine
+from "no repo" to "installed": it fetches this repo and walks through every
+provisioning step in order. Safe to re-run; it resumes where it stopped. It
+can also reinstall a machine that is already registered. Firmware
+preparation is outside it.
+_Avoid_: bootstrap, which already names the host-key + git-agecrypt step
+that the entrypoint runs as one of its stages
+
+**Bootstrap**:
+Installing the shared host age key and unlocking the encrypted private files
+in a checkout. The first thing any fresh checkout needs, installer or not.
+_Avoid_: using it for the whole install
+
+**Registered machine**:
+A machine with an entry in the machine registry, and so a NixOS
+configuration to install or rebuild. Only a registered machine with a
+declarative disk layout can be (re)installed by the installer entrypoint.
+
 ### Sleep / hibernation
 
 See ADR 0001.

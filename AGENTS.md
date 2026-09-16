@@ -218,6 +218,13 @@ build: Update flake dependencies and fix platform references
 Installing on fresh hardware is a full procedure with two unforgiving steps —
 follow **`docs/new-machine.md`**, not this summary.
 
+From the installer ISO, `nix run github:ohaukeboe/dot-emacs#install` (the
+`install` app, `scripts/installer.sh`) clones the repo to `/root/dot-emacs` and
+runs steps 1–4 below in order, resuming on re-run. `apps` and
+`packages.installer` must never force `private`, or the entrypoint stops
+evaluating on a machine that has not bootstrapped. The steps it sequences stay
+usable on their own:
+
 1. On the machine itself, run `just bootstrap` once with the "wallet" YubiKey
    inserted. No key material is per-machine, so nothing about secrets has to be
    edited when a machine is added or retired. This has to happen before any
@@ -226,7 +233,8 @@ follow **`docs/new-machine.md`**, not this summary.
 2. `just new-machine <hostname> <device>` creates `machines/<hostname>/` with a
    `disk.nix`, a filesystem-free `hardware-configuration.nix` and a
    `default.nix`, registers the machine in `machines/machines.nix`, and git adds
-   the result.
+   the result. It asks whether this is a work machine and leaves
+   `modules.attic.push.enable` out if so.
 3. Edit `machines/machines.nix` for the modules this machine wants. Anything
    machine-specific that is not a module toggle goes in `machines/<hostname>/config.nix`
    (see `work-laptop`).

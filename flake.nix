@@ -212,6 +212,28 @@
 
       # Machine definitions
       machines = import ./machines/machines.nix { inherit nixos-hardware; };
+
+      linuxSystems = builtins.filter (nixpkgs.lib.hasSuffix "linux") supportedSystems;
+      forLinuxSystems = nixpkgs.lib.genAttrs linuxSystems;
+
+      # The installer entrypoint: `nix run github:ohaukeboe/dot-emacs#install`
+      # from a NixOS installer. See scripts/installer.sh and docs/new-machine.md.
+      # Nothing here touches `private`, so it evaluates while private/** is still
+      # ciphertext, which it always is on a machine that has not bootstrapped.
+      installerFor =
+        system:
+        let
+          pkgs = nixpkgsFor.${system};
+        in
+        pkgs.writeShellApplication {
+          name = "dot-emacs-install";
+          runtimeInputs = with pkgs; [
+            git
+            just
+            vim
+          ];
+          text = builtins.readFile ./scripts/installer.sh;
+        };
     in
     {
       formatter = forAllSystems (system: treefmtEval.${system}.config.build.wrapper);
@@ -240,11 +262,27 @@
           test-disk-layout = nixpkgsFor.${system}.callPackage ./tests/disk-layout.nix {
             diskoLib = inputs.disko.lib;
           };
+          installer = installerFor system;
         }
       );
 
-      checks = forAllSystems (system: {
-        formatting = treefmtEval.${system}.config.build.check self;
+      apps = forLinuxSystems (system: {
+        install = {
+          type = "app";
+          program = nixpkgs.lib.getExe self.packages.${system}.installer;
+          meta.description = "Install a NixOS machine from this flake, from the installer ISO";
+        };
       });
+
+      checks = forAllSystems (
+        system:
+        {
+          formatting = treefmtEval.${system}.config.build.check self;
+        }
+        # writeShellApplication runs shellcheck at build time.
+        // nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "linux" system) {
+          installer = self.packages.${system}.installer;
+        }
+      );
     };
 }
