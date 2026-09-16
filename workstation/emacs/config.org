@@ -35,6 +35,7 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
     ("C-c t t" . tab-bar-mode)
     ("C-c s" . scratch-buffer)
     ("C-x x k" . my/kill-buffers-not-backed-by-file)
+    ("C-x 4 o" . my/other-window-C-c-o)
 
     :preface
     (set-frame-parameter nil 'undecorated t)
@@ -101,6 +102,9 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
     (read-extended-command-predicate #'command-completion-default-include-p)
     (text-mode-ispell-word-completion nil)
     (compilation-scroll-output 'first-error)
+    ;; Let `other-window-prefix' (C-x 4 4) and friends redirect commands
+    ;; that use `switch-to-buffer' (elfeed, ...) too
+    (switch-to-buffer-obey-display-actions t)
 
     :custom-face
     (italic ((t (:foreground "#b294bb"))))
@@ -154,7 +158,16 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
     (defun my/kill-buffers-not-backed-by-file ()
       "Kill all buffers that are not backed by a file."
       (interactive)
-      (mapc 'kill-buffer (-remove 'my/buffer-backed-by-file-p (buffer-list)))))
+      (mapc 'kill-buffer (-remove 'my/buffer-backed-by-file-p (buffer-list))))
+
+    (defun my/other-window-C-c-o ()
+      "Run the next `C-c o' command with its buffer in another window.
+  `C-x 4 o m' opens mu4e in another window like `C-x 4 4 C-c o m'.  The
+  `C-c o' map is looked up lazily from `global-map' (dired rebinds it), so
+  keys bound later in the init file work as well."
+      (interactive)
+      (other-window-prefix)
+      (set-transient-map (keymap-lookup global-map "C-c o"))))
 #+end_src
 
 #+begin_src elisp :tangle early-init.el
@@ -3734,10 +3747,15 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
         "Show Claude Code in the selected window instead of a side window.
   Reuses the current project's instance (moving it out of its side window
   when visible), or starts one when the project has none.  With prefix
-  ARG, start a new named instance here."
+  ARG, start a new named instance here.  An action already in
+  `display-buffer-overriding-action' (`other-window-prefix', `C-x 4 o')
+  wins over the same-window default."
         (interactive "P")
         (let ((claude-code-ide-use-side-window nil)
-              (display-buffer-overriding-action '(display-buffer-same-window))
+              (display-buffer-overriding-action
+               (cons (append (car display-buffer-overriding-action)
+                             '(display-buffer-same-window))
+                     (cdr display-buffer-overriding-action)))
               (session (unless arg
                          (car (or (claude-code-ide--visible-project-sessions
                                    (claude-code-ide--get-working-directory))
