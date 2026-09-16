@@ -248,7 +248,9 @@ in
 
       clang-tools
       clang
-      clang-analyzer
+      # hiPrio: clang-tools also ships bin/scan-view since LLVM 21, and
+      # clang-analyzer is the one that carries scan-build alongside it
+      (lib.hiPrio clang-analyzer)
       (lib.hiPrio gcc)
       # Needed hiPrio to resolve conflict as both
       # clang and gcc provide C++ binary
