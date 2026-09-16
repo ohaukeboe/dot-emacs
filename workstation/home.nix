@@ -215,6 +215,12 @@ in
       ### just ###
       just
       just-lsp
+
+      ### nix ###
+      # Needed on PATH before direnv evaluates: a devenv project's .envrc
+      # starts with `eval "$(devenv direnvrc)"`, so it cannot bootstrap
+      # itself from the environment it is about to enter.
+      devenv
       proton-pass
       proton-pass-cli
 

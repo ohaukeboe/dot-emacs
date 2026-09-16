@@ -3234,7 +3234,16 @@ Next up, the =docker= package is good at handling containers.
 #+end_src
 
 ** nix-init
-Some utilities for using nix-shell together with direnv for projects
+Scaffolds a Nix development environment for a project.  =nix-init-project=
+prompts for one of four /environment kinds/ -- =shell=, =flake=, =devenv=,
+=services-flake= -- writes that kind's files from the templates in
+=packages/nix-init-templates/=, writes an =.envrc= carrying its loader
+directive, and appends the =.gitignore= entries it needs.
+=nix-init-edit= opens the main file of whichever kind a project already has.
+
+Nothing here starts a service; =direnv= only enters an environment.  The
+services a kind declares are started by their own supervisor -- =just up= for
+services-flake, =devenv up= for devenv.
 
 #+begin_src elisp
   (use-package nix-init)

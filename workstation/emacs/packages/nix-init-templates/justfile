@@ -1,0 +1,12 @@
+# Services resolve their dataDir against the working directory, not the
+# flake, so `nix run` from a subdirectory silently creates a second data
+# dir.  just always enters the justfile's own directory before running a
+# recipe, which is why upstream recommends driving services through it.
+
+# Start the process-compose service group.
+up:
+    nix run .#services
+
+# Open a psql shell against the scaffolded postgres instance.
+psql:
+    nix develop -c psql -h 127.0.0.1 -p 5433 dev

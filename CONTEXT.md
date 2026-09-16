@@ -63,3 +63,22 @@ work here
 A machine configured to fetch from the **attic cache** but not to upload to
 it. The work laptop is one: what it builds can involve dependencies fetched
 with work credentials, which have no business on a personal cache.
+
+### Dev environments
+
+**Environment kind**:
+One of the four things `nix-init` can scaffold for a project: `shell`,
+`flake`, `devenv`, `services-flake`. A project has at most one, identified
+by its marker file.
+_Avoid_: template, which is the file a kind is written from, not the choice
+
+**Loader directive**:
+The line in `.envrc` that hands control to nix — `use nix`, `use flake`,
+`use devenv`. Each environment kind maps to exactly one. A project has a
+single `.envrc`, so the directive is what a second kind collides with.
+
+**Service**:
+A long-running process an environment declares (postgres, redis). Started by
+a supervisor — `just up`, `devenv up` — never by direnv, which only enters an
+environment and exits.
+_Avoid_: conflating with the environment that declares it
