@@ -26,12 +26,9 @@ fi
 echo
 echo "==> Tailscale"
 # private/hosts.json addresses the other machines by tailnet name, so
-# workstation/ssh.nix is useless until this machine has joined.
-if tailscale status >/dev/null 2>&1; then
-  echo "already up: $(tailscale status --json | grep -m1 '"DNSName"' | cut -d'"' -f4)"
-else
-  sudo tailscale up
-fi
+# workstation/ssh.nix is useless until this machine has joined — and so is the
+# attic cache the rebuild below wants to pull from.
+./scripts/tailnet-up.sh
 
 echo
 echo "==> Rebuilding in place"

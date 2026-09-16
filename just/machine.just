@@ -12,3 +12,11 @@ install-machine hostname mode="format":
 # Post-boot setup on a freshly installed machine (safe to re-run)
 finish-install hostname="":
     ./scripts/finish-install.sh {{ hostname }}
+
+# Join the tailnet, from an installed machine or from the installer
+tailnet-up:
+    ./scripts/tailnet-up.sh
+
+# Report whether this machine is on the tailnet, without joining it
+tailnet-status:
+    ./scripts/tailnet-up.sh --quiet

@@ -116,6 +116,57 @@ if [[ $mode == format ]] && grep -qv '^$' <<<"$mounts"; then
 fi
 
 ########################################
+# Binary caches
+#
+# The install builds with the installer's Nix daemon, which knows nothing of
+# common/caches.nix — that file configures the machine being installed, not the
+# one installing it. So read the machine's own substituters out of its config
+# and hand them to nixos-install, and take the trusted keys from the same place
+# so the two cannot drift.
+#
+# Only the ones that answer, though: the attic caches are reachable on the
+# tailnet only, and an installer that has not joined it would spend
+# connect-timeout on every path. `just tailnet-up` joins it.
+########################################
+
+probe_opts=(--option connect-timeout 5 --option download-attempts 1)
+
+cache_reachable() { # $1 substituter url
+  # `nix store ping` is what `nix store info` was called before 2.20; the
+  # installer image decides which of the two this is.
+  nix store info --store "$1" "${probe_opts[@]}" >/dev/null 2>&1 ||
+    nix store ping --store "$1" "${probe_opts[@]}" >/dev/null 2>&1
+}
+
+mapfile -t substituters < <(nix eval --raw \
+  ".#nixosConfigurations.\"$host\".config.nix.settings.substituters" \
+  --apply 'builtins.concatStringsSep "\n"')
+
+trusted_keys=$(nix eval --raw \
+  ".#nixosConfigurations.\"$host\".config.nix.settings.trusted-public-keys" \
+  --apply 'builtins.concatStringsSep " "')
+
+echo
+echo "Probing the binary caches $host is configured to use ..."
+reachable=() unreachable=()
+for sub in "${substituters[@]}"; do
+  if cache_reachable "$sub"; then
+    reachable+=("$sub")
+    echo "  up      $sub"
+  else
+    unreachable+=("$sub")
+    echo "  skipped $sub"
+  fi
+done
+
+if ((${#unreachable[@]})); then
+  echo
+  echo "The skipped caches will not be used for this install. The private ones"
+  echo "answer on the tailnet only — if this installer has not joined it, abort"
+  echo "here, run 'just tailnet-up', and start again."
+fi
+
+########################################
 # Confirm
 ########################################
 
@@ -126,6 +177,7 @@ lsblk -o NAME,SIZE,MODEL,FSTYPE,MOUNTPOINTS "$device"
 echo
 echo "  user:   $username"
 echo "  mode:   $mode"
+echo "  caches: ${#reachable[@]} of ${#substituters[@]} reachable"
 if [[ $mode == format ]]; then
   echo
   echo "This will ERASE $device completely. Every partition and all data on it"
@@ -176,7 +228,19 @@ mountpoint -q /mnt || die "disko did not leave a filesystem mounted at /mnt"
 
 echo
 echo "==> Installing (this takes a while; no input needed from here on)"
-as_root nixos-install --no-root-passwd --flake ".#$host" --root /mnt
+install_opts=(
+  # A cache that answers but lacks a path must lead to a build, not to a failed
+  # install: `fallback` is off by default.
+  --option fallback true
+  --option connect-timeout 5
+)
+if ((${#reachable[@]})); then
+  install_opts+=(
+    --option extra-substituters "${reachable[*]}"
+    --option extra-trusted-public-keys "$trusted_keys"
+  )
+fi
+as_root nixos-install --no-root-passwd --flake ".#$host" --root /mnt "${install_opts[@]}"
 
 ########################################
 # Seed the new root before it is unmounted

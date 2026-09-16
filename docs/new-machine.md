@@ -98,6 +98,26 @@ nix fmt
 git add -A          # the flake only sees git-tracked files
 ```
 
+### Join the tailnet first
+
+Optional, and worth the two minutes. The private attic caches hold everything
+this household has already built — the Emacs overlay, the nvfetcher npm
+packages, every patched derivation — and they answer on the tailnet only. Off
+the tailnet, the installer builds all of it from source.
+
+```sh
+just tailnet-up
+```
+
+The installer runs no `tailscaled`: `services.tailscale.enable` is part of the
+system config, which is what the install is about to produce. So the recipe
+starts a temporary one from nixpkgs and leaves it running for the rest of the
+install; it ends at the next reboot. `just tailnet-status` reports without
+joining.
+
+Skipping this costs nothing but build time — step 5 probes each cache and uses
+the ones that answer.
+
 ## 5. Install
 
 ```sh
@@ -113,19 +133,26 @@ disagree with the config — then:
    format a disk with mounted partitions, which is what a wrong device in
    `disk.nix` looks like. Everything that can fail, fails before the disk is
    touched.
-2. Shows the disk, asks you to type the hostname to confirm, then collects the
+2. Probes every substituter the machine is configured with — the list comes from
+   its own `nix.settings`, so `common/caches.nix` stays the one place they are
+   written — and prints which answered. The reachable ones are passed to
+   `nixos-install`, which otherwise builds with the installer's own Nix
+   settings and so would use cache.nixos.org alone. If the private caches are
+   listed as `skipped`, abort at the confirmation prompt, run `just tailnet-up`,
+   and start again.
+3. Shows the disk, asks you to type the hostname to confirm, then collects the
    LUKS passphrase, the root password and the user password. Nothing after this
    point prompts, so the long part of the install runs unattended.
-3. `disko --mode destroy,format,mount`, with the passphrase handed over through
+4. `disko --mode destroy,format,mount`, with the passphrase handed over through
    the layout's `passwordFile` (removed again when the script exits).
-4. `nixos-install --no-root-passwd`.
-5. Sets both passwords inside the new root. Root's is your way back in if the
+5. `nixos-install --no-root-passwd`.
+6. Sets both passwords inside the new root. Root's is your way back in if the
    user account or the greeter misbehaves; without the user's the machine boots
    to a login prompt you cannot get past, since `common/system/system.nix`
    declares no password.
-6. Copies `/var/lib/sops-nix/keys.txt` onto the new root, and this checkout to
+7. Copies `/var/lib/sops-nix/keys.txt` onto the new root, and this checkout to
    `~/projects/dot-emacs`.
-7. Unmounts.
+8. Unmounts.
 
 If `nixos-install` fails partway, retry without losing the partitioning:
 
@@ -140,7 +167,7 @@ Then reboot and remove the installer.
 1. Unlock LUKS with the passphrase from the install.
 2. lanzaboote enrolls the Secure Boot keys and reboots once by itself, so expect
    two boots before a login prompt.
-3. Log in as the user, with the password from step 5.
+3. Log in as the user, with the password you set during the install.
 
 ## 7. Finish
 
