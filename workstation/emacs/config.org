@@ -3664,7 +3664,8 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
 #+begin_src elisp
     (use-package claude-code-ide
       :bind (("C-c o c" . my/claude-code-ide-dwim)
-             ("C-c o C" . my/claude-code-ide-here))
+             ("C-c o C" . my/claude-code-ide-here)
+             ("C-c o w" . my/claude-code-ide-worktree))
       :custom
       (claude-code-ide-enable-mcp-server t)
       (claude-code-ide-terminal-backend 'ghostel)
@@ -3769,7 +3770,61 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
                 (my/claude-code-ide--delete-window-maybe window)
                 ;; With `claude-code-ide-use-side-window' nil this is a plain
                 ;; `display-buffer', steered here by the overriding action
-                (claude-code-ide--display-buffer-in-side-window buffer)))))))
+                (claude-code-ide--display-buffer-in-side-window buffer))))))
+
+      ;; A task that turns up while a session is already running is best given
+      ;; its own worktree.  Magit creates it rather than Claude, because
+      ;; Claude skips repo-local git filters (here: git-agecrypt) when it
+      ;; creates one, and because `claude-code-ide' binds its MCP session to
+      ;; the working directory at launch -- the tree has to exist first.
+      (defcustom my/claude-code-ide-worktree-seed-files
+        '(".claude/settings.local.json")
+        "Gitignored paths to copy from the main checkout into a new worktree.
+  Each is relative to the top level of the working tree.  Paths that do not
+  exist, or that the worktree already has, are skipped."
+        :type '(repeat string)
+        :group 'claude-code-ide)
+
+      (defun my/claude-code-ide--seed-worktree (main dir)
+        "Copy `my/claude-code-ide-worktree-seed-files' from MAIN into DIR.
+  A worktree checks out tracked files only, so anything ignored -- the
+  permission allowlist above all -- is missing until copied.  Also allow
+  DIR's `.envrc', since direnv keys its cache by directory."
+        (dolist (rel my/claude-code-ide-worktree-seed-files)
+          (let ((src (expand-file-name rel main))
+                (dst (expand-file-name rel dir)))
+            (when (and (file-regular-p src)
+                       (not (file-exists-p dst)))
+              (make-directory (file-name-directory dst) t)
+              (copy-file src dst))))
+        (when (and (file-exists-p (expand-file-name ".envrc" dir))
+                   (executable-find "direnv"))
+          (let ((default-directory dir))
+            (call-process "direnv" nil nil nil "allow"))))
+
+      (defun my/claude-code-ide-worktree (directory branch start-point)
+        "Check out a new BRANCH from START-POINT in DIRECTORY, start Claude there.
+  Arguments are read like `magit-worktree-branch', so
+  `magit-read-worktree-directory-function' decides where the worktree
+  lands.  project.el treats a worktree as a project of its own, which is
+  what keeps the new instance separate from the one in the main checkout."
+        (interactive
+         (pcase-let ((`(,branch ,start-point)
+                      (magit-branch-read-args "In new worktree; checkout new branch")))
+           (list (magit--read-worktree-directory branch) branch start-point)))
+        ;; Not `magit--expand-worktree': that hands back the path as git sees
+        ;; it, which is the wrong one to pass to `copy-file' over TRAMP.
+        (let ((main (magit-toplevel))
+              (dir (file-name-as-directory (expand-file-name directory))))
+          (magit-worktree-branch dir branch start-point)
+          ;; `magit-worktree-branch' is silent when "git worktree add" fails.
+          (unless (file-exists-p (expand-file-name ".git" dir))
+            (user-error "No worktree at %s" dir))
+          (my/claude-code-ide--seed-worktree main dir)
+          (when-let* ((project (project-current nil dir)))
+            (project-remember-project project))
+          (let ((default-directory dir))
+            (claude-code-ide)))))
 #+end_src
 
 ** MCP Server
