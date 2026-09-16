@@ -4,6 +4,7 @@
   x13-laptop = {
     stateVersion = "24.11";
     modules = [
+      { modules.attic.push.enable = true; }
       { modules.cosmic-de.enable = true; }
       {
         modules.sleep-then-hibernate.enable = true;
@@ -24,6 +25,7 @@
   desktop = {
     stateVersion = "24.11";
     modules = [
+      { modules.attic.push.enable = true; }
       {
         system.audio.allowedSampleRates = [
           32000

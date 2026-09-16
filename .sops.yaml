@@ -14,7 +14,7 @@ creation_rules:
     # host key itself. Listing *host as a recipient of its own key file is an
     # information no-op (whoever can read it already holds the key) and lets an
     # already-provisioned machine re-run `sops updatekeys` without the YubiKey.
-    - path_regex: sops/(home|bootstrap)/[^/]+\.(yaml|json|env|ini)$
+    - path_regex: sops/(home|bootstrap|system)/[^/]+\.(yaml|json|env|ini)$
       key_groups:
           - age:
                 - *wallet_key

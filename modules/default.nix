@@ -10,5 +10,6 @@
     ./ollama
     ./sleep-then-hibernate
     ./sops
+    ./attic
   ];
 }

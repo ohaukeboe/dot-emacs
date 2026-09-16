@@ -42,3 +42,24 @@ _Avoid_: Claude frame, Claude popup
 **Claude panel**:
 The set of Claude side windows visible in the current tab. Hiding the panel
 remembers the set so a project's members can be restored later.
+
+### Binary cache
+
+**attic cache**:
+A named namespace on the private binary cache these machines pull from, each
+with its own signing key and its own push permission. Three exist —
+`homestach`, `folindra`, `simmerly` — one per repository that produces
+closures. Public in the sense that pulling needs no token; reachable only from
+the tailnet.
+_Avoid_: "the cache" unqualified, which reads as cache.nixos.org
+
+**push hook**:
+The mechanism that uploads freshly built paths to an **attic cache**. Fires
+per build, hands the paths off, and never makes the build wait on the upload.
+_Avoid_: "watcher", which names a different upstream mechanism that does not
+work here
+
+**pull-only machine**:
+A machine configured to fetch from the **attic cache** but not to upload to
+it. The work laptop is one: what it builds can involve dependencies fetched
+with work credentials, which have no business on a personal cache.
