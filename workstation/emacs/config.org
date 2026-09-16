@@ -3250,8 +3250,19 @@ buffer, while devenv has no streaming mode and starts detached, leaving its
 buffer to exit at once -- read state back with =nix-init-services-status=.
 Attaching needs a tty, so it runs in =eat= rather than a compilation buffer.
 
+Everything lives under the =C-c v= prefix: =n= new environment, =e= edit,
+then =u= up, =d= down, =s= status, =a= attach.  =C-c n= is org-roam, so the
+obvious =n= for nix was taken.
+
 #+begin_src elisp
-  (use-package nix-init)
+  (use-package nix-init
+    :bind
+    ("C-c v n" . nix-init-project)
+    ("C-c v e" . nix-init-edit)
+    ("C-c v u" . nix-init-services-up)
+    ("C-c v d" . nix-init-services-down)
+    ("C-c v s" . nix-init-services-status)
+    ("C-c v a" . nix-init-services-attach))
 #+end_src
 
 ** gptel
