@@ -3649,115 +3649,109 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
 ** Claude Code
 
 #+begin_src elisp
-  (use-package claude-code-ide
-    :bind (("C-c o c" . my/claude-code-ide-dwim)
-           ("C-c o C" . my/claude-code-ide-here))
-    :custom
-    (claude-code-ide-enable-mcp-server t)
-    (claude-code-ide-terminal-backend 'ghostel)
-    :config
-    (claude-code-ide-emacs-tools-setup) ; Optionally enable Emacs MCP tools
+    (use-package claude-code-ide
+      :bind (("C-c o c" . my/claude-code-ide-dwim)
+             ("C-c o C" . my/claude-code-ide-here))
+      :custom
+      (claude-code-ide-enable-mcp-server t)
+      (claude-code-ide-terminal-backend 'ghostel)
+      :config
+      (claude-code-ide-emacs-tools-setup) ; Optionally enable Emacs MCP tools
 
-    ;; Upstream `claude-code-ide' always starts a new instance and prompts
-    ;; for a name once the project has one.  These wrappers make the key
-    ;; a toggle: hide the whole panel when any Claude window is visible,
-    ;; otherwise bring back (or start) the current project's instance.
-    ;; They lean on claude-code-ide internals (the `--' helpers and the
-    ;; `:all' hidden-panel scope shared with `claude-code-ide-toggle-recent');
-    ;; re-check them when bumping the flake input.
+      ;; Upstream `claude-code-ide' always starts a new instance and prompts
+      ;; for a name once the project has one.  These wrappers make the key
+      ;; a toggle: hide the whole panel when any Claude window is visible,
+      ;; otherwise bring back (or start) the current project's instance.
+      ;; They lean on claude-code-ide internals (the `--' helpers and the
+      ;; `:all' hidden-panel scope shared with `claude-code-ide-toggle-recent');
+      ;; re-check them when bumping the flake input.
 
-    (defun my/claude-code-ide--delete-window-maybe (window)
-      "Delete WINDOW when it is not the sole window; return non-nil if deleted."
-      (when (and window (eq (window-deletable-p window) t))
-        (delete-window window)
-        t))
+      (defun my/claude-code-ide--delete-window-maybe (window)
+        "Delete WINDOW when it is not the sole window; return non-nil if deleted."
+        (when (and window (eq (window-deletable-p window) t))
+          (delete-window window)
+          t))
 
-    (defun my/claude-code-ide--visible-instances ()
-      "Return every Claude instance with a window in the current tab."
-      (cl-remove-if-not #'claude-code-ide--session-visible-p
-                        (claude-code-ide-mcp--active-sessions)))
+      (defun my/claude-code-ide--visible-instances ()
+        "Return every Claude instance with a window in the current tab."
+        (cl-remove-if-not #'claude-code-ide--session-visible-p
+                          (claude-code-ide-mcp--active-sessions)))
 
-    (defun my/claude-code-ide--hide-window (session)
-      "Hide SESSION's window.
-A sole window cannot be deleted, so it switches to its previous buffer
-instead."
-      (let* ((buffer (claude-code-ide-mcp-session-buffer session))
-             (window (and buffer (get-buffer-window buffer))))
-        (when window
-          ;; Mark as most recently used so a plain open brings it back
-          (claude-code-ide--touch-session session)
-          (unless (my/claude-code-ide--delete-window-maybe window)
-            (set-window-dedicated-p window nil)
-            (switch-to-prev-buffer window)))))
+      (defun my/claude-code-ide--hide-window (session)
+        "Hide SESSION's window.
+  A sole window cannot be deleted, so it switches to its previous buffer
+  instead."
+        (let* ((buffer (claude-code-ide-mcp-session-buffer session))
+               (window (and buffer (get-buffer-window buffer))))
+          (when window
+            ;; Mark as most recently used so a plain open brings it back
+            (claude-code-ide--touch-session session)
+            (unless (my/claude-code-ide--delete-window-maybe window)
+              (set-window-dedicated-p window nil)
+              (switch-to-prev-buffer window)))))
 
-    (defun my/claude-code-ide--instances-to-show ()
-      "Return the current project's instances that a plain open should show.
-Prefers instances hidden by the last toggle, then the most recently used
-one.  Nil when the project has no instance."
-      (let* ((project-dir (claude-code-ide--get-working-directory))
-             (sessions (cl-remove-if-not
-                        (lambda (s) (buffer-live-p (claude-code-ide-mcp-session-buffer s)))
-                        (claude-code-ide-mcp--sessions-for-project project-dir))))
-        (when sessions
-          (or (cl-remove-if-not (lambda (s) (memq s sessions))
-                                (claude-code-ide--hidden-panel-get :all))
-              (list (claude-code-ide-mcp--mru-session project-dir))))))
+      (defun my/claude-code-ide--instances-to-show ()
+        "Return the current project's instances that a plain open should show.
+  Prefers instances hidden by the last toggle, then the most recently used
+  one.  Nil when the project has no instance."
+        (let* ((project-dir (claude-code-ide--get-working-directory))
+               (sessions (cl-remove-if-not
+                          (lambda (s) (buffer-live-p (claude-code-ide-mcp-session-buffer s)))
+                          (claude-code-ide-mcp--sessions-for-project project-dir))))
+          (when sessions
+            (or (cl-remove-if-not (lambda (s) (memq s sessions))
+                                  (claude-code-ide--hidden-panel-get :all))
+                (list (claude-code-ide-mcp--mru-session project-dir))))))
 
-    (defun my/claude-code-ide--forget-hidden (sessions)
-      "Drop SESSIONS from the remembered hidden set of this tab."
-      (claude-code-ide--hidden-panel-set
-       :all (cl-set-difference (claude-code-ide--hidden-panel-get :all) sessions)))
+      (defun my/claude-code-ide--forget-hidden (sessions)
+        "Drop SESSIONS from the remembered hidden set of this tab."
+        (claude-code-ide--hidden-panel-set
+         :all (cl-set-difference (claude-code-ide--hidden-panel-get :all) sessions)))
 
-    (defun my/claude-code-ide-dwim (&optional arg)
-      "Toggle Claude Code.
-With any Claude window visible in this tab, hide them all (any project).
-Otherwise show the current project's instance, starting one when the
-project has none.  With prefix ARG, behave like `claude-code-ide': start
-a new instance and prompt for its name."
-      (interactive "P")
-      (let ((visible (my/claude-code-ide--visible-instances)))
-        (cond
-         (arg (claude-code-ide))
-         (visible
-          (claude-code-ide--hidden-panel-set :all visible)
-          (mapc #'my/claude-code-ide--hide-window visible))
-         (t
-          (if-let* ((sessions (my/claude-code-ide--instances-to-show)))
-              (progn
-                (my/claude-code-ide--forget-hidden sessions)
-                (dolist (session sessions)
-                  (claude-code-ide--display-buffer-in-side-window
-                   (claude-code-ide-mcp-session-buffer session))))
-            (claude-code-ide))))))
+      (defun my/claude-code-ide-dwim (&optional arg)
+        "Toggle Claude Code.
+  With any Claude window visible in this tab, hide them all (any project).
+  Otherwise show the current project's instance, starting one when the
+  project has none.  With prefix ARG, behave like `claude-code-ide': start
+  a new instance and prompt for its name."
+        (interactive "P")
+        (let ((visible (my/claude-code-ide--visible-instances)))
+          (cond
+           (arg (claude-code-ide))
+           (visible
+            (claude-code-ide--hidden-panel-set :all visible)
+            (mapc #'my/claude-code-ide--hide-window visible))
+           (t
+            (if-let* ((sessions (my/claude-code-ide--instances-to-show)))
+                (progn
+                  (my/claude-code-ide--forget-hidden sessions)
+                  (dolist (session sessions)
+                    (claude-code-ide--display-buffer-in-side-window
+                     (claude-code-ide-mcp-session-buffer session))))
+              (claude-code-ide))))))
 
-    (defun my/claude-code-ide-here (&optional arg)
-      "Show Claude Code in the selected window instead of a side window.
-Reuses the current project's instance (moving it out of its side window
-when visible), or starts one when the project has none.  With prefix
-ARG, start a new named instance here."
-      (interactive "P")
-      (let ((claude-code-ide-use-side-window nil)
-            (display-buffer-overriding-action '(display-buffer-same-window))
-            (session (unless arg
-                       (car (or (claude-code-ide--visible-project-sessions
-                                 (claude-code-ide--get-working-directory))
-                                (my/claude-code-ide--instances-to-show))))))
-        (if (null session)
-            (claude-code-ide)
-          (let* ((buffer (claude-code-ide-mcp-session-buffer session))
-                 (window (get-buffer-window buffer)))
-            (my/claude-code-ide--forget-hidden (list session))
-            (unless (eq window (selected-window))
-              (my/claude-code-ide--delete-window-maybe window)
-              ;; With `claude-code-ide-use-side-window' nil this is a plain
-              ;; `display-buffer', steered here by the overriding action
-              (claude-code-ide--display-buffer-in-side-window buffer))))))
-
-    (defun my/claude-code-ide--tmux-session-name ()
-      "Return a tmux-safe session name derived from the current project."
-      (let* ((proj (project-current))
-             (raw (if proj (project-name proj) "claude")))
-        (replace-regexp-in-string "[^A-Za-z0-9_-]" "_" raw))))
+      (defun my/claude-code-ide-here (&optional arg)
+        "Show Claude Code in the selected window instead of a side window.
+  Reuses the current project's instance (moving it out of its side window
+  when visible), or starts one when the project has none.  With prefix
+  ARG, start a new named instance here."
+        (interactive "P")
+        (let ((claude-code-ide-use-side-window nil)
+              (display-buffer-overriding-action '(display-buffer-same-window))
+              (session (unless arg
+                         (car (or (claude-code-ide--visible-project-sessions
+                                   (claude-code-ide--get-working-directory))
+                                  (my/claude-code-ide--instances-to-show))))))
+          (if (null session)
+              (claude-code-ide)
+            (let* ((buffer (claude-code-ide-mcp-session-buffer session))
+                   (window (get-buffer-window buffer)))
+              (my/claude-code-ide--forget-hidden (list session))
+              (unless (eq window (selected-window))
+                (my/claude-code-ide--delete-window-maybe window)
+                ;; With `claude-code-ide-use-side-window' nil this is a plain
+                ;; `display-buffer', steered here by the overriding action
+                (claude-code-ide--display-buffer-in-side-window buffer)))))))
 #+end_src
 
 ** MCP Server
