@@ -12,6 +12,18 @@ let
 in
 {
   options.modules.attic = {
+    cacheName = mkOption {
+      type = types.str;
+      default = "homestach";
+      description = ''
+        The attic cache this machine pushes to. Every namespace on the server
+        has its own signing key and its own push permission, and the token in
+        sops carries exactly one of them, so changing this means issuing a new
+        token as well.
+      '';
+      example = "folindra";
+    };
+
     push.enable = mkEnableOption ''
       pushing locally built store paths to the homestach attic cache.
 
@@ -45,12 +57,12 @@ in
       ${pkgs.systemd}/bin/systemd-run \
         --no-block --collect --quiet \
         --property=Environment=HOME=/root \
-        ${pkgs.attic-client}/bin/attic push --no-closure homestach $OUT_PATHS \
+        ${pkgs.attic-client}/bin/attic push --no-closure ${cfg.cacheName} $OUT_PATHS \
         || echo "attic: could not queue a push for $OUT_PATHS" >&2
       exit 0
     '';
 
-    # The token carries both push and pull on `homestach`. Pull is not optional
+    # The token carries both push and pull on the cache named above. Pull is not optional
     # even though the cache is public: `get-missing-paths` refuses a token that
     # lacks it rather than treating the request as anonymous.
     sops.secrets."attic/push-token" = {

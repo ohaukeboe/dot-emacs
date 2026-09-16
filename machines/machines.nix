@@ -46,6 +46,7 @@
   flow-x13 = {
     stateVersion = "26.11";
     modules = [
+      { modules.attic.push.enable = true; }
       { modules.cosmic-de.enable = true; }
       {
         modules.sleep-then-hibernate.enable = true;

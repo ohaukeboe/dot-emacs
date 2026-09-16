@@ -35,6 +35,26 @@ echo "==> Rebuilding in place"
 sudo nixos-rebuild switch --flake ".#$host"
 
 echo
+echo "==> Seeding the attic cache with this machine's closure"
+# The install built into the /mnt store with the installer's Nix daemon, which
+# has no post-build hook, so nothing it produced locally ever reached the cache.
+# The rebuild above only covers what changed since. Push the whole closure once,
+# now that the machine is up and modules/attic has put the token in place.
+#
+# Cheap when there is nothing to do: attic asks the server which paths are
+# missing and skips everything signed by an upstream cache key, so a machine
+# that substituted its closure uploads nothing.
+if [[ $(nix eval --json ".#nixosConfigurations.\"$host\".config.modules.attic.push.enable") == true ]]; then
+  cache=$(nix eval --raw ".#nixosConfigurations.\"$host\".config.modules.attic.cacheName")
+  # As root: the token lives in /root/.config/attic/config.toml, which is where
+  # the attic client looks and nowhere else.
+  sudo attic push "$cache" /run/current-system ||
+    echo "warning: the push failed; the machine is fine, the cache just missed this closure"
+else
+  echo "pull-only machine (modules.attic.push.enable is off); nothing to push"
+fi
+
+echo
 echo "==> Verification"
 # Expect "Secure Boot: enabled (user)". Anything else means the firmware was
 # not in Setup Mode when lanzaboote tried to enroll — see docs/new-machine.md.

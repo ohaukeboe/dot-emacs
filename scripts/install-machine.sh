@@ -148,8 +148,13 @@ trusted_keys=$(nix eval --raw \
 
 echo
 echo "Probing the binary caches $host is configured to use ..."
-reachable=() unreachable=()
+reachable=() unreachable=() seen=()
 for sub in "${substituters[@]}"; do
+  # nixpkgs appends its own default, so cache.nixos.org usually arrives twice,
+  # once with a trailing slash. Probing it twice would only be noise.
+  key=${sub%/}
+  [[ " ${seen[*]-} " == *" $key "* ]] && continue
+  seen+=("$key")
   if cache_reachable "$sub"; then
     reachable+=("$sub")
     echo "  up      $sub"
@@ -177,7 +182,7 @@ lsblk -o NAME,SIZE,MODEL,FSTYPE,MOUNTPOINTS "$device"
 echo
 echo "  user:   $username"
 echo "  mode:   $mode"
-echo "  caches: ${#reachable[@]} of ${#substituters[@]} reachable"
+echo "  caches: ${#reachable[@]} of ${#seen[@]} reachable"
 if [[ $mode == format ]]; then
   echo
   echo "This will ERASE $device completely. Every partition and all data on it"

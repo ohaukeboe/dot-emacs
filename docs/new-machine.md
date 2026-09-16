@@ -85,8 +85,14 @@ This creates `machines/<hostname>/` with:
   mapping; leaving the generated stanzas in would collide with it.
 - `default.nix` importing both
 
-and registers the machine in `machines/machines.nix` with `cosmic-de` enabled
-and `stateVersion` set to the release of the nixpkgs this flake pins.
+and registers the machine in `machines/machines.nix` with `cosmic-de` and
+`modules.attic.push.enable` on, and `stateVersion` set to the release of the
+nixpkgs this flake pins.
+
+`modules.attic.push.enable` makes the machine upload what it builds instead of
+only pulling. **Remove that line if this is a work machine** — the push hook
+uploads everything the Nix daemon builds, dependencies fetched with work
+credentials included.
 
 Now edit `machines/machines.nix` for what this machine actually wants —
 `gaming`, `sshd`, `sleep-then-hibernate`, a `nixos-hardware` profile.

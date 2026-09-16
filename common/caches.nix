@@ -1,3 +1,10 @@
+# Imported two ways: as a NixOS module (common/nixos-default.nix), where it
+# lands in /etc/nix/nix.conf and the root daemon honours all of it, and as a
+# Home Manager module (lib/mkHomeConfiguration.nix), where it lands in
+# ~/.config/nix/nix.conf instead. A daemon takes `substituters` and
+# `trusted-public-keys` from a client only if that client is a trusted user, so
+# the second form needs `trusted-users` in the host's own /etc/nix/nix.conf to
+# have any effect. AGENTS.md says so under "Home Manager (Standalone)".
 { pkgs, ... }:
 {
   nix.package = pkgs.nix;

@@ -13,12 +13,24 @@ home-manager switch --flake .#default --impure -b backup
 home-manager switch --flake .#oskar@x86_64-linux --impure -b backup
 ```
 
+On a non-NixOS host, `common/caches.nix` reaches only `~/.config/nix/nix.conf`,
+and `substituters` and `trusted-public-keys` are settings the Nix daemon accepts
+from a client only if that client is trusted. So the attic caches are written
+and then ignored unless the host's own `/etc/nix/nix.conf` says
+
+```
+trusted-users = root <your-user>
+```
+
+That file is outside this flake. Without it the machine still works, it just
+builds from source everything the household has already built.
+
 ### NixOS System
 ```bash
 # Deploy NixOS configuration
 sudo nixos-rebuild switch --flake .#<hostname>
 
-# Available hostnames: x13-laptop, work-laptop, desktop
+# Available hostnames: x13-laptop, work-laptop, desktop, flow-x13
 sudo nixos-rebuild switch --flake .#x13-laptop
 ```
 

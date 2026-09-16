@@ -124,11 +124,18 @@ if re.search(rf"^\s*{re.escape(host)}\s*=", src, re.M):
 body = src.rstrip()
 assert body.endswith("}"), "unexpected machines.nix shape; register the machine by hand"
 
+# Pushing to the attic cache is on by default here because a machine that only
+# pulls is a machine whose builds nothing else can reuse, and forgetting the
+# line is easier than noticing it is missing. Drop it for a work machine: the
+# hook uploads everything the daemon builds, dependencies fetched with work
+# credentials included. modules/attic/default.nix has the reasoning.
 entry = "\n".join([
     "",
     f"  {host} = " + "{",
     f'    stateVersion = "{state_version}";',
     "    modules = [",
+    "      # Remove this on a work machine — see modules/attic/default.nix.",
+    "      { modules.attic.push.enable = true; }",
     "      { modules.cosmic-de.enable = true; }",
     "    ];",
     "  };",
