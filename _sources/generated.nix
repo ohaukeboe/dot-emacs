@@ -8,13 +8,13 @@
 {
   beads = {
     pname = "beads";
-    version = "v1.2.2";
+    version = "v1.3.0";
     src = fetchFromGitHub {
       owner = "gastownhall";
       repo = "beads";
-      rev = "v1.2.2";
+      rev = "v1.3.0";
       fetchSubmodules = false;
-      sha256 = "sha256-HSZ1z4WaHQDPomW6nNs8iUnld36BuHnOVaODD5mxY00=";
+      sha256 = "sha256-QryUnK04c9Wm9/VgWoaOJW9M2HoZVZzSDMSMBtjKiyc=";
     };
   };
   caveman-shrink = {

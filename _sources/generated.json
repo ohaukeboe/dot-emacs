@@ -13,12 +13,12 @@
             "name": null,
             "owner": "gastownhall",
             "repo": "beads",
-            "rev": "v1.2.2",
-            "sha256": "sha256-HSZ1z4WaHQDPomW6nNs8iUnld36BuHnOVaODD5mxY00=",
+            "rev": "v1.3.0",
+            "sha256": "sha256-QryUnK04c9Wm9/VgWoaOJW9M2HoZVZzSDMSMBtjKiyc=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v1.2.2"
+        "version": "v1.3.0"
     },
     "caveman-shrink": {
         "cargoLock": null,
