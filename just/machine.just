@@ -13,6 +13,10 @@ install-machine hostname mode="format":
 finish-install hostname="":
     ./scripts/finish-install.sh {{ hostname }}
 
+# Enroll the root LUKS volume for TPM unlock (skips if not applicable)
+tpm-enroll hostname="":
+    ./scripts/tpm-enroll.sh {{ hostname }}
+
 # Join the tailnet, from an installed machine or from the installer
 tailnet-up:
     ./scripts/tailnet-up.sh

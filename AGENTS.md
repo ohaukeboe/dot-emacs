@@ -244,8 +244,11 @@ TPM-backed LUKS unlock is opt-in per machine via
 systemd-pcrlock support so the volume is bound to a policy rather than to static
 PCR values — lanzaboote refreshes it on every rebuild, so enrolment happens once
 instead of after every firmware or Secure Boot key change. Enabling it forces
-`configurationLimit` down to 8, a systemd-pcrlock limit. Enrolment itself stays
-manual (`systemd-cryptenroll --tpm2-pcrlock`, with a PIN) — see
+`configurationLimit` down to 8, a systemd-pcrlock limit. `just new-machine` asks
+whether to turn it on. Enrolment (`systemd-cryptenroll --tpm2-pcrlock`, no PIN)
+is `scripts/tpm-enroll.sh`, run by `just finish-install` and on its own as
+`just tpm-enroll`; it skips machines without measured boot, a supported TPM or
+user Secure Boot keys, and volumes that already have a tpm2 slot — see
 `docs/new-machine.md` step 8.
 
 `tests/disk-layout.nix` exercises the layout in a VM: it formats a virtual

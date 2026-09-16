@@ -98,13 +98,31 @@ fi
 }
 echo "stateVersion: $state_version (from $source)"
 
+# Measured boot is what lets scripts/finish-install.sh enroll the disk for TPM
+# unlock. Asked rather than defaulted: systemd-pcrlock is still experimental
+# upstream and sits in the boot path. The check needs a TPM, which the installer
+# can see as well as the installed system can.
+measured_boot=false
+pcrlock=$(command -v systemd-pcrlock 2>/dev/null || true)
+for p in /run/current-system/systemd/lib/systemd/systemd-pcrlock /run/current-system/sw/lib/systemd/systemd-pcrlock; do
+  if [[ -z $pcrlock && -x $p ]]; then pcrlock=$p; fi
+done
+supported=
+if [[ -n $pcrlock ]]; then supported=$("$pcrlock" is-supported 2>/dev/null || true); fi
+if [[ $supported == yes ]]; then
+  read -rp "Unlock the disk with the TPM at boot (no PIN, measured boot)? [y/N] " answer
+  if [[ $answer == [yY]* ]]; then measured_boot=true; fi
+else
+  echo "TPM unlock not offered: systemd-pcrlock is-supported says '${supported:-nothing}'"
+fi
+
 # Registering is otherwise a judgement call (which modules this machine wants),
 # so write the minimum and leave the rest to the operator.
 # The installer ISO has no python3, and this script runs from it — fall back to
 # nix-shell, the same way scripts/agecrypt-rekey.sh does.
-py=(python3 - "$hostname" "$state_version")
+py=(python3 - "$hostname" "$state_version" "$measured_boot")
 if ! command -v python3 >/dev/null 2>&1; then
-  py=(nix-shell -p python3 --run "python3 - $(printf '%q ' "$hostname" "$state_version")")
+  py=(nix-shell -p python3 --run "python3 - $(printf '%q ' "$hostname" "$state_version" "$measured_boot")")
 fi
 
 "${py[@]}" <<'PY'
@@ -114,6 +132,7 @@ import pathlib
 
 host = sys.argv[1]
 state_version = sys.argv[2]
+measured_boot = sys.argv[3] == "true"
 path = pathlib.Path("machines/machines.nix")
 src = path.read_text()
 
@@ -137,6 +156,7 @@ entry = "\n".join([
     "      # Remove this on a work machine — see modules/attic/default.nix.",
     "      { modules.attic.push.enable = true; }",
     "      { modules.cosmic-de.enable = true; }",
+    *(["      { modules.secure-boot.measuredBoot.enable = true; }"] if measured_boot else []),
     "    ];",
     "  };",
     "",

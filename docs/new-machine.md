@@ -20,7 +20,7 @@ skipping it is not recoverable in place.
 
 1. UEFI boot, CSM/legacy disabled.
 2. TPM 2.0 enabled. `modules/sops` sets `security.tpm2.enable`, and TPM-backed
-   LUKS unlock in step 8 depends on it.
+   LUKS unlock (step 8) depends on it.
 3. **Put Secure Boot into Setup Mode** — the firmware menu calls it "Erase all
    Secure Boot settings", "Delete platform key (PK)", "Clear Secure Boot keys",
    or "Custom mode". Leave Secure Boot itself enabled.
@@ -88,6 +88,11 @@ This creates `machines/<hostname>/` with:
 and registers the machine in `machines/machines.nix` with `cosmic-de` and
 `modules.attic.push.enable` on, and `stateVersion` set to the release of the
 nixpkgs this flake pins.
+
+If `systemd-pcrlock is-supported` says `yes` on the installer, the script also
+asks whether the disk should unlock with the TPM at boot. Answering yes adds
+`modules.secure-boot.measuredBoot.enable` to the entry, and step 7 then enrolls
+the disk — see step 8 for what that means.
 
 `modules.attic.push.enable` makes the machine upload what it builds instead of
 only pulling. **Remove that line if this is a work machine** — the push hook
@@ -187,7 +192,8 @@ Re-runnable, and nothing in it is destructive. It runs `just agecrypt-init`
 installer's root-owned paths, which this user cannot read; the recipe drops
 those and registers `/run/secrets/host-age-key` instead), switches `origin`
 from HTTPS to SSH now that a key is decryptable, joins
-Tailscale, rebuilds in place, and reports `bootctl status` and `sbctl verify`.
+Tailscale, rebuilds in place, enrolls the disk for TPM unlock (step 8), and
+reports `bootctl status` and `sbctl verify`.
 
 Expect `Secure Boot: enabled (user)`. Anything else means the firmware was not
 in Setup Mode — see below.
@@ -213,43 +219,42 @@ install that, then clear the platform key from firmware, drop the line, and
 inside `modules`.
 
 What is left is restoring whatever this flake does not manage — Nextcloud,
-1Password, mail — and, optionally, TPM unlock below.
+1Password, mail.
 
 ## 8. Optional: TPM-backed LUKS unlock
 
-Only worth doing once the machine is known good, and only if you would rather
-type a short PIN than the full passphrase at every boot.
+The disk unlocks at boot with no input, from a TPM policy that
+systemd-pcrlock maintains. There is **no PIN**: whoever holds the powered-off
+machine gets as far as the login screen, so disk encryption then protects only
+a removed disk, not a stolen laptop.
 
-Check the TPM is usable at all:
+A machine opts in with `modules.secure-boot.measuredBoot.enable` in
+`machines/machines.nix`. `just new-machine` asks, and adds the line if you
+answer yes. Enabling it lowers the generation limit from 10 to 8, which
+systemd-pcrlock enforces and the module handles for you.
 
-```sh
-/run/current-system/systemd/lib/systemd/systemd-pcrlock is-supported
-```
+Enrollment is `just tpm-enroll` (`scripts/tpm-enroll.sh`), which
+`just finish-install` runs after its rebuild. It skips, without failing, when:
 
-If that says anything but `yes`, stop — this machine cannot do it.
+- measured boot is off for the machine,
+- `systemd-pcrlock is-supported` says anything but `yes`,
+- `bootctl status` does not show `Secure Boot: enabled (user)` — PCR 7 measures
+  the Secure Boot keys, so enrolling before lanzaboote's keys are in place would
+  lock to the wrong state,
+- `/var/lib/systemd/pcrlock.json` does not exist yet, or
+- the LUKS device behind `/dev/mapper/crypted` already has a `tpm2` slot.
 
-Enable measured boot for the machine in `machines/machines.nix`:
-
-```nix
-{ modules.secure-boot.measuredBoot.enable = true; }
-```
-
-then `sudo nixos-rebuild boot` and reboot. That drops the generation limit from
-10 to 8, which systemd-pcrlock enforces and the module handles for you.
-
-Enroll, once:
+Otherwise it runs, asking once for the LUKS passphrase:
 
 ```sh
 sudo systemd-cryptenroll \
   --tpm2-device=auto \
-  --tpm2-with-pin=true \
   --tpm2-pcrlock=/var/lib/systemd/pcrlock.json \
-  /dev/nvme0n1p2
+  /dev/<luks partition>
 ```
 
-`--tpm2-with-pin=true` is deliberate: upstream is explicit that an attended
-machine should require a user secret alongside the TPM, or an attacker with the
-powered-off laptop has the disk.
+To opt in an existing machine: add the line, `sudo nixos-rebuild switch`, reboot,
+then `just tpm-enroll`.
 
 **Keep the passphrase.** systemd-pcrlock is still experimental upstream, and if
 its policy ever fails to validate the passphrase is the only way back in.

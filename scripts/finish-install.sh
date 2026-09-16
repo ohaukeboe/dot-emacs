@@ -55,6 +55,13 @@ else
 fi
 
 echo
+echo "==> TPM unlock"
+# After the rebuild on purpose: that is what regenerates the pcrlock policy on
+# this boot, with the Secure Boot keys lanzaboote enrolled on the first one.
+./scripts/tpm-enroll.sh "$host" ||
+  echo "warning: TPM enrollment failed; the passphrase still unlocks the disk. Retry with: just tpm-enroll"
+
+echo
 echo "==> Verification"
 # Expect "Secure Boot: enabled (user)". Anything else means the firmware was
 # not in Setup Mode when lanzaboote tried to enroll — see docs/new-machine.md.
@@ -66,10 +73,4 @@ cat <<EOF
 Done. What is left:
 
   Restore anything not covered by this flake (Nextcloud, 1Password, mail).
-
-  Optionally, TPM-backed LUKS unlock. That means enabling
-  modules.secure-boot.measuredBoot for this machine and enrolling once with
-  systemd-cryptenroll --tpm2-pcrlock; step 8 of docs/new-machine.md has the
-  details. Not scripted here on purpose: it is a one-time decision per machine,
-  it needs a reboot in the middle, and it wants a PIN you have to choose.
 EOF

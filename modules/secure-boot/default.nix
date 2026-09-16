@@ -39,8 +39,9 @@ in
 
         Off by default on purpose. systemd-pcrlock is still experimental
         upstream and this sits in the boot path, so a working machine should not
-        acquire it as a side effect of a rebuild. Enrolment is a separate manual
-        step -- see docs/new-machine.md
+        acquire it as a side effect of a rebuild. Enrolment is done by
+        `just tpm-enroll` (also run by `just finish-install`) -- see
+        docs/new-machine.md
       '';
 
       pcrs = mkOption {
@@ -88,9 +89,9 @@ in
       measuredBoot = mkIf cfg.measuredBoot.enable {
         enable = true;
         inherit (cfg.measuredBoot) pcrs;
-        # autoCryptenroll is deliberately not exposed: it enrolls without a PIN,
-        # and upstream is explicit that an attended workstation should require a
-        # user secret in addition to the TPM.
+        # autoCryptenroll is not used: it unlocks with an existing tpm2 slot,
+        # so it can only migrate an enrollment, not create the first one.
+        # scripts/tpm-enroll.sh does that instead.
       };
     };
   };
