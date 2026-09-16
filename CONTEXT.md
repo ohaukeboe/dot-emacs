@@ -26,3 +26,19 @@ cancel. Only audio routed through the echo-cancel sink becomes reference.
 The virtual sink + virtual source that a PipeWire echo-cancellation setup
 creates. Applications play to the virtual sink and record from the virtual
 source; the pair wraps the real hardware devices.
+
+### Emacs / Claude Code
+
+**Claude instance**:
+One running Claude Code process together with its terminal buffer, bound to
+a project. A project may run several at once; each has an optional name.
+_Avoid_: Claude frame, Claude session (upstream's internal struct name)
+
+**Claude side window**:
+The dedicated side window (right edge by default) that shows one Claude
+instance. The default place an instance is displayed.
+_Avoid_: Claude frame, Claude popup
+
+**Claude panel**:
+The set of Claude side windows visible in the current tab. Hiding the panel
+remembers the set so a project's members can be restored later.
