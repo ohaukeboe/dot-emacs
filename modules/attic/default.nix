@@ -21,7 +21,6 @@ in
         sops carries exactly one of them, so changing this means issuing a new
         token as well.
       '';
-      example = "folindra";
     };
 
     push.enable = mkEnableOption ''

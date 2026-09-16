@@ -124,9 +124,9 @@ fi
 # and hand them to nixos-install, and take the trusted keys from the same place
 # so the two cannot drift.
 #
-# Only the ones that answer, though: the attic caches are reachable on the
-# tailnet only, and an installer that has not joined it would spend
-# connect-timeout on every path. `just tailnet-up` joins it.
+# Only the ones that answer, though: the attic cache is reachable on the tailnet
+# only, and an installer that has not joined it would spend connect-timeout on
+# every path. `just tailnet-up` joins it.
 ########################################
 
 probe_opts=(--option connect-timeout 5 --option download-attempts 1)
@@ -166,8 +166,8 @@ done
 
 if ((${#unreachable[@]})); then
   echo
-  echo "The skipped caches will not be used for this install. The private ones"
-  echo "answer on the tailnet only — if this installer has not joined it, abort"
+  echo "The skipped caches will not be used for this install. The private one"
+  echo "answers on the tailnet only — if this installer has not joined it, abort"
   echo "here, run 'just tailnet-up', and start again."
 fi
 

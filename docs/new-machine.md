@@ -106,9 +106,9 @@ git add -A          # the flake only sees git-tracked files
 
 ### Join the tailnet first
 
-Optional, and worth the two minutes. The private attic caches hold everything
+Optional, and worth the two minutes. The private attic cache holds everything
 this household has already built — the Emacs overlay, the nvfetcher npm
-packages, every patched derivation — and they answer on the tailnet only. Off
+packages, every patched derivation — and it answers on the tailnet only. Off
 the tailnet, the installer builds all of it from source.
 
 ```sh
@@ -143,9 +143,9 @@ disagree with the config — then:
    its own `nix.settings`, so `common/caches.nix` stays the one place they are
    written — and prints which answered. The reachable ones are passed to
    `nixos-install`, which otherwise builds with the installer's own Nix
-   settings and so would use cache.nixos.org alone. If the private caches are
-   listed as `skipped`, abort at the confirmation prompt, run `just tailnet-up`,
-   and start again.
+   settings and so would use cache.nixos.org alone. If the private one is listed
+   as `skipped`, abort at the confirmation prompt, run `just tailnet-up`, and
+   start again.
 3. Shows the disk, asks you to type the hostname to confirm, then collects the
    LUKS passphrase, the root password and the user password. Nothing after this
    point prompts, so the long part of the install runs unattended.

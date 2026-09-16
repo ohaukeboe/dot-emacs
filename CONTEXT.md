@@ -48,14 +48,15 @@ remembers the set so a project's members can be restored later.
 
 **attic cache**:
 A named namespace on the private binary cache these machines pull from, each
-with its own signing key and its own push permission. Three exist —
-`homestach`, `folindra`, `simmerly`. Every machine pulls from all three; the
-workstations in this repo push to `homestach`, which is also where the
-homestach repo's own closures go. A namespace is not free — it needs a key and
-a token issued on the server, in the homestach repo — which is why this repo
-has none of its own. `modules.attic.cacheName` is where that choice is written.
-Public in the sense that pulling needs no token; reachable only from the
-tailnet.
+with its own signing key and its own push permission. These machines use one,
+`homestach`, for both directions: they pull from it and the ones that are not
+work machines push to it, alongside the homestach repo's own closures. Other
+projects have namespaces on the same server; they are not listed here, because
+a namespace nothing on these machines pulls from is only a substituter to time
+out on. A namespace is not free — it needs a key and a token issued on the
+server, in the homestach repo — which is why this repo has none of its own.
+`modules.attic.cacheName` is where that choice is written. Public in the sense
+that pulling needs no token; reachable only from the tailnet.
 _Avoid_: "the cache" unqualified, which reads as cache.nixos.org
 
 **push hook**:
