@@ -84,6 +84,29 @@ a supervisor — `just up`, `devenv up` — never by direnv, which only enters a
 environment and exits.
 _Avoid_: conflating with the environment that declares it
 
+**Secrets backend**:
+Where a project's secrets live and which tool reads them: `sops`, `dotenv`,
+or `secretspec`. Chosen independently of the environment kind, so any kind
+can carry any backend, and a project may have none.
+_Avoid_: provider, which is secretspec's word for the 33 stores it can read;
+the secretspec backend uses the sops provider, and those are two levels
+
+**Backend marker**:
+The file whose presence means a project already has a secrets backend —
+`secretspec.toml`, `.sops.yaml`, `.env`. The counterpart to an environment
+kind's marker, and what a second backend collides with.
+
+**Load-time secret**:
+A secret direnv exports on entering the directory, so every process under
+that root inherits it — including, under `envrc.el`, everything Emacs spawns
+there. Only the dotenv backend works this way.
+_Avoid_: treating the blast radius as terminal-only; it is not
+
+**Explicit-run secret**:
+A secret that reaches only the one child process asked for it, via
+`sops exec-env` or `secretspec run`. The sops and secretspec backends work
+this way.
+
 ### Sleep / hibernation
 
 See ADR 0001.

@@ -1,0 +1,5 @@
+# secretspec resolves this project's secrets.  devenv only selects the
+# profile; the provider binding lives in secretspec.toml.
+secretspec:
+  enable: true
+  profile: default

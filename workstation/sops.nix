@@ -29,6 +29,16 @@ in
       sops
       age
       age-plugin-yubikey
+      # Drives the sops CLI for projects scaffolded by nix-init. Global for
+      # the same reason devenv is: a devenv project resolves secretspec while
+      # direnv is still entering the environment, so it cannot come from the
+      # environment it is about to enter.
+      #
+      # devenv ships its own bin/secretspec (0.19.1 in devenv 2.2.2), which
+      # collides with this one in buildEnv. hiPrio settles it in favour of the
+      # standalone package, which is newer and is not silently re-pinned every
+      # time devenv is updated.
+      (lib.hiPrio secretspec)
     ]
     ++ lib.optionals (!pkgs.stdenv.isDarwin) [ age-plugin-tpm ];
 

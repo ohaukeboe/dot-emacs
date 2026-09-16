@@ -3250,15 +3250,43 @@ buffer, while devenv has no streaming mode and starts detached, leaving its
 buffer to exit at once -- read state back with =nix-init-services-status=.
 Attaching needs a tty, so it runs in =eat= rather than a compilation buffer.
 
+Secrets are a separate axis from the kind: any kind can carry any of three
+/secrets backends/, or none, and =nix-init-secrets= adds one to whatever
+environment a project already has -- secrets are rarely wanted the minute a
+project is created.  =sops= commits an encrypted file; =dotenv= keeps a
+plaintext, gitignored =.env=; =secretspec= declares secret /names/ in
+=secretspec.toml= and resolves them through sops, which is what devenv
+integrates with natively.
+
+The backends differ in how far a secret reaches, which is the part worth
+being deliberate about.  =dotenv= is load-time: direnv exports it on entering
+the directory, and with =envrc= that means every subprocess Emacs spawns in
+that project inherits it.  =sops= and =secretspec= are explicit-run -- the
+secret reaches only the process that asked, through =nix-init-secrets-run=.
+Reach for those two when the secret actually matters.
+
+Nothing here ever creates key material.  =nix-init-secrets= writes
+configuration referencing the recipient in =nix-init-sops-recipient= and
+reports what is left to do; generating an age key, and choosing where it
+lives, stays a deliberate act.  That recipient is deliberately not the shared
+host key -- see =docs/adr/0002-project-scoped-age-key.md=.
+
+=nix-init-sops-recipient= is still unset, so the two encrypted backends
+currently scaffold a =.sops.yaml= carrying a placeholder and encrypt nothing
+until it is filled in.  Setting it, and provisioning the matching private key
+on every machine, is =dot-emacs-jtm=.
+
 Everything lives under the =C-c v= prefix: =n= new environment, =e= edit,
-then =u= up, =d= down, =s= status, =a= attach.  =C-c n= is org-roam, so the
-obvious =n= for nix was taken.
+=k= add secrets, =r= run with secrets, then =u= up, =d= down, =s= status,
+=a= attach.  =C-c n= is org-roam, so the obvious =n= for nix was taken.
 
 #+begin_src elisp
   (use-package nix-init
     :bind
     ("C-c v n" . nix-init-project)
     ("C-c v e" . nix-init-edit)
+    ("C-c v k" . nix-init-secrets)
+    ("C-c v r" . nix-init-secrets-run)
     ("C-c v u" . nix-init-services-up)
     ("C-c v d" . nix-init-services-down)
     ("C-c v s" . nix-init-services-status)
