@@ -5,7 +5,7 @@
 
 ;; This file provides utilities for working with Nix-shell files. It
 ;; assumes that the Nix-shell file is in the root of the project and
-;; that you use direnv.
+;; that you use direnv, via `envrc' on the Emacs side.
 
 ;;; Code:
 
@@ -82,7 +82,7 @@
       (nix-init--write-nix-shell)
       (nix-init--write-direnv)
       (nix-init-edit-nix-shell)
-      (direnv-allow)
+      (envrc-allow)
       (message "Nix shell initialized.")))))
 
 ;;;###autoload
@@ -100,7 +100,7 @@
     (nix-init--write-flake)
     (nix-init--write-flake-direnv)
     (nix-init-edit-flake)
-    (direnv-allow)
+    (envrc-allow)
     (message "Nix flake initialized."))))
 
 (provide 'nix-init)

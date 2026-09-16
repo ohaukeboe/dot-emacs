@@ -2837,15 +2837,23 @@ A terminal emulator
 ** Direnv
 Integrate [[https://direnv.net/][direnv]] in emacs.
 
+[[https://github.com/purcell/envrc][envrc]] rather than =direnv.el=: =direnv-mode= swaps the *global*
+=process-environment= as point moves between buffers, so two projects open at
+once overwrite each other and every buffer switch costs a =direnv export json=
+round trip.  =envrc= binds =process-environment= and =exec-path= buffer-locally
+and caches per =.envrc= directory, so the export runs once per project.  A
+=compile= or =vterm= buffer spawned from a project buffer then inherits that
+project's environment, which is what makes per-project services (=nix run
+.#dev=, =devenv up=) work in parallel.
+
+=envrc-global-mode= has to wrap a buffer before anything in it starts a
+subprocess, hence =after-init= rather than a mode hook.  Do not enable
+=direnv-mode= alongside it; the global and buffer-local strategies fight.
+
 #+begin_src elisp
-  ;; (use-package direnv
-  ;;  :init
-  ;;  (direnv-mode))
-  (use-package direnv
+  (use-package envrc
     :ensure t
-    :after (prog-mode)
-    :config
-    (direnv-mode))
+    :hook (after-init . envrc-global-mode))
 #+end_src
 
 ** PDF
