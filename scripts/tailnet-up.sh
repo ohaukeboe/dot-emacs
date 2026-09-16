@@ -109,6 +109,8 @@ if [[ ! -S $SOCKET ]]; then
 fi
 
 echo
-echo "==> tailscale up (follow the login URL if it prints one)"
-as_root "$TS" up
+echo "==> tailscale up (follow the login URL, or scan the QR code, if it prints one)"
+# --qr prints the login URL as a QR code too: the installer has no browser, so
+# the login usually happens on a phone.
+as_root "$TS" up --qr
 echo "tailnet: up as $(self_name)"
