@@ -2,7 +2,8 @@
 
 Personal NixOS + Home Manager configuration for three machines (x13-laptop,
 work-laptop, desktop). This glossary pins down terms used when designing
-config changes.
+config changes. Keep terms short and link decisions to the relevant ADR under
+`docs/adr/`.
 
 ## Language
 
@@ -82,3 +83,42 @@ A long-running process an environment declares (postgres, redis). Started by
 a supervisor — `just up`, `devenv up` — never by direnv, which only enters an
 environment and exits.
 _Avoid_: conflating with the environment that declares it
+
+### Sleep / hibernation
+
+See ADR 0001.
+
+**suspend-then-hibernate**:
+systemd sleep mode: suspend to RAM first, then automatically hibernate after
+`HibernateDelaySec`, or on critical battery.
+
+**hibernate (S4)**:
+Write RAM contents to disk swap and power off; restore on next boot.
+
+**suspend (S3)**:
+Keep RAM powered, everything else off. Fast resume, but drains battery and
+loses state if power is lost.
+
+**swapfile**:
+A regular file used as swap space; here it is the hibernation-image target.
+Created declaratively via `swapDevices.*.size`.
+
+**zswap**:
+Kernel compressed _cache_ in front of a real disk swap device; pages fall
+through to the swapfile when the pool is full. Configured via `zswap.*`
+kernel parameters.
+_Avoid_: conflating with zram
+
+**zram**:
+A compressed _block device_ used directly as swap, backed by RAM. Disabled on
+machines using suspend-then-hibernate, to avoid overlapping with zswap.
+_Avoid_: conflating with zswap
+
+**resume_offset / HibernateLocation**:
+The block offset of the hibernation image within the swapfile. With systemd
+in initrd, recorded automatically in the `HibernateLocation` EFI variable
+instead of a static kernel parameter.
+
+**NoCOW (`chattr +C`)**:
+btrfs attribute disabling copy-on-write; required for swapfiles on btrfs.
+NixOS sets it automatically when creating a swapfile via `swapDevices.*.size`.
