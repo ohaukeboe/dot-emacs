@@ -33,6 +33,19 @@
           process-compose."services" = {
             imports = [ inputs.services-flake.processComposeModules.default ];
 
+            # services-flake defaults no-server to true, which leaves no API
+            # to talk to; `just down`, `status` and `attach` need one.  Turn
+            # it on, but over a unix socket rather than the default TCP 8080,
+            # which is shared machine-wide.  The socket and log paths are
+            # relative, so every checkout gets its own, the same way dataDir
+            # does.
+            cli.options = {
+              no-server = false;
+              use-uds = true;
+              unix-socket = "./.process-compose.sock";
+              log-file = "./.process-compose.log";
+            };
+
             services.postgres."db" = {
               enable = true;
               # Bump per checkout; a second worktree running at the same time
@@ -48,7 +61,13 @@
           devShells.default = pkgs.mkShell {
             # Puts psql and the other enabled services' client tools on PATH.
             inputsFrom = [ config.process-compose."services".services.outputs.devShell ];
-            packages = [ self'.packages.services ];
+            packages = [
+              self'.packages.services
+              # `just down`, `status` and `attach` drive the running group
+              # through the process-compose client, which the generated
+              # wrapper does not put on PATH by itself.
+              pkgs.process-compose
+            ];
           };
         };
     };

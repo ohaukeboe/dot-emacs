@@ -3241,9 +3241,14 @@ prompts for one of four /environment kinds/ -- =shell=, =flake=, =devenv=,
 directive, and appends the =.gitignore= entries it needs.
 =nix-init-edit= opens the main file of whichever kind a project already has.
 
-Nothing here starts a service; =direnv= only enters an environment.  The
-services a kind declares are started by their own supervisor -- =just up= for
-services-flake, =devenv up= for devenv.
+=direnv= only ever enters an environment, so services are started separately:
+=nix-init-services-up=, =-down=, =-status= and =-attach=.  Both
+service-capable kinds ship a justfile, so Emacs and a terminal run the same
+recipes.  The two differ in one way worth knowing: process-compose streams
+plain logs with its TUI off, so services-flake keeps a live compilation
+buffer, while devenv has no streaming mode and starts detached, leaving its
+buffer to exit at once -- read state back with =nix-init-services-status=.
+Attaching needs a tty, so it runs in =eat= rather than a compilation buffer.
 
 #+begin_src elisp
   (use-package nix-init)
