@@ -3,26 +3,15 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    systems.url = "github:nix-systems/default";
-    flake-utils = {
-      url = "github:numtide/flake-utils";
-      inputs.systems.follows = "systems";
-    };
   };
 
-  outputs =
-    {
-      nixpkgs,
-      flake-utils,
-      ...
-    }:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-      in
-      {
-        devShells.default = pkgs.mkShell { packages = [ pkgs.bashInteractive ]; };
-      }
-    );
+  outputs = inputs: {
+    # Mapping over legacyPackages covers every system nixpkgs supports:
+    # no hardcoded system list, no flake-utils input, and one shared
+    # nixpkgs instance. Attributes are lazy, and `nix flake check`/`show`
+    # skip systems this machine cannot build unless given --all-systems.
+    devShells = builtins.mapAttrs (_: pkgs: {
+      default = pkgs.mkShell { packages = [ pkgs.bashInteractive ]; };
+    }) inputs.nixpkgs.legacyPackages;
+  };
 }

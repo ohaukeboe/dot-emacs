@@ -11,11 +11,10 @@
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-        "aarch64-darwin"
-      ];
+      # Every system nixpkgs exposes, without a hardcoded list or an extra
+      # input. flake-parts needs an explicit list here, so this is the
+      # equivalent of mapping over legacyPackages in a plain flake.
+      systems = inputs.nixpkgs.lib.systems.flakeExposed;
 
       imports = [ inputs.process-compose-flake.flakeModule ];
 
