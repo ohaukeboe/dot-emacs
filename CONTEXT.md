@@ -44,6 +44,21 @@ _Avoid_: Claude frame, Claude popup
 The set of Claude side windows visible in the current tab. Hiding the panel
 remembers the set so a project's members can be restored later.
 
+### Emacs / projects
+
+**Project**:
+A git repository that project.el remembers. Created in Emacs by either
+cloning or creating a new one; both land directly under a project parent
+directory.
+_Avoid_: repo (when the project.el registration matters), projection
+project, flake
+
+**Project parent directory**:
+A directory whose immediate children are projects. project.el scans each one
+at startup, and it is where new and cloned projects are placed. Any path can
+be chosen at the prompt, but only the configured ones are scanned.
+_Avoid_: workspace, projects root
+
 ### Binary cache
 
 **attic cache**:

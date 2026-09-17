@@ -910,12 +910,20 @@ Make magit integrate with github and other git hosting services.
   Used both to seed `project.el' and as clone targets for
   `my/clone-project'.")
 
+  (defun my/read-project-parent-dir (prompt)
+    "Read a project parent directory with PROMPT.
+  Offers `my/project-parent-dirs' but accepts any path."
+    (expand-file-name
+     (completing-read prompt my/project-parent-dirs
+                      nil nil nil nil (car my/project-parent-dirs))))
+
   (use-package project
     :custom
     (project-vc-ignore "^/var/home")
     :bind
     (:map project-prefix-map
-          ("G" . my/clone-project))
+          ("G" . my/clone-project)
+          ("n" . my/new-project))
     :config
     (require 'f)
     (mapc #'project-remember-projects-under
@@ -928,7 +936,7 @@ Clone a GitHub repo into one of my project directories. Suggests my own repos
 (from =consult-gh-favorite-orgs-list=) for completion, but also accepts an
 arbitrary =owner/repo= or a full URL. Cloning goes through =gh= (via consult-gh's
 clone engine), so github.com repos use SSH per my =gh= host config. After
-cloning, the new project is registered with =project.el= and opened in dired.
+cloning, the new project is registered with =project.el= and opened in magit.
 
 #+begin_src elisp
   (defun my/clone-project--candidates ()
@@ -953,13 +961,100 @@ cloning, the new project is registered with =project.el= and opened in dired.
     (interactive
      (list (completing-read "Clone repo (owner/repo or URL): "
                             (my/clone-project--candidates))
-           (completing-read "Into directory: " my/project-parent-dirs
-                            nil nil nil nil (car my/project-parent-dirs))))
+           (my/read-project-parent-dir "Into directory: ")))
     (let* ((target (expand-file-name dir))
            (name   (my/clone-project--repo-name repo))
            (path   (consult-gh--repo-clone repo name target)))
       (project-remember-projects-under target)
-      (dired path)))
+      (magit-status path)))
+#+end_src
+
+** New project
+
+Create an empty project from scratch, the counterpart to cloning one.
+=my/new-project= (=C-x p n=) asks for a project parent directory and a name,
+refuses a target that exists and is not empty, then:
+
+1. runs =git init -b main= and writes a =README.md= holding the name,
+2. offers a Nix environment through =nix-init-project= (default =none=),
+3. commits everything as =chore: initial commit=,
+4. offers to create a GitHub repo with =gh= (owner from
+   =consult-gh-favorite-orgs-list=, private by default) and push to it,
+5. registers the project with =project.el= and opens it in magit.
+
+The commit comes before =gh= so =--push= has something to push, and so a
+flake's files are tracked by git before anything evaluates it.  A failing
+=gh= is only a warning: the local project is already complete by then.
+Whatever file =nix-init-project= visits is left in the background, so magit
+is the one thing on screen.
+
+#+begin_src elisp
+  (defun my/new-project--git (&rest args)
+    "Run git with ARGS in `default-directory', signalling on failure."
+    (with-temp-buffer
+      (unless (zerop (apply #'process-file "git" nil t nil args))
+        (user-error "git %s failed: %s"
+                    (string-join args " ") (string-trim (buffer-string))))))
+
+  (defun my/new-project--nix-env ()
+    "Offer to scaffold a Nix environment in `default-directory'."
+    (require 'nix-init)
+    (let ((kind (completing-read "Nix environment: "
+                                 (cons "none" (mapcar #'car nix-init-kinds))
+                                 nil t nil nil "none")))
+      (unless (equal kind "none")
+        (save-window-excursion
+          (save-current-buffer
+            (nix-init-project kind))))))
+
+  (defun my/new-project--github (root name)
+    "Offer to create GitHub repo NAME for ROOT and push to it.
+  A failure is reported as a warning; the local project is kept."
+    (when (y-or-n-p "Create GitHub repo? ")
+      (require 'consult-gh)
+      (let ((owner (completing-read "Owner: " consult-gh-favorite-orgs-list
+                                    nil nil nil nil
+                                    (car consult-gh-favorite-orgs-list)))
+            (visibility (completing-read "Visibility: "
+                                         '("private" "public" "internal")
+                                         nil t nil nil "private")))
+        (with-temp-buffer
+          (setq default-directory root)
+          (if (zerop (process-file "gh" nil t nil "repo" "create"
+                                   (concat owner "/" name)
+                                   (concat "--" visibility)
+                                   "--source" "." "--remote" "origin"
+                                   "--push"))
+              (message "Created github.com/%s/%s" owner name)
+            (display-warning 'my/new-project
+                             (format "gh repo create failed: %s"
+                                     (string-trim (buffer-string)))
+                             :error))))))
+
+  (defun my/new-project (parent name)
+    "Create project NAME under PARENT and open it in magit.
+  Initialises git on main, writes a README, optionally scaffolds a Nix
+  environment, commits, optionally creates a GitHub repo, and registers
+  the project with project.el."
+    (interactive
+     (list (my/read-project-parent-dir "Create project in: ")
+           (read-string "Project name: ")))
+    (when (string-blank-p name)
+      (user-error "Project name is empty"))
+    (let ((root (file-name-as-directory (expand-file-name name parent))))
+      (when (and (file-exists-p root) (not (directory-empty-p root)))
+        (user-error "%s exists and is not empty" (abbreviate-file-name root)))
+      (make-directory root t)
+      (let ((default-directory root))
+        (my/new-project--git "init" "-b" "main")
+        (write-region (format "# %s\n" name) nil
+                      (expand-file-name "README.md" root))
+        (my/new-project--nix-env)
+        (my/new-project--git "add" "-A")
+        (my/new-project--git "commit" "-m" "chore: initial commit")
+        (my/new-project--github root name))
+      (project-remember-project (project-current nil root))
+      (magit-status root)))
 #+end_src
 
 ** Projection
