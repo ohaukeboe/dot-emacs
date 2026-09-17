@@ -846,6 +846,116 @@ Consult is a package that provides a set of commands for searching and navigatin
       (add-to-list 'project-switch-commands '(my/magit-project-status "Magit") t)))
 #+end_src
 
+Magit only refreshes its buffers after Emacs itself changes something, so edits
+made outside Emacs (e.g. by an LLM agent) are not shown until =g= is pressed.
+This mode polls visible status and diff buffers and refreshes them when the
+worktree changed. Change detection is cheap (one =git status= plus a few
+mtimes), so the full refresh only runs when there is something new to show.
+
+#+begin_src elisp
+  (use-package magit
+    :defer t
+    :config
+    (defvar my/magit-auto-refresh-interval 2
+      "Seconds between checks for external changes in visible Magit buffers.")
+
+    (defvar my/magit-auto-refresh--timer nil)
+
+    (defvar-local my/magit-auto-refresh--fingerprint nil
+      "Worktree state seen at the last refresh of this Magit buffer.")
+
+    (defun my/magit-auto-refresh--fingerprint ()
+      "Return a snapshot of the worktree state of `default-directory'.
+  The snapshot covers the changed files with their mtimes (so further edits
+  to an already modified file are noticed), the index and the HEAD reflog."
+      (let ((top (magit-toplevel))
+            (gitdir (magit-gitdir))
+            ;; Otherwise `git status' may rewrite the index, which changes
+            ;; its mtime and makes every check look like a change.
+            (magit-git-global-arguments
+             (cons "--no-optional-locks" magit-git-global-arguments)))
+        (list
+         (mapcar (lambda (entry)
+                   (cons entry
+                         (file-attribute-modification-time
+                          (file-attributes
+                           (expand-file-name (substring entry 3) top)))))
+                 (magit-git-items "status" "--porcelain=v1" "-z"
+                                  "--untracked-files=all"))
+         (file-attribute-modification-time
+          (file-attributes (expand-file-name "index" gitdir)))
+         (file-attribute-modification-time
+          (file-attributes (expand-file-name "logs/HEAD" gitdir))))))
+
+    (defun my/magit-auto-refresh--remember ()
+      "Store the fingerprint after every refresh, whatever triggered it."
+      (when (derived-mode-p 'magit-status-mode 'magit-diff-mode)
+        (setq my/magit-auto-refresh--fingerprint
+              (my/magit-auto-refresh--fingerprint))))
+
+    (defun my/magit-auto-refresh--tick ()
+      "Refresh visible Magit buffers whose worktree changed."
+      ;; Stay out of the way while the user is typing, in the minibuffer or
+      ;; in a transient menu.
+      (when (and (time-less-p 1 (or (current-idle-time) 0))
+                 (not (active-minibuffer-window))
+                 (not (bound-and-true-p transient--prefix)))
+        (dolist (buf (seq-uniq
+                      (mapcar #'window-buffer
+                              (window-list-1 nil 'nomini 'visible))))
+          (with-current-buffer buf
+            (when (and (derived-mode-p 'magit-status-mode 'magit-diff-mode)
+                       (not (file-remote-p default-directory))
+                       (not (region-active-p))
+                       (not (equal my/magit-auto-refresh--fingerprint
+                                   (my/magit-auto-refresh--fingerprint))))
+              (magit-refresh-buffer))))))
+
+    (define-minor-mode my/magit-auto-refresh-mode
+      "Refresh visible Magit buffers when files change outside Emacs."
+      :global t
+      (when my/magit-auto-refresh--timer
+        (cancel-timer my/magit-auto-refresh--timer)
+        (setq my/magit-auto-refresh--timer nil))
+      (if my/magit-auto-refresh-mode
+          (progn
+            (add-hook 'magit-refresh-buffer-hook #'my/magit-auto-refresh--remember)
+            (setq my/magit-auto-refresh--timer
+                  (run-with-timer my/magit-auto-refresh-interval
+                                  my/magit-auto-refresh-interval
+                                  #'my/magit-auto-refresh--tick)))
+        (remove-hook 'magit-refresh-buffer-hook #'my/magit-auto-refresh--remember)))
+
+    (my/magit-auto-refresh-mode 1))
+#+end_src
+
+Syntax highlighted diffs in magit through [[https://github.com/dandavison/delta][delta]]. While enabled, delta does
+its own word-level highlighting, so =magit-delta= turns off
+=magit-diff-refine-hunk=.
+
+#+begin_src elisp
+  (use-package magit-delta
+    :ensure t
+    :after magit
+    :hook (magit-mode . magit-delta-mode))
+#+end_src
+
+Structural diffs with [[https://difftastic.wilfred.me.uk/][difftastic]], shown side by side when the window is wide
+enough. =difftastic-bindings-mode= adds =M-d= / =M-c= to the magit diff menu,
+=M-d= to the file dispatch menu and =M-== in dired.
+
+#+begin_src elisp
+  (use-package difftastic
+    :ensure t
+    :defer t)
+
+  (use-package difftastic-bindings
+    :after magit
+    :demand t
+    :config
+    (difftastic-bindings-mode 1))
+#+end_src
+
 Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp

@@ -198,6 +198,8 @@ in
       ### misc ###
       ripgrep
       fd
+      delta # syntax highlighted diffs (magit-delta)
+      difftastic # structural diffs (difftastic.el)
       dragon-drop # drag-andn-drop from terminal
       screen
       tmux
