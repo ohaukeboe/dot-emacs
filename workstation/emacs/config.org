@@ -74,8 +74,6 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
     (truncate-lines t)                          ; Truncate lines instead of wrapping
     (initial-scratch-message nil)               ; Clean scratch buffer
     (auto-revert-interval 1)                    ; Refresh buffers every second
-    (split-width-threshold 180)                 ; Split vertically by default
-    (split-height-threshold nil)                ; Split vertically by default
     (use-dialog-box nil)                        ; Disable dialog boxes
     (inhibit-startup-screen t)                  ; Disable startup screen
     (recentf-max-saved-items 100)               ; Show more recent files
@@ -186,6 +184,97 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
   (push '(tool-bar-lines . 0) default-frame-alist)
   (push '(menu-bar-lines . 0) default-frame-alist)
   (push '(vertical-scroll-bars) default-frame-alist)
+#+end_src
+
+** Windows
+Emacs only ever picks side-by-side splits, and only while each window in the row keeps at least =my/split-window-min-width= columns; otherwise it reuses a window. Windows in a row are kept at equal width after every split or close, manual ones included, except while a saved layout (=winner=, tabs) is being restored. Manual =C-x 2= and splits with an explicit size are left alone.
+
+#+begin_src elisp
+  (use-package window
+    :custom
+    ;; A split takes its space from the whole row, not just the split window
+    (window-combination-resize t)
+    (split-window-preferred-function #'my/split-window-side-by-side)
+    :preface
+    (defcustom my/split-window-min-width 60
+      "Narrowest total width an automatic split may leave a window in its row."
+      :type 'natnum
+      :group 'windows)
+
+    (defvar my/window--restoring nil
+      "Non-nil while a saved window layout is being restored.")
+
+    (defun my/window--row-p (window)
+      "Return non-nil if WINDOW is a row without side windows.
+  A row is a side-by-side combination: its children sit left to right."
+      (and (window-valid-p window)
+           (window-left-child window)
+           (not (seq-some (lambda (w) (window-parameter w 'window-side))
+                          (my/window--children window)))))
+
+    (defun my/window--children (window)
+      "Return the direct children of internal WINDOW."
+      (let ((child (window-child window)) children)
+        (while child
+          (push child children)
+          (setq child (window-next-sibling child)))
+        children))
+
+    (defun my/split-window-side-by-side (&optional window)
+      "Split WINDOW side by side, never stacked.
+  Used as `split-window-preferred-function', so this only governs splits
+  Emacs chooses itself.  Refuse (return nil, so `display-buffer' reuses a
+  window instead) when a window in the row would end up narrower than
+  `my/split-window-min-width'."
+      (let* ((window (or window (selected-window)))
+             (parent (window-parent window))
+             ;; With `window-combination-resize' the new window's space
+             ;; comes from the whole row; next to a side window the split
+             ;; gets its own parent, so only WINDOW gives up space.
+             (width (if (my/window--row-p parent)
+                        (/ (window-total-width parent)
+                           (1+ (window-child-count parent)))
+                      (/ (window-total-width window) 2))))
+        (and (let ((split-width-threshold 0))
+               (window-splittable-p window t))
+             (>= width my/split-window-min-width)
+             (split-window window nil 'right))))
+
+    ;; The horizontal half of `balance-windows', which uses these
+    ;; internal helpers; re-check them on Emacs upgrades.
+    (defun my/window--balance-row (row)
+      "Give every window in ROW the same width.
+  Unlike `balance-windows', leave heights alone."
+      (when (and (not my/window--restoring) (my/window--row-p row))
+        (let ((frame (window-frame row)))
+          (window--resize-reset frame t)
+          (balance-windows-1 row t)
+          (when (window--resize-apply-p frame t)
+            (window-resize-apply frame t)
+            (window--pixel-to-total frame t)))))
+
+    (defun my/window--balance-after-split-a (orig &optional window size &rest args)
+      "Balance the row after `split-window' unless the caller chose SIZE."
+      (let ((new (apply orig window size args)))
+        (unless size
+          (my/window--balance-row (window-parent new)))
+        new))
+
+    (defun my/window--balance-after-delete-a (orig &optional window)
+      "Balance the row WINDOW leaves after `delete-window'."
+      (let ((parent (window-parent (window-normalize-window window))))
+        (prog1 (funcall orig window)
+          (my/window--balance-row parent))))
+
+    (defun my/window--restoring-a (orig &rest args)
+      "Run ORIG with row balancing off, so a restored layout stays as saved."
+      (let ((my/window--restoring t))
+        (apply orig args)))
+
+    :config
+    (advice-add 'split-window :around #'my/window--balance-after-split-a)
+    (advice-add 'delete-window :around #'my/window--balance-after-delete-a)
+    (advice-add 'window-state-put :around #'my/window--restoring-a))
 #+end_src
 
 ** Benchmark

@@ -44,6 +44,27 @@ _Avoid_: Claude frame, Claude popup
 The set of Claude side windows visible in the current tab. Hiding the panel
 remembers the set so a project's members can be restored later.
 
+### Emacs / windows
+
+**Side-by-side split**:
+Dividing a window into windows placed left and right of each other.
+_Avoid_: horizontal split, vertical split (Emacs uses both for this)
+
+**Stacked split**:
+Dividing a window into windows placed above and below each other.
+_Avoid_: horizontal split, vertical split
+
+**Row**:
+A group of windows that share one side-by-side split. Windows in a row
+are kept at equal width.
+_Avoid_: combination, column
+
+**Automatic split**:
+A split Emacs chooses on its own to show a buffer, as opposed to one the
+user asks for with a split command. Automatic splits are always
+side-by-side and never make windows narrower than a set minimum.
+_Avoid_: pop-up window
+
 ### Emacs / projects
 
 **Project**:
