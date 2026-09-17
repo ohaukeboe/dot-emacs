@@ -39,6 +39,17 @@ unusable install if skipped, so read it through first.
 - Fish shell with starship, zoxide, and atuin
 - AI coding assistants (Claude Code, Aider, Goose, OpenCode)
 
+* Boot
+
+The ~silent-boot~ module (on by default) shows a Plymouth splash with the NixOS
+logo, hides kernel output, and hides the systemd-boot menu.
+
+- Show the boot menu: hold (or repeatedly tap) =Space= while the machine powers on.
+- Show it on the next boot only, from a running system: ~sudo bootctl set-timeout-oneshot 10~
+- Show boot messages behind the splash: press =Esc= during boot.
+- Disable for a machine: ~{ modules.silent-boot.enable = false; }~ in ~machines/machines.nix~,
+  or only the early GPU driver loading with ~modules.silent-boot.earlyKms.enable = false~.
+
 * Gaming
 
 The gaming module provides a custom ~gamescope-game~ command that launches games with optimal gamescope settings:
@@ -75,7 +86,7 @@ gamescope-game /path/to/game
 - ~flake.nix~ - Main entry point
 - ~workstation/~ - Home Manager user configuration
 - ~machines/~ - Per-machine configurations and the machine registry
-- ~modules/~ - Optional feature modules (gaming, cosmic-de, secure-boot, sshd, ...)
+- ~modules/~ - Optional feature modules (gaming, cosmic-de, secure-boot, sshd, silent-boot, ...)
 - ~common/~ - Shared NixOS defaults, caches, custom options, unfree predicates
 - ~lib/~ - Helper functions and the shared disko disk layout
 - ~just/~ - just recipes (bootstrap, sops, nvfetcher, git-agecrypt, new-machine)

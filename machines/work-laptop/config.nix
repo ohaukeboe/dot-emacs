@@ -30,7 +30,7 @@
     };
   };
 
-  boot.kernelParams = lib.mkDefault [
+  boot.kernelParams = [
     "nvidia-drm.modeset=1"
   ];
 

@@ -10,6 +10,7 @@
         modules.sleep-then-hibernate.enable = true;
         modules.sleep-then-hibernate.swapSize = 40960; # 40 GiB (RAM = 32 GiB + headroom)
       }
+      { modules.silent-boot.earlyKms.modules = [ "amdgpu" ]; }
       nixos-hardware.nixosModules.asus-flow-gv302x-nvidia
     ];
   };
@@ -19,6 +20,8 @@
     modules = [
       { modules.cosmic-de.enable = true; }
       { modules.sshd.enable = true; }
+      # Display runs on the Intel iGPU; nvidia stays out of the initrd.
+      { modules.silent-boot.earlyKms.modules = [ "i915" ]; }
     ];
   };
 
@@ -39,6 +42,7 @@
       { modules.cosmic-de.enable = true; }
       { modules.gaming.enable = true; }
       { modules.sshd.enable = true; }
+      { modules.silent-boot.earlyKms.modules = [ "amdgpu" ]; }
       # { sops.ageKey = "tpm"; }
     ];
   };
