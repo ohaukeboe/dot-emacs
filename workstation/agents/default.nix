@@ -99,6 +99,7 @@ in
     ./mcp-servers.nix
     ./rtk.nix
     ./skills.nix
+    ./spec-kit.nix
   ];
 
   config = {
