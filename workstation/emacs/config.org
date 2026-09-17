@@ -956,6 +956,340 @@ enough. =difftastic-bindings-mode= adds =M-d= / =M-c= to the magit diff menu,
     (difftastic-bindings-mode 1))
 #+end_src
 
+**** Reviewing diffs with Claude Code
+
+A [[https://www.hunk.dev/][hunk.dev]]-style review loop: press =@= in a Magit buffer, comment on
+the hunk, active region or file at point, then send all pending comments to
+the running Claude Code instance as one prompt.  Each comment carries the file,
+new/old line range, the diff it refers to and the (hunk or region) patch.
+
+The review is sent as a bracketed paste, because typing a multi-line string
+into the terminal would submit it at the first newline.  =@ p= pastes without
+submitting so the prompt can still be edited.  Claude can also re-read the
+review through the =magit_review_comments= MCP tool.
+
+Comments are drawn below the last commented line (unsent ones highlighted,
+sent ones dimmed) and file headings show a comment count, so they stay
+visible while a file is collapsed.
+
+#+begin_src elisp
+  (use-package magit
+    :defer t
+    :config
+    (defvar my/magit-review-comments nil
+      "Review comments on Magit diffs, newest first.
+  Each comment is a plist with :repo, :file, :where, :new, :old, :patch,
+  :text and :sent.  :new and :old are (START . END) line ranges or nil.")
+
+    (defun my/magit-review--range (section from)
+      "Return the (START . END) lines of hunk SECTION on the old side if FROM.
+  Uses the active region when there is one, else the whole hunk.  Returns
+  nil when the region has no lines on that side (only additions for the
+  old side, only removals for the new side)."
+      (if (magit-diff-use-hunk-region-p)
+          (let* ((beg (magit-diff-hunk-region-beginning))
+                 ;; A region ending at the start of a line doesn't cover it.
+                 (end (save-excursion
+                        (goto-char (region-end))
+                        (if (and (bolp) (> (point) beg)) (1- (point)) (point)))))
+            (when (save-excursion
+                    (goto-char beg)
+                    (re-search-forward (if from "^[- ]" "^[+ ]") end t))
+              (cons (save-excursion
+                      (goto-char beg)
+                      (magit-diff-hunk-line section from))
+                    (save-excursion
+                      (goto-char end)
+                      (magit-diff-hunk-line section from)))))
+        ;; A range is (START LENGTH); LENGTH defaults to 1 and is 0 when
+        ;; that side has no lines (new/deleted file, pure removal/addition).
+        (when-let* ((range (slot-value section (if from 'from-range 'to-range)))
+                    (length (or (cadr range) 1))
+                    ((> length 0)))
+          (cons (car range) (+ (car range) length -1)))))
+
+    (defun my/magit-review--where (section)
+      "Describe which diff SECTION belongs to."
+      (pcase (magit-diff-type section)
+        ('unstaged "unstaged changes")
+        ('staged "staged changes")
+        ('untracked "untracked file")
+        (_ (if-let* ((rev (or (bound-and-true-p magit-buffer-revision)
+                              (bound-and-true-p magit-buffer-range))))
+               (format "diff of %s" rev)
+             "diff"))))
+
+    (defun my/magit-review-comment (text)
+      "Attach review comment TEXT to the hunk, hunk region or file at point."
+      (interactive
+       (progn
+         (unless (magit-section-match '(hunk file))
+           (user-error "Not on a diff file or hunk"))
+         (list (read-string "Review comment: "))))
+      (when (string-empty-p text)
+        (user-error "Empty comment"))
+      (let* ((section (magit-current-section))
+             (hunk (and (magit-section-match 'hunk section) section)))
+        (push (list :repo (magit-toplevel)
+                    :file (magit-file-at-point)
+                    :where (my/magit-review--where section)
+                    :new (and hunk (my/magit-review--range hunk nil))
+                    :old (and hunk (my/magit-review--range hunk t))
+                    :patch (and hunk
+                                (if (magit-diff-use-hunk-region-p)
+                                    (magit-diff-hunk-region-patch hunk)
+                                  (buffer-substring-no-properties
+                                   (oref hunk start) (oref hunk end))))
+                    :text text
+                    :sent nil)
+              my/magit-review-comments)
+        (deactivate-mark)
+        (my/magit-review--redecorate (magit-toplevel))
+        (message "%d pending review comment(s)"
+                 (length (my/magit-review--pending (magit-toplevel))))))
+
+    (defun my/magit-review--pending (repo &optional include-sent)
+      "Return REPO's review comments, oldest first.
+  Sent comments are left out unless INCLUDE-SENT."
+      (reverse (seq-filter (lambda (c)
+                             (and (equal (plist-get c :repo) repo)
+                                  (or include-sent (not (plist-get c :sent)))))
+                           my/magit-review-comments)))
+
+    (defun my/magit-review--format (comments)
+      "Format COMMENTS as a Markdown review prompt."
+      (cl-flet ((lines (label range)
+                  (when range
+                    (format " %s L%d-%d" label (car range) (cdr range)))))
+        (concat
+         "Please address my review comments on this diff.  Each one names "
+         "the file, the new/old line range and the diff it refers to.\n\n"
+         (mapconcat
+          (lambda (c)
+            (let ((patch (plist-get c :patch)))
+              (concat
+               (format "## %s%s%s (%s)%s\n\n%s\n"
+                       (plist-get c :file)
+                       (or (lines "new" (plist-get c :new)) "")
+                       (or (lines "old" (plist-get c :old)) "")
+                       (plist-get c :where)
+                       (if (plist-get c :sent) " [already sent]" "")
+                       (plist-get c :text))
+               (when patch
+                 (format "\n```diff\n%s%s```\n" patch
+                         (if (string-suffix-p "\n" patch) "" "\n"))))))
+          comments "\n"))))
+
+    (defun my/magit-review--paste (text submit)
+      "Paste TEXT into this project's Claude Code terminal; press RET if SUBMIT."
+      (require 'claude-code-ide)
+      (let* ((session (or (let ((current-prefix-arg nil))
+                            (claude-code-ide--resolve-session
+                             'auto "Send review to Claude instance: "))
+                          (user-error "No Claude Code session for this project")))
+             (buffer (claude-code-ide-mcp-session-buffer session)))
+        (with-current-buffer buffer
+          (pcase claude-code-ide-terminal-backend
+            ('ghostel (ghostel-paste-string text))
+            ('vterm (vterm-send-string text t))
+            ('eat (eat-term-send-string-as-yank eat-terminal text))
+            (_ (claude-code-ide--terminal-send-string text)))
+          (when submit
+            (sit-for 0.1)
+            (claude-code-ide--terminal-send-return)))
+        buffer))
+
+    (defun my/magit-review-send (&optional no-submit)
+      "Send pending review comments to Claude Code and mark them sent.
+  With prefix argument NO-SUBMIT, only paste them and show the Claude
+  buffer so the prompt can be edited first."
+      (interactive "P")
+      (let* ((repo (or (magit-toplevel) (user-error "Not in a Git repository")))
+             (pending (or (my/magit-review--pending repo)
+                          (user-error "No pending review comments")))
+             (buffer (my/magit-review--paste (my/magit-review--format pending)
+                                             (not no-submit))))
+        (dolist (c pending)
+          (plist-put c :sent t))
+        (my/magit-review--redecorate repo)
+        (when no-submit
+          (if-let* ((window (get-buffer-window buffer t)))
+              (select-window window)
+            (pop-to-buffer buffer)))
+        (message "%s %d review comment(s)"
+                 (if no-submit "Pasted" "Sent") (length pending))))
+
+    (defun my/magit-review-paste ()
+      "Paste pending review comments into Claude Code without submitting."
+      (interactive)
+      (my/magit-review-send t))
+
+    (defun my/magit-review-list (&optional include-sent)
+      "Show this repository's pending review comments.
+  With prefix argument INCLUDE-SENT, show sent comments too."
+      (interactive "P")
+      (let* ((repo (or (magit-toplevel) (user-error "Not in a Git repository")))
+             (comments (or (my/magit-review--pending repo include-sent)
+                           (user-error "No review comments"))))
+        (with-current-buffer (get-buffer-create "*magit-review*")
+          (let ((inhibit-read-only t))
+            (erase-buffer)
+            (insert (my/magit-review--format comments)))
+          (if (fboundp 'gfm-view-mode) (gfm-view-mode) (view-mode))
+          (goto-char (point-min))
+          (display-buffer (current-buffer)))))
+
+    (defun my/magit-review-discard (&optional all)
+      "Discard this repository's pending review comments.
+  With prefix argument ALL, also forget the sent ones."
+      (interactive "P")
+      (let* ((repo (or (magit-toplevel) (user-error "Not in a Git repository")))
+             (doomed (my/magit-review--pending repo all)))
+        (unless doomed
+          (user-error "No review comments to discard"))
+        (when (y-or-n-p (format "Discard %d review comment(s)? " (length doomed)))
+          (setq my/magit-review-comments
+                (cl-set-difference my/magit-review-comments doomed :test #'eq))
+          (my/magit-review--redecorate repo))))
+
+    (defface my/magit-review-comment
+      '((t :inherit font-lock-warning-face))
+      "Face for unsent review comments shown in Magit buffers.")
+
+    (defface my/magit-review-sent
+      '((t :inherit shadow))
+      "Face for review comments already sent to Claude Code.")
+
+    (defun my/magit-review--hunk-lines (hunk)
+      "Return an alist mapping (SIDE . LINE) to line starts in HUNK.
+  SIDE is `new' or `old'; context lines are listed under both."
+      (let ((new (car (oref hunk to-range)))
+            (old (car (oref hunk from-range)))
+            lines)
+        (save-excursion
+          (goto-char (oref hunk content))
+          (while (< (point) (oref hunk end))
+            (let ((char (char-after)))
+              (unless (eq char ?-)
+                (push (cons (cons 'new new) (point)) lines)
+                (cl-incf new))
+              (unless (eq char ?+)
+                (push (cons (cons 'old old) (point)) lines)
+                (cl-incf old)))
+            (forward-line)))
+        lines))
+
+    (defun my/magit-review--annotate (pos comments &optional prefix)
+      "Show PREFIX and then COMMENTS below the line containing POS."
+      (let* ((eol (save-excursion (goto-char pos) (line-end-position)))
+             (overlay (make-overlay eol eol)))
+        (overlay-put overlay 'my/magit-review t)
+        (overlay-put
+         overlay 'after-string
+         (concat
+          prefix
+          (mapconcat
+           (lambda (c)
+             (let ((sent (plist-get c :sent)))
+               (propertize (format "\n    ▶ %s%s" (plist-get c :text)
+                                   (if sent " (sent)" ""))
+                           'face (if sent 'my/magit-review-sent
+                                   'my/magit-review-comment))))
+           comments "")))))
+
+    (defun my/magit-review--decorate ()
+      "Show this repository's review comments in the current Magit buffer.
+  File headings get a comment count; hunk comments appear below the last
+  commented line, file comments below the file heading."
+      (remove-overlays (point-min) (point-max) 'my/magit-review t)
+      (when-let* (((derived-mode-p 'magit-status-mode 'magit-diff-mode))
+                  (repo (magit-toplevel))
+                  (comments (my/magit-review--pending repo t)))
+        (save-excursion
+          (magit-map-sections
+           (lambda (section)
+             (when (magit-section-match '(file hunk) section)
+               (let* ((hunk (and (magit-section-match 'hunk section) section))
+                      (file (oref (if hunk (oref section parent) section) value))
+                      (where (my/magit-review--where section))
+                      (mine (seq-filter
+                             (lambda (c)
+                               (and (equal (plist-get c :file) file)
+                                    (equal (plist-get c :where) where)))
+                             comments)))
+                 (cond
+                  ((null mine))
+                  ((null hunk)
+                   (my/magit-review--annotate
+                    (oref section start)
+                    (seq-remove (lambda (c)
+                                  (or (plist-get c :new) (plist-get c :old)))
+                                mine)
+                    (propertize (format "  [%d review comment%s]"
+                                        (length mine)
+                                        (if (cdr mine) "s" ""))
+                                'face 'my/magit-review-comment)))
+                  ((not (oref hunk combined))
+                   (let ((lines (my/magit-review--hunk-lines hunk))
+                         anchored)
+                     (dolist (c mine)
+                       (when-let* ((anchor (if-let* ((new (plist-get c :new)))
+                                               (cons 'new (cdr new))
+                                             (and (plist-get c :old)
+                                                  (cons 'old (cdr (plist-get c :old))))))
+                                   (pos (alist-get anchor lines nil nil #'equal)))
+                         (push c (alist-get pos anchored))))
+                     (pcase-dolist (`(,pos . ,cs) anchored)
+                       (my/magit-review--annotate pos (nreverse cs)))))))))))))
+
+    (defun my/magit-review--redecorate (repo)
+      "Redraw review comments in every Magit buffer of REPO."
+      (dolist (buffer (buffer-list))
+        (with-current-buffer buffer
+          (when (and (derived-mode-p 'magit-status-mode 'magit-diff-mode)
+                     (equal (magit-toplevel) repo))
+            (my/magit-review--decorate)))))
+
+    (add-hook 'magit-refresh-buffer-hook #'my/magit-review--decorate)
+
+    (transient-define-prefix my/magit-review ()
+      "Comment on diffs and hand the review to Claude Code."
+      [["Comment"
+        ("c" "Hunk, region or file" my/magit-review-comment)]
+       ["Review"
+        ("s" "Send to Claude" my/magit-review-send)
+        ("p" "Paste, don't submit" my/magit-review-paste)
+        ("l" "List" my/magit-review-list)
+        ("k" "Discard" my/magit-review-discard)]])
+
+    (keymap-set magit-mode-map "@" #'my/magit-review))
+
+  (use-package claude-code-ide
+    :defer t
+    :config
+    (claude-code-ide-make-tool
+     :name "magit_review_comments"
+     :description "Return the user's review comments on the Git diff of the current project, written in Emacs/Magit. Each comment names the file, the new/old line range, which diff it belongs to (unstaged, staged or a revision) and includes the commented diff hunk."
+     :args '((:name "include_sent"
+                    :type boolean
+                    :description "Also return comments already sent to Claude"
+                    :optional t))
+     :function
+     (lambda (&optional include-sent)
+       (require 'magit)
+       (let* ((context (claude-code-ide-mcp-server-get-session-context))
+              (repo (let ((default-directory
+                           (or (plist-get context :project-dir)
+                               default-directory)))
+                      (magit-toplevel)))
+              (comments (and repo
+                             (my/magit-review--pending
+                              repo (eq include-sent t)))))
+         (if comments
+             (my/magit-review--format comments)
+           "No review comments for this project.")))))
+#+end_src
+
 Magit-todos for integrating TODO keywords with magit's overview screen
 
 #+begin_src elisp
