@@ -3979,7 +3979,15 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
           (my/claude-code-ide--seed-worktree main dir)
           (when-let* ((project (project-current nil dir)))
             (project-remember-project project))
-          (let ((default-directory dir))
+          ;; A task of its own gets an ordinary split rather than the side
+          ;; window; `display-buffer-overriding-action' ordering as in
+          ;; `my/claude-code-ide-here'.
+          (let ((default-directory dir)
+                (claude-code-ide-use-side-window nil)
+                (display-buffer-overriding-action
+                 (cons (append (car display-buffer-overriding-action)
+                               '(display-buffer-pop-up-window))
+                       (cdr display-buffer-overriding-action))))
             (claude-code-ide)))))
 #+end_src
 
