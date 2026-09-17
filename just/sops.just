@@ -4,6 +4,10 @@
 # material is committed as sops/bootstrap/host-key.yaml, encrypted to the
 # YubiKey (and to itself). To set up a new machine use `just bootstrap`, not the
 # rotation recipe below.
+#
+# The YubiKey and TPM recipes create the hardware identities behind the
+# `sops.ageKey` escape hatches (common/options.nix). Those only decrypt once the
+# matching public key is a recipient in .sops.yaml.
 
 # Rotate the shared host key: new keypair, re-encrypt every secret to it
 sops-rotate-host-key:
@@ -31,7 +35,7 @@ sops-rotate-host-key:
     sed -i "s|$old_pub|$pub|g" .sops.yaml git-agecrypt.toml
 
     SOPS_AGE_KEY_FILE="$old_key" \
-      nix-shell -p sops age age-plugin-yubikey --run "sops updatekeys -y sops/home/*"
+      nix-shell -p sops age age-plugin-yubikey --run "sops updatekeys -y sops/home/* sops/system/*"
 
     # Rewrite the bootstrap file itself with the new private key.
     {
@@ -53,19 +57,12 @@ sops-rotate-host-key:
     echo "Rotated. Commit the result, then run 'just bootstrap-host-key' on every"
     echo "other machine."
 
-# Re-encrypt secrets.yaml after adding new keys to .sops.yaml
+# Re-encrypt every sops/** file after changing recipients in .sops.yaml
 sops-updatekeys identity="auto":
     #!/usr/bin/env bash
     set -euo pipefail
     source scripts/sops-identity.sh "{{ identity }}"
-    nix-shell -p sops age age-plugin-yubikey age-plugin-tpm --run "sops updatekeys sops/home/*"
-
-# Show which identity would be used (for debugging)
-sops-which identity="auto":
-    #!/usr/bin/env bash
-    set -euo pipefail
-    source scripts/sops-identity.sh "{{ identity }}"
-    echo "SOPS_AGE_KEY is set (content loaded from identity file)"
+    nix-shell -p sops age age-plugin-yubikey age-plugin-tpm --run "sops updatekeys sops/home/* sops/system/* sops/bootstrap/*"
 
 # Show detailed info about SOPS keys and file status
 sops-info:
@@ -95,12 +92,8 @@ sops-info:
     fi
 
     echo ""
-    echo "=== secrets.yaml Status ==="
-    if [[ -f secrets.yaml ]]; then
-      nix-shell -p sops age age-plugin-yubikey age-plugin-tpm --run "sops filestatus sops/secrets.yaml" 2>/dev/null || echo "  Could not get file status"
-    else
-      echo "  sops/secrets.yaml not found"
-    fi
+    echo "=== Encrypted File Status ==="
+    nix-shell -p sops --run 'for f in sops/*/*.yaml; do echo "  $f: $(sops filestatus "$f" 2>/dev/null || echo "could not get file status")"; done'
 
 #################### YubiKey ####################
 
@@ -111,16 +104,6 @@ yubikey-setup:
     @echo "Make sure your YubiKey is inserted."
     @echo ""
     nix-shell -p age-plugin-yubikey --run "age-plugin-yubikey"
-
-# Generate age identity from existing YubiKey slot (non-interactive)
-yubikey-identity slot="1":
-    @echo "Generating age identity from YubiKey slot {{ slot }}..."
-    nix-shell -p age-plugin-yubikey --run "age-plugin-yubikey --identity --slot {{ slot }}"
-
-# List all age recipients from connected YubiKeys
-yubikey-list:
-    @echo "Listing age recipients from connected YubiKeys..."
-    nix-shell -p age-plugin-yubikey --run "age-plugin-yubikey --list"
 
 # Save YubiKey age identity to file (name: wallet or home)
 yubikey-save-identity name slot="1":
@@ -144,17 +127,6 @@ yubikey-save-identity name slot="1":
 
 #################### TPM 2.0 ####################
 
-# Check if TPM 2.0 is available and working
-tpm-check:
-    @echo "Checking TPM 2.0 status..."
-    @if [ -c /dev/tpm0 ] || [ -c /dev/tpmrm0 ]; then \
-      echo "✓ TPM device found"; \
-      tpm2_getcap properties-fixed 2>/dev/null | head -20 || echo "Run 'tpm2_getcap properties-fixed' for details"; \
-    else \
-      echo "✗ No TPM device found at /dev/tpm0 or /dev/tpmrm0"; \
-      echo "  Ensure TPM is enabled in BIOS and security.tpm2.enable = true in NixOS config"; \
-    fi
-
 # Generate TPM identity and save to file for sops (use pin=false to disable PIN)
 tpm-save-identity pin="true":
     #!/usr/bin/env bash
@@ -176,8 +148,3 @@ tpm-save-identity pin="true":
     echo "Public key (add this to .sops.yaml):"
     grep "# Recipient:" ~/.config/sops/age/tpm-identity.txt | cut -d: -f2 | tr -d ' ' || \
       grep "^age1tpm1" ~/.config/sops/age/tpm-identity.txt
-
-# List TPM-sealed age identities
-tpm-list:
-    @echo "Listing TPM-sealed age identities..."
-    nix-shell -p age-plugin-tpm --run "age-plugin-tpm --list" 2>/dev/null || echo "No TPM identities found"
