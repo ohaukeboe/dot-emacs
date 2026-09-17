@@ -124,4 +124,4 @@ echo "Installed $SYSTEM_KEY"
 
 echo
 echo "Public key: $(grep 'public key:' "$USER_KEY" | sed 's/.*: //')"
-echo "Next: just agecrypt-init, then home-manager switch / nixos-rebuild switch."
+echo "Next: just agecrypt-init, then nixos-rebuild switch."

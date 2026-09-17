@@ -24,8 +24,3 @@ bootstrap: bootstrap-host-key agecrypt-init
     fi
     echo "Now run:"
     echo "  sudo nixos-rebuild switch --flake .#$host"
-    # Only a non-NixOS checkout needs this: lib/mkNixosConfiguration.nix imports
-    # home-manager as a NixOS module, so the rebuild above covers the user
-    # config on every machine in the registry.
-    echo "On a non-NixOS host instead:"
-    echo "  home-manager switch --flake .#default --impure -b backup"

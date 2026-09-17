@@ -70,8 +70,7 @@ nix build .#test-disk-layout -L                      # VM test of the disko layo
 ## Deploy
 
 ```bash
-home-manager switch --flake .#default --impure -b backup  # standalone home-manager
-sudo nixos-rebuild switch --flake .#<hostname>            # hosts: x13-laptop, work-laptop, desktop
+sudo nixos-rebuild switch --flake .#<hostname>  # hosts: x13-laptop, work-laptop, desktop
 ```
 
 ## Key Paths
@@ -92,5 +91,6 @@ sudo nixos-rebuild switch --flake .#<hostname>            # hosts: x13-laptop, w
 
 - Flake sees only **git-tracked** files — `git add` new files before `nix build`/`nix flake check` (else `"... is not tracked by Git"`).
 - `default`/`oskar` config aliases use `builtins.currentSystem` (needs `--impure`); for a clean test build a concrete attr: `nix build '.#homeConfigurations."oskar@x86_64-linux".activationPackage'`.
+- Only NixOS is tested. Standalone `homeConfigurations` still exist (build checks, future non-NixOS use) but have no setup docs — don't add any unasked.
 - `nix fmt` runs treefmt across **all** files — may reformat unrelated ones; revert stray churn before committing.
 - `just update-sources` regenerates nvfetcher sources (`nvfetcher.toml` → `_sources/`), consumed via the `pkgs.nvSources` overlay. npm pkgs still need a manual `npmDepsHash` bump.

@@ -4,35 +4,23 @@ This is a personal NixOS and Home Manager configuration using flakes with litera
 
 ## Build & Deploy Commands
 
-### Home Manager (Standalone)
-```bash
-# Apply home-manager configuration (non-NixOS systems)
-home-manager switch --flake .#default --impure -b backup
-
-# Apply for specific system
-home-manager switch --flake .#oskar@x86_64-linux --impure -b backup
-```
-
-On a non-NixOS host, `common/caches.nix` reaches only `~/.config/nix/nix.conf`,
-and `substituters` and `trusted-public-keys` are settings the Nix daemon accepts
-from a client only if that client is trusted. So the attic caches are written
-and then ignored unless the host's own `/etc/nix/nix.conf` says
-
-```
-trusted-users = root <your-user>
-```
-
-That file is outside this flake. Without it the machine still works, it just
-builds from source everything the household has already built.
-
 ### NixOS System
 ```bash
 # Deploy NixOS configuration
 sudo nixos-rebuild switch --flake .#<hostname>
 
-# Available hostnames: x13-laptop, work-laptop, desktop, flow-x13
+# Available hostnames: x13-laptop, work-laptop, desktop
 sudo nixos-rebuild switch --flake .#x13-laptop
 ```
+
+### Home Manager outside NixOS
+
+Every machine runs NixOS, where `lib/mkNixosConfiguration.nix` imports Home
+Manager as a NixOS module. The flake still exports standalone
+`homeConfigurations` (built by `lib/mkHomeConfiguration.nix`, with `isNixos =
+false`), and they double as a quick build check. Activating them on a non-NixOS
+host is untested and has no documented setup; do not add instructions for it
+unless asked.
 
 ### Testing & Validation
 ```bash
@@ -42,8 +30,8 @@ nix fmt
 # Verify formatting without applying
 nix flake check
 
-# Build without activating (test before deploying)
-nix build .#homeConfigurations.default.activationPackage
+# Build the user config without activating (quick check; needs --impure)
+nix build .#homeConfigurations.default.activationPackage --impure
 
 # Show all flake outputs
 nix flake show

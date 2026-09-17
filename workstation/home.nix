@@ -418,7 +418,6 @@ in
       };
 
       shellAliases = {
-        hs = "home-manager switch --flake .#default --impure -b backup";
         edit = "emacsclient -r -n";
       }
       // lib.optionalAttrs isNixos {

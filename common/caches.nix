@@ -4,7 +4,10 @@
 # ~/.config/nix/nix.conf instead. A daemon takes `substituters` and
 # `trusted-public-keys` from a client only if that client is a trusted user, so
 # the second form needs `trusted-users` in the host's own /etc/nix/nix.conf to
-# have any effect. AGENTS.md says so under "Home Manager (Standalone)".
+# have any effect:
+#   trusted-users = root <user>
+# That file is outside this flake. Without it the attic caches are ignored and
+# the machine builds from source what the other machines already built.
 { pkgs, ... }:
 {
   nix.package = pkgs.nix;
