@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   lib,
   pkgs,
   ...
@@ -9,13 +10,14 @@ with lib;
 
 let
   cfg = config.modules.silent-boot;
+  mac-style-plymouth = pkgs.callPackage "${inputs.mac-style-plymouth}/package.nix" { };
 in
 {
   options.modules.silent-boot = {
     enable = mkOption {
       type = types.bool;
       default = true;
-      description = "Graphical Plymouth boot splash with the NixOS logo, quiet boot output and a hidden boot menu";
+      description = "Graphical Plymouth boot splash (animated mac-style NixOS theme), quiet boot output and a hidden boot menu";
     };
 
     earlyKms = {
@@ -43,8 +45,8 @@ in
   config = mkIf cfg.enable {
     boot.plymouth = {
       enable = true;
-      theme = "nixos-bgrt";
-      themePackages = [ pkgs.nixos-bgrt-plymouth ];
+      theme = "mac-style";
+      themePackages = [ mac-style-plymouth ];
     };
 
     # Hide kernel and systemd output behind the splash (Esc shows it).

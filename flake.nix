@@ -49,6 +49,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Plymouth boot splash theme (modules/silent-boot). No releases upstream,
+    # so track HEAD; import only its package.nix to keep flake-utils out.
+    mac-style-plymouth = {
+      url = "github:SergioRibera/s4rchiso-plymouth-theme";
+      flake = false;
+    };
+
     # Add nixGL for better OpenGL and vulkan support
     nixgl.url = "github:nix-community/nixGL";
 

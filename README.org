@@ -41,8 +41,8 @@ unusable install if skipped, so read it through first.
 
 * Boot
 
-The ~silent-boot~ module (on by default) shows a Plymouth splash with the NixOS
-logo, hides kernel output, and hides the systemd-boot menu.
+The ~silent-boot~ module (on by default) shows an animated NixOS Plymouth splash
+([[https://github.com/SergioRibera/s4rchiso-plymouth-theme][mac-style]] theme), hides kernel output, and hides the systemd-boot menu.
 
 - Show the boot menu: hold (or repeatedly tap) =Space= while the machine powers on.
 - Show it on the next boot only, from a running system: ~sudo bootctl set-timeout-oneshot 10~
