@@ -10,11 +10,14 @@ agecrypt-init:
     # git-agecrypt init records an absolute /nix/store path, which breaks once
     # that store path is garbage collected. Point at a wrapper instead, which
     # also covers the bootstrap case where git-agecrypt is not yet on PATH.
-    # Git runs filter and textconv commands from the top of the worktree, so a
-    # relative path here survives the repo being moved.
-    git config filter.git-agecrypt.smudge "./scripts/git-agecrypt.sh smudge -f %f"
-    git config filter.git-agecrypt.clean "./scripts/git-agecrypt.sh clean -f %f"
-    git config diff.git-agecrypt.textconv "./scripts/git-agecrypt.sh textconv"
+    # The path is resolved at run time, so it survives the repo being moved.
+    # It must not be relative to the worktree: `git worktree add` smudges
+    # private/** before scripts/ is checked out, so ./scripts/ does not exist
+    # yet. The main worktree (next to the common git dir) always has it.
+    wrapper='"$(git rev-parse --path-format=absolute --git-common-dir)/../scripts/git-agecrypt.sh"'
+    git config filter.git-agecrypt.smudge "$wrapper smudge -f %f"
+    git config filter.git-agecrypt.clean "$wrapper clean -f %f"
+    git config diff.git-agecrypt.textconv "$wrapper textconv"
     # Identities live in .git/config so each checkout can point at its own keys.
     # `scripts/install-machine.sh` copies the checkout with `cp -a`, so a fresh
     # machine inherits whatever the installer registered — typically
