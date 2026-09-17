@@ -40,7 +40,7 @@ in
       # time devenv is updated.
       (lib.hiPrio secretspec)
     ]
-    ++ lib.optionals (!pkgs.stdenv.isDarwin) [ age-plugin-tpm ];
+    ++ lib.optionals (!pkgs.stdenv.hostPlatform.isDarwin) [ age-plugin-tpm ];
 
   # mkDefault so a NixOS host can point this at the copy modules/sops hands
   # over as a secret, sparing every machine an age key in the home directory.

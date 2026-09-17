@@ -6,8 +6,8 @@
   ...
 }:
 let
-  isLinux = pkgs.stdenv.isLinux;
-  isDarwin = pkgs.stdenv.isDarwin;
+  isLinux = pkgs.stdenv.hostPlatform.isLinux;
+  isDarwin = pkgs.stdenv.hostPlatform.isDarwin;
 
   joinDocs = paths: lib.concatStringsSep "\n" (map (p: builtins.readFile p) paths);
 
