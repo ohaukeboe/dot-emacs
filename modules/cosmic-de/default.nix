@@ -135,21 +135,6 @@ in
           }
         '';
       };
-
-      # Fallback polkit agent (cosmic-osd's built-in agent crashes)
-      systemd.user.services.polkit-agent = {
-        Unit = {
-          Description = "LXQt Polkit authentication agent";
-          After = [ "graphical-session-pre.target" ];
-          PartOf = [ "graphical-session.target" ];
-        };
-        Service = {
-          ExecStart = "${pkgs.lxqt.lxqt-policykit}/bin/lxqt-policykit-agent";
-          Restart = "on-failure";
-          RestartSec = 1;
-        };
-        Install.WantedBy = [ "graphical-session.target" ];
-      };
     };
   };
 }
