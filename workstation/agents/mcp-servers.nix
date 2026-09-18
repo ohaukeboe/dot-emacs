@@ -13,44 +13,26 @@ let
     inputs.codebase-memory-mcp.packages.${pkgs.stdenv.hostPlatform.system}.default;
   emacsConfig = "${config.xdg.configHome}/emacs";
 
-  # Wraps an MCP server with optional caveman-shrink token compression and/or
-  # secret-env-from-file injection. Returns an attrset shaped for
-  # `programs.mcp.servers.<name>`.
+  # Wraps an MCP server with optional caveman-shrink token compression. Returns
+  # an attrset shaped for `programs.mcp.servers.<name>`.
+  #
+  # Secrets go in `env` as file references (`env.VAR.file = <path>`), which
+  # upstream handles per consumer: programs.claude-code runs the server through
+  # a generated wrapper that reads the file at startup (lib.hm.mcp
+  # .wrapEnvFilesCommand), programs.opencode emits a `{file:...}` token the
+  # client resolves itself. Either way the value never reaches the store.
   mkMcpServer =
     {
-      name,
       command,
       args ? [ ],
       env ? { },
-      secretEnvFiles ? { },
       shrink ? false,
     }:
-    let
-      hasSecrets = secretEnvFiles != { };
-      cmdAndArgs = (lib.optional shrink "caveman-shrink") ++ [ command ] ++ args;
-      wrapper = pkgs.writeShellScript "${name}-mcp" ''
-        ${lib.concatStringsSep "\n" (
-          lib.mapAttrsToList (var: path: ''
-            ${var}="$(cat ${path})"
-            export ${var}
-          '') secretEnvFiles
-        )}
-        exec ${lib.escapeShellArgs cmdAndArgs} "$@"
-      '';
-    in
-    if hasSecrets then
-      {
-        command = toString wrapper;
-      }
-      // lib.optionalAttrs (env != { }) { inherit env; }
-    else if shrink then
-      {
-        command = "caveman-shrink";
-        args = [ command ] ++ args;
-      }
-      // lib.optionalAttrs (env != { }) { inherit env; }
-    else
-      { inherit command args; } // lib.optionalAttrs (env != { }) { inherit env; };
+    {
+      command = if shrink then "caveman-shrink" else command;
+      args = (lib.optional shrink command) ++ args;
+    }
+    // lib.optionalAttrs (env != { }) { inherit env; };
 
   # Emacs MCP stdio servers all share the same launcher script and arg shape.
   mkEmacsStdioServer =
@@ -61,7 +43,7 @@ let
       shrink ? true,
     }:
     mkMcpServer {
-      inherit name shrink;
+      inherit shrink;
       command = "${emacsConfig}/emacs-mcp-stdio.sh";
       args = [
         "--init-function=${initFunction}"
@@ -84,24 +66,20 @@ in
 
   programs.mcp.servers = {
     "mcp-nixos" = mkMcpServer {
-      name = "mcp-nixos";
       command = "mcp-nixos";
       shrink = true;
     };
     "github-mcp" = mkMcpServer {
-      name = "github-mcp";
       command = "github-mcp-server";
       args = [ "stdio" ];
-      secretEnvFiles.GITHUB_PERSONAL_ACCESS_TOKEN = config.sops.secrets."authinfo/github_pat".path;
+      env.GITHUB_PERSONAL_ACCESS_TOKEN.file = config.sops.secrets."authinfo/github_pat".path;
       shrink = true;
     };
     "codebase-memory" = mkMcpServer {
-      name = "codebase-memory";
       command = "${codebase-memory-mcp}/bin/codebase-memory-mcp";
       shrink = true;
     };
     "chrome-devtools" = mkMcpServer {
-      name = "chrome-devtools";
       command = "chrome-devtools-mcp";
       args = [ "--executablePath=${pkgs.chromium}/bin/chromium" ];
       shrink = true;
@@ -117,14 +95,12 @@ in
       stopFunction = "lsp-mcp-disable";
     };
     "mobile-mcp" = mkMcpServer {
-      name = "mobile-mcp";
       command = "mcp-server-mobile";
       shrink = true;
     };
     "kagi" = mkMcpServer {
-      name = "kagi";
       command = "${kagimcp}/bin/kagimcp";
-      secretEnvFiles.KAGI_API_KEY = config.sops.secrets."authinfo/kagi".path;
+      env.KAGI_API_KEY.file = config.sops.secrets."authinfo/kagi".path;
     };
   };
 

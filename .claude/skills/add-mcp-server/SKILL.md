@@ -1,6 +1,6 @@
 ---
 name: add-mcp-server
-description: Register a new MCP (Model Context Protocol) server in the Nix home-manager config (workstation/agents/mcp-servers.nix), including secret-env wrapping, caveman-shrink token compression, and optional per-package derivations under workstation/agents/packages/. Use this skill whenever the user wants to add an MCP server, wire a new MCP integration into their Nix/home-manager config, expose a new tool to Claude Code or Opencode via MCP, register a stdio MCP server, set up an Emacs MCP stdio proxy, or mentions adding capabilities like "add the X MCP", "wire up MCP for Y", "I want to use github-mcp / kagi-mcp / chrome-devtools-mcp / etc.", or any request to expand the MCP-server inventory.
+description: Register a new MCP (Model Context Protocol) server in the Nix home-manager config (workstation/agents/mcp-servers.nix), including file-based secret env vars, caveman-shrink token compression, and optional per-package derivations under workstation/agents/packages/. Use this skill whenever the user wants to add an MCP server, wire a new MCP integration into their Nix/home-manager config, expose a new tool to Claude Code or Opencode via MCP, register a stdio MCP server, set up an Emacs MCP stdio proxy, or mentions adding capabilities like "add the X MCP", "wire up MCP for Y", "I want to use github-mcp / kagi-mcp / chrome-devtools-mcp / etc.", or any request to expand the MCP-server inventory.
 ---
 
 Register a new MCP server in `workstation/agents/mcp-servers.nix` using the post-refactor helpers (`mkMcpServer`, `mkEmacsStdioServer`) and the `programs.mcp.servers` seam. If the server needs a build-from-source derivation, drop it in `workstation/agents/packages/<name>.nix`.
@@ -97,13 +97,13 @@ Two orthogonal needs the helpers cover automatically:
 | Need | Flag | Mechanic |
 |------|------|----------|
 | Token compression (most chatty MCP servers benefit) | `shrink = true` | Prepends `caveman-shrink` to the command line. |
-| Secret env from a sops file | `secretEnvFiles = { ENV_NAME = config.sops.secrets."path/to/secret".path; };` | Generates a `pkgs.writeShellScript` wrapper that `cat`s the file, exports the var, then `exec`s the underlying command. |
+| Secret env from a sops file | `env.ENV_NAME.file = config.sops.secrets."path/to/secret".path;` | Upstream home-manager reads the file at runtime, differently per consumer, so the value never reaches the Nix store. The `mkMcpServer` comment in `mcp-servers.nix` is the canonical account — read it there rather than restating it here. |
 
-Both can compose (see `github-mcp` in current `mcp-servers.nix`: both `secretEnvFiles` and `shrink = true`).
+Both can compose (see `github-mcp` in current `mcp-servers.nix`: both an `env.<VAR>.file` secret and `shrink = true`).
 
-If the server needs neither, you get a bare `{ command; args; }` entry — no wrapper script, no shrink.
+If the server needs neither, you get a bare `{ command; args; }` entry — no shrink, no secret.
 
-If it needs **plain `env = { ... }` vars** (non-secret), pass `env = { FOO = "bar"; };` — works in all three branches.
+Non-secret vars go in the same `env` attrset as plain strings: `env = { LOG_LEVEL = "info"; };`. Literal strings and `{ file = ...; }` references can be mixed freely.
 
 ## Step 4: Pick the helper
 
@@ -111,14 +111,13 @@ If it needs **plain `env = { ... }` vars** (non-secret), pass `env = { FOO = "ba
 
 ```nix
 "<server-name>" = mkMcpServer {
-  name           = "<server-name>";              # used as wrapper-script name
-  command        = "<absolute-or-PATH binary>";  # e.g. "github-mcp-server" or "${pkg}/bin/foo"
-  args           = [ "stdio" "--flag" "value" ]; # optional
-  env            = { LOG_LEVEL = "info"; };      # optional, non-secret env
-  secretEnvFiles = {                              # optional
-    GITHUB_PERSONAL_ACCESS_TOKEN = config.sops.secrets."authinfo/github_pat".path;
+  command = "<absolute-or-PATH binary>";  # e.g. "github-mcp-server" or "${pkg}/bin/foo"
+  args = [ "stdio" "--flag" "value" ];    # optional
+  env = {                                 # optional; literals and file refs can mix
+    LOG_LEVEL = "info";
+    GITHUB_PERSONAL_ACCESS_TOKEN.file = config.sops.secrets."authinfo/github_pat".path;
   };
-  shrink         = true;                          # optional, default false
+  shrink = true;                          # optional, default false
 };
 ```
 
@@ -184,11 +183,20 @@ Then `nix flake lock --update-input <name>` (or `nix flake update <name>` on old
    ```bash
    nix build .#homeConfigurations."oskar@x86_64-linux".activationPackage
    ```
-4. **Inspect the generated wrapper** (sanity-check secret-env / shrink wiring):
+4. **Inspect the generated config** (sanity-check secret-env / shrink wiring). The
+   registry itself never holds a wrapper — each consumer decides. Read the built
+   outputs rather than `config.programs.mcp.servers`:
    ```bash
-   nix eval --raw .#homeConfigurations."oskar@x86_64-linux".config.programs.mcp.servers."<server-name>".command
-   # if it points to /nix/store/...-<name>-mcp, cat it to see the wrapper
+   out=$(nix build --no-link --print-out-paths \
+     .#homeConfigurations."oskar@x86_64-linux".activationPackage)
+   # Central registry: expect a "{file:/path/to/secret}" token, never the value
+   cat "$out"/home-files/.config/mcp/mcp.json
+   # Claude Code: secret-bearing servers point at /nix/store/...-mcp-<name>-wrapper
+   cat "$out"/home-files/.claude/skills/claude-code-home-manager/.mcp.json
+   # Opencode: same "{file:...}" token, under "environment"
+   cat "$out"/home-files/.config/opencode/opencode.json
    ```
+   A secret's **value** must appear in none of these. Seeing the path is correct.
 5. **Format**: `nix fmt -- workstation/agents/mcp-servers.nix` (treefmt).
 6. **Apply**: tell the user to `home-manager switch` (or whatever their activation entry is). The new server appears in Claude Code + Opencode automatically — both `programs.claude-code.enableMcpIntegration` and `programs.opencode.enableMcpIntegration` are already `true` in the refactored `mcp-servers.nix`.
 
