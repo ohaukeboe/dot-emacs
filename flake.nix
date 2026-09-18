@@ -86,6 +86,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Proton Pass quick-access popup for COSMIC, enabled by modules/cosmic-de.
+    cosmic-pass = {
+      url = "github:ohaukeboe/cosmic-pass";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     humanizer-skill = {
       url = "github:blader/humanizer";
       flake = false;

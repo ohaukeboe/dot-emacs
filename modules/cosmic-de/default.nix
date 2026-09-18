@@ -18,6 +18,8 @@ let
   # same on every machine.
   cosmicFiles =
     component: mapAttrs' (key: value: nameValuePair "cosmic/${component}/v1/${key}" { text = value; });
+
+  cosmic-pass = inputs.cosmic-pass.packages.${pkgs.stdenv.hostPlatform.system}.default;
 in
 {
   options.modules.cosmic-de = {
@@ -51,10 +53,17 @@ in
     xdg.portal.enable = true;
 
     # COSMIC-specific packages
-    environment.systemPackages = with pkgs; [
-      cutecosmic
-      adw-gtk3
+    environment.systemPackages = [
+      pkgs.cutecosmic
+      pkgs.adw-gtk3
+      cosmic-pass
     ];
+
+    # cosmic-pass ships a user service for its background popup process; the
+    # shortcut below only toggles it. pass-cli (workstation/home.nix) must be
+    # logged in, and gnome-keyring above holds its cache key.
+    systemd.packages = [ cosmic-pass ];
+    systemd.user.services.cosmic-pass.wantedBy = [ "graphical-session.target" ];
 
     home-manager.users.${config.user.username} = {
       services.flatpak.remotes = [
@@ -138,8 +147,8 @@ in
           '';
         })
 
-        # Custom keyboard shortcuts. Super+space opens the Proton Pass wofi
-        # picker declared in workstation/home.nix.
+        # Custom keyboard shortcuts. Super+space toggles the cosmic-pass
+        # Proton Pass quick-access popup.
         (cosmicFiles "com.system76.CosmicSettings.Shortcuts" {
           custom = ''
             {
@@ -149,7 +158,7 @@ in
                     ],
                     key: "space",
                     description: Some("proton pass"),
-                ): Spawn("protonpass-wofi"),
+                ): Spawn("cosmic-pass"),
                 (
                     modifiers: [
                         Super,

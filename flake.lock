@@ -137,6 +137,26 @@
         "type": "github"
       }
     },
+    "cosmic-pass": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1789739927,
+        "narHash": "sha256-v5MV7oQiqAQJbeiSMmHNmNFP5SqjyBNX7xJUGgxAsAU=",
+        "owner": "ohaukeboe",
+        "repo": "cosmic-pass",
+        "rev": "2f17a38a545c01cd089e6a26f029f1c32033377a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ohaukeboe",
+        "repo": "cosmic-pass",
+        "type": "github"
+      }
+    },
     "crane": {
       "locked": {
         "lastModified": 1781825982,
@@ -791,6 +811,7 @@
         "claude-code-ide-src": "claude-code-ide-src",
         "codebase-memory-mcp": "codebase-memory-mcp",
         "consult-mu-src": "consult-mu-src",
+        "cosmic-pass": "cosmic-pass",
         "disko": "disko",
         "emacs-overlay": "emacs-overlay",
         "flatpaks": "flatpaks",
