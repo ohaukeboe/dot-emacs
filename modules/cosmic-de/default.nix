@@ -10,6 +10,14 @@ with lib;
 
 let
   cfg = config.modules.cosmic-de;
+  homeDir = config.users.users.${config.user.username}.home;
+
+  # COSMIC stores one setting per file under ~/.config/cosmic/<component>/v1/<key>.
+  # Declaring a key here makes it a read-only symlink: COSMIC can no longer
+  # change that setting at runtime, so only pin settings that should be the
+  # same on every machine.
+  cosmicFiles =
+    component: mapAttrs' (key: value: nameValuePair "cosmic/${component}/v1/${key}" { text = value; });
 in
 {
   options.modules.cosmic-de = {
@@ -68,73 +76,212 @@ in
         "io.github.nwxnw.cosmic-ext-connected"
       ];
 
-      # Wallpaper: flat dark color on every output. Declared here so new
-      # machines come up with the same background instead of the COSMIC
-      # default image. Note these files become read-only symlinks, so the
-      # wallpaper can only be changed by editing this module.
-      xdg.configFile = {
-        "cosmic/com.system76.CosmicBackground/v1/all".text = ''
-          (
-              output: "all",
-              source: Color(Single((0.09, 0.09, 0.09))),
-              filter_by_theme: false,
-              rotation_frequency: 900,
-              filter_method: Lanczos,
-              scaling_mode: Zoom,
-              sampling_method: Alphanumeric,
-          )
-        '';
-        "cosmic/com.system76.CosmicBackground/v1/same-on-all".text = "true";
+      xdg.configFile = mkMerge [
+        # Wallpaper: flat dark color on every output. Declared here so new
+        # machines come up with the same background instead of the COSMIC
+        # default image.
+        (cosmicFiles "com.system76.CosmicBackground" {
+          all = ''
+            (
+                output: "all",
+                source: Color(Single((0.09, 0.09, 0.09))),
+                filter_by_theme: false,
+                rotation_frequency: 900,
+                filter_method: Lanczos,
+                scaling_mode: Zoom,
+                sampling_method: Alphanumeric,
+            )
+          '';
+          same-on-all = "true";
+        })
 
-        # Keyboard: EU layout, Caps Lock as an extra Ctrl, faster repeat.
-        "cosmic/com.system76.CosmicComp/v1/xkb_config".text = ''
-          (
-              rules: "",
-              model: "pc104",
-              layout: "eu",
-              variant: "",
-              options: Some("terminate:ctrl_alt_bksp,caps:ctrl_modifier"),
-              repeat_delay: 600,
-              repeat_rate: 25,
-          )
-        '';
+        (cosmicFiles "com.system76.CosmicComp" {
+          # Keyboard: EU layout, Caps Lock as an extra Ctrl, faster repeat.
+          xkb_config = ''
+            (
+                rules: "",
+                model: "pc104",
+                layout: "eu",
+                variant: "",
+                options: Some("terminate:ctrl_alt_bksp,caps:ctrl_modifier"),
+                repeat_delay: 600,
+                repeat_rate: 25,
+            )
+          '';
 
-        # Tiling and workspace behaviour: autotile per workspace, vertical
-        # per-output workspaces, focus following the cursor and back.
-        "cosmic/com.system76.CosmicComp/v1/autotile".text = "true";
-        "cosmic/com.system76.CosmicComp/v1/autotile_behavior".text = "PerWorkspace";
-        "cosmic/com.system76.CosmicComp/v1/cursor_follows_focus".text = "true";
-        "cosmic/com.system76.CosmicComp/v1/focus_follows_cursor".text = "true";
-        "cosmic/com.system76.CosmicComp/v1/focus_follows_cursor_delay".text = "20";
-        "cosmic/com.system76.CosmicComp/v1/workspaces".text = ''
-          (
-              workspace_mode: OutputBound,
-              workspace_layout: Vertical,
-          )
-        '';
+          # Tiling and workspace behaviour: autotile per workspace, vertical
+          # per-output workspaces, focus following the cursor and back.
+          autotile = "true";
+          autotile_behavior = "PerWorkspace";
+          cursor_follows_focus = "true";
+          focus_follows_cursor = "true";
+          focus_follows_cursor_delay = "20";
+          workspaces = ''
+            (
+                workspace_mode: OutputBound,
+                workspace_layout: Vertical,
+            )
+          '';
+
+          # Touchpad: click zones by finger count, natural two-finger scroll.
+          input_touchpad = ''
+            (
+                state: Enabled,
+                click_method: Some(Clickfinger),
+                scroll_config: Some((
+                    method: Some(TwoFinger),
+                    natural_scroll: Some(true),
+                    scroll_button: None,
+                    scroll_factor: None,
+                )),
+            )
+          '';
+        })
 
         # Custom keyboard shortcuts. Super+space opens the Proton Pass wofi
         # picker declared in workstation/home.nix.
-        "cosmic/com.system76.CosmicSettings.Shortcuts/v1/custom".text = ''
-          {
-              (
-                  modifiers: [
-                      Super,
-                  ],
-                  key: "space",
-                  description: Some("proton pass"),
-              ): Spawn("protonpass-wofi"),
-              (
-                  modifiers: [
-                      Super,
-                      Shift,
-                  ],
-                  key: "space",
-                  description: Some("1password"),
-              ): Spawn("1password --quick-access"),
-          }
-        '';
-      };
+        (cosmicFiles "com.system76.CosmicSettings.Shortcuts" {
+          custom = ''
+            {
+                (
+                    modifiers: [
+                        Super,
+                    ],
+                    key: "space",
+                    description: Some("proton pass"),
+                ): Spawn("protonpass-wofi"),
+                (
+                    modifiers: [
+                        Super,
+                        Shift,
+                    ],
+                    key: "space",
+                    description: Some("1password"),
+                ): Spawn("1password --quick-access"),
+            }
+          '';
+        })
+
+        # Only the top panel; no dock.
+        (cosmicFiles "com.system76.CosmicPanel" {
+          entries = ''
+            [
+                "Panel",
+            ]
+          '';
+        })
+
+        # Top panel: thin, always visible, full width. `output` is left out on
+        # purpose so each machine can bind the panel to its own display.
+        (cosmicFiles "com.system76.CosmicPanel.Panel" {
+          name = ''"Panel"'';
+          anchor = "Top";
+          anchor_gap = "false";
+          layer = "Top";
+          size = "XS";
+          size_center = "None";
+          size_wings = "None";
+          spacing = "0";
+          padding = "0";
+          padding_overlap = "0.5";
+          margin = "0";
+          border_radius = "0";
+          opacity = "1.0";
+          background = "ThemeDefault";
+          expand_to_edges = "true";
+          exclusive_zone = "true";
+          keep_style_on_maximize = "false";
+          keyboard_interactivity = "OnDemand";
+          autohide = "Never";
+          autohover_delay_ms = "Some(500)";
+          autohide_behavior = ''
+            (
+                wait_time: 1000,
+                transition_time: 200,
+                handle_size: 4,
+                unhide_delay: 200,
+            )
+          '';
+          plugins_center = ''
+            Some([
+                "com.system76.CosmicAppletTime",
+            ])
+          '';
+          plugins_wings = ''
+            Some(([
+                "com.system76.CosmicAppletWorkspaces",
+                "com.system76.CosmicPanelAppButton",
+            ], [
+                "io.github.nwxnw.cosmic-ext-connected",
+                "com.system76.CosmicAppletInputSources",
+                "com.system76.CosmicAppletStatusArea",
+                "com.system76.CosmicAppletTiling",
+                "com.system76.CosmicAppletAudio",
+                "com.system76.CosmicAppletNetwork",
+                "com.system76.CosmicAppletBattery",
+                "com.system76.CosmicAppletNotifications",
+                "com.system76.CosmicAppletBluetooth",
+                "com.system76.CosmicAppletPower",
+            ]))
+          '';
+        })
+
+        # Theme source values. cosmic-settings derives the full
+        # com.system76.CosmicTheme.{Dark,Light}/* palettes from these, so only
+        # the builder inputs are pinned.
+        (cosmicFiles "com.system76.CosmicTheme.Dark.Builder" {
+          accent = ''
+            Some((
+                red: 0.7921569,
+                green: 0.7294118,
+                blue: 0.7058824,
+            ))
+          '';
+          bg_color = ''
+            Some((
+                red: 0.09019608,
+                green: 0.09019608,
+                blue: 0.09019608,
+                alpha: 1.0,
+            ))
+          '';
+          gaps = "(0, 2)";
+          active_hint = "2";
+        })
+
+        (cosmicFiles "com.system76.CosmicTheme.Light.Builder" {
+          gaps = "(0, 2)";
+          active_hint = "2";
+        })
+
+        # Toolkit: theme GTK/Qt apps from the COSMIC theme, COSMIC icon set.
+        (cosmicFiles "com.system76.CosmicTk" {
+          apply_theme_global = "true";
+          icon_theme = ''"Cosmic"'';
+        })
+
+        # Clock applet: 24-hour time, weeks start on Monday.
+        (cosmicFiles "com.system76.CosmicAppletTime" {
+          military_time = "true";
+          first_day_of_week = "0";
+        })
+
+        # File manager sidebar shortcuts.
+        (cosmicFiles "com.system76.CosmicFiles" {
+          favorites = ''
+            [
+                Home,
+                Documents,
+                Downloads,
+                Music,
+                Pictures,
+                Videos,
+                Path("${homeDir}/Nextcloud"),
+                Path("${homeDir}/projects"),
+            ]
+          '';
+        })
+      ];
     };
   };
 }
