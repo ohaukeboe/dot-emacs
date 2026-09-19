@@ -44,6 +44,14 @@ in
       QT_QPA_PLATFORMTHEME = "cosmic";
       COSMIC_DATA_CONTROL_ENABLED = 1; # Clipboard management
       GTK_THEME = "adw-gtk3-dark";
+      # pass-cli keeps the key to its own database in the store this names, and
+      # its default, kernel, means the caller's kernel session keyring -- which
+      # a systemd user service never shares with the terminal a login ran in,
+      # so the cosmic-pass service failed every call with "Error creating
+      # client features". cosmic-pass itself passes dbus; this makes a terminal
+      # pass-cli agree, since the two stores must match or pass-cli force-logs
+      # out. Changing the value costs one sign-in.
+      PROTON_PASS_LINUX_KEYRING = "dbus";
     };
 
     # XDG Desktop Portal configuration for COSMIC
@@ -61,7 +69,8 @@ in
 
     # cosmic-pass ships a user service for its background popup process; the
     # shortcut below only toggles it. pass-cli (workstation/home.nix) must be
-    # logged in, and gnome-keyring above holds its cache key.
+    # logged in, and gnome-keyring above holds both its cache key and, through
+    # PROTON_PASS_LINUX_KEYRING above, pass-cli's own database key.
     systemd.packages = [ cosmic-pass ];
     systemd.user.services.cosmic-pass.wantedBy = [ "graphical-session.target" ];
 
