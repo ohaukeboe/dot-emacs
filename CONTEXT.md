@@ -44,6 +44,30 @@ _Avoid_: Claude frame, Claude popup
 The set of Claude side windows visible in the current tab. Hiding the panel
 remembers the set so a project's members can be restored later.
 
+### Emacs / beads
+
+**Bead**:
+One issue in the beads tracker, identified by `dot-emacs-<suffix>`. Lives in
+`.beads/` beside the worktree, so it belongs to a repository the way a branch
+does.
+_Avoid_: ticket; task, which is one of bd's `issue_type` values and so already
+means something narrower
+
+**Ready**:
+Open and unblocked: every dependency of the bead is closed, so it can be
+claimed now. Computed by `bd`, never derived in Emacs — a second
+implementation of blocker resolution would drift from the first.
+_Avoid_: open, which includes blocked beads
+
+**In progress**:
+Claimed, by a person or by an agent. The assignee says who holds it, not
+whether it is yours; a bead an agent is working on is in progress.
+
+**Beads section**:
+The Magit status section listing the in-progress and ready beads of the
+repository at `magit-toplevel`. Absent when the repository has no `.beads/`,
+and when both lists are empty.
+
 ### Emacs / windows
 
 **Side-by-side split**:

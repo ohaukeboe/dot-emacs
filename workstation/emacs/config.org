@@ -867,7 +867,9 @@ mtimes), so the full refresh only runs when there is something new to show.
     (defun my/magit-auto-refresh--fingerprint ()
       "Return a snapshot of the worktree state of `default-directory'.
   The snapshot covers the changed files with their mtimes (so further edits
-  to an already modified file are noticed), the index and the HEAD reflog."
+  to an already modified file are noticed), the index, the HEAD reflog and,
+  in a repository with a beads tracker, the last write to that tracker --
+  an agent claiming or closing an issue touches no file git can see."
       (let ((top (magit-toplevel))
             (gitdir (magit-gitdir))
             ;; Otherwise `git status' may rewrite the index, which changes
@@ -885,7 +887,11 @@ mtimes), so the full refresh only runs when there is something new to show.
          (file-attribute-modification-time
           (file-attributes (expand-file-name "index" gitdir)))
          (file-attribute-modification-time
-          (file-attributes (expand-file-name "logs/HEAD" gitdir))))))
+          (file-attributes (expand-file-name "logs/HEAD" gitdir)))
+         (and (file-directory-p (expand-file-name ".beads" top))
+              (file-attribute-modification-time
+               (file-attributes
+                (expand-file-name ".beads/last-touched" top)))))))
 
     (defun my/magit-auto-refresh--remember ()
       "Store the fingerprint after every refresh, whatever triggered it."
@@ -1383,6 +1389,33 @@ Magit-todos for integrating TODO keywords with magit's overview screen
   (use-package pr-review
     :ensure t
     :after consult-gh)
+#+end_src
+
+** Beads
+
+Lists the issues of the [[https://github.com/steveyegge/beads][beads]] tracker in the Magit status buffer of the
+repository they belong to: an =In progress= subsection (every assignee,
+uncapped -- an issue an agent is working on is exactly what should be
+visible) and a =Ready= subsection, capped at =beads-ready-limit=.  =TAB=
+unfolds an issue's description in place, =RET= opens the full =bd show=
+output.  Both lists come from =bd= itself, because /ready/ means open and
+unblocked, and resolving blockers is the tracker's job rather than this
+config's.
+
+The section is gated on =.beads/= existing at the repository root, so
+repositories without a tracker make no =bd= call at all.  =beads-show= also
+works on its own, reading an issue id with completion; it is deliberately
+unbound, since no prefix has an obvious free key for it yet.
+
+#+begin_src elisp
+  (use-package beads
+    :after magit
+    :demand t
+    :config
+    (magit-add-section-hook 'magit-status-sections-hook
+                            #'beads-insert-issues
+                            #'magit-insert-staged-changes
+                            'append))
 #+end_src
 
 ** Gitignore
