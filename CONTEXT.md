@@ -63,6 +63,11 @@ _Avoid_: open, which includes blocked beads
 Claimed, by a person or by an agent. The assignee says who holds it, not
 whether it is yours; a bead an agent is working on is in progress.
 
+**Claim**:
+Taking a bead: the assignee becomes you and the status becomes in
+progress, in one act rather than two. Claiming a bead somebody else holds
+is a takeover, and asks first.
+
 **Beads section**:
 The Magit status section listing the in-progress and ready beads of the
 repository at `magit-toplevel`. Absent when the repository has no `.beads/`,

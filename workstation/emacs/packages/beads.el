@@ -13,14 +13,19 @@
 ;; open and unblocked, and resolving blockers is bd's job; a second
 ;; implementation here would drift from it.
 ;;
-;; Everything is read-only.  TAB unfolds an issue's description in place,
-;; RET opens the full `bd show' output in its own buffer.  Claiming,
-;; closing and creating stay in the terminal.
+;; TAB unfolds an issue's description in place and RET opens the full
+;; `bd show' output in its own buffer.  `#' opens a transient that acts on
+;; the issue at point -- claim, close, comment, assign, set priority -- or
+;; on every issue in the region for the two operations bd itself takes
+;; several ids for.  Prose is written in a buffer rather than the
+;; minibuffer and reaches bd through a temp file.
 
 ;;; Code:
 
 (require 'ansi-color)
+(require 'cl-lib)
 (require 'seq)
+(require 'transient)
 (require 'magit-git)
 (require 'magit-section)
 
@@ -253,9 +258,22 @@ empty of claimed and ready work gets no section at all."
 
 ;;; Showing one issue
 
+(defvar-local beads--issue nil
+  "The id of the issue a `beads-show-mode' buffer displays.")
+
+(defvar-keymap beads-show-mode-map
+  :doc "Keymap for `beads-show-mode'."
+  :parent special-mode-map
+  "#" #'beads-dispatch)
+
 (define-derived-mode beads-show-mode special-mode "Beads"
   "Major mode for the output of `bd show'."
-  :interactive nil)
+  :interactive nil
+  (setq-local revert-buffer-function #'beads-show-revert))
+
+(defun beads-show-revert (&rest _)
+  "Re-read the issue this buffer displays."
+  (beads-show beads--issue))
 
 ;;;###autoload
 (defun beads-show (id)
@@ -275,6 +293,7 @@ what an issue looks like, and every field it gains shows up here."
         (with-current-buffer buffer
           (beads-show-mode)
           (setq default-directory root)
+          (setq beads--issue id)
           (let ((inhibit-read-only t))
             (erase-buffer)
             (insert out)
@@ -283,9 +302,9 @@ what an issue looks like, and every field it gains shows up here."
         (pop-to-buffer buffer)))))
 
 (defun beads-show-at-point ()
-  "Display the beads issue of the section at point."
+  "Display the beads issue at point, reading one when there is none."
   (interactive)
-  (beads-show (oref (magit-current-section) value)))
+  (beads-show (or (beads--issue-at-point) (beads--read-issue))))
 
 (defun beads--read-issue ()
   "Read the id of an open beads issue, titles shown as annotations."
@@ -305,6 +324,298 @@ what an issue looks like, and every field it gains shows up here."
                   (lambda (id)
                     (concat "  " (alist-get id table nil nil #'equal))))))
       (completing-read "Issue: " table nil t))))
+
+;;; Acting on issues
+
+(defun beads--issue-at-point ()
+  "Return the id of the issue at point, or nil."
+  (cond
+   ((derived-mode-p 'magit-section-mode)
+    (and-let* ((section (magit-current-section))
+               ((cl-typep section 'beads-issue-section)))
+      (oref section value)))
+   ((derived-mode-p 'beads-show-mode) beads--issue)))
+
+(defun beads--issues-at-point ()
+  "Return the ids of the issues the region covers, or of the one at point.
+Return nil when point is not on an issue.  Never prompts, so the
+transient can name its target while building its description."
+  (or (and (derived-mode-p 'magit-section-mode)
+           (and-let* ((sections (magit-region-sections 'beads-issue-section t)))
+             (mapcar (lambda (section) (oref section value)) sections)))
+      (and-let* ((id (beads--issue-at-point))) (list id))))
+
+(defun beads--targets (&optional multiple)
+  "Return the issue ids to act on, reading one when point is not on an issue.
+Unless MULTIPLE, act on a single issue even when the region covers
+several: one comment or one assignee for three issues is rarely what
+was meant, while one close reason for three is."
+  (let ((ids (beads--issues-at-point)))
+    (cond ((and ids multiple) ids)
+          (ids (list (car ids)))
+          (t (list (beads--read-issue))))))
+
+(defun beads--fetch-issue (id)
+  "Return the issue ID as an alist, or nil when bd cannot find it."
+  (and id
+       (let ((issues (beads--issues "show" id "--json")))
+         (and (consp issues) (car issues)))))
+
+(defun beads--mutate (&rest args)
+  "Run bd with ARGS, signalling bd's own message when it fails.
+Return stdout."
+  (pcase-let ((`(,status ,out ,err) (apply #'beads--run args)))
+    (unless (eq status 0)
+      (user-error "bd %s: %s" (car args)
+                  (or (beads--failure-line err)
+                      (format "exited with status %s" status))))
+    out))
+
+(defun beads--refresh (format-string &rest args)
+  "Show the mutation FORMAT-STRING with ARGS and re-read what is on screen.
+Only the current buffer: other Magit buffers pick the change up through
+the beads mtime in `my/magit-auto-refresh-mode's fingerprint."
+  (cond ((derived-mode-p 'magit-mode) (magit-refresh))
+        ((derived-mode-p 'beads-show-mode) (beads-show beads--issue)))
+  (message "%s" (apply #'format format-string args)))
+
+(defun beads--read-assignee ()
+  "Read an assignee, completing over the ones the tracker already knows.
+Matching is not required: the first issue assigned to someone new has to
+be possible."
+  (let* ((issues (beads--issues "list" "--all" "--json" "-n" "0"))
+         (known (and (consp issues)
+                     (seq-uniq (delq nil (mapcar (lambda (issue)
+                                                   (alist-get 'assignee issue))
+                                                 issues))))))
+    (completing-read "Assignee: " known nil nil nil nil user-full-name)))
+
+;;; The message buffer
+
+(defvar-local beads-message--submit nil
+  "Function called with the text of a `beads-message-mode' buffer.")
+
+(defvar-local beads-message--origin nil
+  "Buffer the message buffer was opened from, and returns to.")
+
+(defvar-keymap beads-message-mode-map
+  :doc "Keymap for `beads-message-mode'."
+  "C-c C-c" #'beads-message-submit
+  "C-c C-k" #'beads-message-abort)
+
+(define-derived-mode beads-message-mode text-mode "Beads Message"
+  "Major mode for prose on its way to bd."
+  :interactive nil
+  (setq-local comment-start "#"))
+
+(defun beads--read-message (name headers submit)
+  "Pop to a buffer named NAME for prose, HEADERS shown as comments.
+On \\[beads-message-submit] call SUBMIT with the text, in the buffer the
+message was started from."
+  (let ((origin (current-buffer))
+        (buffer (get-buffer-create (format "*beads: %s*" name))))
+    (with-current-buffer buffer
+      (beads-message-mode)
+      (setq beads-message--submit submit)
+      (setq beads-message--origin origin)
+      (setq default-directory (buffer-local-value 'default-directory origin))
+      (erase-buffer)
+      (dolist (header headers)
+        (insert "# " header "\n"))
+      (insert "# Lines starting with # are ignored."
+              "  C-c C-c to send, C-c C-k to abort.\n\n")
+      (goto-char (point-min)))
+    (pop-to-buffer buffer)))
+
+(defun beads-message--text ()
+  "Return the buffer's text without its comment lines."
+  (string-trim
+   (mapconcat #'identity
+              (seq-remove (lambda (line) (string-prefix-p "#" line))
+                          (split-string (buffer-string) "\n"))
+              "\n")))
+
+(defun beads-message-submit ()
+  "Hand the text of this buffer to the command that asked for it."
+  (interactive)
+  (let ((text (beads-message--text))
+        (submit beads-message--submit)
+        (origin beads-message--origin))
+    (quit-window t)
+    (with-current-buffer (if (buffer-live-p origin) origin (current-buffer))
+      (funcall submit text))))
+
+(defun beads-message-abort ()
+  "Abandon this message."
+  (interactive)
+  (quit-window t)
+  (message "Abandoned"))
+
+(defun beads--with-text-file (text function)
+  "Call FUNCTION with the name of a file holding TEXT."
+  (let ((file (make-temp-file "beads-message")))
+    (unwind-protect
+        (progn (write-region text nil file nil 'silent)
+               (funcall function file))
+      (delete-file file))))
+
+;;; Commands
+
+(defun beads-claim (ids)
+  "Claim the issues IDS: assignee becomes you, status in progress.
+Ask first when somebody else holds one -- taking an issue from a running
+agent should not be silent.  bd refuses to claim an issue another
+assignee holds, so a confirmed takeover sets the two fields itself."
+  (interactive (list (beads--targets t)))
+  (dolist (id ids)
+    (let ((assignee (alist-get 'assignee (beads--fetch-issue id))))
+      (cond
+       ((or (null assignee) (beads--self-p assignee))
+        (beads--mutate "update" id "--claim"))
+       ((yes-or-no-p (format "%s is assigned to %s; claim anyway? " id assignee))
+        (beads--mutate "update" id
+                       "--assignee" user-full-name
+                       "--status" "in_progress"))
+       (t (user-error "Not claimed")))))
+  (beads--refresh "Claimed %s" (string-join ids ", ")))
+
+(defun beads-close (ids)
+  "Close the issues IDS, with one reason for all of them."
+  (interactive (list (beads--targets t)))
+  (beads--read-message
+   (format "close %s" (string-join ids ", "))
+   (cons "Reason for closing:"
+         (mapcar (lambda (id)
+                   (format "  %s  %s" id
+                           (or (alist-get 'title (beads--fetch-issue id)) "")))
+                 ids))
+   (lambda (text)
+     (beads--with-text-file
+      text
+      (lambda (file)
+        (apply #'beads--mutate "close" (append ids (list "--reason-file" file)))))
+     (beads--refresh "Closed %s" (string-join ids ", ")))))
+
+(defun beads-comment (id)
+  "Add a comment to the issue ID."
+  (interactive (list (car (beads--targets))))
+  (beads--read-message
+   (format "comment on %s" id)
+   (list (format "Comment on %s  %s" id
+                 (or (alist-get 'title (beads--fetch-issue id)) "")))
+   (lambda (text)
+     (when (string-empty-p text)
+       (user-error "Empty comment"))
+     (beads--with-text-file
+      text
+      (lambda (file) (beads--mutate "comment" id "--file" file)))
+     (beads--refresh "Commented on %s" id))))
+
+(defun beads-assign (id assignee)
+  "Assign the issue ID to ASSIGNEE."
+  (interactive (list (car (beads--targets)) (beads--read-assignee)))
+  (beads--mutate "assign" id assignee)
+  (beads--refresh "%s assigned to %s" id assignee))
+
+(defun beads--set-priority (priority ids)
+  "Set the priority of the issues IDS to PRIORITY."
+  (dolist (id ids)
+    (beads--mutate "update" id "--priority" (number-to-string priority)))
+  (beads--refresh "%s set to P%d" (string-join ids ", ") priority))
+
+(defmacro beads--define-priority-command (priority meaning)
+  "Define the command setting an issue's priority to PRIORITY, meaning MEANING."
+  `(defun ,(intern (format "beads-set-priority-%d" priority)) (ids)
+     ,(format "Set the priority of the issue at point to P%d (%s)."
+              priority meaning)
+     (interactive (list (beads--targets)))
+     (beads--set-priority ,priority ids)))
+
+(beads--define-priority-command 0 "critical")
+(beads--define-priority-command 1 "high")
+(beads--define-priority-command 2 "medium")
+(beads--define-priority-command 3 "low")
+(beads--define-priority-command 4 "backlog")
+
+(defun beads-create (type priority)
+  "Create an issue of TYPE with PRIORITY.
+The first line of the message buffer is the title, the rest the
+description."
+  (interactive
+   (let ((default-directory (or (beads-toplevel)
+                                (user-error "No beads database in this repository"))))
+     (list (completing-read "Type: " (beads--types) nil t nil nil "task")
+           (string-to-number
+            (completing-read "Priority: "
+                             '("0" "1" "2" "3" "4") nil t nil nil "2")))))
+  (beads--read-message
+   "new issue"
+   (list "First line is the title, the rest is the description."
+         (format "Type: %s  Priority: P%d" type priority))
+   (lambda (text)
+     (pcase-let ((`(,title . ,description) (beads--split-message text)))
+       (when (string-empty-p title)
+         (user-error "An issue needs a title"))
+       (let ((id (beads--with-text-file
+                  description
+                  (lambda (file)
+                    (alist-get 'id
+                               (json-parse-string
+                                (beads--mutate "create" title
+                                               "--type" type
+                                               "--priority" (number-to-string priority)
+                                               "--body-file" file
+                                               "--json")
+                                :object-type 'alist
+                                :null-object nil
+                                :false-object nil))))))
+         (beads--refresh "Created %s" id))))))
+
+(defun beads--split-message (text)
+  "Split TEXT into its first line and the rest."
+  (let ((lines (split-string text "\n")))
+    (cons (string-trim (or (car lines) ""))
+          (string-trim (mapconcat #'identity (cdr lines) "\n")))))
+
+(defun beads--types ()
+  "Return the issue types bd accepts."
+  (let ((out (ignore-errors (beads--mutate "types"))))
+    (or (and out
+             (seq-keep (lambda (line)
+                         (and (string-match "\\`  \\([a-z][a-z-]*\\) " line)
+                              (match-string 1 line)))
+                       (split-string out "\n")))
+        '("task" "bug" "feature" "chore" "epic"))))
+
+;;; The transient
+
+(defun beads--dispatch-description ()
+  "Return a heading naming what the transient is about to act on."
+  (let ((ids (beads--issues-at-point)))
+    (cond ((null ids) "Beads (no issue at point)")
+          ((cdr ids) (format "Beads (%d issues in region)" (length ids)))
+          (t (format "Beads: %s  %s"
+                     (car ids)
+                     (or (alist-get 'title (beads--fetch-issue (car ids))) ""))))))
+
+;;;###autoload
+(transient-define-prefix beads-dispatch ()
+  "Act on the beads issue at point."
+  [:description beads--dispatch-description
+   ["Issue"
+    ("k" "Claim" beads-claim)
+    ("c" "Close" beads-close)
+    ("m" "Comment" beads-comment)
+    ("a" "Assign" beads-assign)]
+   ["Priority"
+    ("0" "critical" beads-set-priority-0)
+    ("1" "high" beads-set-priority-1)
+    ("2" "medium" beads-set-priority-2)
+    ("3" "low" beads-set-priority-3)
+    ("4" "backlog" beads-set-priority-4)]
+   ["Tracker"
+    ("n" "New issue" beads-create)
+    ("RET" "Show" beads-show-at-point)]])
 
 (provide 'beads)
 

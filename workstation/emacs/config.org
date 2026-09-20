@@ -1402,6 +1402,13 @@ output.  Both lists come from =bd= itself, because /ready/ means open and
 unblocked, and resolving blockers is the tracker's job rather than this
 config's.
 
+=#= opens a transient acting on the issue at point -- claim, close with a
+reason, comment, assign, set priority -- or on every issue the region
+covers, for the two operations =bd= itself takes several ids for.  =n=
+captures a new issue.  Prose is written in a buffer with =C-c C-c= to send
+and =C-c C-k= to abort, rather than in the minibuffer: close reasons here
+run to a couple of sentences.
+
 The section is gated on =.beads/= existing at the repository root, so
 repositories without a tracker make no =bd= call at all.  =beads-show= also
 works on its own, reading an issue id with completion; it is deliberately
@@ -1415,7 +1422,8 @@ unbound, since no prefix has an obvious free key for it yet.
     (magit-add-section-hook 'magit-status-sections-hook
                             #'beads-insert-issues
                             #'magit-insert-staged-changes
-                            'append))
+                            'append)
+    (keymap-set magit-mode-map "#" #'beads-dispatch))
 #+end_src
 
 ** Gitignore
