@@ -210,6 +210,37 @@ rotated, with sections whose end preceded their start."
         (should (string-search "Ready (9)" text))
         (should (string-search "…and 6 more" text))))))
 
+(ert-deftest beads-test-refresh-in-an-unselected-window ()
+  "A refresh of a displayed but unselected window keeps the tree consistent.
+This is dot-emacs-l3y itself.  `window-max-chars-per-line\' is implemented
+with `with-selected-window\', and selecting a window sets its buffer\'s
+point to that window\'s point.  Measuring the width that way while Magit
+rebuilt the buffer dragged the insertion point back to the window\'s stale
+position, so every issue line landed at the top of the buffer and the
+sections came out interleaved.  It only bit when the status window was not
+the selected one, which is the normal case for the auto-refresh timer, and
+never when the user pressed `g\' in that window."
+  (beads-test--with-status
+    (beads-test--set-issues
+     (list (beads-test--issue "t-1" 1 "A claimed issue" "Test"))
+     (cl-loop for n from 1 to 4
+              collect (beads-test--issue (format "r-%d" n) 2
+                                         (format "Ready issue %d" n))))
+    (let ((status (current-buffer))
+          (elsewhere (get-buffer-create "*beads-test-elsewhere*")))
+      (delete-other-windows)
+      (set-window-buffer (selected-window) elsewhere)
+      (let ((window (split-window)))
+        (set-window-buffer window status)
+        ;; What `erase-buffer\' leaves behind at the start of a refresh.
+        (set-window-point window 1)
+        (with-current-buffer status
+          (magit-refresh-buffer)
+          (should (equal (beads-test--section-problems) nil))
+          (should (string-search "Ready (4)"
+                                 (buffer-substring-no-properties
+                                  (point-min) (point-max)))))))))
+
 (ert-deftest beads-test-tree-problems-catch-a-moved-insertion-point ()
   "The invariant is red-capable: it reports a refresh whose point was moved.
 Something else making the status buffer current and moving point - a

@@ -1454,10 +1454,11 @@ unbound, since no prefix has an obvious free key for it yet.
     (defun my/diff-hl-update-if-enabled ()
       "Update diff-hl in buffers that actually use it.
   `diff-hl-update' called unconditionally updates whatever buffer happens to
-  be current, Magit status buffers included.  With `diff-hl-update-async' set
-  to `thread' that spawns a thread which makes the buffer current and walks it
-  with `widen', `goto-char' and `forward-line' while Magit may be rebuilding
-  it -- point is per buffer, not per thread (dot-emacs-l3y)."
+  be current, Magit status buffers among them, where it has nothing to do.
+  With `diff-hl-update-async' set to `thread' that also spawns a thread which
+  makes the buffer current and walks it with `widen', `goto-char' and
+  `forward-line'; point belongs to the buffer rather than the thread, so
+  keeping that off buffers diff-hl does not manage is worth the one check."
       (when (bound-and-true-p diff-hl-mode)
         (diff-hl-update)))
 

@@ -120,9 +120,16 @@ a bug, and the id keeps it stable across refreshes."
 ;;; Formatting
 
 (defun beads--width ()
-  "Return the number of columns available for an issue line."
+  "Return the number of columns available for an issue line.
+Deliberately `window-body-width\' rather than `window-max-chars-per-line\':
+the latter is implemented with `with-selected-window\', and selecting a
+window sets its buffer\'s point to that window\'s point.  Called while
+Magit is rebuilding the buffer -- from a timer, with the status window
+displayed but not selected -- that drags the insertion point back to the
+window\'s stale position, and the rest of the refresh lands at the top of
+the buffer."
   (max 40 (1- (if-let* ((window (get-buffer-window (current-buffer))))
-                  (window-max-chars-per-line window)
+                  (window-body-width window)
                 fill-column))))
 
 (defun beads--priority-face (priority)
