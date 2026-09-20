@@ -1443,7 +1443,7 @@ unbound, since no prefix has an obvious free key for it yet.
     :hook
     (prog-mode . diff-hl-mode)
     (dired-mode . my/diff-hl-dired-mode-unless-tramp)
-    (window-state-change . (lambda () (diff-hl-update)))
+    (window-state-change . my/diff-hl-update-if-enabled)
     :custom
     (diff-hl-flydiff-mode t)
     (diff-hl-flydiff-delay 0)
@@ -1451,6 +1451,16 @@ unbound, since no prefix has an obvious free key for it yet.
 
     ;; (diff-hl-dired-extra-indicators nil))
     :init
+    (defun my/diff-hl-update-if-enabled ()
+      "Update diff-hl in buffers that actually use it.
+  `diff-hl-update' called unconditionally updates whatever buffer happens to
+  be current, Magit status buffers included.  With `diff-hl-update-async' set
+  to `thread' that spawns a thread which makes the buffer current and walks it
+  with `widen', `goto-char' and `forward-line' while Magit may be rebuilding
+  it -- point is per buffer, not per thread (dot-emacs-l3y)."
+      (when (bound-and-true-p diff-hl-mode)
+        (diff-hl-update)))
+
     (defun my/diff-hl-dired-mode-unless-tramp ()
       "Enable diff-hl-dired mode when not accessing through tramp"
       (unless (file-remote-p default-directory)
