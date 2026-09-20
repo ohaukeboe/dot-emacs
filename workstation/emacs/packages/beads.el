@@ -213,7 +213,9 @@ empty: an empty heading is permanent furniture for a passing fact."
                     issues))
            (hidden (- (length issues) (length shown))))
       (magit-insert-section (beads-group-section ident)
-        (magit-insert-heading (format "%s (%d)" heading (length issues)))
+        (magit-insert-heading
+          (propertize (format "%s (%d)" heading (length issues))
+                      'font-lock-face 'magit-section-secondary-heading))
         (mapc #'beads--insert-issue shown)
         (when (> hidden 0)
           (magit-insert-section (beads-more-section hidden)
