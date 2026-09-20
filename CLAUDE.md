@@ -94,3 +94,17 @@ sudo nixos-rebuild switch --flake .#<hostname>  # hosts: x13-laptop, work-laptop
 - Only NixOS is tested. Standalone `homeConfigurations` still exist (build checks, future non-NixOS use) but have no setup docs — don't add any unasked.
 - `nix fmt` runs treefmt across **all** files — may reformat unrelated ones; revert stray churn before committing.
 - `just update-sources` regenerates nvfetcher sources (`nvfetcher.toml` → `_sources/`), consumed via the `pkgs.nvSources` overlay. npm pkgs still need a manual `npmDepsHash` bump.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in **beads (bd)**, a local Dolt-backed tracker — not GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default five-role vocabulary, applied as bd labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
