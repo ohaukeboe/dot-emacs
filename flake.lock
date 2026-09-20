@@ -144,11 +144,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789833172,
-        "narHash": "sha256-Ofr9sCiSLGpSKr/+/b/xf5MeNxZWACsBrEybn4gYtEk=",
+        "lastModified": 1789925264,
+        "narHash": "sha256-GGidf5xePsNVlCncHjM92aKeyHxNUHyXhgNFLgSriXM=",
         "owner": "ohaukeboe",
         "repo": "cosmic-pass",
-        "rev": "dfbc77ebf92bf85e55d65f36cdef4dbd2edad554",
+        "rev": "9b50fee3c5b049aa625e9a1438af8888c0bcec07",
         "type": "github"
       },
       "original": {
