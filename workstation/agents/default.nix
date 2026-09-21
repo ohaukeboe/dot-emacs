@@ -93,6 +93,7 @@ in
   };
 
   imports = [
+    ./auto-mode.nix
     ./beads.nix
     ./caveman.nix
     ./code-review-graph.nix
