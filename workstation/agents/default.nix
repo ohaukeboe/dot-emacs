@@ -134,6 +134,21 @@ in
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
     programs.claude-code.settings.skillListingBudgetFraction = 0.02;
+    # Give the CLAUDE.md git rule teeth. Prompt text only shapes what the
+    # agent tries; an ask rule is enforced by the harness, and still prompts
+    # inside a sandboxed auto-allow session.
+    programs.claude-code.settings.permissions.ask = [
+      "Bash(git commit:*)"
+      "Bash(git push:*)"
+      "Bash(git reset --hard:*)"
+      "Bash(sudo nixos-rebuild:*)"
+
+      "mcp__plugin_hm_github-mcp__create_or_update_file"
+      "mcp__plugin_hm_github-mcp__push_files"
+      "mcp__plugin_hm_github-mcp__delete_file"
+      "mcp__plugin_hm_github-mcp__merge_pull_request"
+      "mcp__plugin_hm_github-mcp__create_pull_request"
+    ];
     # Run tool calls inside the sandbox, and refuse to fall back to an
     # unsandboxed run if it cannot be set up.
     programs.claude-code.settings.sandbox = {
