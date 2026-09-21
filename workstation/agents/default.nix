@@ -133,6 +133,12 @@ in
     programs.claude-code.settings.remoteControlAtStartup = true;
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+    # Pin the executor shell to a store-backed bash. The sandbox resolves its
+    # shell with Node's fs.statSync, and statx(2) on the envfs-provided
+    # /bin/bash returns ENOENT, which aborted every sandboxed Bash call with
+    # "Shell '/bin/bash' not found in PATH". See services.envfs in
+    # common/system/system.nix for the other half of the fix.
+    programs.claude-code.settings.env.CLAUDE_CODE_SHELL = "${pkgs.bash}/bin/bash";
     programs.claude-code.settings.skillListingBudgetFraction = 0.02;
     # Give the CLAUDE.md git rule teeth. Prompt text only shapes what the
     # agent tries; an ask rule is enforced by the harness, and still prompts
