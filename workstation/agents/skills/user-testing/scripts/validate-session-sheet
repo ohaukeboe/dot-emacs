@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+"""Validate a user-testing session sheet.
+
+Checks structure and, above all, that every finding cites evidence that
+actually exists on disk. A citation that does not resolve is the failure mode
+the whole skill is built to prevent.
+
+Usage: validate-session-sheet SHEET.md [SHEET.md ...]
+
+Exit status: 0 if every sheet passes, 1 otherwise.
+"""
+
+import os
+import re
+import sys
+
+REQUIRED_SECTIONS = [
+    "CHARTER",
+    "DRIVER",
+    "PERSONA",
+    "TESTER",
+    "START",
+    "TASK BREAKDOWN",
+    "DATA FILES",
+    "TEST NOTES",
+    "ISSUES",
+    "BUGS",
+    "PATHS NOT TAKEN",
+    "PROOF",
+    "STANDING",
+]
+
+# Sections whose body must not be left as the unfilled template.
+PLACEHOLDER_RE = re.compile(r"<[^<>\n]{2,60}>")
+BACKTICK_RE = re.compile(r"`([^`\n]+)`")
+
+
+def split_sections(text):
+    """Return {SECTION NAME: body} for level-2 headings."""
+    sections, name, buf = {}, None, []
+    for line in text.splitlines():
+        heading = re.match(r"^##\s+(?!#)(.+?)\s*$", line)
+        if heading:
+            if name is not None:
+                sections[name] = "\n".join(buf)
+            name, buf = heading.group(1).strip().upper(), []
+        elif name is not None:
+            buf.append(line)
+    if name is not None:
+        sections[name] = "\n".join(buf)
+    return sections
+
+
+def split_findings(body):
+    """Return [(title, body)] for level-3 headings inside a section."""
+    findings, title, buf = [], None, []
+    for line in body.splitlines():
+        heading = re.match(r"^###\s+(.+?)\s*$", line)
+        if heading:
+            if title is not None:
+                findings.append((title, "\n".join(buf)))
+            title, buf = heading.group(1).strip(), []
+        elif title is not None:
+            buf.append(line)
+    if title is not None:
+        findings.append((title, "\n".join(buf)))
+    return findings
+
+
+def resolve(path, sheet_dir):
+    """Resolve an evidence path relative to the sheet, then to the cwd."""
+    for base in (sheet_dir, os.getcwd()):
+        candidate = os.path.join(base, path) if not os.path.isabs(path) else path
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
+
+def check(sheet):
+    errors, warnings = [], []
+    sheet_dir = os.path.dirname(os.path.abspath(sheet))
+
+    try:
+        with open(sheet, encoding="utf-8") as handle:
+            text = handle.read()
+    except OSError as exc:
+        return [f"cannot read: {exc}"], []
+
+    sections = split_sections(text)
+
+    for name in REQUIRED_SECTIONS:
+        if name not in sections:
+            errors.append(f"missing section: ## {name}")
+        elif not sections[name].strip():
+            errors.append(f"empty section: ## {name}")
+
+    # Unfilled template placeholders anywhere are a hard error: an unedited
+    # sheet must never validate.
+    for name, body in sections.items():
+        for placeholder in PLACEHOLDER_RE.findall(body):
+            errors.append(f"{name}: unfilled placeholder {placeholder}")
+
+    # Every path listed under DATA FILES must exist.
+    listed = set()
+    for path in BACKTICK_RE.findall(sections.get("DATA FILES", "")):
+        listed.add(path)
+        if resolve(path, sheet_dir) is None:
+            errors.append(f"DATA FILES: artifact does not exist: {path}")
+
+    # Every finding must cite evidence, and every cited path must exist.
+    findings = split_findings(sections.get("BUGS", ""))
+    if not findings and sections.get("BUGS", "").strip().lower() not in (
+        "none.",
+        "none",
+    ):
+        warnings.append("BUGS: no findings; write 'None.' if that is intended")
+
+    for title, body in findings:
+        evidence_line = re.search(r"^\s*[-*]?\s*evidence:\s*(.+)$", body, re.MULTILINE)
+        if not evidence_line:
+            errors.append(f"finding '{title}': no evidence: line")
+            continue
+
+        paths = BACKTICK_RE.findall(evidence_line.group(1))
+        if not paths:
+            errors.append(
+                f"finding '{title}': evidence: line cites no path in backticks"
+            )
+        for path in paths:
+            if resolve(path, sheet_dir) is None:
+                errors.append(f"finding '{title}': evidence does not exist: {path}")
+            elif path not in listed:
+                warnings.append(f"finding '{title}': {path} not listed in DATA FILES")
+
+        if not re.search(r"^\s*[-*]?\s*not-execution-error:\s*\S", body, re.MULTILINE):
+            errors.append(f"finding '{title}': no not-execution-error: line")
+
+        if not re.search(r"^\s*[-*]?\s*severity:\s*[0-4]\b", body, re.MULTILINE):
+            kind = re.search(r"^\s*[-*]?\s*kind:\s*(\S+)", body, re.MULTILINE)
+            if kind is None or kind.group(1).lower() != "functional":
+                errors.append(f"finding '{title}': no severity: 0-4 line")
+
+        if re.search(r"\bwait budget\b", body, re.IGNORECASE) is None and re.search(
+            r"no (observable )?(change|response)", body, re.IGNORECASE
+        ):
+            errors.append(
+                f"finding '{title}': 'no response' finding without a wait budget"
+            )
+
+    # Behavioral claims are out of scope for this skill, everywhere in the sheet.
+    for match in re.finditer(
+        r"^.*\b(users would|most (users|people) would|\d+% of users)\b.*$",
+        text,
+        re.IGNORECASE | re.MULTILINE,
+    ):
+        errors.append(f"behavioral claim (not supported by this method): {match.group(0).strip()}")
+
+    return errors, warnings
+
+
+def main(argv):
+    if len(argv) < 2:
+        print(__doc__.strip(), file=sys.stderr)
+        return 2
+
+    failed = False
+    for sheet in argv[1:]:
+        errors, warnings = check(sheet)
+        for warning in warnings:
+            print(f"{sheet}: warning: {warning}")
+        for error in errors:
+            print(f"{sheet}: error: {error}", file=sys.stderr)
+        if errors:
+            failed = True
+            print(f"{sheet}: FAIL ({len(errors)} errors)", file=sys.stderr)
+        else:
+            print(f"{sheet}: OK")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
