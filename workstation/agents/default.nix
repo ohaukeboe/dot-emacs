@@ -121,6 +121,11 @@ in
         claude-agent-acp
         aider-chat-full # another AI thingy
 
+        # Claude Code sandbox runtime: bubblewrap builds the namespace jail,
+        # socat proxies the network access allowed through it.
+        (lib.optional isLinux bubblewrap)
+        socat
+
         (collect "packages")
       ];
 
@@ -129,6 +134,12 @@ in
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
     programs.claude-code.settings.skillListingBudgetFraction = 0.02;
+    # Run tool calls inside the sandbox, and refuse to fall back to an
+    # unsandboxed run if it cannot be set up.
+    programs.claude-code.settings.sandbox = {
+      enabled = true;
+      failIfUnavailable = true;
+    };
     # Absorbed from former security-guidance.nix:
     programs.claude-code.settings.enabledPlugins = {
       "security-guidance@claude-plugins-official" = true;
