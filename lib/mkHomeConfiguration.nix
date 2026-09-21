@@ -19,6 +19,8 @@ let
     };
     overlays = [
       emacs-overlay.overlay
+      # Fix sops.el hanging on save (see the file for the why).
+      (import ../common/emacs-sops-fix-overlay.nix)
       # Only add nixGL overlay for Linux. Inline nixgl.overlay logic to avoid
       # final.system (deprecated; nixgl upstream uses it in their overlay).
       (

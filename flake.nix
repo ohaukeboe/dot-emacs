@@ -282,6 +282,17 @@
           test-disk-layout = nixpkgsFor.${system}.callPackage ./tests/disk-layout.nix {
             diskoLib = inputs.disko.lib;
           };
+          # Regression test for the sops.el save hang; see the file and
+          # common/emacs-sops-fix-overlay.nix.
+          #   nix build .#test-emacs-sops-save -L
+          # Needs the overlay, which lives outside nixpkgsFor.
+          test-emacs-sops-save =
+            (import nixpkgs {
+              inherit system;
+              overlays = [ (import ./common/emacs-sops-fix-overlay.nix) ];
+            }).callPackage
+              ./tests/emacs-sops-save.nix
+              { };
           installer = installerFor system;
         }
       );
