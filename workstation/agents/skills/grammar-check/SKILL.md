@@ -1,5 +1,5 @@
 ---
-name: grammar
+name: grammar-check
 description: Automatically check and correct user's grammar, spelling, and clarity at the end of every response. Detects the language the user writes in and provides corrections in that language. Use whenever the user writes a message to provide corrections and explanations that help them learn. This skill enhances communication by ensuring responses are clear, natural, and educational while addressing the original request.
 disable-model-invocation: true
 ---

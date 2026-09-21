@@ -186,11 +186,19 @@ let
       mattpocockSkills
       llmSkillsSubset
       understandAnythingSkills
-      "${inputs.anthropic-cybersecurity-skills}/skills"
+      # Bulk skill packs disabled: together ~1101 skills, all model-invocable,
+      # none relevant to this NixOS/Emacs workflow. They blow the skill-listing
+      # budget (skillListingBudgetFraction 0.02 → listing truncated,
+      # skills_truncated), hiding the curated dev skills above. Re-enable a line
+      # to bring a pack back; CLAUDE_SKILL_FILTER does NOT exist in claude-code
+      # 2.1.270, so there is no runtime filter — gate at build time here instead.
+      #
+      # anthropic-cybersecurity-skills — 818 skills (offensive-sec / DFIR).
+      # "${inputs.anthropic-cybersecurity-skills}/skills"
+      #
       # privacy-data-protection-skills — 282 skills via privacy-skills-complete
       # plugin (superset of all 20 individual plugins in the repo).
-      # All are auto-invoked; set CLAUDE_SKILL_FILTER to limit if needed.
-      "${inputs.privacy-data-protection-skills}/plugins/privacy-skills-complete/skills"
+      # "${inputs.privacy-data-protection-skills}/plugins/privacy-skills-complete/skills"
     ]
     ++ config.agents.extraSkillPaths;
   };
