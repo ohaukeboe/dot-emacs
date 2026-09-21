@@ -160,6 +160,22 @@ in
     programs.claude-code.settings.sandbox = {
       enabled = true;
       failIfUnavailable = true;
+      # The default seccomp filter rejects socket(AF_UNIX, ...) outright, so
+      # the nix client cannot reach /nix/var/nix/daemon-socket/socket and every
+      # build, eval or flake fetch dies with "cannot create Unix domain socket:
+      # Operation not permitted". On Linux allowUnixSockets (a path list) is
+      # ignored -- seccomp cannot filter by path -- so the all-or-nothing knob
+      # is the only one that works. Same block breaks ssh-agent, so signed
+      # commits fail with "Error connecting to agent: Operation not permitted"
+      # (gpg.format = ssh, commit.gpgsign = true), and it stops a nested Claude
+      # Code session binding its own sandbox mux socket.
+      network.allowAllUnixSockets = true;
+      filesystem.allowWrite = [
+        # nix keeps its fetcher/eval SQLite caches here; without write access
+        # every command fails on "unable to open database file".
+        "${config.home.homeDirectory}/.cache/nix"
+        "${config.home.homeDirectory}/.local/state/nix"
+      ];
     };
     # Absorbed from former security-guidance.nix:
     programs.claude-code.settings.enabledPlugins = {
