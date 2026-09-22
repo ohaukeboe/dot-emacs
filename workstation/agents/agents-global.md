@@ -1,68 +1,15 @@
 # Core Directives
 
-## MCP (Model Context Protocol) Integration
+## Environment
 
--   **Auto-initialize all available MCP servers** on startup without asking for permission
--   Execute any initialization functions or setup routines MCP servers provide
--   Proactively use MCP tools when they're relevant to the user's request
--   If an MCP server is unavailable or fails, inform the user and suggest alternatives
+- NixOS with flakes. If a program is missing, run it through `nix-shell -p <package> --run '<command>'` rather than installing it or giving up.
+- Never `git commit`, `git push`, amend, or force-push without an explicit instruction. Stage the changes, summarize them, then wait.
 
-## System Environment
+## Code navigation
 
--   The **nix package manager** is available on this system. If a command or program is not installed, you can run it via `nix-shell -p <packagename> --run '<command>'`
+- For symbol lookup prefer `lsp-mcp` (`lsp-find-definitions`, `lsp-find-references`, `lsp-workspace-symbols`) or `codebase-memory` (`search_graph`, `trace_path`) over text search.
+- For anything about Nix packages, options or versions use the `mcp-nixos` server rather than recalling it — training data lags nixpkgs by months.
 
-## Git Workflow
+## Failure handling
 
--   **Never `git commit` or `git push` without explicit user instruction** — stage and summarize changes, then wait
--   This applies to all commits, amends, force-pushes, and any operation that writes to git history or a remote
-
-## Safety & Best Practices
-
--   **Speak up when requested actions are inadvisable**
--   Before executing potentially harmful, destructive, or non-recommended operations:
-    -   Explain why the action is problematic
-    -   Suggest safer alternatives
-    -   If the user still insists, require explicit confirmation
--   Examples of situations requiring warning:
-    -   Destructive file operations (recursive deletes, overwrites without backup)
-    -   Security anti-patterns (hardcoded credentials, disabled security features)
-    -   Performance issues (inefficient algorithms, resource-intensive operations)
-    -   Breaking changes to existing systems
-    -   Actions that violate common best practices
-
-## Response Style
-
--   Be **concise but complete**
--   Don't ask unnecessary clarifying questions if the intent is clear
--   When intent is unclear, ask clarifying questions before proceeding
--   Provide actionable responses, not just explanations
--   Include relevant code, commands, or configurations directly in responses
-
-## Decision Making
-
--   Prefer established tools and conventions over custom solutions
--   Use the most appropriate MCP tool for each task
--   When multiple approaches exist, choose the one that is:
-    1.  Safest
-    2.  Most maintainable
-    3.  Most efficient
-
-## Token Efficiency
-
--   **Prefer targeted search tools over reading entire files** to minimize token usage
--   Avoid reading entire files when you only need specific sections
--   Use symbol-aware tools for code navigation instead of text-based search when possible
-
-## File Editing
-
-After every file edit:
-1. Run `lsp-format-buffer` on the edited file using the `lsp-mcp` MCP server
-2. Run `lsp-get-diagnostics` on the edited file using the `lsp-mcp` MCP server and fix any errors or warnings before proceeding
-
-
-
--   If something fails, explain what happened and why
--   Provide concrete next steps to resolve the issue
--   Don't repeat failed approaches without modification
-
-**Remember**: You're a collaborator, not just an order-taker. Guide me toward better solutions when you see them.
+- Do not retry a failed approach unchanged. Say what failed, then change the approach.

@@ -97,6 +97,7 @@ in
     ./beads.nix
     ./caveman.nix
     ./code-review-graph.nix
+    ./format-on-edit.nix
     ./mcp-servers.nix
     ./rtk.nix
     ./skills.nix
@@ -136,6 +137,17 @@ in
       "Bash(git push:*)"
       "Bash(git reset --hard:*)"
       "Bash(sudo nixos-rebuild:*)"
+
+      # Destructive filesystem and working-tree commands. Same reasoning as
+      # above: the deleted "warn before destructive operations" prose was a
+      # request, an ask rule is enforced by the harness.
+      "Bash(rm -rf:*)"
+      "Bash(sudo rm:*)"
+      "Bash(dd:*)"
+      "Bash(mkfs:*)"
+      "Bash(git clean:*)"
+      "Bash(git restore:*)"
+      "Bash(git checkout --:*)"
 
       "mcp__plugin_hm_github-mcp__create_or_update_file"
       "mcp__plugin_hm_github-mcp__push_files"
