@@ -77,6 +77,7 @@ in
     "authinfo/imap_knowit" = { };
     "authinfo/github_pat" = { };
     "authinfo/kagi" = { };
+    "authinfo/context7" = { };
   };
 
   sops.templates."nix-github-token" = {
@@ -107,6 +108,7 @@ in
       }"
       machine githubpat password ${config.sops.placeholder."authinfo/github_pat"}
       machine kagi.com password ${config.sops.placeholder."authinfo/kagi"}
+      machine context7.com password ${config.sops.placeholder."authinfo/context7"}
     '';
   };
 }

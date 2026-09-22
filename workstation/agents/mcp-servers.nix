@@ -62,6 +62,7 @@ in
     mobile-mcp
     pkgs.mcp-nixos
     pkgs.github-mcp-server
+    pkgs.context7-mcp
   ];
 
   programs.mcp.servers = {
@@ -97,6 +98,14 @@ in
     "mobile-mcp" = mkMcpServer {
       command = "mcp-server-mobile";
       shrink = true;
+    };
+    "context7" = mkMcpServer {
+      command = "context7-mcp";
+      args = [
+        "--transport"
+        "stdio"
+      ];
+      env.CONTEXT7_API_KEY.file = config.sops.secrets."authinfo/context7".path;
     };
     "kagi" = mkMcpServer {
       command = "${kagimcp}/bin/kagimcp";
