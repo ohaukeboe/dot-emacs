@@ -198,6 +198,16 @@ in
       emacs-lsp-booster
       trash-cli
       yaml-language-server
+
+      ### spec-driven development ###
+      # Neither ships global skills. spec-kit's workflow commands are templates
+      # that `specify init --ai claude` renders into a project, together with
+      # the `.specify/` scripts they call; openspec scaffolds per project the
+      # same way. So only the CLIs are installed here -- run `specify init` or
+      # `openspec init` inside each project.
+      spec-kit
+      openspec
+
       ### just ###
       just
       just-lsp
