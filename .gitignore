@@ -62,3 +62,30 @@ var/
 
 # migrated to sops (workstation/sops.nix) — do not re-add plaintext/git-crypt copy
 /secrets/.authinfo
+
+# Claude Code sandbox mask files. The bubblewrap sandbox protects shell, git
+# and editor config by creating the path if missing and bind-mounting it
+# read-only; a killed session leaves the 0-byte stub behind. None of these are
+# ever tracked here (MCP servers are declared in workstation/agents/mcp-servers.nix,
+# and flake inputs replace submodules), so ignoring them is safe. If one is ever
+# wanted for real, `git add -f <path>`. Clean up stubs with `claude doctor`'s
+# remedy while no session is running in this project.
+/.bash_profile
+/.bashrc
+/.gitconfig
+/.gitmodules
+/.idea
+/.mcp.json
+/.profile
+/.ripgreprc
+/.vscode
+/.zprofile
+/.zshrc
+/.claude/agents
+/.claude/commands
+/.claude/hooks
+/.claude/launch.json
+/.claude/loop.md
+/.claude/output-styles
+/.claude/routines
+/.claude/workflows
