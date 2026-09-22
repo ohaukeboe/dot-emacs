@@ -148,16 +148,7 @@
   };
 
   # Improve compatibility with programs/scripts not made for nix
-  services.envfs = {
-    enable = true;
-    # envfs resolves most /bin entries dynamically from the caller's PATH, and
-    # those entries answer execve, access(2) and newfstatat(2) but return
-    # ENOENT to statx(2). Anything that probes /bin/bash with statx therefore
-    # concludes it does not exist — Node's fs.statSync does, which is why the
-    # Claude Code bubblewrap sandbox refused to start. Entries in the fallback
-    # path are real symlinks, so statx works on them.
-    extraFallbackPathCommands = "ln -s ${pkgs.bash}/bin/bash $out/bash";
-  };
+  services.envfs.enable = true;
   programs.nix-ld.enable = true;
 
   services.flatpak.enable = true;

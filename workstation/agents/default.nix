@@ -120,11 +120,6 @@ in
         claude-agent-acp
         aider-chat-full # another AI thingy
 
-        # Claude Code sandbox runtime: bubblewrap builds the namespace jail,
-        # socat proxies the network access allowed through it.
-        (lib.optional isLinux bubblewrap)
-        socat
-
         (collect "packages")
       ];
 
@@ -132,12 +127,6 @@ in
     programs.claude-code.settings.remoteControlAtStartup = true;
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
-    # Pin the executor shell to a store-backed bash. The sandbox resolves its
-    # shell with Node's fs.statSync, and statx(2) on the envfs-provided
-    # /bin/bash returns ENOENT, which aborted every sandboxed Bash call with
-    # "Shell '/bin/bash' not found in PATH". See services.envfs in
-    # common/system/system.nix for the other half of the fix.
-    programs.claude-code.settings.env.CLAUDE_CODE_SHELL = "${pkgs.bash}/bin/bash";
     programs.claude-code.settings.skillListingBudgetFraction = 0.02;
     # Give the CLAUDE.md git rule teeth. Prompt text only shapes what the
     # agent tries; an ask rule is enforced by the harness, and still prompts
@@ -154,28 +143,10 @@ in
       "mcp__plugin_hm_github-mcp__merge_pull_request"
       "mcp__plugin_hm_github-mcp__create_pull_request"
     ];
-    # Run tool calls inside the sandbox, and refuse to fall back to an
-    # unsandboxed run if it cannot be set up.
-    programs.claude-code.settings.sandbox = {
-      enabled = true;
-      failIfUnavailable = true;
-      # The default seccomp filter rejects socket(AF_UNIX, ...) outright, so
-      # the nix client cannot reach /nix/var/nix/daemon-socket/socket and every
-      # build, eval or flake fetch dies with "cannot create Unix domain socket:
-      # Operation not permitted". On Linux allowUnixSockets (a path list) is
-      # ignored -- seccomp cannot filter by path -- so the all-or-nothing knob
-      # is the only one that works. Same block breaks ssh-agent, so signed
-      # commits fail with "Error connecting to agent: Operation not permitted"
-      # (gpg.format = ssh, commit.gpgsign = true), and it stops a nested Claude
-      # Code session binding its own sandbox mux socket.
-      network.allowAllUnixSockets = true;
-      filesystem.allowWrite = [
-        # nix keeps its fetcher/eval SQLite caches here; without write access
-        # every command fails on "unable to open database file".
-        "${config.home.homeDirectory}/.cache/nix"
-        "${config.home.homeDirectory}/.local/state/nix"
-      ];
-    };
+    # Keep the Claude Code sandbox off. Its bubblewrap/seccomp jail broke nix
+    # daemon access, ssh-agent signing and nested sessions more often than it
+    # helped.
+    programs.claude-code.settings.sandbox.enabled = false;
     # Absorbed from former security-guidance.nix:
     programs.claude-code.settings.enabledPlugins = {
       "security-guidance@claude-plugins-official" = true;
