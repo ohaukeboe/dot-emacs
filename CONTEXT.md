@@ -44,6 +44,37 @@ _Avoid_: Claude frame, Claude popup
 The set of Claude side windows visible in the current tab. Hiding the panel
 remembers the set so a project's members can be restored later.
 
+### Agents / command rewriting
+
+**Rewriter chain**:
+The ordered set of stages that rewrite a Bash command before an agent runs
+it, declared in `agents.bashRewriters` and run by a single `PreToolUse` hook.
+One hook, because matching hooks run in parallel and the winning rewrite would
+otherwise be undefined. See `docs/adr/0003-agent-bash-rewriter-chain.md`.
+_Avoid_: hook chain, rewrite pipeline
+
+**Rewriter stage**:
+One executable in that chain, identified by its `order`. Reads the hook
+payload on stdin, prints either nothing (no change) or an `updatedInput`.
+`rtk` is order 50, the process cap order 90.
+_Avoid_: rewriter hook, filter
+
+**Cap policy**:
+The per-machine limits the process cap enforces: a foreground allowance, a
+longer background allowance, a grace period between the stop request and the
+kill, and the token that opts a command out.
+
+**Capped command**:
+One Bash tool call and the process tree it creates, running inside a transient
+systemd scope with a runtime limit. Terminated as a whole when the allowance
+runs out, including children re-parented away from a dead launcher.
+_Avoid_: wrapped command, scoped command
+
+**Kill record**:
+The journal entry a capped termination leaves behind — command text, time and
+the allowance that applied, all tagged `claude-cap`. Read them with
+`journalctl --user -g claude-cap`. The only durable trace; there is no log file.
+
 ### Emacs / beads
 
 **Bead**:

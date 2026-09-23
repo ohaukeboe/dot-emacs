@@ -320,6 +320,21 @@ Two tiers, both encrypted to the same age recipients listed in `.sops.yaml`:
 - Always run `nix fmt` before committing Nix files
 - When editing Emacs config, edit `config.org`, not generated `.el` files
 
+## Shell commands are capped
+
+Every command you run through the Bash tool runs inside a transient systemd
+scope with a runtime limit: 1 hour in the foreground, 4 hours for
+`run_in_background`. At the limit the whole process tree gets a `SIGTERM`, then
+a `SIGKILL` a few seconds later. A capped command exits 143 or 137 and prints a
+`[process-cap]` line on stderr.
+
+- Prefix a command with `nocap ` to exempt it, for a daemon you mean to keep.
+- Read kills back with `journalctl --user -g claude-cap`.
+- A module that wants to rewrite Bash commands registers a stage in
+  `agents.bashRewriters` (`workstation/agents/default.nix`) — never its own
+  `PreToolUse` hook, because matching hooks run in parallel and the winning
+  rewrite would be undefined. See `docs/adr/0003-agent-bash-rewriter-chain.md`.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker
 
