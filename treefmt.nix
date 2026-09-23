@@ -9,6 +9,9 @@
     # [profiles.default] ends up empty at the top and the example declaration
     # below it lands under [providers].
     "workstation/emacs/packages/nix-init-templates/*.toml"
+    # Vendored by the Specify CLI and rewritten on every refresh; formatting
+    # them here only creates churn on the next `specify` update.
+    ".specify/scripts/bash/*.sh"
   ];
 
   programs.nixfmt.enable = true;
