@@ -31,6 +31,11 @@ in
     services.displayManager.cosmic-greeter.enable = true;
     services.desktopManager.cosmic.enable = true;
     services.system76-scheduler.enable = true;
+    # Backend for COSMIC's power applet. Without it the applet has no way to
+    # switch profiles, so on ThinkPads the firmware's DYTC thermal management
+    # (/sys/firmware/acpi/platform_profile) stays pinned to "balanced" and
+    # never drops the fan curve on battery.
+    services.power-profiles-daemon.enable = true;
     services.gnome.gnome-keyring.enable = true;
     # gnome-keyring pulls in gcr-ssh-agent by default, whose socket unit runs
     # `systemctl --user set-environment SSH_AUTH_SOCK=%t/gcr/ssh` and so

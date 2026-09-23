@@ -18,12 +18,18 @@
     # of just the bare essentials.
     # powerManagement.enable = true;
 
-    # powerManagement.finegrained = true;
+    # Required for the dGPU to actually reach D3cold while offloading; without
+    # it offload only stops the card rendering the desktop, it stays powered.
+    powerManagement.finegrained = true;
+    # Offload keeps the dGPU runtime-suspended until an application asks for it
+    # (run those with `nvidia-offload <cmd>`). reverseSync instead had the dGPU
+    # render the whole desktop, which pinned it at ~12.7 W and P3 around the
+    # clock and kept the fan audible at idle.
     prime = {
-      # offload.enable = true;
-      # offload.enableOffloadCmd = true;
+      offload.enable = true;
+      offload.enableOffloadCmd = true;
       # sync.enable = true;
-      reverseSync.enable = true;
+      # reverseSync.enable = true;
 
       intelBusId = "PCI:0:2:0";
       nvidiaBusId = "PCI:1:0:0";
