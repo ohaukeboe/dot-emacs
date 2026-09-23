@@ -182,6 +182,7 @@ in
       ### misc ###
       ripgrep
       fd
+      jq # json processor
       delta # syntax highlighted diffs (magit-delta)
       difftastic # structural diffs (difftastic.el)
       dragon-drop # drag-andn-drop from terminal
