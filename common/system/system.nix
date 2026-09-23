@@ -255,6 +255,17 @@
     "L /etc/nixos - - - - ${config.system.flakePath}"
   ];
 
+  # A freshly installed machine has an empty ~/.ssh/known_hosts, so the first
+  # push over SSH fails with "Host key verification failed" until someone
+  # accepts the key by hand. Declaring it writes /etc/ssh/ssh_known_hosts, the
+  # global known-hosts file, which leaves ~/.ssh/known_hosts mutable and lets
+  # finish-install switch origin to SSH unattended. Key taken from
+  # https://api.github.com/meta (ssh_keys).
+  programs.ssh.knownHosts."github.com" = {
+    extraHostNames = [ "ssh.github.com" ];
+    publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl";
+  };
+
   programs.fish.enable = true;
   users.defaultUserShell = pkgs.fish;
 
