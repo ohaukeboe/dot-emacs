@@ -1,6 +1,6 @@
 # ADR 0002 — Project-scoped age key for scaffolded project secrets
 
-**Status:** Accepted (2026-09-16)
+**Status:** Accepted (2026-09-16), implemented 2026-09-23
 
 ## Context
 
@@ -40,8 +40,13 @@ separate from both the shared host key and the hardware keys.
    where it lives, stays a deliberate act.
 3. The private half is distributed the way the existing keys are: a `projects`
    entry in `ageKeyFiles`, stored in `sops/home/secrets.yaml`, rendered to
-   `~/.config/sops/age/projects.txt`. Tracked as `dot-emacs-jtm`; until it
-   lands, the recipient is set by hand.
+   `~/.config/sops/age/projects.txt`.
+4. sops is told about it through `SOPS_AGE_KEY_CMD`, a second identity source
+   alongside the `SOPS_AGE_KEY_FILE` that names the host key. sops unions the
+   identities it finds across its sources, so a project decrypts with the
+   projects key without this repository losing the host key. A justfile
+   variable would not reach devenv, which resolves secretspec while direnv is
+   still entering the directory.
 
 ## Consequences
 
@@ -57,8 +62,9 @@ separate from both the shared host key and the hardware keys.
 - (−) Rotation is genuinely expensive once projects exist: every scaffolded
   repository must be re-encrypted, and this repository does not know which
   those are.
-- (−) Until `dot-emacs-jtm` lands, `nix-init-sops-recipient` is set by hand and
-  a fresh machine cannot decrypt project secrets.
+- (−) Both keys are now ambient for every sops invocation, this repository's
+  included. The boundary is what a project repo *carries* and what rotates
+  together, not which identity a given process could reach.
 
 ## Alternatives rejected
 

@@ -3951,10 +3951,12 @@ reports what is left to do; generating an age key, and choosing where it
 lives, stays a deliberate act.  That recipient is deliberately not the shared
 host key -- see =docs/adr/0002-project-scoped-age-key.md=.
 
-=nix-init-sops-recipient= is still unset, so the two encrypted backends
-currently scaffold a =.sops.yaml= carrying a placeholder and encrypt nothing
-until it is filled in.  Setting it, and provisioning the matching private key
-on every machine, is =dot-emacs-jtm=.
+The private half of that recipient is a sops secret like any other
+(=workstation/sops.nix=), rendered to =~/.config/sops/age/projects.txt= and
+reached through =SOPS_AGE_KEY_CMD=.  sops unions the identities it finds
+across its sources, so a scaffolded project decrypts with the projects key
+while this repository still decrypts with the host key, and a freshly
+provisioned machine needs no extra step.
 
 Everything lives under the =C-c v= prefix: =n= new environment, =e= edit,
 =k= add secrets, =r= run with secrets, then =u= up, =d= down, =s= status,
@@ -3962,6 +3964,12 @@ Everything lives under the =C-c v= prefix: =n= new environment, =e= edit,
 
 #+begin_src elisp
   (use-package nix-init
+    :custom
+    ;; Projects-scoped age key -- deliberately not the shared host key. The
+    ;; private half lands as ~/.config/sops/age/projects.txt; see
+    ;; docs/adr/0002-project-scoped-age-key.md.
+    (nix-init-sops-recipient
+     "age1ayjhzr43v5srdntf7wl0zzxjsru9rf5xy9an07v0jck6ff6kp4ps8jfztn")
     :bind
     ("C-c v n" . nix-init-project)
     ("C-c v e" . nix-init-edit)

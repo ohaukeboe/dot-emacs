@@ -18,6 +18,12 @@ let
     tpm = "${ageKeyDir}/tpm-identity.txt";
     yubikey-wallet = "${ageKeyDir}/yubikey-wallet.txt";
     yubikey-home = "${ageKeyDir}/yubikey-home.txt";
+    # Scoped to projects scaffolded by nix-init, deliberately not the shared
+    # host key: a project repo should never carry the key that provisions
+    # machines (docs/adr/0002-project-scoped-age-key.md). Not a `sops.ageKey`
+    # choice -- it is a recipient of nothing under sops/, only of the secrets
+    # files scaffolded projects commit. Rendered below, not bootstrapped.
+    projects = "${ageKeyDir}/projects.txt";
   };
 in
 {
@@ -55,9 +61,26 @@ in
   # CLI at whatever sops-nix itself decrypts with. The shared host key is a
   # recipient of everything under sops/, so one identity is enough.
   home.sessionVariables.SOPS_AGE_KEY_FILE = config.sops.age.keyFile;
+  # A second identity source, for the projects key. sops unions everything it
+  # finds across SOPS_AGE_KEY_FILE, SOPS_AGE_KEY_CMD and the default keys.txt,
+  # so this hands a scaffolded project its own key without the variable above
+  # losing the host key that decrypts this repository -- and it reaches devenv,
+  # which resolves secretspec while direnv is still entering the directory and
+  # so cannot be given the identity by a justfile. A command that fails is not
+  # fatal to sops, so this stays inert until activation renders the file.
+  home.sessionVariables.SOPS_AGE_KEY_CMD = "cat ${ageKeyFiles.projects}";
   sops.defaultSopsFile = ../sops/home/secrets.yaml;
 
   sops.secrets = {
+    # The projects age identity. `path` puts it where a scaffolded project's
+    # secrets.justfile points SOPS_AGE_KEY_FILE, so a fresh clone on any
+    # machine decrypts with no manual key installation. Unlike ssh/main this
+    # wants a stable well-known path: the projects that reference it live
+    # outside this repository and cannot be told where sops-nix happened to
+    # put it.
+    "age/projects" = {
+      path = ageKeyFiles.projects;
+    };
     # Main SSH private key. Left at the default path
     # (${config.xdg.configHome}/sops-nix/secrets/ssh/main, a symlink into the
     # per-user runtime tmpfs) and the default mode 0400, which already passes
