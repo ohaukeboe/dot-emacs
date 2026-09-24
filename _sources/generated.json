@@ -44,11 +44,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-X3U7HL9XdcjkNxE1Is0QwfDO/RZSHgVyVA1XhgVWwTM=",
+            "sha256": "sha256-ASy89ugy1PZwna0MIde+8XCJ6Ure6c8zF50V6gqa3ys=",
             "type": "url",
-            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.9.0.tgz"
+            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.10.1.tgz"
         },
-        "version": "1.9.0"
+        "version": "1.10.1"
     },
     "code-review-graph": {
         "cargoLock": null,
@@ -64,12 +64,12 @@
             "name": null,
             "owner": "tirth8205",
             "repo": "code-review-graph",
-            "rev": "v2.3.8",
-            "sha256": "sha256-NhssTYN0McUEpxAlb4bWDrdlCA6jFmXj9Cn9IxdkcUg=",
+            "rev": "v2.3.9",
+            "sha256": "sha256-UiQg1ygebw6PePJVHNNOUsL6buw1/oMzX34jloui9Bg=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v2.3.8"
+        "version": "v2.3.9"
     },
     "lsp-ltex-plus": {
         "cargoLock": null,
@@ -101,11 +101,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-aAMy0WTEP+Yh4y7GdSSnasCA0KevVc3363BNFb94JBk=",
+            "sha256": "sha256-APDeIp/oI4VGG61GZRqGOnFuNd4Ok3uSK/QCQWPVzfI=",
             "type": "url",
-            "url": "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.4.tgz"
+            "url": "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.5.tgz"
         },
-        "version": "1.0.4"
+        "version": "1.0.5"
     },
     "pgmacs": {
         "cargoLock": null,

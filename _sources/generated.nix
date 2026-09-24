@@ -27,21 +27,21 @@
   };
   chrome-devtools-mcp = {
     pname = "chrome-devtools-mcp";
-    version = "1.9.0";
+    version = "1.10.1";
     src = fetchurl {
-      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.9.0.tgz";
-      sha256 = "sha256-X3U7HL9XdcjkNxE1Is0QwfDO/RZSHgVyVA1XhgVWwTM=";
+      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.10.1.tgz";
+      sha256 = "sha256-ASy89ugy1PZwna0MIde+8XCJ6Ure6c8zF50V6gqa3ys=";
     };
   };
   code-review-graph = {
     pname = "code-review-graph";
-    version = "v2.3.8";
+    version = "v2.3.9";
     src = fetchFromGitHub {
       owner = "tirth8205";
       repo = "code-review-graph";
-      rev = "v2.3.8";
+      rev = "v2.3.9";
       fetchSubmodules = false;
-      sha256 = "sha256-NhssTYN0McUEpxAlb4bWDrdlCA6jFmXj9Cn9IxdkcUg=";
+      sha256 = "sha256-UiQg1ygebw6PePJVHNNOUsL6buw1/oMzX34jloui9Bg=";
     };
   };
   lsp-ltex-plus = {
@@ -57,10 +57,10 @@
   };
   mobile-mcp = {
     pname = "mobile-mcp";
-    version = "1.0.4";
+    version = "1.0.5";
     src = fetchurl {
-      url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.4.tgz";
-      sha256 = "sha256-aAMy0WTEP+Yh4y7GdSSnasCA0KevVc3363BNFb94JBk=";
+      url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.5.tgz";
+      sha256 = "sha256-APDeIp/oI4VGG61GZRqGOnFuNd4Ok3uSK/QCQWPVzfI=";
     };
   };
   pgmacs = {

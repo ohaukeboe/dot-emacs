@@ -6,7 +6,7 @@ buildNpmPackage {
   src = nvSources.chrome-devtools-mcp.src;
   sourceRoot = "package";
   npmDepsFetcherVersion = 2;
-  npmDepsHash = "sha256-V/uc+yIHG4XmkvcU+h+VsMQsE70/SXIgIZBktpMkxaY=";
+  npmDepsHash = "sha256-m6/ckl1CZnLFmrvO13lpaRQIWR1/BTucWfnnHjZbyFY=";
   npmFlags = [
     "--omit=dev"
     "--ignore-scripts"
