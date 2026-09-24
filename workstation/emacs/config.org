@@ -935,15 +935,25 @@ mtimes), so the full refresh only runs when there is something new to show.
     (my/magit-auto-refresh-mode 1))
 #+end_src
 
-Syntax highlighted diffs in magit through [[https://github.com/dandavison/delta][delta]]. While enabled, delta does
-its own word-level highlighting, so =magit-delta= turns off
-=magit-diff-refine-hunk=.
+Syntax highlighted diffs. Magit 4.6 grew =magit-diff-fontify-hunk=, which
+replaces the old =magit-delta= package: instead of piping the buffer through
+the =delta= pager and translating ANSI escapes into anonymous 24-bit face
+plists, it reuses stock =diff-mode='s =diff-syntax-fontify-props= in process.
+That path opens the real blob, picks the major mode with =set-auto-mode= and
+runs =font-lock-ensure=, so it picks up tree-sitter fontification for free
+wherever the mode for that language is a =*-ts-mode=.
+
+The value =t= fontifies only the section at point. Upstream still does this
+work synchronously -- =all= is noticeably slow on large diffs -- and has
+deferred asynchronous fontification to a later release.
 
 #+begin_src elisp
-  (use-package magit-delta
-    :ensure t
-    :after magit
-    :hook (magit-mode . magit-delta-mode))
+  (use-package magit
+    :defer t
+    :custom
+    (magit-diff-specify-hunk-foreground nil)
+    (magit-diff-use-indicator-faces t)
+    (magit-diff-fontify-hunk t))
 #+end_src
 
 Structural diffs with [[https://difftastic.wilfred.me.uk/][difftastic]], shown side by side when the window is wide
