@@ -1,6 +1,6 @@
 # Phase 0 Research: Beads Issue Relations in Magit
 
-**Date**: 2026-09-23 · **Feature**: `specs/001-beads-issue-relations/`
+**Date**: 2026-09-23 · **Feature**: `specs/002-beads-issue-relations/`
 
 All timings were measured in this worktree against the real tracker
 (79 issues, 7 open, Dolt-backed) with `/usr/bin/env time -f %e`, three runs each;

@@ -1,6 +1,6 @@
 # Phase 1 Data Model: Beads Issue Relations in Magit
 
-**Date**: 2026-09-23 · **Feature**: `specs/001-beads-issue-relations/`
+**Date**: 2026-09-23 · **Feature**: `specs/002-beads-issue-relations/`
 
 Nothing here is stored. Every structure below is built from `bd` output during a
 refresh and discarded on the next one; the tracker remains the only durable

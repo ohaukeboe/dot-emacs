@@ -1,6 +1,6 @@
 # Contract: what this feature exposes to the user
 
-**Feature**: `specs/001-beads-issue-relations/` · **Date**: 2026-09-23
+**Feature**: `specs/002-beads-issue-relations/` · **Date**: 2026-09-23
 
 The public surface of `beads.el`: interactive commands, the transient, faces and
 customization. Everything else in the file is internal (`beads--` prefix) and

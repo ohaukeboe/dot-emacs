@@ -2,7 +2,7 @@
 
 **Branch**: `magit-beads` | **Date**: 2026-09-23 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `specs/001-beads-issue-relations/spec.md`
+**Input**: Feature specification from `specs/002-beads-issue-relations/spec.md`
 
 ## Summary
 
@@ -135,7 +135,7 @@ See Complexity Tracking.
 ### Documentation (this feature)
 
 ```text
-specs/001-beads-issue-relations/
+specs/002-beads-issue-relations/
 ├── plan.md              # This file
 ├── spec.md              # Feature specification
 ├── research.md          # Phase 0 output — R1..R10, all measured

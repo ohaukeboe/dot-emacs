@@ -5,7 +5,7 @@ description: "Task list for Beads Issue Relations in Magit"
 
 # Tasks: Beads Issue Relations in Magit
 
-**Input**: Design documents from `specs/001-beads-issue-relations/`
+**Input**: Design documents from `specs/002-beads-issue-relations/`
 
 **Prerequisites**: [plan.md](./plan.md), [spec.md](./spec.md), [research.md](./research.md), [data-model.md](./data-model.md), [contracts/](./contracts/), [quickstart.md](./quickstart.md)
 
@@ -54,7 +54,7 @@ that will verify it, before any behaviour exists.
 | `dot-emacs-9ym.6` | Phase 6, US4 transient |
 | `dot-emacs-9ym.7` | Phase 7, polish |
 
-- [X] T001 Create the beads issues for this feature with `bd create`, one per user story phase plus one for the test harness, and record their ids at the top of `specs/001-beads-issue-relations/tasks.md` — the repository tracks work in `bd`, never in a markdown list (CLAUDE.md, constitution "Additional Constraints")
+- [X] T001 Create the beads issues for this feature with `bd create`, one per user story phase plus one for the test harness, and record their ids at the top of `specs/002-beads-issue-relations/tasks.md` — the repository tracks work in `bd`, never in a markdown list (CLAUDE.md, constitution "Additional Constraints")
 - [X] T002 [P] Create `tests/beads.nix` as a `runCommand` derivation that runs `emacs -batch -L . -l beads-test.el -f ert-run-tests-batch-and-exit` over `workstation/emacs/packages/`, modelled on `tests/emacs-sops-save.nix`; it needs `emacs` and `emacsPackages.magit`, `emacsPackages.transient`, `emacsPackages.compat` on the load path, plus `git` and a writable `HOME` because the fixture runs `git init`
 - [X] T003 Add `test-beads = nixpkgsFor.${system}.callPackage ./tests/beads.nix { };` to the Linux-only `packages` attrset in `flake.nix` (beside `test-disk-layout` and `test-emacs-sops-save`, around line 282), with the comment stating `nix build .#test-beads -L` and why it is a package rather than a check — it builds an Emacs closure and `nix flake check` runs before every commit
 - [X] T004 `git add tests/beads.nix` and run `nix build .#test-beads -L` to confirm the existing suite passes inside the build before anything is added to it — the flake sees only git-tracked files

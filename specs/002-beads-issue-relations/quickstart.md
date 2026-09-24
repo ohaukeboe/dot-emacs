@@ -1,6 +1,6 @@
 # Quickstart: validating Beads Issue Relations
 
-**Feature**: `specs/001-beads-issue-relations/` · **Date**: 2026-09-23
+**Feature**: `specs/002-beads-issue-relations/` · **Date**: 2026-09-23
 
 Two levels of validation: the ERT suite, which runs against a fake `bd` and is
 what CI-style checking uses, and a manual pass in a scratch tracker, which is

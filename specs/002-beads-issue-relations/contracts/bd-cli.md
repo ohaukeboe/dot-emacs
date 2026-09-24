@@ -1,6 +1,6 @@
 # Contract: what this feature asks of `bd`
 
-**Feature**: `specs/001-beads-issue-relations/` · **Date**: 2026-09-23
+**Feature**: `specs/002-beads-issue-relations/` · **Date**: 2026-09-23
 
 Every invocation below was run against a real tracker while writing this plan
 (see [research.md](../research.md)); the fields listed are fields observed, not
