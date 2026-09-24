@@ -89,3 +89,4 @@ var/
 /.claude/output-styles
 /.claude/routines
 /.claude/workflows
+/.beads.gate.lock
