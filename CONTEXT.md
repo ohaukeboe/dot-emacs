@@ -102,7 +102,42 @@ is a takeover, and asks first.
 **Beads section**:
 The Magit status section listing the in-progress and ready beads of the
 repository at `magit-toplevel`. Absent when the repository has no `.beads/`,
-and when both lists are empty.
+and when both lists are empty. What it lists does not change with the
+relations below: a blocked bead that is neither claimed nor ready still
+appears nowhere, and is reached by following a relation to it.
+
+**Parent**:
+The larger bead a bead belongs to — an epic over its tasks, a task over its
+subtasks. A bead has at most one, named by bd's own `parent` field.
+_Avoid_: epic for the relation; an epic is an `issue_type`, and a parent need
+not be one.
+
+**Blocker**:
+An open bead a bead depends on, and so cannot be claimed past. Which beads are
+blocked and by what is `bd blocked`'s answer, never derived in Emacs — the same
+rule as **Ready**, and for the same reason. A dependency on a closed bead is
+not a blocker, which falls out of asking bd rather than being decided here.
+
+**Dependent**:
+A bead that depends on this one. Counted rather than listed in the section: the
+count comes free with the listing, and the identities cost a call bd warns is
+slow on a bead many others hang off.
+_Caveat_: `bd list` and `bd ready` count only the beads joined by a `blocks`
+edge, while `bd show` also counts children — an epic of seven tasks is reported
+as having no dependents by the first two and seven by the third. The mark shows
+the listing's number; moving to a dependent asks `bd show`, so an epic's
+children stay reachable from a bead that carries no mark.
+
+**Relation mark**:
+The compact sign on a bead's heading line saying which relations it takes part
+in — `↑` for a parent, `⊘N` for N blockers, `↳N` for N dependents. The heading
+says a relation exists; unfolding the bead names the issue it points at. A bead
+with no relations carries no mark and no separator.
+
+**Jump history**:
+Where the relation jumps of this Emacs session started, most recent first, so
+`beads-go-back` can retrace them. Pushed only once a jump has happened, and not
+persisted across sessions.
 
 ### Emacs / windows
 

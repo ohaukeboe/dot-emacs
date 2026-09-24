@@ -282,6 +282,10 @@
           test-disk-layout = nixpkgsFor.${system}.callPackage ./tests/disk-layout.nix {
             diskoLib = inputs.disko.lib;
           };
+          # The ERT suite of workstation/emacs/packages/beads.el; see the file.
+          # A package rather than a check because it builds an Emacs closure.
+          #   nix build .#test-beads -L
+          test-beads = nixpkgsFor.${system}.callPackage ./tests/beads.nix { };
           # Regression test for the sops.el save hang; see the file and
           # common/emacs-sops-fix-overlay.nix.
           #   nix build .#test-emacs-sops-save -L

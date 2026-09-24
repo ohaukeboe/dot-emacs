@@ -1409,6 +1409,17 @@ captures a new issue.  Prose is written in a buffer with =C-c C-c= to send
 and =C-c C-k= to abort, rather than in the minibuffer: close reasons here
 run to a couple of sentences.
 
+Each issue's heading also says what it takes part in: =↑= for a parent,
+=⊘N= for the N open issues blocking it, =↳N= for the N issues depending on
+it.  Unfolding the issue names them.  The same transient moves along those
+relations -- =p= to the parent, =b= to a blocker, =d= to a dependent, =B=
+back the way you came -- and greys out the ones the issue at point has no
+relation for rather than hiding them.  Nothing is bound outside the
+transient, because =p= and =b= are Magit's.  An issue with no relations
+looks exactly as it did before, and costs no extra =bd= call: the section
+asks =bd blocked= only when a claimed issue has dependencies at all, and
+resolves every id a relation names in a single =bd list --id=...=.
+
 The section is gated on =.beads/= existing at the repository root, so
 repositories without a tracker make no =bd= call at all.  =beads-show= also
 works on its own, reading an issue id with completion; it is deliberately
