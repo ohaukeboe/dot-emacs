@@ -719,6 +719,221 @@ be able to go missing without taking the listing with it."
   "Move point to the top of the buffer, as a foreign thread would."
   (goto-char (point-min)))
 
+;;;; Prompting the agent
+
+(defvar beads-test--agent-calls nil
+  "The (TEXT . SUBMIT) pairs the fake agent received, in call order.")
+
+(defvar beads-test--agent-up t
+  "Whether the fake agent reports a session.")
+
+(defmacro beads-test--with-agent (&rest body)
+  "Run BODY with a recording fake agent in place of the real one.
+The agent's buffer is *fake-agent*; what it was sent is in
+`beads-test--agent-calls'."
+  (declare (indent 0))
+  `(let* ((beads-test--agent-calls nil)
+          (beads-test--agent-up t)
+          (beads-agent-available-function (lambda () beads-test--agent-up))
+          (beads-agent-send-function
+           (lambda (text submit)
+             (setq beads-test--agent-calls
+                   (append beads-test--agent-calls (list (cons text submit))))
+             (get-buffer-create "*fake-agent*"))))
+     (unwind-protect
+         (progn ,@body)
+       (when-let* ((buffer (get-buffer "*fake-agent*")))
+         (let ((kill-buffer-query-functions nil)) (kill-buffer buffer))))))
+
+(defmacro beads-test--with-two-ready (&rest body)
+  "Run BODY in a status buffer listing two ready issues, t-one and t-two."
+  (declare (indent 0))
+  `(beads-test--with-status
+     (beads-test--set-issues
+      nil
+      (list (beads-test--issue "t-one" 1 "The first")
+            (beads-test--issue "t-two" 2 "The second")))
+     (magit-refresh-buffer)
+     ,@body))
+
+(defun beads-test--select-both ()
+  "Activate a region spanning the sections of t-one and t-two."
+  (transient-mark-mode 1)
+  (beads-test--goto "t-one")
+  (push-mark (point) t t)
+  (goto-char (oref (beads--section-for "t-two") start)))
+
+(defmacro beads-test--in-show-buffer (id &rest body)
+  "Run BODY in a `beads-show-mode' buffer displaying ID, then kill it."
+  (declare (indent 1))
+  `(progn
+     (beads-test--set-show (list (beads-test--issue ,id 2 "Shown")))
+     (beads-show ,id)
+     (unwind-protect
+         (with-current-buffer (format "*beads: %s*" ,id) ,@body)
+       (when-let* ((buffer (get-buffer (format "*beads: %s*" ,id))))
+         (let ((kill-buffer-query-functions nil)) (kill-buffer buffer))))))
+
+(ert-deftest beads-test-agent-prompt-names-the-issue ()
+  "The quick prompt pastes the id unsent and hands focus to the agent."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (beads-test--goto "t-one")
+      (beads-agent-prompt)
+      (should (equal beads-test--agent-calls '(("Beads issue t-one: " . nil))))
+      (should (equal (buffer-name (window-buffer (selected-window)))
+                     "*fake-agent*")))))
+
+(ert-deftest beads-test-agent-prompt-takes-the-region ()
+  "Every issue in the region is named, in the order they are listed."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (beads-test--select-both)
+      (beads-agent-prompt)
+      (should (equal beads-test--agent-calls
+                     '(("Beads issue t-one, t-two: " . nil)))))))
+
+(ert-deftest beads-test-agent-prompt-from-a-show-buffer ()
+  "In an issue's own buffer the quick prompt names that issue."
+  (beads-test--with-status
+    (beads-test--with-agent
+      (beads-test--in-show-buffer "t-shown"
+        (beads-agent-prompt)
+        (should (equal beads-test--agent-calls
+                       '(("Beads issue t-shown: " . nil))))))))
+
+(ert-deftest beads-test-agent-prompt-refuses-without-issue ()
+  "Off an issue nothing is sent, and no issue is asked for."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (goto-char (point-min))
+      (should-error (beads-agent-prompt) :type 'user-error)
+      (should-not beads-test--agent-calls))))
+
+(ert-deftest beads-test-agent-prompt-refuses-without-agent ()
+  "Without a session nothing is sent and the window stays."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (setq beads-test--agent-up nil)
+      (beads-test--goto "t-one")
+      (let ((window-buffer (window-buffer (selected-window))))
+        (should (equal (cadr (should-error (beads-agent-prompt)
+                                           :type 'user-error))
+                       "No agent session for this repository"))
+        (should-not beads-test--agent-calls)
+        (should (eq (window-buffer (selected-window)) window-buffer))))))
+
+(ert-deftest beads-test-agent-quick-prompt-default-is-plain-text ()
+  "The default does not start with a character Claude Code treats specially."
+  (should-not (string-match-p "\\`[/!#]"
+                              (default-value 'beads-agent-quick-prompt-format))))
+
+(ert-deftest beads-test-agent-explore-submits-the-prompt ()
+  "Explore submits the prepared prompt with the id filled in."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (beads-test--goto "t-one")
+      (beads-agent-explore)
+      (should (= (length beads-test--agent-calls) 1))
+      (pcase-let ((`(,text . ,submit) (car beads-test--agent-calls)))
+        (should (eq submit t))
+        (should (string-search "Explore beads issue t-one" text))
+        (should (string-search "bd show t-one" text))
+        (should-not (string-search "%i" text))))))
+
+(ert-deftest beads-test-agent-explore-leaves-windows-alone ()
+  "Explore changes no window and says where the prompt went."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (beads-test--goto "t-one")
+      ;; The echo area is not there in batch mode, so the message is read
+      ;; back from the log instead.
+      (let ((before (current-window-configuration))
+            (logged (with-current-buffer (messages-buffer) (point-max))))
+        (beads-agent-explore)
+        (should (compare-window-configurations
+                 before (current-window-configuration)))
+        (should (with-current-buffer (messages-buffer)
+                  (save-excursion
+                    (goto-char logged)
+                    (search-forward
+                     "Sent explore prompt for t-one to *fake-agent*" nil t))))))))
+
+(ert-deftest beads-test-agent-explore-from-a-show-buffer ()
+  "In an issue's own buffer explore works on that issue."
+  (beads-test--with-status
+    (beads-test--with-agent
+      (beads-test--in-show-buffer "t-shown"
+        (beads-agent-explore)
+        (should (string-search "bd show t-shown"
+                               (caar beads-test--agent-calls)))))))
+
+(ert-deftest beads-test-agent-explore-refuses-a-region ()
+  "Explore takes one issue, and says so rather than picking one."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (beads-test--select-both)
+      (should (string-match-p
+               "Explore works on one issue; the region covers 2"
+               (cadr (should-error (beads-agent-explore) :type 'user-error))))
+      (should-not beads-test--agent-calls))))
+
+(ert-deftest beads-test-agent-explore-refuses-without-issue ()
+  "Off an issue explore sends nothing."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (goto-char (point-min))
+      (should-error (beads-agent-explore) :type 'user-error)
+      (should-not beads-test--agent-calls))))
+
+(ert-deftest beads-test-agent-explore-refuses-without-agent ()
+  "Without a session explore sends nothing."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (setq beads-test--agent-up nil)
+      (beads-test--goto "t-one")
+      (should-error (beads-agent-explore) :type 'user-error)
+      (should-not beads-test--agent-calls))))
+
+(ert-deftest beads-test-agent-explore-adds-a-missing-id ()
+  "A customised prompt without %i still names the issue, and a stray % is text."
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (let ((beads-agent-explore-prompt "Look at this 100% carefully"))
+        (beads-test--goto "t-one")
+        (beads-agent-explore)
+        (should (equal (caar beads-test--agent-calls)
+                       "Beads issue t-one:\n\nLook at this 100% carefully"))))))
+
+(ert-deftest beads-test-agent-explore-default-keeps-its-clauses ()
+  "The default prompt keeps every clause the spec asks of it.
+See specs/003-beads-agent-prompts/contracts/explore-prompt.md."
+  (let ((prompt (default-value 'beads-agent-explore-prompt)))
+    (dolist (phrase '("bd show %i" "comments" "parts of this repository"
+                      "each as a" "question" "say so plainly"
+                      "Do not implement anything" "Do not commit"
+                      "stop and wait"))
+      (should (string-search phrase prompt)))
+    (should-not (string-match-p "\\`[/!#]" prompt))))
+
+(ert-deftest beads-test-transient-offers-the-agent ()
+  "Both agent entries are in the menu, and grey without a session."
+  (should (memq 'beads-agent-prompt
+                (flatten-tree (transient-get-suffix 'beads-dispatch "i"))))
+  (should (memq 'beads-agent-explore
+                (flatten-tree (transient-get-suffix 'beads-dispatch "e"))))
+  (beads-test--with-two-ready
+    (beads-test--with-agent
+      (should (eq (beads--agent-available-p) t))
+      (setq beads-test--agent-up nil)
+      (should-not (beads--agent-available-p)))
+    ;; With no agent configured the check asks nobody.
+    (let* ((asked nil)
+           (beads-agent-available-function (lambda () (setq asked t)))
+           (beads-agent-send-function nil))
+      (should-not (beads--agent-available-p))
+      (should-not asked))))
+
 (provide 'beads-test)
 
 ;;; beads-test.el ends here

@@ -1096,25 +1096,6 @@ visible while a file is collapsed.
                          (if (string-suffix-p "\n" patch) "" "\n"))))))
           comments "\n"))))
 
-    (defun my/magit-review--paste (text submit)
-      "Paste TEXT into this project's Claude Code terminal; press RET if SUBMIT."
-      (require 'claude-code-ide)
-      (let* ((session (or (let ((current-prefix-arg nil))
-                            (claude-code-ide--resolve-session
-                             'auto "Send review to Claude instance: "))
-                          (user-error "No Claude Code session for this project")))
-             (buffer (claude-code-ide-mcp-session-buffer session)))
-        (with-current-buffer buffer
-          (pcase claude-code-ide-terminal-backend
-            ('ghostel (ghostel-paste-string text))
-            ('vterm (vterm-send-string text t))
-            ('eat (eat-term-send-string-as-yank eat-terminal text))
-            (_ (claude-code-ide--terminal-send-string text)))
-          (when submit
-            (sit-for 0.1)
-            (claude-code-ide--terminal-send-return)))
-        buffer))
-
     (defun my/magit-review-send (&optional no-submit)
       "Send pending review comments to Claude Code and mark them sent.
   With prefix argument NO-SUBMIT, only paste them and show the Claude
@@ -1123,8 +1104,11 @@ visible while a file is collapsed.
       (let* ((repo (or (magit-toplevel) (user-error "Not in a Git repository")))
              (pending (or (my/magit-review--pending repo)
                           (user-error "No pending review comments")))
-             (buffer (my/magit-review--paste (my/magit-review--format pending)
-                                             (not no-submit))))
+             ;; The prefix argument means "don't submit" here, not "ask
+             ;; which instance".
+             (buffer (let ((current-prefix-arg nil))
+                       (my/claude-code-ide-paste (my/magit-review--format pending)
+                                                 (not no-submit)))))
         (dolist (c pending)
           (plist-put c :sent t))
         (my/magit-review--redecorate repo)
@@ -1430,6 +1414,17 @@ looks exactly as it did before, and costs no extra =bd= call: the section
 asks =bd blocked= only when a claimed issue has dependencies at all, and
 resolves every id a relation names in a single =bd list --id=...=.
 
+The transient also hands an issue to the project's Claude Code session.
+=i= pastes =Beads issue <id>: = into the session's input without submitting
+it and switches there, for the rest of the prompt to be typed by hand -- with
+the region active it names every issue in it.  =e= submits
+=beads-agent-explore-prompt=: the agent reads the issue through =bd show=,
+explores the code it concerns and comes back with its understanding and the
+decisions still open, as questions, without implementing anything, so which
+skill (if any) carries out the work stays my choice.  Both are grey when the
+project has no session; with several, the helpers in the Claude Code section
+choose one, and =C-u= before =i= or =e= asks.
+
 The section is gated on =.beads/= existing at the repository root, so
 repositories without a tracker make no =bd= call at all.  =beads-show= also
 works on its own, reading an issue id with completion; it is deliberately
@@ -1439,6 +1434,9 @@ unbound, since no prefix has an obvious free key for it yet.
   (use-package beads
     :after magit
     :demand t
+    :custom
+    (beads-agent-available-function #'my/claude-code-ide-session-p)
+    (beads-agent-send-function #'my/claude-code-ide-paste)
     :config
     (magit-add-section-hook 'magit-status-sections-hook
                             #'beads-insert-issues
@@ -4430,6 +4428,49 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
 #+end_src
 
 ** Claude Code
+
+Two helpers other sections hand text to Claude Code through: the Magit
+review hand-off (=@=) and the beads transient (=#=, =i= and =e=).  They are
+defined outside the =use-package= block below so they exist before
+=claude-code-ide= loads -- the session check must answer "no" rather than
+fail when nothing has started it yet.  Which instance receives the text is
+=claude-code-ide='s own choice: the only one, the only visible one, or the
+most recently used, and a prefix argument asks.  The paste goes through each
+terminal backend's paste primitive rather than being typed, so a newline in
+the text does not submit half of it.  Both lean on =claude-code-ide=
+internals (=claude-code-ide--resolve-session=,
+=claude-code-ide-mcp--sessions-for-project=,
+=claude-code-ide--get-working-directory=,
+=claude-code-ide--terminal-send-return=); re-check them when bumping the
+flake input.
+
+#+begin_src elisp
+  (defun my/claude-code-ide-paste (text submit)
+    "Paste TEXT into this project's Claude Code terminal; press RET if SUBMIT.
+  Return the terminal buffer."
+    (require 'claude-code-ide)
+    (let* ((session (or (claude-code-ide--resolve-session
+                         'auto "Send to Claude instance: ")
+                        (user-error "No Claude Code session for this project")))
+           (buffer (claude-code-ide-mcp-session-buffer session)))
+      (with-current-buffer buffer
+        (pcase claude-code-ide-terminal-backend
+          ('ghostel (ghostel-paste-string text))
+          ('vterm (vterm-send-string text t))
+          ('eat (eat-term-send-string-as-yank eat-terminal text))
+          (_ (claude-code-ide--terminal-send-string text)))
+        (when submit
+          (sit-for 0.1)
+          (claude-code-ide--terminal-send-return)))
+      buffer))
+
+  (defun my/claude-code-ide-session-p ()
+    "Return non-nil when this project has a Claude Code session."
+    (and (featurep 'claude-code-ide)
+         (claude-code-ide-mcp--sessions-for-project
+          (claude-code-ide--get-working-directory))
+         t))
+#+end_src
 
 #+begin_src elisp
     (use-package claude-code-ide

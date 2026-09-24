@@ -139,6 +139,25 @@ Where the relation jumps of this Emacs session started, most recent first, so
 `beads-go-back` can retrace them. Pushed only once a jump has happened, and not
 persisted across sessions.
 
+**Agent session**:
+The Claude Code instance of this repository that a prompt about a bead goes to.
+A repository can have none, one or several; with several, `claude-code-ide`
+chooses as it does for the review hand-off, and a prefix argument asks.
+`beads.el` never names the agent package — the configuration plugs it in.
+
+**Quick prompt**:
+A reference to one or more beads pasted, unsent, into the agent session's
+input, for the developer to finish in their own words. Only the id travels; the
+agent reads the bead from `bd` itself.
+
+**Explore prompt**:
+The configurable instruction that has the agent study one bead — through
+`bd show`, with its relations and comments, and the code it concerns — and
+reply with its understanding and the decisions still open, as questions. It
+forbids implementing anything, so which skill carries out the work stays the
+developer's choice.
+_Avoid_: plan, which suggests the agent produces an implementation plan
+
 ### Emacs / windows
 
 **Side-by-side split**:

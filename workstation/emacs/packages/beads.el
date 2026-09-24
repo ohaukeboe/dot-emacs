@@ -19,6 +19,13 @@
 ;; on every issue in the region for the two operations bd itself takes
 ;; several ids for.  Prose is written in a buffer rather than the
 ;; minibuffer and reaches bd through a temp file.
+;;
+;; The same transient hands the issue at point to a coding agent: a quick
+;; prompt pastes a reference to it into the agent's input for the rest to
+;; be typed there, and explore submits a prepared prompt asking the agent
+;; to study the issue and ask what has to be decided, without implementing
+;; it.  The agent is plugged in through `beads-agent-available-function'
+;; and `beads-agent-send-function'; this file names no agent package.
 
 ;;; Code:
 
@@ -973,6 +980,132 @@ of things, not a failure worth a message."
     (pop-to-buffer (car location))
     (goto-char (cdr location))))
 
+;;; Prompting the agent
+
+;; This file names no agent package.  The configuration plugs one in
+;; through the two functions below, so the tests can put a recorder in
+;; their place and the package loads without any agent installed.
+
+(defcustom beads-agent-available-function nil
+  "Function telling whether the repository has an agent session.
+Called with no arguments and `default-directory' at the repository root;
+return non-nil when a session exists for that project.  Must be cheap
+and must not prompt: the transient calls it while drawing itself.  Nil
+means no agent is configured, and the agent commands are unavailable."
+  :type '(choice (const nil) function)
+  :group 'beads)
+
+(defcustom beads-agent-send-function nil
+  "Function delivering a prompt to the repository's agent session.
+Called with TEXT and SUBMIT, and `default-directory' at the repository
+root.  Deliver TEXT to the chosen session's input as one paste, so a
+newline in it does not submit half of it, and press return only when
+SUBMIT is non-nil.  May prompt to choose among several sessions.  Signal
+`user-error' when no session can be chosen.  Return the session's
+buffer.  Nil means no agent is configured."
+  :type '(choice (const nil) function)
+  :group 'beads)
+
+(defun beads--agent-root ()
+  "Return the directory the agent functions are called in."
+  (or (beads-toplevel) default-directory))
+
+(defun beads--agent-available-p ()
+  "Return non-nil when an agent session can receive a prompt."
+  (and beads-agent-available-function
+       beads-agent-send-function
+       (let ((default-directory (beads--agent-root)))
+         (funcall beads-agent-available-function))
+       t))
+
+(defun beads--agent-send (text submit)
+  "Send TEXT to the agent, pressing return if SUBMIT; return its buffer.
+Refuses before anything is sent, so a refusal leaves the agent's input
+exactly as it was."
+  (unless (beads--agent-available-p)
+    (user-error "No agent session for this repository"))
+  (let ((default-directory (beads--agent-root)))
+    (funcall beads-agent-send-function text submit)))
+
+(defun beads--agent-ids ()
+  "Return the ids to prompt about, or say there is no issue here.
+Unlike `beads--targets', never reads one: a prompt reaches the agent
+before a mis-chosen completion would be noticed."
+  (or (beads--issues-at-point) (user-error "No beads issue at point")))
+
+(defcustom beads-agent-quick-prompt-format "Beads issue %s: "
+  "Format of the quick prompt; %s is the ids, separated by commas.
+It names what the ids are, since the agent may not know the tracker's
+prefix, and it must not start with /, ! or #, which the agent reads as
+commands."
+  :type 'string
+  :group 'beads)
+
+;;;###autoload
+(defun beads-agent-prompt ()
+  "Start a prompt to the agent about the issue at point, and switch to it.
+Paste a reference to the issue -- or to every issue in the region --
+into the agent's input without submitting it, so the rest is typed
+there.  Text already in the input is kept; the reference is pasted at
+the terminal's cursor, which is its end unless it was moved."
+  (interactive)
+  (let* ((ids (beads--agent-ids))
+         (buffer (beads--agent-send
+                  (format beads-agent-quick-prompt-format
+                          (string-join ids ", "))
+                  nil)))
+    (if-let* ((window (get-buffer-window buffer t)))
+        (select-window window)
+      (pop-to-buffer buffer))))
+
+(defcustom beads-agent-explore-prompt
+  "Explore beads issue %i before any work on it starts.
+
+Read it with `bd show %i`, including its parent, its blockers, the issues that
+depend on it and its comments. Then read the parts of this repository the issue
+concerns, enough to know how it would be implemented here.
+
+Reply with:
+1. Your understanding of what the issue asks for and why.
+2. Every decision that has to be made before implementing it, each as a
+   question, with the options you see and the one you would choose. If nothing
+   needs deciding, say so plainly instead of inventing questions.
+
+Do not implement anything. Do not create, edit or delete files. Do not claim,
+update, comment on or close any issue. Do not commit. Do not start any skill or
+workflow that implements the issue. After your questions, stop and wait for my
+answers: I will choose how the work is done, and with which skills if any."
+  "Prompt `beads-agent-explore' submits; %i is the issue id.
+It asks the agent to study the issue and ask what has to be decided,
+and forbids it to implement anything, so that how the work is then done
+-- and with which skills -- stays the developer's choice.  When the
+text does not end up naming the issue, \"Beads issue ID:\" is put in
+front of it.  Other % sequences are left as they are."
+  :type 'string
+  :group 'beads)
+
+(defun beads--agent-explore-text (id)
+  "Return `beads-agent-explore-prompt' for the issue ID."
+  (require 'format-spec)
+  (let ((text (format-spec beads-agent-explore-prompt `((?i . ,id)) 'ignore)))
+    (if (string-search id text)
+        text
+      (concat "Beads issue " id ":\n\n" text))))
+
+;;;###autoload
+(defun beads-agent-explore ()
+  "Have the agent explore the issue at point and ask what must be decided.
+Submit `beads-agent-explore-prompt' for the issue, leaving the windows
+as they are.  Works on one issue: with several in the region, says so."
+  (interactive)
+  (let ((ids (beads--agent-ids)))
+    (when (cdr ids)
+      (user-error "Explore works on one issue; the region covers %d"
+                  (length ids)))
+    (let ((buffer (beads--agent-send (beads--agent-explore-text (car ids)) t)))
+      (message "Sent explore prompt for %s to %s"
+               (car ids) (buffer-name buffer)))))
+
 ;;; The transient
 
 (defvar beads--relations-cache nil
@@ -1045,6 +1178,10 @@ itself is not gated on this -- see `beads-goto-dependent'."
     ("b" "Blocker" beads-goto-blocker :inapt-if-not beads--has-blockers-p)
     ("d" "Dependent" beads-goto-dependent :inapt-if-not beads--has-dependents-p)
     ("B" "Back" beads-go-back :inapt-if-not beads--went-somewhere-p)]
+   ["Agent"
+    ;; Grey rather than gone without a session, as for the relations.
+    ("i" "Prompt" beads-agent-prompt :inapt-if-not beads--agent-available-p)
+    ("e" "Explore" beads-agent-explore :inapt-if-not beads--agent-available-p)]
    ["Tracker"
     ("n" "New issue" beads-create)
     ("RET" "Show" beads-show-at-point)]])
