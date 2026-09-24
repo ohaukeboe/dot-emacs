@@ -141,14 +141,15 @@
       "inputs": {
         "nixpkgs": [
           "nixpkgs"
-        ]
+        ],
+        "nixpkgs-pass-cli": "nixpkgs-pass-cli"
       },
       "locked": {
-        "lastModified": 1789925264,
-        "narHash": "sha256-GGidf5xePsNVlCncHjM92aKeyHxNUHyXhgNFLgSriXM=",
+        "lastModified": 1789997638,
+        "narHash": "sha256-Lljibig+xUuhBkeBENaOyVvxrbRolO47Zfo1/9plcHI=",
         "owner": "ohaukeboe",
         "repo": "cosmic-pass",
-        "rev": "9b50fee3c5b049aa625e9a1438af8888c0bcec07",
+        "rev": "7d1d41141b1c1d5cc53c3836cd94ebd5c924dc6e",
         "type": "github"
       },
       "original": {
@@ -653,6 +654,19 @@
         "owner": "nix-community",
         "repo": "nixpkgs.lib",
         "type": "github"
+      }
+    },
+    "nixpkgs-pass-cli": {
+      "locked": {
+        "lastModified": 1789684949,
+        "narHash": "sha256-TAKa57gfBM/9a4IZrFaIQZhnHs9mXIFPlZbYrvhnaMY=",
+        "rev": "e554fab72f81915600f3f449b786fd9af40439a5",
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1075591.e554fab72f81/nixexprs.tar.zst"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1075591.e554fab72f81/nixexprs.tar.zst"
       }
     },
     "nixpkgs-stable": {
