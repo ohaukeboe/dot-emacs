@@ -7,6 +7,10 @@
 let
   cfg = config.agents.processCap;
 
+  # With memory-cap.nix enabled, a command also lands in the agent slice with
+  # its own memory limit, so a runaway build is OOM-killed on its own.
+  memoryScopeArgs = lib.optionals config.agents.memoryCap.enable config.agents.memoryCap.commandScopeArgs;
+
   # Runtime cap for agent-spawned shell commands.
   #
   # Processes started by a Bash tool call outlive their session: Claude Code's
@@ -79,10 +83,12 @@ let
       # trailing heredoc would read the appended line as part of its body, and
       # a trailing comment would eat it entirely.
       set +e
+      SECONDS=0
       systemd-run --user --scope -q --collect --expand-environment=no \
         --description="claude-cap $mode ''${cap}s: $command" \
         -p RuntimeMaxSec="$cap" \
         -p TimeoutStopSec=${toString cfg.graceSeconds} \
+        ${lib.escapeShellArgs memoryScopeArgs} \
         -- bash -c "$command" 2>&3
       rc=$?
       set -e
@@ -91,10 +97,16 @@ let
 
       # 143 is SIGTERM at the cap, 137 SIGKILL after the grace period. Either
       # way the agent must be told why its command died, or a capped hang looks
-      # like an unexplained failure.
+      # like an unexplained failure. A memory-limit kill exits the same way —
+      # systemd stops the whole scope once the kernel OOM-kills a process in it —
+      # so the elapsed time tells the two apart.
       case "$rc" in
         143 | 137)
-          echo "[process-cap] terminated after the $mode runtime cap of ''${cap}s" >&2
+          if [ "$SECONDS" -ge "$cap" ]; then
+            echo "[process-cap] terminated after the $mode runtime cap of ''${cap}s" >&2
+          elif ${lib.boolToString config.agents.memoryCap.enable}; then
+            echo "[process-cap] killed after ''${SECONDS}s, before the runtime cap; most likely the memory limit (journalctl --user -g 'OOM killer' --since -5m)" >&2
+          fi
           ;;
       esac
 

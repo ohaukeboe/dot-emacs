@@ -242,6 +242,7 @@ in
     ./code-review-graph.nix
     ./format-on-edit.nix
     ./mcp-servers.nix
+    ./memory-cap.nix
     ./process-cap.nix
     ./rtk.nix
     ./skills.nix
