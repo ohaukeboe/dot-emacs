@@ -111,6 +111,12 @@ in
         HostName = "github.com";
         IdentityFile = mainKey;
       };
+
+      "deploy-relay" = {
+        HostName = "relay.taile95975.ts.net";
+        User = "root";
+        IdentityFile = mainKey;
+      };
     };
   };
 }
