@@ -1,20 +1,6 @@
-{ nixos-hardware }:
+{ }:
 
 {
-  x13-laptop = {
-    stateVersion = "24.11";
-    modules = [
-      { modules.attic.push.enable = true; }
-      { modules.cosmic-de.enable = true; }
-      {
-        modules.sleep-then-hibernate.enable = true;
-        modules.sleep-then-hibernate.swapSize = 40960; # 40 GiB (RAM = 32 GiB + headroom)
-      }
-      { modules.silent-boot.earlyKms.modules = [ "amdgpu" ]; }
-      nixos-hardware.nixosModules.asus-flow-gv302x-nvidia
-    ];
-  };
-
   work-laptop = {
     stateVersion = "24.11";
     modules = [
