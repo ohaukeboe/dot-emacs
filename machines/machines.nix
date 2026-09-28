@@ -46,4 +46,19 @@
       # { sops.ageKey = "tpm"; }
     ];
   };
+
+  laptop = {
+    stateVersion = "26.11";
+    modules = [
+      # Remove this on a work machine — see modules/attic/default.nix.
+      { modules.attic.push.enable = true; }
+      { modules.cosmic-de.enable = true; }
+      { modules.secure-boot.measuredBoot.enable = true; }
+      { modules.silent-boot.earlyKms.modules = [ "amdgpu" ]; }
+      {
+        modules.sleep-then-hibernate.enable = true;
+        modules.sleep-then-hibernate.swapSize = 40960; # 40 GiB (RAM = 32 GiB + headroom)
+      }
+    ];
+  };
 }
