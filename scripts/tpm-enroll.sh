@@ -38,17 +38,27 @@ supported=$("$pcrlock" is-supported 2>/dev/null || true)
 
 # PCR 7 measures the Secure Boot keys. Enrolling before lanzaboote has put its
 # own keys in place would lock the volume to state that is about to change.
-bootctl status 2>/dev/null | grep -q 'Secure Boot: enabled (user)' ||
+# Captured rather than piped: run unprivileged, bootctl exits 1 because it
+# cannot read /boot, and pipefail would turn that into a failed match even
+# though the Secure Boot line is printed.
+secureboot=$(bootctl status 2>/dev/null || true)
+grep -q 'Secure Boot: enabled (user)' <<<"$secureboot" ||
   skip "Secure Boot is not enabled with user keys yet (see bootctl status)"
 
 sudo test -f "$policy" ||
   skip "$policy does not exist; run nixos-rebuild switch first"
 
-dev=/dev/$(lsblk -ndo PKNAME "/dev/mapper/$mapper" 2>/dev/null || true)
+# The device-mapper backing device comes from sysfs: lsblk leaves PKNAME empty
+# when asked about a dm device directly rather than walking down from its parent.
+dm=$(basename "$(readlink -f "/dev/mapper/$mapper")")
+slaves=("/sys/class/block/$dm/slaves/"*)
+dev=
+[[ ${#slaves[@]} -eq 1 && -e ${slaves[0]} ]] && dev=/dev/$(basename "${slaves[0]}")
 [[ -b $dev && $(lsblk -ndo FSTYPE "$dev") == crypto_LUKS ]] ||
   skip "could not find the LUKS device behind /dev/mapper/$mapper"
 
-if sudo systemd-cryptenroll "$dev" | awk '{ print $2 }' | grep -qx tpm2; then
+slots=$(sudo systemd-cryptenroll "$dev")
+if awk '$2 == "tpm2" { found = 1 } END { exit !found }' <<<"$slots"; then
   skip "$dev already has a tpm2 slot"
 fi
 
