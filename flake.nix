@@ -231,7 +231,7 @@
       };
 
       # Machine definitions
-      machines = import ./machines/machines.nix { inherit nixos-hardware; };
+      machines = import ./machines/machines.nix { };
 
       linuxSystems = builtins.filter (nixpkgs.lib.hasSuffix "linux") supportedSystems;
       forLinuxSystems = nixpkgs.lib.genAttrs linuxSystems;
