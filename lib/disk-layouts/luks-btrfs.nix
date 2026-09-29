@@ -48,9 +48,7 @@
           size = "100%";
           content = {
             type = "luks";
-            # modules/sleep-then-hibernate defaults boot.resumeDevice to
-            # /dev/mapper/crypted, and the pre-disko machines use the same
-            # name. Renaming this breaks hibernation resume.
+            # The pre-disko machines use the same name.
             name = "crypted";
             inherit passwordFile;
             settings.allowDiscards = true;

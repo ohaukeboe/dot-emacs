@@ -29,10 +29,18 @@ diskoLib.testLib.makeDiskoTest {
       disko.devices.disk.main.content.partitions.luks.content.settings.keyFile = "/tmp/secret.key";
     };
 
+  # The layout exists to host the sleep-then-hibernate swapfile, so boot the
+  # installed system with that module on and check logind will hibernate.
+  extraSystemConfig = {
+    imports = [ ../modules/sleep-then-hibernate ];
+    modules.sleep-then-hibernate = {
+      enable = true;
+      swapSize = 512;
+    };
+  };
+
   extraTestScript = ''
-    # The mapper name is load-bearing: modules/sleep-then-hibernate defaults
-    # boot.resumeDevice to /dev/mapper/crypted, and the machines that predate
-    # disko use the same name.
+    # The machines that predate disko use the same mapper name.
     machine.succeed("cryptsetup isLuks /dev/vda2")
     machine.succeed("test -b /dev/mapper/crypted")
 
@@ -59,6 +67,16 @@ diskoLib.testLib.makeDiskoTest {
     # /swap is where a machine enabling sleep-then-hibernate puts its swapfile.
     # Both have to be writable directories, not just mountpoints.
     machine.succeed("touch /snapshots/.probe /swap/.probe")
+
+    # logind answers "na" when it cannot match the active swapfile to the
+    # resume config (e.g. resume= set without resume_offset), and lid-close
+    # then silently degrades to plain suspend.
+    machine.wait_for_unit("systemd-logind.service")
+    machine.wait_for_unit("swap-swapfile.swap")
+    machine.succeed(
+        "busctl call org.freedesktop.login1 /org/freedesktop/login1 "
+        "org.freedesktop.login1.Manager CanSuspendThenHibernate | grep -qsF '\"yes\"'"
+    )
 
     # The ESP holds signed boot artifacts and must not be world-readable.
     machine.succeed("findmnt -no FSTYPE /boot | grep -qs vfat")

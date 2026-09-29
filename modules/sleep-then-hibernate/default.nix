@@ -31,15 +31,6 @@ in
       '';
     };
 
-    resumeDevice = mkOption {
-      type = types.str;
-      default = "/dev/mapper/crypted";
-      description = ''
-        Block device holding the swapfile's filesystem (the unlocked LUKS
-        mapper). Used as `boot.resumeDevice`.
-      '';
-    };
-
     hibernateDelay = mkOption {
       type = types.str;
       default = "45min";
@@ -91,11 +82,12 @@ in
       }
     ];
 
-    # Resume: systemd in initrd records the swapfile offset in the
-    # HibernateLocation EFI variable on hibernate, so no static resume_offset
-    # kernel param is needed.
+    # Resume: on hibernate systemd records the swapfile's device and offset in
+    # the HibernateLocation EFI variable, which the systemd initrd reads back.
+    # Leave boot.resumeDevice unset: a resume= without a matching
+    # resume_offset makes systemd reject the swapfile, and logind then
+    # degrades suspend-then-hibernate to plain suspend.
     boot.initrd.systemd.enable = true;
-    boot.resumeDevice = cfg.resumeDevice;
 
     # Trigger policy: lid-close and idle fall through to hibernate after the delay.
     systemd.sleep.settings.Sleep.HibernateDelaySec = cfg.hibernateDelay;
