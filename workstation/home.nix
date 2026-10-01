@@ -617,9 +617,9 @@ in
         };
       }
       {
-        condition = "gitdir:**/knowit/**/.git";
+        condition = "gitdir:**/dig/**/.git";
         contents.user = {
-          email = "oskar.haukeboe@knowit.no";
+          email = "oskar.haukeboe@dig.oslo.kommune.no";
         };
       }
     ];
@@ -628,7 +628,7 @@ in
       enable = true;
       repositories = [
         "~/projects/*"
-        "~/knowit/*"
+        "~/dig/*"
       ];
     };
   };

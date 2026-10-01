@@ -59,6 +59,7 @@ in
         # this config is deployed to, discarding forwarded agents on arrival.
         AddKeysToAgent = "yes";
       };
+
       "desktop" = {
         HostName = private.ssh_host.desktop;
         User = "oskar";
@@ -93,18 +94,6 @@ in
         HostName = private.ssh_host.deepthought;
         User = "root";
         IdentityFile = mainKey;
-      };
-
-      "bayer" = {
-        HostName = private.ssh_host.bayer;
-        User = "drift";
-        IdentityFile = trashcanKey;
-      };
-
-      "joe" = {
-        HostName = private.ssh_host.joe;
-        User = "drift";
-        IdentityFile = trashcanKey;
       };
 
       "github.com" = {

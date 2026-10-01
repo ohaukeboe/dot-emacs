@@ -1335,7 +1335,7 @@ Magit-todos for integrating TODO keywords with magit's overview screen
     (consult-gh-dashboard-action #'consult-gh--dashboard-action)
     (consult-gh-large-file-warning-threshold 2500000)
     (consult-gh-prioritize-local-folder t)
-    (consult-gh-favorite-orgs-list '("ohaukeboe" "knowit-objectnet"))
+    (consult-gh-favorite-orgs-list '("ohaukeboe"))
     :config
     ;; (consult-gh-with-pr-review-mode 1)
     ;; Remember visited orgs and repos across sessions
@@ -1509,7 +1509,7 @@ Make magit integrate with github and other git hosting services.
 
 #+begin_src elisp
   (defvar my/project-parent-dirs '("~/projects"
-                                   "~/knowit")
+                                   "~/dig")
     "Parent directories that contain my projects.
   Used both to seed `project.el' and as clone targets for
   `my/clone-project'.")
@@ -4293,7 +4293,7 @@ MCP support is also nice :)
              `(("filesystem" . (
                                 :command "npx"
                                 :args ("-y" "@modelcontextprotocol/server-filesystem")
-                                :roots ("/home/oskar/projects/" "/home/oskar/knowit/")))
+                                :roots ,my/project-parent-dirs))
                ;; ("playwright" . (:command "npx"
                ;; :args ("-y" "@playwright/mcp@latest" "--extension")))
                ("github" . (
