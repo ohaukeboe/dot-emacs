@@ -4480,6 +4480,7 @@ flake input.
       :custom
       (claude-code-ide-enable-mcp-server t)
       (claude-code-ide-terminal-backend 'ghostel)
+      (claude-code-ide-window-width 42)
       :config
       (claude-code-ide-emacs-tools-setup) ; Optionally enable Emacs MCP tools
 
