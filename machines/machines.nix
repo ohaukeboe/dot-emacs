@@ -54,6 +54,10 @@
       { modules.cosmic-de.enable = true; }
       { modules.secure-boot.measuredBoot.enable = true; }
       { modules.silent-boot.earlyKms.modules = [ "i915" ]; }
+      {
+        modules.sleep-then-hibernate.enable = true;
+        modules.sleep-then-hibernate.swapSize = 57344; # 56 GiB (RAM = 48 GiB + headroom)
+      }
     ];
   };
 }
