@@ -4,13 +4,24 @@
 # cannot or should not do it, and on one that is already enrolled, so it is
 # safe to re-run and to call from scripts/finish-install.sh.
 #
-#   ./scripts/tpm-enroll.sh [hostname]
+#   ./scripts/tpm-enroll.sh [--reenroll] [hostname]
+#
+# --reenroll recovers TPM unlock after a firmware update. The update changes
+# PCR 0, so the stored policy no longer matches, and systemd-pcrlock cannot
+# replace it: writing the NV index means satisfying the old policy first
+# ("Failed to submit AuthorizeNV policy"). This removes the policy, builds a
+# new one from the current measurements, and replaces the tpm2 keyslot.
 #
 # See docs/new-machine.md, step 8.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
+reenroll=false
+if [[ ${1:-} == --reenroll ]]; then
+  reenroll=true
+  shift
+fi
 host=${1:-$(hostname)}
 # Both fixed by the config: the mapper name by lib/disk-layouts/luks-btrfs.nix,
 # the policy path by lanzaboote's measuredBoot.pcrlockPolicy default.
@@ -45,6 +56,24 @@ secureboot=$(bootctl status 2>/dev/null || true)
 grep -q 'Secure Boot: enabled (user)' <<<"$secureboot" ||
   skip "Secure Boot is not enabled with user keys yet (see bootctl status)"
 
+if $reenroll; then
+  # remove-policy deletes $policy and deallocates the NV index. The
+  # make-policy unit is lanzaboote's, so the new policy gets the configured PCRs.
+  # remove-policy exits non-zero when it cannot deallocate the NV index, but
+  # deletes the policy files anyway; a leaked NV index does not block a new one.
+  echo "Replacing the systemd-pcrlock policy."
+  sudo "$pcrlock" remove-policy ||
+    echo "remove-policy failed to free the NV index; continuing without it"
+  sudo test ! -e "$policy" || {
+    echo "error: $policy still exists after remove-policy" >&2
+    exit 1
+  }
+  sudo systemctl restart systemd-pcrlock-make-policy.service || {
+    journalctl -b -u systemd-pcrlock-make-policy.service -n 15 --no-pager >&2
+    exit 1
+  }
+fi
+
 sudo test -f "$policy" ||
   skip "$policy does not exist; run nixos-rebuild switch first"
 
@@ -57,9 +86,13 @@ dev=
 [[ -b $dev && $(lsblk -ndo FSTYPE "$dev") == crypto_LUKS ]] ||
   skip "could not find the LUKS device behind /dev/mapper/$mapper"
 
+wipe=()
 slots=$(sudo systemd-cryptenroll "$dev")
 if awk '$2 == "tpm2" { found = 1 } END { exit !found }' <<<"$slots"; then
-  skip "$dev already has a tpm2 slot"
+  $reenroll || skip "$dev already has a tpm2 slot (use --reenroll to replace it)"
+  # cryptenroll wipes only after the new slot is enrolled, and never wipes the
+  # new slot, so a failed enrollment leaves the old one in place.
+  wipe=(--wipe-slot=tpm2)
 fi
 
 # No --tpm2-with-pin: the disk unlocks at boot without any input, so anyone
@@ -70,6 +103,7 @@ echo "Enrolling $dev for TPM unlock; systemd-cryptenroll asks for the current LU
 sudo systemd-cryptenroll \
   --tpm2-device=auto \
   --tpm2-pcrlock="$policy" \
+  "${wipe[@]}" \
   "$dev"
 
 echo "Enrolled. The next boot should unlock without the passphrase."

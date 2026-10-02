@@ -302,11 +302,15 @@ then `just tpm-enroll`.
 **Keep the passphrase.** systemd-pcrlock is still experimental upstream, and if
 its policy ever fails to validate the passphrase is the only way back in.
 
-You should not have to enroll again. lanzaboote regenerates the measurements and
-updates the TPM policy on every `nixos-rebuild`, which is the whole point of
-using a pcrlock policy rather than binding to static PCR values — those change
-on firmware updates and Secure Boot key changes, and would mean re-enrolling by
-hand each time.
+A `nixos-rebuild` does not need re-enrolling: lanzaboote regenerates the
+measurements and updates the TPM policy every time.
+
+A firmware update does. It changes PCR 0, and systemd-pcrlock cannot replace a
+policy whose own PCR values no longer match, so `systemd-pcrlock-make-policy`
+fails with `Failed to submit AuthorizeNV policy` and the disk asks for the
+passphrase. Boot with the passphrase, then run `just tpm-reenroll`. It removes
+the stale policy, builds a new one from the current measurements, and replaces
+the `tpm2` keyslot. The old slot is wiped only after the new one is enrolled.
 
 ## Where the age keys come from
 

@@ -17,6 +17,10 @@ finish-install hostname="":
 tpm-enroll hostname="":
     ./scripts/tpm-enroll.sh {{ hostname }}
 
+# Rebuild the TPM policy and replace the tpm2 keyslot, e.g. after a firmware update
+tpm-reenroll hostname="":
+    ./scripts/tpm-enroll.sh --reenroll {{ hostname }}
+
 # Join the tailnet, from an installed machine or from the installer
 tailnet-up:
     ./scripts/tailnet-up.sh
