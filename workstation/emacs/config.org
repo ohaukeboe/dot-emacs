@@ -4082,17 +4082,16 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     (require 'gptel-openai)
     (require 'gptel-ollama)
     ;; OpenRouter offers an OpenAI compatible API
-    (setq gptel-model 'anthropic/claude-sonnet-4.6
+    (setq gptel-model 'anthropic/claude-sonnet-latest
           gptel-backend
           (gptel-make-openai "OpenRouter"               ;Any name you want
             :host "openrouter.ai"
             :endpoint "/api/v1/chat/completions"
             ;; :stream t
             :key (auth-source-pick-first-password :host "openrouter.ai")
-            :models '(anthropic/claude-sonnet-4.6
-                      anthropic/claude-opus-4.7
-                      anthropic/claude-haiku-4.5
-                      google/gemini-3.1-flash-lite)))
+            :models '(anthropic/claude-sonnet-latest
+                      anthropic/claude-opus-latest
+                      google/gemini-flash-latest)))
 
     (gptel-make-ollama "Ollama"
       :host "localhost:11434"
@@ -4318,7 +4317,7 @@ MCP support is also nice :)
     :after embark
     :custom
     (gptel-quick-backend (alist-get "OpenRouter" gptel--known-backends nil nil #'string=))
-    (gptel-quick-model "anthropic/claude-haiku-4.5")
+    (gptel-quick-model "anthropic/claude-haiku-latest")
     (gptel-quick-timeout nil)
 
     :bind
@@ -4333,7 +4332,7 @@ MCP support is also nice :)
     :ensure t
     :hook (magit-mode . gptel-magit-install)
     :custom
-    (gptel-magit-model "google/gemini-3.1-flash-lite")
+    (gptel-magit-model "google/gemini-flash-latest")
     ;; (gptel-magit-backend (cdr (assoc "Ollama" gptel--known-backends)))
     (gptel-magit-prompt-conventional-commits
      "You are an expert at writing Git commits. Your job is to write a short clear commit message that summarizes the changes.

@@ -361,7 +361,7 @@ in
 
     programs.opencode.enable = true;
     programs.opencode.settings = {
-      model = "openrouter/anthropic/claude-sonnet-4.6";
+      model = "openrouter/anthropic/claude-sonnet-latest";
     };
     programs.opencode.context = joinDocs (
       [ ./agents-global.md ] ++ config.agents.docs.both ++ config.agents.docs.opencodeOnly
@@ -377,8 +377,8 @@ in
         cache-keepalive-pings = 5;
         code-theme = "monokai";
         auto-commits = false;
-        model = "openrouter/anthropic/claude-sonnet-4.6";
-        weak-model = "openrouter/anthropic/claude-haiku-4.5";
+        model = "openrouter/anthropic/claude-sonnet-latest";
+        weak-model = "openrouter/anthropic/claude-haiku-latest";
       };
     };
 
