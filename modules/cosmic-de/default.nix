@@ -96,7 +96,12 @@ in
       services.flatpak.packages = [
         "org.gtk.Gtk3theme.adw-gtk3"
         "org.gtk.Gtk3theme.adw-gtk3-dark"
-        "io.github.nwxnw.cosmic-ext-connected"
+        # Only published on the cosmic remote; without origin nix-flatpak
+        # looks for it on flathub and retries forever.
+        {
+          appId = "io.github.nwxnw.cosmic-ext-connected";
+          origin = "cosmic";
+        }
       ];
 
       xdg.configFile = mkMerge [
