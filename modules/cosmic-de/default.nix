@@ -151,7 +151,8 @@ in
             )
           '';
 
-          # Touchpad: click zones by finger count, natural two-finger scroll.
+          # Touchpad: click zones by finger count, natural two-finger scroll,
+          # tap to click with tap-and-drag.
           input_touchpad = ''
             (
                 state: Enabled,
@@ -161,6 +162,12 @@ in
                     natural_scroll: Some(true),
                     scroll_button: None,
                     scroll_factor: None,
+                )),
+                tap_config: Some((
+                    enabled: true,
+                    button_map: Some(LeftRightMiddle),
+                    drag: true,
+                    drag_lock: false,
                 )),
             )
           '';
