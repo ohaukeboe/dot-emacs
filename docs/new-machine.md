@@ -312,6 +312,14 @@ passphrase. Boot with the passphrase, then run `just tpm-reenroll`. It removes
 the stale policy, builds a new one from the current measurements, and replaces
 the `tpm2` keyslot. The old slot is wiped only after the new one is enrolled.
 
+To reset the TPM to its factory state, run `just tpm-clear`
+(`scripts/tpm-clear.sh`). It wipes the `tpm2` keyslot (refusing when no other
+keyslot exists), removes the systemd-pcrlock policy, then runs `tpm2_clear`.
+That destroys everything sealed to the TPM, including the sops TPM identity and
+any other OS's BitLocker keys. When the OS is not allowed to clear the TPM, it
+files a Physical Presence request instead, which the firmware asks you to
+confirm at the next reboot. Afterwards, reboot and run `just tpm-enroll`.
+
 ## Where the age keys come from
 
 Neither sops module generates a key — `workstation/sops.nix` sets

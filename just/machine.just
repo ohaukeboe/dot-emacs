@@ -21,6 +21,10 @@ tpm-enroll hostname="":
 tpm-reenroll hostname="":
     ./scripts/tpm-enroll.sh --reenroll {{ hostname }}
 
+# Reset the TPM to factory state, wiping the LUKS tpm2 keyslot first
+tpm-clear:
+    ./scripts/tpm-clear.sh
+
 # Join the tailnet, from an installed machine or from the installer
 tailnet-up:
     ./scripts/tailnet-up.sh
