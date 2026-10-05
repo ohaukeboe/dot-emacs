@@ -178,21 +178,18 @@ finding arrives twice."
           "\n"))))))
 
 (defun claude-format-on-edit--cleanup (buffer)
-  "Kill BUFFER and any language server left without one."
+  "Kill BUFFER but leave its language server running.
+The next edit in the same project then finds a warm server instead of paying
+for a cold start, and the user finds it already up when they open a file."
   (when (buffer-live-p buffer)
-    (kill-buffer buffer))
-  ;; Covers servers this hook started, including ones still initializing,
-  ;; which are not attached to a buffer yet.
-  (ignore-errors
-    (dolist (w (lsp--session-workspaces (lsp-session)))
-      (when (null (seq-filter #'buffer-live-p (lsp--workspace-buffers w)))
-        (lsp-workspace-shutdown w)))))
+    (let ((lsp-keep-workspace-alive t))
+      (kill-buffer buffer))))
 
 ;;;###autoload
 (defun claude-format-on-edit (file report)
   "Format FILE and write its diagnostics to REPORT.
-Leaves Emacs as it was found: a buffer opened here is killed again, and a
-buffer the user already had open keeps its modes."
+A buffer opened here is killed again, and a buffer the user already had open
+keeps its modes.  A language server started here stays running."
   (let* ((existing (get-file-buffer file))
          ;; NOWARN: a file that changed on disk must not raise a prompt.
          (buffer (or existing (ignore-errors (find-file-noselect file t)))))
