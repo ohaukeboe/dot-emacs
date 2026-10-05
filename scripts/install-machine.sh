@@ -222,7 +222,9 @@ trap 'rm -f "$passfile"' EXIT
 if [[ $mode == format ]]; then
   echo
   echo "==> Partitioning"
-  as_root nix run "$DISKO" -- --mode destroy,format,mount --flake ".#$host"
+  # The hostname confirmation above already covers the wipe. Without this flag
+  # disko asks again, after the passwords, and the install stalls on it.
+  as_root nix run "$DISKO" -- --mode destroy,format,mount --yes-wipe-all-disks --flake ".#$host"
 else
   echo
   echo "==> Mounting"
