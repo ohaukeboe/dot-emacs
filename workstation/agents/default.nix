@@ -201,13 +201,11 @@ in
         # Destructive filesystem and working-tree commands. Prose in a memory
         # file is a request; an ask rule is enforced by the harness, and still
         # prompts inside a sandboxed auto-allow session.
-        "rm -rf"
         "sudo rm"
         "dd"
         "mkfs"
         "git clean"
         "git restore"
-        "git checkout --"
       ];
       description = ''
         Bash command prefixes that must always prompt. Rendered into
