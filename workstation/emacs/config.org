@@ -1757,6 +1757,7 @@ For information about setting up a new lsp server, see [[https://joaotavora.gith
     (lsp-headerline-breadcrumb-enable nil)
     ;; (eldoc-display-functions '(eldoc-display-in-buffer))
     (lsp-idle-delay 0.0)
+    (lsp-enable-suggest-server-download nil) ;; servers come from Nix
 
     (lsp-inlay-hint-enable t)
     (lsp-format-buffer-on-save t)
