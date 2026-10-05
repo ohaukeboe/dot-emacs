@@ -80,6 +80,22 @@ in
     systemd.user.services.cosmic-pass.wantedBy = [ "graphical-session.target" ];
 
     home-manager.users.${config.user.username} = {
+      imports = [
+        (
+          { lib, ... }:
+          {
+            # COSMIC reads the derived com.system76.CosmicTheme.{Dark,Light}/*
+            # palettes, not the Builder keys pinned below; only cosmic-settings
+            # turns one into the other, and only when a value is changed in its
+            # UI. Rebuild them on every activation so the pinned accent and
+            # background actually reach the desktop.
+            home.activation.cosmicBuildTheme = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+              run ${getExe pkgs.cosmic-ext-ctl} build-theme
+            '';
+          }
+        )
+      ];
+
       services.flatpak.remotes = [
         # Default flathub remote must be re-declared: assigning `remotes`
         # replaces nix-flatpak's default instead of merging with it.
