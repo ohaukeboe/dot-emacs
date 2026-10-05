@@ -4082,16 +4082,17 @@ Use any LLM in Emacs. It is really cool that it's also possible to define tools 
     (require 'gptel-openai)
     (require 'gptel-ollama)
     ;; OpenRouter offers an OpenAI compatible API
-    (setq gptel-model 'anthropic/claude-sonnet-latest
+    (setq gptel-model '~anthropic/claude-sonnet-latest
           gptel-backend
           (gptel-make-openai "OpenRouter"               ;Any name you want
             :host "openrouter.ai"
             :endpoint "/api/v1/chat/completions"
             ;; :stream t
             :key (auth-source-pick-first-password :host "openrouter.ai")
-            :models '(anthropic/claude-sonnet-latest
-                      anthropic/claude-opus-latest
-                      google/gemini-flash-latest)))
+            :models '(~anthropic/claude-sonnet-latest
+                      ~anthropic/claude-opus-latest
+                      ~anthropic/claude-haiku-latest
+                      ~google/gemini-flash-latest)))
 
     (gptel-make-ollama "Ollama"
       :host "localhost:11434"
@@ -4317,7 +4318,7 @@ MCP support is also nice :)
     :after embark
     :custom
     (gptel-quick-backend (alist-get "OpenRouter" gptel--known-backends nil nil #'string=))
-    (gptel-quick-model "anthropic/claude-haiku-latest")
+    (gptel-quick-model "~anthropic/claude-haiku-latest")
     (gptel-quick-timeout nil)
 
     :bind
@@ -4331,8 +4332,24 @@ MCP support is also nice :)
   (use-package gptel-magit
     :ensure t
     :hook (magit-mode . gptel-magit-install)
+    :config
+    ;; gptel-magit's callbacks expect a string, but gptel also calls them
+    ;; with `(reasoning . TEXT)' for thinking models and with nil on errors.
+    (defun my/gptel-magit--string-callback-a (args)
+      "Wrap the :callback in ARGS so it only ever receives a string."
+      (let ((callback (plist-get (cdr args) :callback)))
+        (cons (car args)
+              (plist-put (copy-sequence (cdr args)) :callback
+                         (lambda (response info)
+                           (cond
+                            ((stringp response) (funcall callback response info))
+                            ((null response)
+                             (message "gptel-magit: request failed: %s"
+                                      (or (plist-get (plist-get info :error) :message)
+                                          (plist-get info :status))))))))))
+    (advice-add 'gptel-magit--request :filter-args #'my/gptel-magit--string-callback-a)
     :custom
-    (gptel-magit-model "google/gemini-flash-latest")
+    (gptel-magit-model "~google/gemini-flash-latest")
     ;; (gptel-magit-backend (cdr (assoc "Ollama" gptel--known-backends)))
     (gptel-magit-prompt-conventional-commits
      "You are an expert at writing Git commits. Your job is to write a short clear commit message that summarizes the changes.
