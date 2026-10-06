@@ -147,6 +147,12 @@
       flake = false;
     };
 
+    # No releases; track HEAD. Built by workstation/agents/packages/claude-pointer.nix.
+    claude-pointer = {
+      url = "github:ohaukeboe/claude-pointer";
+      flake = false;
+    };
+
     # Emacs packages previously installed via use-package :vc
     claude-code-ide-src = {
       url = "github:manzaltu/claude-code-ide.el";

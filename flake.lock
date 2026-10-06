@@ -101,6 +101,22 @@
         "type": "github"
       }
     },
+    "claude-pointer": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791315181,
+        "narHash": "sha256-ZLIuZiI4lXC1dlljfI6rLfIEoeELJtncZaL88JLFsf4=",
+        "owner": "ohaukeboe",
+        "repo": "claude-pointer",
+        "rev": "fa01b50f9f856d4aa8d47cdd70fa98f0ff1df489",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ohaukeboe",
+        "repo": "claude-pointer",
+        "type": "github"
+      }
+    },
     "codebase-memory-mcp": {
       "inputs": {
         "nixpkgs": [
@@ -823,6 +839,7 @@
         "cavekit": "cavekit",
         "caveman": "caveman",
         "claude-code-ide-src": "claude-code-ide-src",
+        "claude-pointer": "claude-pointer",
         "codebase-memory-mcp": "codebase-memory-mcp",
         "consult-mu-src": "consult-mu-src",
         "cosmic-pass": "cosmic-pass",

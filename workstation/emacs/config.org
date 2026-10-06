@@ -4499,6 +4499,16 @@ flake input.
       (claude-code-ide-enable-mcp-server t)
       (claude-code-ide-terminal-backend 'ghostel)
       (claude-code-ide-window-width 42)
+      ;; Receive Claude Pointer comments from Zen, as `claude-pointer claude'
+      ;; does.  The file comes from workstation/agents/claude-pointer.nix
+      ;; (Linux only); this `--mcp-config' adds to claude-code-ide's own.
+      (claude-code-ide-cli-extra-flags
+       (let ((config (expand-file-name "claude-pointer/mcp.json"
+                                       (or (getenv "XDG_CONFIG_HOME") "~/.config"))))
+         (if (file-exists-p config)
+             (concat "--mcp-config " (shell-quote-argument config)
+                     " --dangerously-load-development-channels server:claude-pointer")
+           "")))
       :config
       (claude-code-ide-emacs-tools-setup) ; Optionally enable Emacs MCP tools
 

@@ -237,6 +237,7 @@ in
     ./auto-mode.nix
     ./beads.nix
     ./caveman.nix
+    ./claude-pointer.nix
     ./code-review-graph.nix
     ./commit-guard.nix
     ./format-on-edit.nix
