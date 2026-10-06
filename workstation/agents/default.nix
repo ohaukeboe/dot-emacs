@@ -238,6 +238,7 @@ in
     ./beads.nix
     ./caveman.nix
     ./code-review-graph.nix
+    ./commit-guard.nix
     ./format-on-edit.nix
     ./mcp-servers.nix
     ./memory-cap.nix
