@@ -395,7 +395,23 @@ in
     nix-index.enable = true;
     nix-index.enableFishIntegration = true;
 
-    zen-browser.enable = true;
+    zen-browser = {
+      enable = true;
+      # Set through policies rather than profiles.*.settings, which would
+      # make Home Manager take over the existing profile.
+      policies.Preferences = {
+        # Load pinned tabs at startup instead of on first click.
+        "browser.sessionstore.restore_pinned_tabs_on_demand" = {
+          Value = false;
+          Status = "default";
+        };
+        # Reset pinned tabs to their pinned URL when restoring.
+        "zen.pinned-tab-manager.restore-pinned-tabs-to-pinned-url" = {
+          Value = true;
+          Status = "default";
+        };
+      };
+    };
 
     # I mostly use fish, but since nix-shell uses bash it is nice to
     # also have it be managed by nix
