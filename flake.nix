@@ -157,6 +157,12 @@
       flake = false;
     };
 
+    # No releases; track HEAD. Built by workstation/packages/rm-push.nix.
+    rm-push = {
+      url = "github:ohaukeboe/rm-push";
+      flake = false;
+    };
+
     # Emacs packages previously installed via use-package :vc
     claude-code-ide-src = {
       url = "github:manzaltu/claude-code-ide.el";

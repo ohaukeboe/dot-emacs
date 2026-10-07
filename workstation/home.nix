@@ -30,6 +30,7 @@ in
     ./ssh.nix
     ./sops.nix
     ./agents
+    ./rm-push.nix
     inputs.zen-browser.homeModules.beta
   ];
 

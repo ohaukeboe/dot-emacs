@@ -844,6 +844,22 @@
         "type": "github"
       }
     },
+    "rm-push": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791402502,
+        "narHash": "sha256-aCSrMRhkYYS4txGH5i8D9aKKgNfp9pnJ/uASP56WYlg=",
+        "owner": "ohaukeboe",
+        "repo": "rm-push",
+        "rev": "1c2529144971ddf4763e1468f2c03a9c6f95352d",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ohaukeboe",
+        "repo": "rm-push",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "anthropic-cybersecurity-skills": "anthropic-cybersecurity-skills",
@@ -874,6 +890,7 @@
         "nixpkgs": "nixpkgs_6",
         "nixpkgs-zotero": "nixpkgs-zotero",
         "privacy-data-protection-skills": "privacy-data-protection-skills",
+        "rm-push": "rm-push",
         "rust-overlay": "rust-overlay",
         "sops-nix": "sops-nix",
         "treefmt-nix": "treefmt-nix_3",
