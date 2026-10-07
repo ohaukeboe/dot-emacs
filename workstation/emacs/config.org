@@ -3066,7 +3066,22 @@ Show pdf previews as inline images.
     :ensure t
     :after org
     :custom
-    (org-download-method 'attach))
+    (org-download-method 'attach)
+    :config
+    (defun oh/clipboard-has-image-p ()
+      "Return non-nil if the system clipboard holds a PNG image."
+      (when (display-graphic-p)
+        (let ((targets (ignore-errors (gui-get-selection 'CLIPBOARD 'TARGETS))))
+          (and (vectorp targets)
+               (seq-contains-p targets 'image/png)))))
+
+    (defun oh/org-yank-image-a (orig-fn &optional arg)
+      "Paste a clipboard image with `org-download-clipboard', else call ORIG-FN."
+      (if (and (null arg) (oh/clipboard-has-image-p))
+          (org-download-clipboard)
+        (funcall orig-fn arg)))
+
+    (advice-add 'org-yank :around #'oh/org-yank-image-a))
     ;; :general
     ;; (oh/leader-key org-mode-map
     ;;   "map" 'org-download-clipboard
