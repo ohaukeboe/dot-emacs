@@ -37,6 +37,21 @@ in
       description = "systemd HibernateDelaySec — how long to stay suspended before hibernating.";
     };
 
+    sleepAction = mkOption {
+      type = types.enum [
+        "suspend-then-hibernate"
+        "suspend"
+        "hibernate"
+      ];
+      default = "suspend-then-hibernate";
+      description = ''
+        What lid-close and idle trigger. Use "suspend" where the RTC alarm
+        cannot wake the machine from s2idle: suspend-then-hibernate then
+        stays suspended until the lid opens and hibernates at that moment.
+        Manual `systemctl hibernate` keeps working either way.
+      '';
+    };
+
     idleActionSec = mkOption {
       type = types.str;
       default = "30min";
@@ -89,12 +104,13 @@ in
     # degrades suspend-then-hibernate to plain suspend.
     boot.initrd.systemd.enable = true;
 
-    # Trigger policy: lid-close and idle fall through to hibernate after the delay.
+    # Trigger policy: by default lid-close and idle fall through to hibernate
+    # after the delay.
     systemd.sleep.settings.Sleep.HibernateDelaySec = cfg.hibernateDelay;
     services.logind.settings.Login = {
-      HandleLidSwitch = "suspend-then-hibernate";
-      HandleLidSwitchExternalPower = "suspend-then-hibernate";
-      IdleAction = "suspend-then-hibernate";
+      HandleLidSwitch = cfg.sleepAction;
+      HandleLidSwitchExternalPower = cfg.sleepAction;
+      IdleAction = cfg.sleepAction;
       IdleActionSec = cfg.idleActionSec;
     };
   };

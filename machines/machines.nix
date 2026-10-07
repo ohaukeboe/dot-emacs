@@ -44,6 +44,9 @@
       {
         modules.sleep-then-hibernate.enable = true;
         modules.sleep-then-hibernate.swapSize = 40960; # 40 GiB (RAM = 32 GiB + headroom)
+        # SMU firmware 64.44 < 64.53, so amd_pmc never arms the RTC wake from
+        # s2idle and the hibernate delay cannot fire.
+        modules.sleep-then-hibernate.sleepAction = "suspend";
       }
     ];
   };
