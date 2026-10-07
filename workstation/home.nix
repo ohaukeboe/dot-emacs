@@ -227,7 +227,8 @@ in
 
       ### Reading ###
       rmapi
-      (lib.optional (system != "aarch64-linux") zotero)
+      # Pinned: zotero is broken on current nixos-unstable, see flake.nix.
+      (lib.optional (system != "aarch64-linux") inputs.nixpkgs-zotero.legacyPackages.${system}.zotero)
       inputs.zotra-server.packages.${system}.default
 
       ### Java ###

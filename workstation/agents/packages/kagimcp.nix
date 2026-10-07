@@ -10,6 +10,8 @@
 #   - inquirer (via py-key-value-aio → aioboto3 → chalice): flaky pexpect TIMEOUTs in acceptance tests.
 #   - inline-snapshot (via http-snapshot → openai/mocket): test_docs.py black-formatting assertions fail.
 #   - cyclopts (via fastmcp): flaky pexpect TIMEOUT in test_behavior[zsh-literal-positional].
+#   - anyio (via fastmcp): test_tls_connectable fails with "server_hostname can only be
+#     specified in client mode" on Python 3.12.
 # Remove when nixpkgs ships fixes.
 let
   pythonOverridden = python312.override {
@@ -24,6 +26,9 @@ let
         doCheck = false;
       });
       cyclopts = pyprev.cyclopts.overridePythonAttrs (_: {
+        doCheck = false;
+      });
+      anyio = pyprev.anyio.overridePythonAttrs (_: {
         doCheck = false;
       });
     };

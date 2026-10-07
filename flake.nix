@@ -8,6 +8,10 @@
     # https://discourse.nixos.org/t/psa-use-nixos-org-tarballs-for-your-flake-inputs/79950
     nixpkgs.url = "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst";
 
+    # Last nixos-unstable with a building zotero; only zotero comes from it.
+    # TODO: drop once NixOS/nixpkgs#569006 fixes NixOS/nixpkgs#568692.
+    nixpkgs-zotero.url = "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1078696.4975466d3247/nixexprs.tar.zst";
+
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -11,7 +11,7 @@ buildNpmPackage {
   src = nvSources.mobile-mcp.src;
   sourceRoot = "package";
   npmDepsFetcherVersion = 2;
-  npmDepsHash = "sha256-gBOxwe6uN0wiFMLkcA/qTqZPc2Qk/pS4veAiRrtF3Hk=";
+  npmDepsHash = "sha256-Cj1/z/D74BfLhxPs79QiOkM/RBscs2kYIjncpFFQ6vs=";
   npmFlags = [
     "--omit=dev"
     "--ignore-scripts"

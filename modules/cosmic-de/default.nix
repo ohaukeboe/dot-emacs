@@ -303,7 +303,11 @@ in
     # `error: Couldn't find key in agent?` on every signed git commit.
     services.gnome.gcr-ssh-agent.enable = false;
 
-    # Qt theming for COSMIC
+    # Qt theming for COSMIC. The upstream COSMIC module enables the qt module
+    # with platformTheme "qt5ct", which sets QT_QPA_PLATFORMTHEME too and
+    # clashes with "cosmic" below; "cosmic" is not a valid qt.platformTheme,
+    # so the qt module stays off.
+    qt.enable = false;
     environment.sessionVariables = {
       QT_QPA_PLATFORMTHEME = "cosmic";
       COSMIC_DATA_CONTROL_ENABLED = 1; # Clipboard management
