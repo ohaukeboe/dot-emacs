@@ -23,3 +23,4 @@
 - If the block is a baseline credential or hidden socket, say so and stop.
 - `agent-sandbox-probe` checks every protection. Run it when asked to verify the sandbox; it refuses to run outside the sandbox.
 - If approvals stop saving or 0-byte files appear under `.claude/`, a killed session left placeholders behind: `claude doctor` lists them.
+- `parsing .gitmodules file: ... is locked: Permission denied` from Nix in a repo that has no `.gitmodules` is not a leftover placeholder. The sandbox masks the missing file with a device, which breaks every git-backed flake command, and `claude doctor` does not fix it. Propose committing an empty `.gitmodules`, which keeps the commands sandboxed, before any `excludedCommands` entry.
