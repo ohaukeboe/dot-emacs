@@ -101,6 +101,12 @@ in
     "authinfo/github_pat" = { };
     "authinfo/kagi" = { };
     "authinfo/context7" = { };
+  }
+  # The agent signing key (docs/adr/0004-agent-sandbox-policy.md). Declared
+  # only once the sandbox uses it: sops-nix fails activation outright when a
+  # declared key is missing from the file.
+  // optionalAttrs config.agents.sandbox.signing.enable {
+    ${config.agents.sandbox.signing.secret} = { };
   };
 
   sops.templates."nix-github-token" = {

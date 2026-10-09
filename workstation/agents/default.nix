@@ -42,6 +42,45 @@ let
       original=$(jq -r '.tool_input.command // empty' <<<"$payload" 2>/dev/null || true)
       [ -n "$original" ] || exit 0
 
+      # A command the sandbox policy excludes must reach Claude Code unchanged:
+      # it matches `sandbox.excludedCommands` against the final command text,
+      # so a rewritten command never matches and stays sandboxed. Such commands
+      # skip every stage, the process cap included; ask and deny rules still
+      # see the same text, because nothing changes. Only a plain call is
+      # considered: Claude Code keeps redirects, `cd`, substitutions and
+      # chained calls sandboxed anyway, and this matcher must never claim a
+      # command the harness would not. See docs/adr/0003 and 0004.
+      excluded_patterns() {
+        local cwd file
+        local files=("$HOME/.claude/settings.json")
+        cwd=$(jq -r '.cwd // empty' <<<"$payload" 2>/dev/null || true)
+        if [ -n "$cwd" ]; then
+          files+=("$cwd/.claude/settings.json" "$cwd/.claude/settings.local.json")
+        fi
+        for file in "''${files[@]}"; do
+          [ -r "$file" ] || continue
+          jq -r '.sandbox.excludedCommands[]? // empty' "$file" 2>/dev/null || true
+        done
+      }
+      is_excluded() {
+        local cmd=$1 pat base
+        [[ $cmd == *[\;\&\|\<\>\`\$\(\)\{\}]* || $cmd == *$'\n'* ]] && return 1
+        while IFS= read -r pat; do
+          [ -n "$pat" ] || continue
+          # `x *` matches x with or without arguments, as in Bash() rules.
+          if [[ "$pat" == *" *" ]]; then
+            base=''${pat% \*}
+            # shellcheck disable=SC2053
+            [[ $cmd == $base || $cmd == $base" "* ]] && return 0
+          else
+            # shellcheck disable=SC2053
+            [[ $cmd == $pat ]] && return 0
+          fi
+        done < <(excluded_patterns)
+        return 1
+      }
+      is_excluded "$original" && exit 0
+
       # Every failure path keeps the previous command text and carries on: a
       # stage that exits non-zero, prints nothing, or prints something without
       # an updatedInput is treated as "no change". The chain always exits 0,
@@ -245,6 +284,7 @@ in
     ./memory-cap.nix
     ./process-cap.nix
     ./rtk.nix
+    ./sandbox.nix
     ./skills.nix
   ];
 
@@ -286,10 +326,6 @@ in
       "mcp__plugin_hm_github-mcp__merge_pull_request"
       "mcp__plugin_hm_github-mcp__create_pull_request"
     ];
-    # Keep the Claude Code sandbox off. Its bubblewrap/seccomp jail broke nix
-    # daemon access, ssh-agent signing and nested sessions more often than it
-    # helped.
-    programs.claude-code.settings.sandbox.enabled = false;
     # Absorbed from former security-guidance.nix:
     programs.claude-code.settings.enabledPlugins = {
       "security-guidance@claude-plugins-official" = true;

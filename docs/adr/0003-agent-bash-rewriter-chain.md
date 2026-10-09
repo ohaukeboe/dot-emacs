@@ -78,3 +78,17 @@ breaking every Bash command is a worse outage than any leak it would prevent.
   deterministic composition of parallel `updatedInput` hooks, this indirection
   could be dropped — but not before, and the stage contract would still be the
   cheaper way to order two rewrites.
+
+## Amendment (2026-10-09): sandbox-excluded commands bypass the chain
+
+Claude Code matches `sandbox.excludedCommands` against the command text after
+`PreToolUse` hooks have rewritten it. A command wrapped by the chain, for
+example as `agent-process-cap run fg <base64>`, never matched a project's
+exclusion and stayed sandboxed (`specs/004-agent-sandbox-policy/research.md`
+R16). The chain now reads `sandbox.excludedCommands` from the user settings and
+the project's `.claude/settings.json` and `.claude/settings.local.json`. A plain
+call that matches one passes through unchanged: no rtk, no process cap. Calls
+with redirects, pipes, `cd`, substitutions or chaining are never treated as
+excluded, because Claude Code keeps those sandboxed anyway. The cost is that
+excluded commands run uncapped, outside the sandbox's PID-namespace cleanup.
+See `docs/adr/0004-agent-sandbox-policy.md`.

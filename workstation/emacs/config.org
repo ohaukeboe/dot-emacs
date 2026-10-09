@@ -4512,6 +4512,9 @@ flake input.
              ("C-c o w" . my/claude-code-ide-worktree))
       :custom
       (claude-code-ide-enable-mcp-server t)
+      ;; No `executeCode' tool: it evals arbitrary Elisp in this Emacs, which
+      ;; runs outside any sandbox around Claude Code's shell commands.
+      (claude-code-ide-enable-execute-code nil)
       (claude-code-ide-terminal-backend 'ghostel)
       (claude-code-ide-window-width 42)
       ;; Receive Claude Pointer comments from Zen, as `claude-pointer claude'

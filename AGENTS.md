@@ -335,6 +335,10 @@ a `SIGKILL` a few seconds later. A capped command exits 143 or 137 and prints a
   `PreToolUse` hook, because matching hooks run in parallel and the winning
   rewrite would be undefined. See `docs/adr/0003-agent-bash-rewriter-chain.md`.
 
+## Shell commands are sandboxed
+
+- Claude Code's shell commands run in its sandbox (`workstation/agents/sandbox.nix`, `docs/adr/0004-agent-sandbox-policy.md`): credentials and the docker/libvirt/keyring/session-bus sockets (plus the main ssh-agent once `agents.sandbox.signing` is on) are hidden and `$HOME` is read-only except `~/.cache/nix`. Widen per project in `.claude/settings.local.json`; `agent-sandbox-probe`, run by the agent, verifies it.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:46cd31e7 -->
 ## Beads Issue Tracker
 

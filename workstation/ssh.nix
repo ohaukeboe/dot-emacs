@@ -12,6 +12,7 @@ let
   mainKey = config.sops.secrets."ssh/main".path;
   oldKey = config.sops.secrets."ssh/old".path;
   trashcanKey = config.sops.secrets."ssh/trashcan".path;
+  signing = config.agents.sandbox.signing;
 in
 {
   # A plain ssh-agent with no GUI, desktop-session or biometric dependency, so
@@ -43,6 +44,41 @@ in
     Install.WantedBy = [ "default.target" ];
   };
 
+  # A second agent holding only the agent signing key, for Claude Code's
+  # sandboxed commands. The key signs commits but is registered on GitHub for
+  # signatures only, so the agent cannot push with it; the main agent above is
+  # hidden from the sandbox (docs/adr/0004-agent-sandbox-policy.md).
+  systemd.user.services.ssh-agent-sign =
+    lib.mkIf (isLinux && config.agents.sandbox.enable && signing.enable)
+      {
+        Unit = {
+          Description = "SSH agent holding only the agent signing key";
+          After = [ "sops-nix.service" ];
+          Wants = [ "sops-nix.service" ];
+        };
+        Service = {
+          ExecStart = "${lib.getExe' pkgs.openssh "ssh-agent"} -D -a %t/${signing.socketName}";
+          ExecStartPost = lib.getExe (
+            pkgs.writeShellApplication {
+              name = "ssh-agent-sign-load";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.openssh
+              ];
+              text = ''
+                export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/${signing.socketName}"
+                for _ in $(seq 50); do
+                  [ -S "$SSH_AUTH_SOCK" ] && break
+                  sleep 0.1
+                done
+                ssh-add ${config.sops.secrets.${signing.secret}.path}
+              '';
+            }
+          );
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
+
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
@@ -52,7 +88,10 @@ in
         ServerAliveInterval = 30;
         ServerAliveCountMax = 3;
         ControlMaster = "auto";
-        ControlPath = "/tmp/ssh-%u-%r@%h:%p";
+        # Under ~/.ssh, which the agent sandbox hides: a master connection in
+        # /tmp could be reused by any sandboxed command to reach a remote
+        # without a key (docs/adr/0004-agent-sandbox-policy.md).
+        ControlPath = "~/.ssh/cm-%C";
         ControlPersist = "10m";
         IdentitiesOnly = true;
         # No IdentityAgent: it would override SSH_AUTH_SOCK on every machine

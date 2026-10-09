@@ -53,6 +53,35 @@ let
       command=$(printf '%s' "$3" | base64 -d 2>/dev/null) || usage "payload is not base64"
       [ -n "$command" ] || usage "payload decoded to an empty command"
 
+      # Inside Claude Code's sandbox (docs/adr/0004-agent-sandbox-policy.md)
+      # `systemd-run --user` cannot reach the user manager: systemd 261 only
+      # uses the manager's private socket for --user, and that socket rejects
+      # callers from the sandbox's PID and user namespace during
+      # authentication. The sandbox closes the original failure mode on its
+      # own instead: every command runs in a bwrap with --die-with-parent and a
+      # private PID namespace, so nothing a command starts outlives it. What is
+      # left to enforce is the runtime allowance, which `timeout` does from
+      # inside. The per-command memory scope is lost; the session's scope still
+      # bounds everything the sandbox runs.
+      if [ "''${SANDBOX_RUNTIME:-}" = 1 ]; then
+        set +e
+        SECONDS=0
+        timeout --kill-after=${toString cfg.graceSeconds} "$cap" bash -c "$command"
+        rc=$?
+        set -e
+        # timeout reports a TERM at the allowance as 124; keep the documented
+        # 143 so a capped command looks the same with and without the sandbox.
+        [ "$rc" -eq 124 ] && rc=143
+        case "$rc" in
+          143 | 137)
+            if [ "$SECONDS" -ge "$cap" ]; then
+              echo "[process-cap] terminated after the $mode runtime cap of ''${cap}s" >&2
+            fi
+            ;;
+        esac
+        exit "$rc"
+      fi
+
       # Fail open. A hook that breaks every Bash call is a worse outage than the
       # leak it prevents, so anything unexpected runs the command uncapped.
       bus=''${DBUS_SESSION_BUS_ADDRESS:-}

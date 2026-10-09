@@ -103,6 +103,7 @@ sudo nixos-rebuild switch --flake .#<hostname>  # hosts: x13-laptop, work-laptop
 - Only NixOS is tested. Standalone `homeConfigurations` still exist (build checks, future non-NixOS use) but have no setup docs — don't add any unasked.
 - `nix fmt` runs treefmt across **all** files — may reformat unrelated ones; revert stray churn before committing.
 - `just update-sources` regenerates nvfetcher sources (`nvfetcher.toml` → `_sources/`), consumed via the `pkgs.nvSources` overlay. npm pkgs still need a manual `npmDepsHash` bump.
+- Claude Code's shell commands run in its sandbox (`workstation/agents/sandbox.nix`, `docs/adr/0004-agent-sandbox-policy.md`): credentials and the docker/libvirt/keyring/session-bus sockets (plus the main ssh-agent once `agents.sandbox.signing` is on) are hidden and `$HOME` is read-only except `~/.cache/nix`. Widen per project in `.claude/settings.local.json`; `agent-sandbox-probe`, run by the agent, verifies it.
 
 ## Agent skills
 

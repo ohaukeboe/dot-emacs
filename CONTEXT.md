@@ -75,6 +75,33 @@ The journal entry a capped termination leaves behind — command text, time and
 the allowance that applied, all tagged `claude-cap`. Read them with
 `journalctl --user -g claude-cap`. The only durable trace; there is no log file.
 
+### Agents / sandbox
+
+**Sandbox baseline**:
+The user-scope sandbox and permission policy every Claude Code session starts
+with. Generated from `agents.sandbox` into `~/.claude/settings.json`, so the
+agent cannot change it. Hides credential paths and the sockets that act for the
+user, and forbids running unsandboxed. See
+`docs/adr/0004-agent-sandbox-policy.md`.
+_Avoid_: global policy, floor
+
+**Project policy**:
+A project's additions to the sandbox baseline (extra directories, hosts,
+excluded commands) in `.claude/settings.local.json` or a committed
+`.claude/settings.json`. Can only widen what the baseline allows widening.
+_Avoid_: project sandbox, local settings
+
+**Policy proposal**:
+An edit the agent makes to a project policy after a sandbox block. Always shown
+to the user as a permission prompt, auto mode included; nothing is written
+without approval.
+
+**Agent signing key**:
+The signing-only SSH key (`ssh/agent-signing`) the agent signs commits with,
+served by its own ssh-agent. Registered on the code host for signatures, never
+for authentication, so the agent can sign but not push.
+_Avoid_: agent key, bot key
+
 ### Emacs / beads
 
 **Bead**:
