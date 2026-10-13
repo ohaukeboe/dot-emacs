@@ -357,6 +357,7 @@ in
       nerd-fonts.roboto-mono
       nerd-fonts.symbols-only
       noto-fonts-color-emoji
+      (callPackage ./packages/oslo-sans.nix { })
     ]
     ++ lib.optionals isLinux (
       lib.lists.flatten [
