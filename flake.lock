@@ -844,6 +844,22 @@
         "type": "github"
       }
     },
+    "punkt-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791878960,
+        "narHash": "sha256-bvCM6TqGlCucm95jzr/N8pX+Ve7jN3PoxTsk9nXBiYs=",
+        "owner": "oslokommune",
+        "repo": "punkt-skills",
+        "rev": "0a24c0dc7ac65289f06fb63aa13521b044986726",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oslokommune",
+        "repo": "punkt-skills",
+        "type": "github"
+      }
+    },
     "rm-push": {
       "flake": false,
       "locked": {
@@ -890,6 +906,7 @@
         "nixpkgs": "nixpkgs_6",
         "nixpkgs-zotero": "nixpkgs-zotero",
         "privacy-data-protection-skills": "privacy-data-protection-skills",
+        "punkt-skills": "punkt-skills",
         "rm-push": "rm-push",
         "rust-overlay": "rust-overlay",
         "sops-nix": "sops-nix",

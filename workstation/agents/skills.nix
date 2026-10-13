@@ -186,6 +186,9 @@ let
       mattpocockSkills
       llmSkillsSubset
       understandAnythingSkills
+      # oslokommune/punkt-skills — the whole skills/ dir, so skills added
+      # upstream appear on input bump.
+      "${inputs.punkt-skills}/skills"
       # Bulk skill packs disabled: together ~1101 skills, all model-invocable,
       # none relevant to this NixOS/Emacs workflow. They blow the skill-listing
       # budget (skillListingBudgetFraction 0.02 → listing truncated,

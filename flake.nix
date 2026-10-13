@@ -141,6 +141,11 @@
       flake = false;
     };
 
+    punkt-skills = {
+      url = "github:oslokommune/punkt-skills";
+      flake = false;
+    };
+
     codebase-memory-mcp = {
       url = "github:DeusData/codebase-memory-mcp";
       inputs.nixpkgs.follows = "nixpkgs";
