@@ -1524,6 +1524,7 @@ Make magit integrate with github and other git hosting services.
   (use-package project
     :custom
     (project-vc-ignore "^/var/home")
+    (project-vc-extra-root-markers '(".project"))
     :bind
     (:map project-prefix-map
           ("G" . my/clone-project)
