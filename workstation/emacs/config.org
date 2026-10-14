@@ -4407,22 +4407,6 @@ MCP support is also nice :)
   "))
 #+end_src
 
-** aidermacs
-
-#+begin_src elisp
-  (use-package aidermacs
-    :ensure t
-    :bind (("C-c o a" . aidermacs-transient-menu))
-    :hook (aidermacs-comint-mode . visual-line-mode)
-    :config
-    (setenv "OPENROUTER_API_KEY" (auth-source-pick-first-password :host "openrouter.ai"))
-    :custom
-    (aidermacs-program "aider")
-    (aidermacs-default-chat-mode 'architect)
-    (aidermacs-backend 'vterm)
-    (aidermacs-exit-kills-buffer t))
-#+end_src
-
 ** agent-shell
 
 Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client Protocol]].
@@ -4462,13 +4446,6 @@ Use any coding agent using the [[https://agentclientprotocol.com/][Agent Client 
        ;;  (command . "nix")
        ;;  (args . ("run" "github:oraios/serena" "--" "start-mcp-server"))
        ;;  (env . [])))))
-
-  (use-package agent-review
-    :disabled
-    :vc (:url "https://github.com/nineluj/agent-review.git"
-              :rev "df684c4")
-    :bind
-    ("C-c l p" . agent-review))
 #+end_src
 
 ** Claude Code

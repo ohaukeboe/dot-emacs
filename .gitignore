@@ -51,7 +51,6 @@ var/
 /lsp-ltex-plus/
 *.swp
 /result
-.aider*
 /.agent-shell/
 /.serena/
 

@@ -304,7 +304,6 @@ in
 
         ### Coding agent ###
         claude-agent-acp
-        aider-chat-full # another AI thingy
 
         (collect "packages")
       ];
@@ -407,15 +406,6 @@ in
       "${config.home.homeDirectory}/.agents/AGENTS.md".text = joinDocs (
         [ ./agents-global.md ] ++ config.agents.docs.both
       );
-
-      ".aider.conf.yml".source = (pkgs.formats.yaml { }).generate "aider-conf" {
-        cache-prompts = true;
-        cache-keepalive-pings = 5;
-        code-theme = "monokai";
-        auto-commits = false;
-        model = "openrouter/~anthropic/claude-sonnet-latest";
-        weak-model = "openrouter/~anthropic/claude-haiku-latest";
-      };
     };
 
     # Absorbed from former subagents.nix:

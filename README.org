@@ -37,7 +37,7 @@ unusable install if skipped, so read it through first.
 - Rootless Docker and Podman
 - SOPS (age) for secrets, git-agecrypt for low-sensitivity private files (same age keys)
 - Fish shell with starship, zoxide, and atuin
-- AI coding assistants (Claude Code, Aider, Goose, OpenCode)
+- AI coding assistants (Claude Code, Goose, OpenCode)
 
 * Boot
 
