@@ -1537,21 +1537,31 @@ Make magit integrate with github and other git hosting services.
 
 ** Clone project
 
-Clone a GitHub repo into one of my project directories. Suggests my own repos
-(from =consult-gh-favorite-orgs-list=) for completion, but also accepts an
+Clone a GitHub repo into one of my project directories. Suggests repos from
+=consult-gh-favorite-orgs-list= and from every GitHub org I am a member of
+(=gh api user/orgs=) for completion, but also accepts an
 arbitrary =owner/repo= or a full URL. Cloning goes through =gh= (via consult-gh's
 clone engine), so github.com repos use SSH per my =gh= host config. After
 cloning, the new project is registered with =project.el= and opened in magit.
 
 #+begin_src elisp
+  (defun my/clone-project--orgs ()
+    "Return my favorite orgs plus every GitHub org I am a member of."
+    (delete-dups
+     (append consult-gh-favorite-orgs-list
+             (ignore-errors
+               (process-lines "gh" "api" "user/orgs" "--paginate"
+                              "--jq" ".[].login")))))
+
   (defun my/clone-project--candidates ()
-    "Return \"owner/name\" repo strings across my favorite orgs."
-    (cl-loop for org in consult-gh-favorite-orgs-list
-             append (ignore-errors
-                      (process-lines "gh" "repo" "list" org
-                                     "--limit" "200"
-                                     "--json" "nameWithOwner"
-                                     "--jq" ".[].nameWithOwner"))))
+    "Return \"owner/name\" repo strings across `my/clone-project--orgs'."
+    (delete-dups
+     (cl-loop for org in (my/clone-project--orgs)
+              append (ignore-errors
+                       (process-lines "gh" "repo" "list" org
+                                      "--limit" "200"
+                                      "--json" "nameWithOwner"
+                                      "--jq" ".[].nameWithOwner")))))
 
   (defun my/clone-project--repo-name (input)
     "Local directory name from INPUT (owner/repo, https URL, or git@ URL)."
