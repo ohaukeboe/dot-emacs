@@ -184,6 +184,9 @@ in
       ripgrep
       fd
       jq # json processor
+      yq # yaml processor
+      awscli2
+      fzf
       delta # syntax highlighted diffs in the terminal (git pager)
       difftastic # structural diffs (difftastic.el)
       dragon-drop # drag-andn-drop from terminal
@@ -358,6 +361,10 @@ in
       nerd-fonts.symbols-only
       noto-fonts-color-emoji
       (callPackage ./packages/oslo-sans.nix { })
+
+      ### Oslo kommune ###
+      (callPackage ./packages/ok.nix { })
+      (callPackage ./packages/boilerplate.nix { })
     ]
     ++ lib.optionals isLinux (
       lib.lists.flatten [

@@ -10,6 +10,13 @@
 fetch.github = "gastownhall/beads"
 src.github = "gastownhall/beads"
 
+# gruntwork-io/boilerplate (Go). Publishes GitHub releases -> github (latest
+# release). Built from source with buildGoModule, so vendorHash in
+# workstation/packages/boilerplate.nix still has to be bumped by hand.
+[boilerplate]
+fetch.github = "gruntwork-io/boilerplate"
+src.github = "gruntwork-io/boilerplate"
+
 # npm packages: no native npm source, so track latest via `npm view` (the
 # update-sources recipe puts nodejs on PATH). nvfetcher hashes the tarball;
 # buildNpmPackage's npmDepsHash still has to be bumped by hand.
@@ -31,6 +38,13 @@ src.github_tag = "tirth8205/code-review-graph"
 [lsp-ltex-plus]
 fetch.github = "emacs-languagetool/lsp-ltex-plus"
 src.github = "emacs-languagetool/lsp-ltex-plus"
+
+# Oslo kommune infrastructure CLI (Go). Publishes GitHub releases -> github
+# (latest release). Built from source with buildGoModule, so vendorHash in
+# workstation/packages/ok.nix still has to be bumped by hand.
+[ok]
+fetch.github = "oslokommune/ok"
+src.github = "oslokommune/ok"
 
 [mobile-mcp]
 fetch.url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-$ver.tgz"

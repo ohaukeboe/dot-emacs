@@ -20,6 +20,27 @@
         },
         "version": "v1.3.1"
     },
+    "boilerplate": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "boilerplate",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "gruntwork-io",
+            "repo": "boilerplate",
+            "rev": "v0.17.0",
+            "sha256": "sha256-ipX0xAYBQ5rfAmWOtGypl+EP87pBiv6KASOLbrak/7A=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v0.17.0"
+    },
     "caveman-shrink": {
         "cargoLock": null,
         "date": null,
@@ -106,6 +127,27 @@
             "url": "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.8.tgz"
         },
         "version": "1.0.8"
+    },
+    "ok": {
+        "cargoLock": null,
+        "date": null,
+        "extract": null,
+        "name": "ok",
+        "passthru": null,
+        "pinned": false,
+        "src": {
+            "deepClone": false,
+            "fetchSubmodules": false,
+            "leaveDotGit": false,
+            "name": null,
+            "owner": "oslokommune",
+            "repo": "ok",
+            "rev": "v5.22.1",
+            "sha256": "sha256-wEdzS3w5qu8mBK07bzmuuejakxxfHIFhiyMbBic6Zc8=",
+            "sparseCheckout": [],
+            "type": "github"
+        },
+        "version": "v5.22.1"
     },
     "pgmacs": {
         "cargoLock": null,

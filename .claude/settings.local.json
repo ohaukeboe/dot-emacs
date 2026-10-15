@@ -1,0 +1,7 @@
+{
+  "sandbox": {
+    "filesystem": {
+      "allowWrite": ["~/.local/share/nvfetcher", "~/.npm/_cacache"]
+    }
+  }
+}

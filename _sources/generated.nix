@@ -17,6 +17,17 @@
       sha256 = "sha256-k3WUy0FWPoO7Ymu+FFgS2yYZ4u10Fb7mPBYqs17IP2U=";
     };
   };
+  boilerplate = {
+    pname = "boilerplate";
+    version = "v0.17.0";
+    src = fetchFromGitHub {
+      owner = "gruntwork-io";
+      repo = "boilerplate";
+      rev = "v0.17.0";
+      fetchSubmodules = false;
+      sha256 = "sha256-ipX0xAYBQ5rfAmWOtGypl+EP87pBiv6KASOLbrak/7A=";
+    };
+  };
   caveman-shrink = {
     pname = "caveman-shrink";
     version = "0.1.1";
@@ -61,6 +72,17 @@
     src = fetchurl {
       url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.8.tgz";
       sha256 = "sha256-52cCFBMCvqpWu0qrtTwVGsnfQAShNzD5YTCRnpv9QN0=";
+    };
+  };
+  ok = {
+    pname = "ok";
+    version = "v5.22.1";
+    src = fetchFromGitHub {
+      owner = "oslokommune";
+      repo = "ok";
+      rev = "v5.22.1";
+      fetchSubmodules = false;
+      sha256 = "sha256-wEdzS3w5qu8mBK07bzmuuejakxxfHIFhiyMbBic6Zc8=";
     };
   };
   pgmacs = {
