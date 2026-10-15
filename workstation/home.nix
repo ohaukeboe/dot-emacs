@@ -233,7 +233,7 @@ in
       rmapi
       # Pinned: zotero is broken on current nixos-unstable, see flake.nix.
       (lib.optional (system != "aarch64-linux") inputs.nixpkgs-zotero.legacyPackages.${system}.zotero)
-      inputs.zotra-server.packages.${system}.default
+      (callPackage ./packages/zotra-server.nix { src = inputs.zotra-server; })
 
       ### Java ###
       jdk

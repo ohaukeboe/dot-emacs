@@ -319,24 +319,6 @@
         "type": "github"
       }
     },
-    "flake-utils_3": {
-      "inputs": {
-        "systems": "systems_4"
-      },
-      "locked": {
-        "lastModified": 1731533236,
-        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "type": "github"
-      }
-    },
     "flatpaks": {
       "locked": {
         "lastModified": 1767983141,
@@ -1001,21 +983,6 @@
         "type": "github"
       }
     },
-    "systems_4": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
-      }
-    },
     "treefmt-nix": {
       "inputs": {
         "nixpkgs": "nixpkgs_2"
@@ -1108,24 +1075,21 @@
       }
     },
     "zotra-server": {
-      "inputs": {
-        "flake-utils": "flake-utils_3",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
+      "flake": false,
       "locked": {
-        "lastModified": 1765282561,
-        "narHash": "sha256-1V0GaFuLNaEZGY4KGvlM0mVQ/3Eu+78QejhLiyKZ5mM=",
-        "owner": "ohaukeboe",
-        "repo": "zotra-server-flake",
-        "rev": "a8aa2847945e9054c78835cf3915e6e2fce9fa75",
-        "type": "github"
+        "lastModified": 1772764535,
+        "narHash": "sha256-XMOPW1ClldM4R3l3kmf8MEju0FV2HAzxDQ045wKA5ac=",
+        "ref": "refs/heads/main",
+        "rev": "a764dc27f993b40a095dc84eb738ebf396afe144",
+        "revCount": 14,
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/mpedramfar/zotra-server"
       },
       "original": {
-        "owner": "ohaukeboe",
-        "repo": "zotra-server-flake",
-        "type": "github"
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/mpedramfar/zotra-server"
       }
     }
   },

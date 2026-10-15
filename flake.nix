@@ -85,11 +85,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    zotra-server = {
-      url = "github:ohaukeboe/zotra-server-flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Proton Pass quick-access popup for COSMIC, enabled by modules/cosmic-de.
     cosmic-pass = {
       url = "github:ohaukeboe/cosmic-pass";
@@ -159,6 +154,13 @@
     # No releases; track HEAD. Built by workstation/agents/packages/claude-pointer.nix.
     claude-pointer = {
       url = "github:ohaukeboe/claude-pointer";
+      flake = false;
+    };
+
+    # No releases or tags; track HEAD. Needs its translation-server submodule.
+    # Built by workstation/packages/zotra-server.nix.
+    zotra-server = {
+      url = "git+https://github.com/mpedramfar/zotra-server?submodules=1";
       flake = false;
     };
 
