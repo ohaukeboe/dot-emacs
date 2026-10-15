@@ -60,6 +60,7 @@
       {
         modules.sleep-then-hibernate.enable = true;
         modules.sleep-then-hibernate.swapSize = 38912; # 38 GiB (RAM = 32 GiB + headroom)
+        modules.sleep-then-hibernate.hibernateDelay = "90min";
       }
     ];
   };
