@@ -2471,6 +2471,7 @@ Some other zotero plugins I use are:
     (org-cite-insert-processor 'citar)
     (org-cite-follow-processor 'citar)
     (org-cite-activate-processor 'citar)
+    (citar-library-paths '("~/Nextcloud/.org/library/"))
 
     :config
     (require 'citar-capf)
