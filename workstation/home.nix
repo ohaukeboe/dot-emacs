@@ -437,6 +437,37 @@ in
 
       functions = {
         gitignore = "curl -sL https://www.gitignore.io/api/$argv";
+
+        # From km.oslo.systems/aws-account/access-to-aws (step 3). The
+        # prompt part is covered by starship's aws module.
+        aws-sso = {
+          description = "Pick an AWS profile with fzf, export it and log in";
+          body = ''
+            set -l profile (aws configure list-profiles | fzf)
+            or return
+            set -gx AWS_PROFILE $profile
+            aws sso login
+          '';
+        };
+        aws-sso-browser = {
+          description = "Pick an AWS profile with fzf and open its console in the browser";
+          body = ''
+            set -l profile (aws configure list-profiles | fzf)
+            or return
+            set -l sso_start_url "https://osloorigo.awsapps.com/start"
+            set -l sso_role_name (aws configure --profile $profile get sso_role_name)
+            set -l sso_account_id (aws configure --profile $profile get sso_account_id)
+            set -l url "$sso_start_url/#/console?account_id=$sso_account_id&role_name=$sso_role_name"
+            if command -q xdg-open
+              xdg-open $url
+            else if command -q open
+              open $url
+            else
+              echo "Failed to open default web browser" >&2
+              echo "Visit the following URL to log in: $url"
+            end
+          '';
+        };
       };
 
       shellAliases = {
