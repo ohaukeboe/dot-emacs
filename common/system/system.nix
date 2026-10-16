@@ -39,6 +39,11 @@
   hardware.keyboard.zsa.enable = true;
   hardware.logitech.wireless.enable = true;
 
+  # Authorizes Thunderbolt devices when the firmware security level is "user";
+  # without it docks fall back to USB-C DP alt mode. udev starts boltd only when
+  # a thunderbolt device appears, so machines without one never run it.
+  services.hardware.bolt.enable = true;
+
   # For the gc to work, it is important that the boot-loader stops
   # referencing old configurations (`configurationLimit' needs to be set)
   nix.gc = {
