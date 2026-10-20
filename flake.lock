@@ -892,6 +892,7 @@
         "rm-push": "rm-push",
         "rust-overlay": "rust-overlay",
         "sops-nix": "sops-nix",
+        "tree-sitter-kotlin-src": "tree-sitter-kotlin-src",
         "treefmt-nix": "treefmt-nix_3",
         "understand-anything": "understand-anything",
         "zen-browser": "zen-browser",
@@ -980,6 +981,22 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "tree-sitter-kotlin-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785625385,
+        "narHash": "sha256-7pFQyuRy2tJTL8g3zi6Q1W4AzaNpucu09lae4lmBEyE=",
+        "owner": "fwcd",
+        "repo": "tree-sitter-kotlin",
+        "rev": "1852ea17b7f60fb3f9d84e0b1555d56b46b39fb1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "fwcd",
+        "repo": "tree-sitter-kotlin",
         "type": "github"
       }
     },

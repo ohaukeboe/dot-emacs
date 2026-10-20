@@ -75,7 +75,22 @@ in
             });
           in
           [
-            treesit-grammars.with-all-grammars
+            (treesit-grammars.with-grammars (
+              g:
+              builtins.attrValues (
+                g
+                // {
+                  # Grammar master, for the null_literal and
+                  # interpolation_*_start nodes kotlin-ts-mode queries.
+                  tree-sitter-kotlin = pkgs.tree-sitter.buildGrammar {
+                    language = "kotlin";
+                    # Upstream base version; buildGrammar checks it against tree-sitter.json
+                    version = "0.4.0+${inputs.tree-sitter-kotlin-src.shortRev or "unstable"}";
+                    src = inputs.tree-sitter-kotlin-src;
+                  };
+                }
+              )
+            ))
             edit-indirect # Edit codeblocks in markdown
             copilot
             jinx

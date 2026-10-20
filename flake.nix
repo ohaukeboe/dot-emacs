@@ -185,6 +185,13 @@
       url = "github:armindarvish/consult-mu";
       flake = false;
     };
+
+    # kotlin-ts-mode queries nodes that only exist on the grammar's master;
+    # the last release (0.3.8, shipped by nixpkgs) predates them.
+    tree-sitter-kotlin-src = {
+      url = "github:fwcd/tree-sitter-kotlin";
+      flake = false;
+    };
   };
 
   outputs =
