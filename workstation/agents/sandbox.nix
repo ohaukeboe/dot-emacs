@@ -267,6 +267,7 @@ in
       type = lib.types.listOf (lib.types.strMatching "^(~/|/).+");
       default = [
         "~/.ssh"
+        "~/.authinfo"
         "~/.gnupg"
         "~/.aws"
         "~/.kube"
@@ -315,6 +316,9 @@ in
         # The Nix client keeps its flake registry, fetcher and eval caches
         # here; without it every flake command fails on a read-only $HOME.
         "~/.cache/nix"
+        # Many tools ignore $TMPDIR and hardcode /tmp, e.g. the Kotlin
+        # compiler daemon's lock files.
+        "/tmp"
       ];
       description = ''
         Paths outside the project that every sandboxed command may write.
