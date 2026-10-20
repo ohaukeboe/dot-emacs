@@ -319,6 +319,7 @@ in
         # Many tools ignore $TMPDIR and hardcode /tmp, e.g. the Kotlin
         # compiler daemon's lock files.
         "/tmp"
+        "~/.cache/uv"
       ];
       description = ''
         Paths outside the project that every sandboxed command may write.

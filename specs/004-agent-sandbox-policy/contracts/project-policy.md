@@ -43,7 +43,22 @@ project policy uses.
 3. Propose one Edit to the project policy with the narrowest entry, and give a
    one-line reason in the reply.
 4. If the block is a baseline credential or hidden service, say so and stop.
-   Project policy cannot lift it.
+   Project policy cannot lift it. Exception: a project command that needs
+   containers. Propose excluding that command instead (see below).
+
+## Commands that need containers
+
+The container sockets stay hidden. Exposing even the rootless one would let
+any sandboxed command bind-mount `$HOME`, credentials included, through the
+daemon. It would not be enough either: the sandbox has its own network
+namespace with only `lo`, so a test JVM cannot reach the host ports a
+Testcontainers container is mapped to.
+
+Exclude the narrowest project command that needs containers, such as the test
+task, so it runs unsandboxed with rootless Docker reached through `DOCKER_HOST`.
+That command runs code the agent writes (build scripts, tests) with the user's
+full access. This is accepted under the threat model in ADR 0004, which
+covers accidents, not prompt injection.
 
 ## Reference profiles
 
@@ -53,4 +68,5 @@ project policy uses.
 | dot-emacs | `additionalDirectories: ["~/Nextcloud/org_notes"]`, `allowedDomains: ["search.nixos.org"]` |
 | needs a sibling, read-write | `additionalDirectories: ["~/projects/<sibling>"]` |
 | needs Docker | `excludedCommands: ["docker compose *"]` |
+| Testcontainers tests (Gradle) | `excludedCommands: ["./gradlew test *"]` |
 | runs a VM directly from the shell | `excludedCommands: ["./result/bin/run-*-vm"]` (only if the quickstart shows no `/dev/kvm` in the sandbox) |

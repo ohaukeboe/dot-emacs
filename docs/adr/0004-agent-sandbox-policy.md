@@ -69,6 +69,13 @@ already stop commands outliving their session.
 - Whether masking a socket path blocks `connect()` is not documented. The
   `agent-sandbox-probe` command checks it in the real session, and research R3
   in `specs/004-agent-sandbox-policy/` records the fallback.
+- Commands that need containers, such as Testcontainers test suites, are
+  excluded per project (`excludedCommands`) rather than given a container
+  socket. A socket would let every sandboxed command bind-mount credentials
+  through the daemon. It would also not work: the sandbox's own network
+  namespace cannot reach host-mapped container ports. The excluded command
+  runs agent-written code with full user access, which this threat model
+  accepts.
 - If prompt injection enters the threat model, this ADR is superseded by a
   whole-process boundary.
 - Supersedes the "Keep the Claude Code sandbox off" comment in
