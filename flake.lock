@@ -892,6 +892,7 @@
         "rm-push": "rm-push",
         "rust-overlay": "rust-overlay",
         "sops-nix": "sops-nix",
+        "trailofbits-skills": "trailofbits-skills",
         "tree-sitter-kotlin-src": "tree-sitter-kotlin-src",
         "treefmt-nix": "treefmt-nix_3",
         "understand-anything": "understand-anything",
@@ -981,6 +982,22 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "trailofbits-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1792088200,
+        "narHash": "sha256-WP1bZebw67PbZPTsR/RngCV3tInkNPZW3NZyTPhW2gk=",
+        "owner": "trailofbits",
+        "repo": "skills",
+        "rev": "5c99c03fb8a9ea568432ecbcba5d86e9f4ac2bf0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "trailofbits",
+        "repo": "skills",
         "type": "github"
       }
     },

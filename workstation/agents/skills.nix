@@ -175,6 +175,19 @@ let
       ]
   );
 
+  # trailofbits/skills — plugin layout: plugins/<name>/skills/<name>.
+  # The repo ships ~44 plugins; add entries as needed.
+  trailofbitsSkills = pkgs.linkFarm "trailofbits-skills" (
+    map (mkSkillEntry { repo = inputs.trailofbits-skills; }) [
+      # Interactive HTML walkthrough for reviewing code changes.
+      # Upstream SKILL.md already sets disable-model-invocation.
+      {
+        name = "review-walkthrough";
+        subdir = "plugins/review-walkthrough/skills";
+      }
+    ]
+  );
+
   mergedSkills = pkgs.symlinkJoin {
     name = "merged-skills";
     paths = [
@@ -186,6 +199,7 @@ let
       mattpocockSkills
       llmSkillsSubset
       understandAnythingSkills
+      trailofbitsSkills
       # oslokommune/punkt-skills — the whole skills/ dir, so skills added
       # upstream appear on input bump.
       "${inputs.punkt-skills}/skills"
