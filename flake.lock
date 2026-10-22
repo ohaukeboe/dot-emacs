@@ -117,26 +117,6 @@
         "type": "github"
       }
     },
-    "codebase-memory-mcp": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1791330041,
-        "narHash": "sha256-OT9/S4T9Gfp3gAYZHZ5kKOfE6QGWXtgjH95QIfs27Z0=",
-        "owner": "DeusData",
-        "repo": "codebase-memory-mcp",
-        "rev": "e71f23ecf40e473a3e0a49cff1ffebcccead384d",
-        "type": "github"
-      },
-      "original": {
-        "owner": "DeusData",
-        "repo": "codebase-memory-mcp",
-        "type": "github"
-      }
-    },
     "consult-mu-src": {
       "flake": false,
       "locked": {
@@ -866,7 +846,6 @@
         "caveman": "caveman",
         "claude-code-ide-src": "claude-code-ide-src",
         "claude-pointer": "claude-pointer",
-        "codebase-memory-mcp": "codebase-memory-mcp",
         "consult-mu-src": "consult-mu-src",
         "cosmic-pass": "cosmic-pass",
         "disko": "disko",

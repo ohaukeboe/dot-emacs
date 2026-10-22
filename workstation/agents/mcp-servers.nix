@@ -9,8 +9,6 @@ let
   chrome-devtools-mcp = pkgs.callPackage ./packages/chrome-devtools-mcp.nix { };
   kagimcp = pkgs.callPackage ./packages/kagimcp.nix { src = inputs.kagimcp; };
   mobile-mcp = pkgs.callPackage ./packages/mobile-mcp.nix { };
-  codebase-memory-mcp =
-    inputs.codebase-memory-mcp.packages.${pkgs.stdenv.hostPlatform.system}.default;
   emacsConfig = "${config.xdg.configHome}/emacs";
 
   # Wraps an MCP server with optional caveman-shrink token compression. Returns
@@ -77,7 +75,7 @@ in
       shrink = true;
     };
     "codebase-memory" = mkMcpServer {
-      command = "${codebase-memory-mcp}/bin/codebase-memory-mcp";
+      command = "${pkgs.codebase-memory-mcp}/bin/codebase-memory-mcp";
       shrink = true;
     };
     "chrome-devtools" = mkMcpServer {
@@ -121,7 +119,7 @@ in
   # not worth failing the whole activation over, so warn and move on; the next
   # activation with no session running sets it.
   home.activation.codebaseMemoryAutoIndex = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    run ${codebase-memory-mcp}/bin/codebase-memory-mcp config set auto_index true \
+    run ${pkgs.codebase-memory-mcp}/bin/codebase-memory-mcp config set auto_index true \
       || warnEcho "codebase-memory-mcp: could not set auto_index (a CBM session is likely running); skipping."
   '';
 }

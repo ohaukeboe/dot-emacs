@@ -20,7 +20,7 @@ The decision is about **how the source moves over time**, not just where it live
 Rules of thumb that disambiguate the common confusions:
 
 - **"GitHub releases or similar" → nvfetcher.** Releases, tags, npm registry versions, PyPI versions are all version-pinned and belong in nvfetcher. nvfetcher records an exact rev + hash and bumps deterministically on `just update-sources`. This is the default for anything that publishes versions.
-- **Upstream provides a flake you consume → flake input**, even though it's on GitHub. The signal is: you write `inputs.<name>.packages.${system}.default` / `inputs.<name>.homeModules.x` rather than building the source yourself. Examples in this repo: `zen-browser`, `kotlin-lsp`, `zotra-server`, `calibre-plugins`, `codebase-memory-mcp`.
+- **Upstream provides a flake you consume → flake input**, even though it's on GitHub. The signal is: you write `inputs.<name>.packages.${system}.default` / `inputs.<name>.homeModules.x` rather than building the source yourself. Examples in this repo: `zen-browser`, `kotlin-lsp`, `zotra-server`, `calibre-plugins`.
 - **No usable release AND you build it yourself → `flake = false`.** Two sub-cases:
   - *Tracking HEAD is what you want* (branch advances, no meaningful version) → flake input, `flake = false`. Examples: `claude-code-ide-src`, `gptel-quick-src`, `consult-mu-src`, the skills repos (`anthropics-skills`, `caveman`, …).
   - *You want a pinned tag/release of plain source* → that's case 2, **prefer nvfetcher** (e.g. `pgmacs`, `lsp-ltex-plus`, `code-review-graph`). nvfetcher keeps the pin out of `flake.lock` churn and bumps on its own cadence.
