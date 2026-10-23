@@ -698,6 +698,9 @@ LINE is the last anchored line, below which the finding is drawn."
 (defvar-local walkthrough--data nil
   "The walkthrough as the last refresh read it from `walkthrough--file'.")
 
+(defvar-local walkthrough--header-line nil
+  "The text `walkthrough--update-header-line' last put in the header line.")
+
 (defvar-keymap walkthrough-mode-map
   :doc "Keymap for `walkthrough-mode'."
   "n" #'walkthrough-next
@@ -842,6 +845,10 @@ raw text is cut before Magit washes it, so its sections stay sound."
             (goto-char end)
             (set-marker end nil)))))))
 
+(defun walkthrough--findings-noun (count)
+  "Return \"COUNT findings\", or \"1 finding\" when COUNT is 1."
+  (format "%d finding%s" count (if (= count 1) "" "s")))
+
 (defun walkthrough--finding-count (findings)
   "Return \"K findings (J SEVERITY)\" for FINDINGS, or nil when there are none.
 SEVERITY is the highest one present and J how many have it."
@@ -849,8 +856,8 @@ SEVERITY is the highest one present and J how many have it."
                                     (seq-some (lambda (f) (equal (alist-get 'severity f) severity))
                                               findings))
                                   '("high" "medium" "low"))))
-    (format "%d finding%s (%d %s)"
-            (length findings) (if (cdr findings) "s" "")
+    (format "%s (%d %s)"
+            (walkthrough--findings-noun (length findings))
             (seq-count (lambda (f) (equal (alist-get 'severity f) severity)) findings)
             severity)))
 
@@ -902,6 +909,8 @@ SEVERITY is the highest one present and J how many have it."
                           (walkthrough--insert-step step index (length steps)
                                                     diff args))
                         steps))))
+  ;; The refresh may have reset the header line, so set it again.
+  (setq walkthrough--header-line nil)
   (walkthrough--update-header-line))
 
 (defun walkthrough--step-at-point ()
@@ -917,13 +926,14 @@ SEVERITY is the highest one present and J how many have it."
          (steps (alist-get 'steps walkthrough--data))
          (index (walkthrough--step-at-point))
          (line (if-let* ((step (and index (elt steps index))))
-                   (let ((count (length (alist-get 'findings step))))
-                     (format "%s — Step %d/%d: %s · %d finding%s"
-                             title (1+ index) (length steps) (alist-get 'title step)
-                             count (if (= count 1) "" "s")))
+                   (format "%s — Step %d/%d: %s · %s"
+                           title (1+ index) (length steps) (alist-get 'title step)
+                           (walkthrough--findings-noun
+                            (length (alist-get 'findings step))))
                  title)))
     ;; After every command, so only touch it when it changes.
-    (unless (equal line (string-trim-left (or header-line-format "")))
+    (unless (equal line walkthrough--header-line)
+      (setq walkthrough--header-line line)
       (magit-set-header-line-format line))))
 
 ;;; Moving around
@@ -1084,8 +1094,9 @@ TEXT deletes the reply and leaves the mark as it is."
 
 ;;; Patch excerpts
 
-(defconst walkthrough-excerpt-context 3
-  "Lines of context `walkthrough-patch-excerpt' keeps around a range.")
+(defcustom walkthrough-excerpt-context 3
+  "Lines of context `walkthrough-patch-excerpt' keeps around a range."
+  :type 'natnum)
 
 (defcustom walkthrough-excerpt-max-lines 40
   "About how many lines of a hunk `walkthrough-patch-excerpt' keeps.
@@ -1122,10 +1133,23 @@ such as a combined diff's."
             (?+ (cl-incf new))))
         (cons tail (nreverse rows))))))
 
+(defun walkthrough--row-line (row)
+  "Return the diff line of ROW (see `walkthrough--hunk-rows')."
+  (car row))
+
+(defun walkthrough--row-number (row side)
+  "Return the number of ROW's next line on SIDE, \"old\" or \"new\"."
+  (if (equal side "old") (nth 1 row) (nth 2 row)))
+
 (defun walkthrough--row-on-side-p (row side)
   "Return non-nil when ROW (see `walkthrough--hunk-rows') is a line of SIDE."
-  (memq (and (> (length (car row)) 0) (aref (car row) 0))
-        (if (equal side "old") '(?\s ?-) '(?\s ?+))))
+  (let ((line (walkthrough--row-line row)))
+    (memq (and (> (length line) 0) (aref line 0))
+          (if (equal side "old") '(?\s ?-) '(?\s ?+)))))
+
+(defun walkthrough--indices (pred seq)
+  "Return the indices of the elements of SEQ that satisfy PRED, in order."
+  (delq nil (seq-map-indexed (lambda (elt i) (and (funcall pred elt) i)) seq)))
 
 (defun walkthrough--excerpt (tail rows kept &optional mark-cuts)
   "Return the ROWS whose index is in KEPT as a hunk with header TAIL.
@@ -1133,18 +1157,18 @@ The header spans the first to the last kept row.  With MARK-CUTS, a line
 \"…\" stands for each run of rows left out."
   (let* ((first (seq-min kept))
          (span (seq-subseq rows first (1+ (seq-max kept)))))
-    (cl-flet ((side (side n)
-                (let ((count (seq-count (lambda (row) (walkthrough--row-on-side-p row side))
+    (cl-flet ((side-range (side)
+                (let ((start (walkthrough--row-number (car span) side))
+                      (count (seq-count (lambda (row) (walkthrough--row-on-side-p row side))
                                         span)))
-                  (format "%d,%d" (if (zerop count) (1- (nth n (car span))) (nth n (car span)))
-                          count))))
+                  (format "%d,%d" (if (zerop count) (1- start) start) count))))
       (concat
-       (format "@@ -%s +%s @@%s\n" (side "old" 1) (side "new" 2) tail)
+       (format "@@ -%s +%s @@%s\n" (side-range "old") (side-range "new") tail)
        (mapconcat
         #'identity
         (delq nil (seq-map-indexed
                    (lambda (row i)
-                     (cond ((memq i kept) (concat (car row) "\n"))
+                     (cond ((memq i kept) (concat (walkthrough--row-line row) "\n"))
                            ((and mark-cuts (or (zerop i) (memq (1- i) kept))) "…\n")))
                    rows))
         "")))))
@@ -1162,16 +1186,13 @@ the last line kept.  A hunk that is not two-sided is returned as it is."
   (pcase-let* ((parsed (walkthrough--hunk-rows hunk))
                (`(,tail . ,rows) parsed)
                (in-range (and range
-                              (seq-filter
-                               #'identity
-                               (seq-map-indexed
-                                (lambda (row i)
-                                  (and (walkthrough--row-on-side-p row side)
-                                       (<= (car range)
-                                           (nth (if (equal side "old") 1 2) row)
-                                           (cdr range))
-                                       i))
-                                rows)))))
+                              (walkthrough--indices
+                               (lambda (row)
+                                 (and (walkthrough--row-on-side-p row side)
+                                      (<= (car range)
+                                          (walkthrough--row-number row side)
+                                          (cdr range))))
+                               rows))))
     (cond
      ((null parsed) hunk)
      (in-range
@@ -1184,26 +1205,22 @@ the last line kept.  A hunk that is not two-sided is returned as it is."
      (t
       ;; Keep the rows within the widest distance of a change that fits;
       ;; when even the changes alone do not, the first of them.
-      (let* ((changes (seq-filter
-                       #'identity
-                       (seq-map-indexed (lambda (row i)
-                                          (and (string-match-p "\\`[-+]" (car row)) i))
-                                        rows)))
+      (let* ((changes (walkthrough--indices
+                       (lambda (row) (string-match-p "\\`[-+]" (walkthrough--row-line row)))
+                       rows))
              (distance (seq-map-indexed
                         (lambda (_ i)
                           (if changes
                               (seq-min (mapcar (lambda (c) (abs (- c i))) changes))
                             i))
                         rows))
-             (within (lambda (r)
-                       (seq-filter #'identity
-                                   (seq-map-indexed (lambda (d i) (and (<= d r) i))
-                                                    distance))))
-             (r 0))
-        (while (<= (length (funcall within (1+ r))) walkthrough-excerpt-max-lines)
-          (cl-incf r))
-        (walkthrough--excerpt
-         tail rows (seq-take (funcall within r) walkthrough-excerpt-max-lines) t))))))
+             (reach 0))
+        (cl-flet ((rows-within (reach)
+                    (walkthrough--indices (lambda (d) (<= d reach)) distance)))
+          (while (<= (length (rows-within (1+ reach))) walkthrough-excerpt-max-lines)
+            (cl-incf reach))
+          (walkthrough--excerpt
+           tail rows (seq-take (rows-within reach) walkthrough-excerpt-max-lines) t)))))))
 
 ;;; Handing findings off
 

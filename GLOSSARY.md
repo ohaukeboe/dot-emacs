@@ -85,6 +85,11 @@ Replying accepts the finding, even a dismissed or already sent one, which
 is then handed off again.
 _Avoid_: review comment (that is on a diff, not on a finding)
 
+**Follow-up**:
+A finding already handed off that the user then replied to, handed off
+again with the reply. It is marked as a follow-up, so the agent reads it as
+a continuation rather than a new finding.
+
 ### Agents / command rewriting
 
 **Rewriter chain**:

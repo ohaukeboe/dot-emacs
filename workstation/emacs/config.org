@@ -1079,9 +1079,12 @@ visible while a file is collapsed.
 
     (defun my/magit-review-comment (&optional text)
       "Attach review comment TEXT to the hunk, hunk region or file at point.
-  On a walkthrough finding, reply to it instead (`walkthrough-reply')."
-      (interactive (unless (my/magit-review--on-finding-p) (my/magit-review--read)))
-      (if (my/magit-review--on-finding-p)
+  Interactively on a walkthrough finding, TEXT is nil and this replies to
+  the finding instead (`walkthrough-reply')."
+      (interactive (if (my/magit-review--on-finding-p)
+                       (list nil)
+                     (my/magit-review--read)))
+      (if (null text)
           (call-interactively #'walkthrough-reply)
         (my/magit-review--add text)
         (my/magit-review--redecorate (magit-toplevel))
@@ -1092,7 +1095,10 @@ visible while a file is collapsed.
       "Send review comment TEXT on the thing at point to Claude Code at once.
   Other pending comments stay pending.  With prefix argument NO-SUBMIT,
   only paste it and show the Claude buffer."
-      (interactive (append (my/magit-review--read) (list current-prefix-arg)))
+      (interactive
+       (if (my/magit-review--on-finding-p)
+           (user-error "On a finding, reply with `@ c' instead")
+         (append (my/magit-review--read) (list current-prefix-arg))))
       (my/magit-review--hand-off
        (list (my/magit-review--add text))
        "Here is a comment on this diff: a question or a request.  It names "
