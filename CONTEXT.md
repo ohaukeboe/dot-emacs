@@ -354,7 +354,7 @@ NixOS sets it automatically when creating a swapfile via `swapDevices.*.size`.
 **Workaround override**:
 An override that exists only because a package in nixpkgs is broken, flaky or
 lagging upstream. Meant to be deleted once nixpkgs catches up, so it always
-carries an expiry condition.
+carries an expiry condition, a fix reference, or both.
 _Avoid_: hack, patch (a patch is one possible body of an override)
 
 **Preference override**:

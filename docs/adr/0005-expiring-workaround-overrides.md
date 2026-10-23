@@ -70,6 +70,10 @@ elsewhere, such as the pinned `nixpkgs-zotero` input in `flake.nix`, it is a
 `# fixedBy:` comment. Evaluation only validates its format and names it in
 expiry warnings. An override with only a fix reference always applies.
 
+This reverses the Decision's "exactly one expiry condition": an override now
+states at most one expiry condition and at least one of an expiry condition or
+a fix reference.
+
 Whether the fix has landed is decided by `just check-fixes` (also
 `nix run .#check-fixes`), run by hand after `nix flake update`. It asks GitHub
 for the fixing commit and whether the `rev` pinned in `flake.lock`, or else
