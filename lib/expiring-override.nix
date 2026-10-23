@@ -50,12 +50,14 @@ let
     else
       throw "expiringOverride: give at most one of ${lib.concatStringsSep ", " conditionKinds}, and at least one unless fixedBy is set (got: [ ${toString given} ])";
 
-  # A fix reference: owner/repo#N, as `just check-fixes` parses it.
+  # A fix reference: owner/repo#N. The one definition of its syntax:
+  # flake.nix injects it into scripts/check-fixes.sh, so `just check-fixes`
+  # parses exactly what is accepted here. POSIX ERE, usable by both.
+  fixReferencePattern = "[A-Za-z0-9._-]+/[A-Za-z0-9._-]+#[0-9]+";
+
   checkFixedBy =
     args:
-    if
-      !(args ? fixedBy) || builtins.match "[A-Za-z0-9._-]+/[A-Za-z0-9._-]+#[0-9]+" args.fixedBy != null
-    then
+    if !(args ? fixedBy) || builtins.match fixReferencePattern args.fixedBy != null then
       args
     else
       throw "expiringOverride: fixedBy must look like owner/repo#N (got: ${args.fixedBy})";
@@ -79,14 +81,18 @@ let
           whileMarkedBroken = !(pkg.meta.broken or false);
         }
         .${kind};
+      # null when there is no expiry condition (fixedBy alone): never warned.
       message =
-        {
-          fixedIn = "expiring override: ${name} ${pkg.version} reached fixedIn ${args.fixedIn}, override dropped (${reason}). Remove it.";
-          brokenAt = "expiring override: ${name} ${args.brokenAt} -> ${pkg.version} (${reason}). Try removing it, or bump brokenAt.";
-          whileMarkedBroken = "expiring override: ${name} is no longer marked broken, override dropped (${reason}). Remove it.";
-        }
-        .${kind}
-        + lib.optionalString (args ? fixedBy) " Fix tracked in ${args.fixedBy} (just check-fixes).";
+        if kind == null then
+          null
+        else
+          {
+            fixedIn = "expiring override: ${name} ${pkg.version} reached fixedIn ${args.fixedIn}, override dropped (${reason}). Remove it.";
+            brokenAt = "expiring override: ${name} ${args.brokenAt} -> ${pkg.version} (${reason}). Try removing it, or bump brokenAt.";
+            whileMarkedBroken = "expiring override: ${name} is no longer marked broken, override dropped (${reason}). Remove it.";
+          }
+          .${kind}
+          + lib.optionalString (args ? fixedBy) " Fix tracked in ${args.fixedBy} (just check-fixes).";
     in
     {
       inherit expired message;
@@ -115,5 +121,10 @@ let
     );
 in
 {
-  inherit resolve expiringOverride expiringSkipTests;
+  inherit
+    fixReferencePattern
+    resolve
+    expiringOverride
+    expiringSkipTests
+    ;
 }

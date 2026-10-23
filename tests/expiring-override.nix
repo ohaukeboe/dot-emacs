@@ -160,10 +160,12 @@ let
         [
           r.expired
           (r.result.overridden or false)
+          r.message
         ];
       expected = [
         false
         true
+        null
       ];
     };
 

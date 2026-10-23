@@ -218,6 +218,9 @@
       # Helper function to generate attributes for each system
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
       nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
+      # Attributes that only exist for the Linux systems.
+      onLinux = system: nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "linux" system);
+      expiringOverrideLib = import ./lib/expiring-override.nix { inherit (nixpkgs) lib; };
 
       treefmtEval = forAllSystems (system: treefmt-nix.lib.evalModule nixpkgsFor.${system} ./treefmt.nix);
 
@@ -293,11 +296,18 @@
         pkgs.writeShellApplication {
           name = "check-fixes";
           runtimeInputs = with pkgs; [
+            coreutils
             curl
+            gawk
             git
+            gnugrep
+            gnused
             jq
           ];
-          text = builtins.readFile ./scripts/check-fixes.sh;
+          # The fix reference syntax has one definition, in the library.
+          text =
+            builtins.replaceStrings [ "@fixReferencePattern@" ] [ expiringOverrideLib.fixReferencePattern ]
+              (builtins.readFile ./scripts/check-fixes.sh);
         };
     in
     {
@@ -324,7 +334,7 @@
         # Deliberately a package rather than a check: `nix flake check` runs
         # before every commit and a VM test would add minutes to that loop.
         #   nix build .#test-disk-layout -L
-        // nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "linux" system) {
+        // onLinux system {
           test-disk-layout = nixpkgsFor.${system}.callPackage ./tests/disk-layout.nix {
             diskoLib = inputs.disko.lib;
           };
@@ -361,7 +371,7 @@
             meta.description = "Report whether the fix behind each fix reference reached the pinned nixpkgs";
           };
         }
-        // nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "linux" system) {
+        // onLinux system {
           install = {
             type = "app";
             program = nixpkgs.lib.getExe self.packages.${system}.installer;
@@ -383,7 +393,7 @@
           };
         }
         # writeShellApplication runs shellcheck at build time.
-        // nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "linux" system) {
+        // onLinux system {
           installer = self.packages.${system}.installer;
         }
       );

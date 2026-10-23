@@ -142,5 +142,23 @@ runCommand "test-check-fixes"
     cat "$TMPDIR/report"
     [ "$status" -ne 0 ] || fail "exit code 0 with an unreachable API"
 
+    # A PR response without a boolean "merged" is an API error, not a PR
+    # closed without merging. Checked in a repo of its own, since the run
+    # above must exit 0.
+    echo '{"number":800,"state":"closed","pull_request":{}}' >"$repo_api/issues/800"
+    echo '{"message":"Server Error"}' >"$repo_api/pulls/800"
+    cd ..
+    mkdir repo-bad-pr
+    cd repo-bad-pr
+    git init -q
+    cp ../repo/flake.lock .
+    echo '{ } # fixedBy: NixOS/nixpkgs#800' >flake.nix
+    git add -A
+    status=0
+    GITHUB_API_URL="file://$api" check-fixes >"$TMPDIR/report" 2>&1 || status=$?
+    cat "$TMPDIR/report"
+    [ "$status" -ne 0 ] || fail "exit code 0 with a malformed PR response"
+    ! grep -q '^closed-unmerged' "$TMPDIR/report" || fail "malformed PR response reported as closed-unmerged"
+
     touch "$out"
   ''

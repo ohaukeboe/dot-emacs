@@ -10,6 +10,10 @@
 # on one line. Git-tracked *.nix files are scanned; tests/ is skipped because
 # its references are fixtures.
 #
+# A line matching `fixedBy *[:=]` that does not parse as a reference gets a
+# warning on stderr. Only that form is checked, deliberately: code that merely
+# mentions the attribute, such as `args ? fixedBy`, is not flagged.
+#
 # One line is printed per reference:
 #
 #   <category> <owner/repo#N> (<file:line>[, <file:line>...]): <advice>
@@ -20,6 +24,10 @@
 #   pending          open, or merged but not in nixos-unstable yet
 #   closed-unmerged  a PR closed without merging
 #   unknown          an issue closed with no linked commit
+#
+# An issue's events are read from the first page only (requests carry no query
+# string, see GITHUB_API_URL), so an issue whose "closed" event lies beyond
+# GitHub's first 30 events reports unknown.
 #
 # The report is advice, never a gate: the exit code is 0 whatever the
 # categories, and non-zero only when the GitHub API cannot be read.
@@ -36,7 +44,9 @@ set -euo pipefail
 api=${GITHUB_API_URL:-https://api.github.com}
 api=${api%/}
 upstream=nixos-unstable
-ref_re='[A-Za-z0-9._-]+/[A-Za-z0-9._-]+#[0-9]+'
+# The fix reference syntax, owner/repo#N, as an ERE. Substituted by flake.nix
+# from lib/expiring-override.nix, its one definition.
+ref_re='@fixReferencePattern@'
 
 top=$(git rev-parse --show-toplevel)
 cd "$top"
@@ -66,14 +76,14 @@ scan() { # pattern; git grep exits 1 when nothing matches, which is fine
   git grep -n -I -E "$1" -- '*.nix' ':(exclude)tests/**' || [[ $? -eq 1 ]]
 }
 # A reference must end at a word boundary, so "#12x" is malformed, not #12.
-valid="fixedBy *[:=] *\"?($ref_re)([^A-Za-z0-9._/#-]|\$)"
-matches=$(scan "$valid")
-refs=$(sed -E "s@^([^:]+):([0-9]+):.*$valid.*@\3\t\1:\2@" <<<"$matches")
+ref_line_re="fixedBy *[:=] *\"?($ref_re)([^A-Za-z0-9._/#-]|\$)"
+matches=$(scan "$ref_line_re")
+refs=$(sed -E "s@^([^:]+):([0-9]+):.*$ref_line_re.*@\3\t\1:\2@" <<<"$matches")
 
 # Lines that look like a reference but do not parse would be invisible here.
 while IFS= read -r line; do
   [[ -n $line ]] || continue
-  if ! grep -qE "$valid" <<<"$line"; then
+  if ! grep -qE "$ref_line_re" <<<"$line"; then
     loc=${line%%:*}:$(cut -d: -f2 <<<"$line")
     text=$(cut -d: -f3- <<<"$line" | sed -E 's/^[[:space:]]+//')
     echo "warning: $loc: cannot parse fix reference: $text" >&2
@@ -99,23 +109,23 @@ check_ref() { # ref locations
   local ref=$1 locs=$2
   local repo=${ref%#*} n=${ref##*#}
   local issue pr events sha in_pin in_upstream
+  local merged
   issue=$(get "/repos/$repo/issues/$n") || return
+  # The issues endpoint covers PRs too, with the same state.
+  if [[ $(jq -er '.state' <<<"$issue") == open ]]; then
+    report pending "$ref" "$locs" "still open"
+    return
+  fi
   if jq -e '.pull_request' <<<"$issue" >/dev/null; then
     pr=$(get "/repos/$repo/pulls/$n") || return
-    if [[ $(jq -r '.merged' <<<"$pr") != true ]]; then
-      if [[ $(jq -r '.state' <<<"$pr") == open ]]; then
-        report pending "$ref" "$locs" "still open"
-      else
-        report closed-unmerged "$ref" "$locs" "closed without merging, find the replacement PR"
-      fi
+    # Anything but a boolean is an unexpected response, hence an error.
+    merged=$(jq -r '.merged | if type == "boolean" then . else error("no boolean merged in PR response") end' <<<"$pr") || return
+    if [[ $merged != true ]]; then
+      report closed-unmerged "$ref" "$locs" "closed without merging, find the replacement PR"
       return
     fi
     sha=$(jq -er '.merge_commit_sha' <<<"$pr") || return
   else
-    if [[ $(jq -r '.state' <<<"$issue") == open ]]; then
-      report pending "$ref" "$locs" "still open"
-      return
-    fi
     # The commit whose "fixes #N" closed the issue, if any. Followed through
     # the issue's own events_url rather than a path built here: that path
     # would sit below the issue's, which a file:// fixture cannot hold.
