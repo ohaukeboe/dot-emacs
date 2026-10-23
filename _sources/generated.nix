@@ -38,10 +38,10 @@
   };
   chrome-devtools-mcp = {
     pname = "chrome-devtools-mcp";
-    version = "1.10.1";
+    version = "1.12.0";
     src = fetchurl {
-      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.10.1.tgz";
-      sha256 = "sha256-ASy89ugy1PZwna0MIde+8XCJ6Ure6c8zF50V6gqa3ys=";
+      url = "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.12.0.tgz";
+      sha256 = "sha256-Sq3jFnw+eBx5fWEJ7WA6DKW4yzY6KJ4uqsqpsMXSo2A=";
     };
   };
   code-review-graph = {
@@ -68,21 +68,21 @@
   };
   mobile-mcp = {
     pname = "mobile-mcp";
-    version = "1.0.8";
+    version = "1.0.12";
     src = fetchurl {
-      url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.8.tgz";
-      sha256 = "sha256-52cCFBMCvqpWu0qrtTwVGsnfQAShNzD5YTCRnpv9QN0=";
+      url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.12.tgz";
+      sha256 = "sha256-9AsVPjdLLISX0XbOk/dSurEcfNeLwPoKp/6y6JrDZNw=";
     };
   };
   ok = {
     pname = "ok";
-    version = "v5.22.1";
+    version = "v5.22.2";
     src = fetchFromGitHub {
       owner = "oslokommune";
       repo = "ok";
-      rev = "v5.22.1";
+      rev = "v5.22.2";
       fetchSubmodules = false;
-      sha256 = "sha256-wEdzS3w5qu8mBK07bzmuuejakxxfHIFhiyMbBic6Zc8=";
+      sha256 = "sha256-ZqhPA1a6ReQmUHX3u3OrxNnn7w5WJQ8JEq6Eim8AqQg=";
     };
   };
   pgmacs = {

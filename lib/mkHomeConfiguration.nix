@@ -16,6 +16,7 @@ let
     inherit system;
     config = {
       allowUnfreePredicate = import ../common/unfree-predicates.nix { inherit (nixpkgs) lib; };
+      permittedInsecurePackages = import ../common/insecure-packages.nix;
     };
     overlays = [
       emacs-overlay.overlay

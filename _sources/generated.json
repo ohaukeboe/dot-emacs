@@ -65,11 +65,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-ASy89ugy1PZwna0MIde+8XCJ6Ure6c8zF50V6gqa3ys=",
+            "sha256": "sha256-Sq3jFnw+eBx5fWEJ7WA6DKW4yzY6KJ4uqsqpsMXSo2A=",
             "type": "url",
-            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.10.1.tgz"
+            "url": "https://registry.npmjs.org/chrome-devtools-mcp/-/chrome-devtools-mcp-1.12.0.tgz"
         },
-        "version": "1.10.1"
+        "version": "1.12.0"
     },
     "code-review-graph": {
         "cargoLock": null,
@@ -122,11 +122,11 @@
         "pinned": false,
         "src": {
             "name": null,
-            "sha256": "sha256-52cCFBMCvqpWu0qrtTwVGsnfQAShNzD5YTCRnpv9QN0=",
+            "sha256": "sha256-9AsVPjdLLISX0XbOk/dSurEcfNeLwPoKp/6y6JrDZNw=",
             "type": "url",
-            "url": "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.8.tgz"
+            "url": "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.12.tgz"
         },
-        "version": "1.0.8"
+        "version": "1.0.12"
     },
     "ok": {
         "cargoLock": null,
@@ -142,12 +142,12 @@
             "name": null,
             "owner": "oslokommune",
             "repo": "ok",
-            "rev": "v5.22.1",
-            "sha256": "sha256-wEdzS3w5qu8mBK07bzmuuejakxxfHIFhiyMbBic6Zc8=",
+            "rev": "v5.22.2",
+            "sha256": "sha256-ZqhPA1a6ReQmUHX3u3OrxNnn7w5WJQ8JEq6Eim8AqQg=",
             "sparseCheckout": [],
             "type": "github"
         },
-        "version": "v5.22.1"
+        "version": "v5.22.2"
     },
     "pgmacs": {
         "cargoLock": null,

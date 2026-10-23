@@ -7,6 +7,7 @@
 
 {
   nixpkgs.config.allowUnfreePredicate = import ../../common/unfree-predicates.nix { inherit lib; };
+  nixpkgs.config.permittedInsecurePackages = import ../../common/insecure-packages.nix;
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"

@@ -260,8 +260,11 @@ in
 
       ### Reading ###
       rmapi
-      # Pinned: zotero is broken on current nixos-unstable, see flake.nix.
-      (lib.optional (system != "aarch64-linux") inputs.nixpkgs-zotero.legacyPackages.${system}.zotero)
+      (lib.optional (system != "aarch64-linux") (
+        lib.warnIfNot (lib.hasInfix "-firefox-esr-140-bin-unwrapped-" zotero.buildPhase)
+          "expiring override: zotero no longer bundles firefox-esr-140-bin-unwrapped. Remove it from common/insecure-packages.nix and common/unfree-predicates.nix."
+          zotero
+      ))
       (callPackage ./packages/zotra-server.nix { src = inputs.zotra-server; })
 
       ### Java ###

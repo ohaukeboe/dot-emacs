@@ -41,6 +41,7 @@ let
           nixpkgs.config.allowUnfreePredicate = import ../common/unfree-predicates.nix {
             inherit (nixpkgs) lib;
           };
+          nixpkgs.config.permittedInsecurePackages = import ../common/insecure-packages.nix;
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.extraSpecialArgs.flake-inputs = inputs;

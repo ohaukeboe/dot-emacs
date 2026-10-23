@@ -13,4 +13,7 @@ builtins.elem (lib.getName pkg) [
   "steam-unwrapped"
   "kotlin-lsp"
   "oslo-sans"
+  # zotero runtime, see common/insecure-packages.nix
+  "firefox-esr-140-bin-unwrapped"
+  "rtk"
 ]
