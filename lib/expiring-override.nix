@@ -11,11 +11,11 @@
 #   whileMarkedBroken = true; once nixpkgs drops meta.broken, the override is
 #                             dropped and a warning says so.
 #
-#   fixedBy = "owner/repo#N"; the fix reference: the nixpkgs PR (preferred) or
-#                             issue whose change obsoletes the override. Not
-#                             judged at evaluation time (`just check-fixes`
-#                             does that); alone, the override always applies.
-#                             Expiry warnings name it.
+#   fixedBy, a string "owner/repo#N" (not spelled out as an assignment here,
+#   so `just check-fixes` does not report this example): the fix reference,
+#   the nixpkgs PR (preferred) or issue whose change obsoletes the override.
+#   Not judged at evaluation time (`just check-fixes` does that); alone, the
+#   override always applies. Expiry warnings name it.
 #
 #   pkgs.expiringOverride {
 #     pkg = pyprev.anyio;

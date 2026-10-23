@@ -60,3 +60,26 @@ on the narrowest fact available (here, the pin in upstream's `pyproject.toml`).
 - `tests/expiring-override.nix` tests the expiry decision through `resolve`,
   which returns the decision and message without emitting the warning, so
   `nix flake check` stays quiet while it passes.
+
+## Amendment (2026-10-23): fix references are checked outside evaluation
+
+A workaround can now carry a **fix reference** (`CONTEXT.md`): the nixpkgs PR
+or issue whose change should make it obsolete, written `owner/repo#N`. On an
+override it is the `fixedBy` field, alone or next to one expiry condition;
+elsewhere, such as the pinned `nixpkgs-zotero` input in `flake.nix`, it is a
+`# fixedBy:` comment. Evaluation only validates its format and names it in
+expiry warnings. An override with only a fix reference always applies.
+
+Whether the fix has landed is decided by `just check-fixes` (also
+`nix run .#check-fixes`), run by hand after `nix flake update`. It asks GitHub
+for the fixing commit and whether the `rev` pinned in `flake.lock`, or else
+nixos-unstable, contains it, and reports without ever failing a build. This
+cannot happen at evaluation time: pure evaluation has no network, and the
+pinned channel tarball carries no git history, so commit ancestry is not
+decidable there (`docs/nixpkgs-issue-expiry-research.md`).
+
+Prefer the fixing PR over the issue. In nixpkgs an issue often does not lead
+to the commit that fixed it: zotero's comment named PR #569006, which was
+closed unmerged, and issue #568692, which was closed by hand, while the fix
+that landed was #572466. A closed issue with no linked commit is reported as
+unknown.
