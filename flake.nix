@@ -340,6 +340,10 @@
           # A package rather than a check because it builds an Emacs closure.
           #   nix build .#test-beads -L
           test-beads = nixpkgsFor.${system}.callPackage ./tests/beads.nix { };
+          # The ERT suite of workstation/emacs/packages/walkthrough.el; see the
+          # file. A package for the same reason as test-beads.
+          #   nix build .#test-walkthrough -L
+          test-walkthrough = nixpkgsFor.${system}.callPackage ./tests/walkthrough.nix { };
           # The ERT suite of workstation/emacs/packages/agent-commit-gate.el;
           # see the file. A package for the same reason as test-beads.
           #   nix build .#test-agent-commit-review -L

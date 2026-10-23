@@ -50,14 +50,33 @@ Magit diff. Pending until handed off, then sent; sent comments stay visible,
 dimmed, until discarded.
 
 **Review hand-off**:
-Sending the repository's pending review comments to its Claude instance as one
-prompt, which marks them sent.
+Sending the repository's pending review comments, and the accepted findings of
+its walkthroughs, to its Claude instance as one prompt, which marks them sent.
+Dismissed findings are not mentioned.
 
 **Direct comment**:
 A review comment handed off alone, the moment it is written, leaving other
 pending comments untouched. Phrased neutrally, since it is often a question
 rather than a change request.
 _Avoid_: quick comment (clashes with quick prompt)
+
+**Walkthrough**:
+An agent's guided tour of the committed changes between a base and a head
+commit. It splits them into steps in reading order and carries the agent's
+findings on them. Fixed to those two commits, so it does not change as the
+branch moves on.
+_Avoid_: tour, review (which is the user's side)
+
+**Step**:
+One concept of a walkthrough: an explanation plus the diffs that make it up.
+Definitions come before their consumers, wiring after its parts and tests
+beside their subjects.
+
+**Finding**:
+A suggestion the agent makes about a walkthrough's changes, with a severity
+and usually anchored to lines of one file. Unmarked until the user accepts
+or dismisses it. Only accepted findings are handed off.
+_Avoid_: review comment, which is always the user's own remark
 
 ### Agents / command rewriting
 

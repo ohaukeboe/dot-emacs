@@ -1025,15 +1025,20 @@ visible while a file is collapsed.
           (cons (car range) (+ (car range) length -1)))))
 
     (defun my/magit-review--where (section)
-      "Describe which diff SECTION belongs to."
+      "Describe which diff SECTION belongs to.
+  A committed range is named by its commit ids (`walkthrough-diff-label'),
+  so a comment made in a walkthrough is the same comment in `magit-diff'
+  of the same commits.  Magit renamed `magit-buffer-range' to
+  `magit-buffer-diff-range' without an alias; reading the old name made
+  every range diff plain \"diff\"."
       (pcase (magit-diff-type section)
         ('unstaged "unstaged changes")
         ('staged "staged changes")
         ('untracked "untracked file")
-        (_ (if-let* ((rev (or (bound-and-true-p magit-buffer-revision)
-                              (bound-and-true-p magit-buffer-range))))
-               (format "diff of %s" rev)
-             "diff"))))
+        (_ (cond ((and (require 'walkthrough nil t) (walkthrough-diff-label)))
+                 ((bound-and-true-p magit-buffer-revision)
+                  (format "diff of %s" magit-buffer-revision))
+                 ("diff")))))
 
     (defun my/magit-review--read ()
       "Read a review comment for the hunk, hunk region or file at point."
@@ -1089,23 +1094,43 @@ visible while a file is collapsed.
                                   (or include-sent (not (plist-get c :sent)))))
                            my/magit-review-comments)))
 
+    (defun my/magit-review--items (repo &optional include-sent)
+      "Return REPO's pending review comments and accepted findings.
+  The findings come from the repository's walkthroughs, shaped like
+  comments with :kind `finding'.  Sent ones are left out unless
+  INCLUDE-SENT."
+      (append (my/magit-review--pending repo include-sent)
+              (and (require 'walkthrough nil t)
+                   (walkthrough-accepted-findings repo include-sent))))
+
+    (defun my/magit-review--finding-p (item)
+      "Return non-nil when hand-off ITEM is a walkthrough finding."
+      (eq (plist-get item :kind) 'finding))
+
     (defun my/magit-review--format (comments &optional intro)
       "Format COMMENTS as a Markdown review prompt.
-  INTRO starts the prompt's opening sentence, which goes on to say what
-  each comment names."
+  COMMENTS may include accepted walkthrough findings, which are headed by
+  their severity and title.  INTRO starts the prompt's opening sentence,
+  which goes on to say what each comment names."
       (cl-flet ((lines (label range)
                   (when range
                     (format " %s L%d-%d" label (car range) (cdr range)))))
         (concat
          (or intro
-             "Please address my review comments on this diff.  Each one names ")
+             (if (seq-some #'my/magit-review--finding-p comments)
+                 "Please address my review comments and the review findings I accepted.  Each one names "
+               "Please address my review comments on this diff.  Each one names "))
          "the file, the new/old line range and the diff it refers to.\n\n"
          (mapconcat
           (lambda (c)
             (let ((patch (plist-get c :patch)))
               (concat
-               (format "## %s%s%s (%s)%s\n\n%s\n"
-                       (plist-get c :file)
+               (format "## %s%s%s%s (%s)%s\n\n%s\n"
+                       (if (my/magit-review--finding-p c)
+                           (format "Finding [%s] %s: "
+                                   (plist-get c :severity) (plist-get c :title))
+                         "")
+                       (or (plist-get c :file) "no file")
                        (or (lines "new" (plist-get c :new)) "")
                        (or (lines "old" (plist-get c :old)) "")
                        (plist-get c :where)
@@ -1117,14 +1142,14 @@ visible while a file is collapsed.
           comments "\n"))))
 
     (defun my/magit-review-send (&optional no-submit)
-      "Send pending review comments to Claude Code and mark them sent.
-  With prefix argument NO-SUBMIT, only paste them and show the Claude
-  buffer so the prompt can be edited first."
+      "Send pending review comments and accepted findings to Claude Code.
+  Mark them sent.  With prefix argument NO-SUBMIT, only paste them and
+  show the Claude buffer so the prompt can be edited first."
       (interactive "P")
       (let ((repo (or (magit-toplevel) (user-error "Not in a Git repository"))))
         (my/magit-review--hand-off
-         (or (my/magit-review--pending repo)
-             (user-error "No pending review comments"))
+         (or (my/magit-review--items repo)
+             (user-error "No pending review comments or accepted findings"))
          nil no-submit)))
 
     (defun my/magit-review--hand-off (comments intro no-submit)
@@ -1137,14 +1162,17 @@ visible while a file is collapsed.
                        (my/claude-code-ide-paste
                         (my/magit-review--format comments intro)
                         (not no-submit)))))
-        (dolist (c comments)
+        ;; Comments live in memory; findings in their walkthrough's file.
+        (dolist (c (seq-remove #'my/magit-review--finding-p comments))
           (plist-put c :sent t))
+        (when-let* ((findings (seq-filter #'my/magit-review--finding-p comments)))
+          (walkthrough-mark-sent findings))
         (my/magit-review--redecorate repo)
         (when no-submit
           (if-let* ((window (get-buffer-window buffer t)))
               (select-window window)
             (pop-to-buffer buffer)))
-        (message "%s %d review comment(s)"
+        (message "%s %d review item(s)"
                  (if no-submit "Pasted" "Sent") (length comments))))
 
     (defun my/magit-review-paste ()
@@ -1157,7 +1185,7 @@ visible while a file is collapsed.
   With prefix argument INCLUDE-SENT, show sent comments too."
       (interactive "P")
       (let* ((repo (or (magit-toplevel) (user-error "Not in a Git repository")))
-             (comments (or (my/magit-review--pending repo include-sent)
+             (comments (or (my/magit-review--items repo include-sent)
                            (user-error "No review comments"))))
         (with-current-buffer (get-buffer-create "*magit-review*")
           (let ((inhibit-read-only t))
@@ -1289,7 +1317,10 @@ visible while a file is collapsed.
         ("s" "Send to Claude" my/magit-review-send)
         ("p" "Paste, don't submit" my/magit-review-paste)
         ("l" "List" my/magit-review-list)
-        ("k" "Discard" my/magit-review-discard)]])
+        ("k" "Discard" my/magit-review-discard)]
+       ["Walkthrough"
+        ("w" "Open (C-u: pick)" walkthrough-open-current)
+        ("W" "Ask for one (C-u: base)" walkthrough-request)]])
 
     (keymap-set magit-mode-map "@" #'my/magit-review))
 
@@ -1298,10 +1329,10 @@ visible while a file is collapsed.
     :config
     (claude-code-ide-make-tool
      :name "magit_review_comments"
-     :description "Return the user's review comments on the Git diff of the current project, written in Emacs/Magit. Each comment names the file, the new/old line range, which diff it belongs to (unstaged, staged or a revision) and includes the commented diff hunk."
+     :description "Return the user's review comments on the Git diff of the current project, written in Emacs/Magit, and the walkthrough findings the user accepted. Each comment names the file, the new/old line range, which diff it belongs to (unstaged, staged or a revision) and includes the commented diff hunk; a finding is headed by its severity and title."
      :args '((:name "include_sent"
                     :type boolean
-                    :description "Also return comments already sent to Claude"
+                    :description "Also return comments and findings already sent to Claude"
                     :optional t))
      :function
      (lambda (&optional include-sent)
@@ -1312,11 +1343,61 @@ visible while a file is collapsed.
                                default-directory)))
                       (magit-toplevel)))
               (comments (and repo
-                             (my/magit-review--pending
+                             (my/magit-review--items
                               repo (eq include-sent t)))))
          (if comments
              (my/magit-review--format comments)
            "No review comments for this project.")))))
+#+end_src
+
+A walkthrough is the agent's guided tour of a branch: the =/walkthrough=
+skill runs the built-in review on the branch's committed changes, groups the
+changed files into steps in reading order and explains each.  It writes a
+draft to its temp dir and calls the =open_walkthrough= MCP tool, which hands
+the draft to =walkthrough.el= (=packages/=).  Emacs validates it -- every
+hunk owned by exactly one step -- and returns the errors for the agent to fix,
+or installs it under the repository's git directory and opens it.  Emacs is
+the only writer there, since in an agent worktree that directory is outside
+what the agent's sandbox may write.
+
+The walkthrough buffer is a Magit diff of the two commits, arranged in steps,
+so =RET=, folding and =@= comments work as in any diff buffer.  =N= and =P=
+move between steps, =n= and =p= between findings.  On a finding, =a=
+accepts it, =x= dismisses it and =u= unmarks it; the mark is written to the
+walkthrough's file at once.  =@ s= then sends the accepted findings together
+with the pending review comments, in one prompt, and marks both sent.
+
+A comment is labelled with the commits of the diff it was made in, so a
+comment made in a walkthrough shows in =magit-diff= of the same commits too.
+=@ w= opens the current branch's walkthrough (=C-u= picks another branch's)
+and =@ W= asks the Claude session for one (=C-u= reads the base).
+
+#+begin_src elisp
+  (use-package walkthrough
+    :after magit
+    :demand t
+    :custom
+    (walkthrough-request-function #'my/claude-code-ide-paste))
+
+  (use-package claude-code-ide
+    :defer t
+    :config
+    (claude-code-ide-make-tool
+     :name "open_walkthrough"
+     :description "Validate a draft walkthrough JSON file and, when it is valid, install it for the current project's branch and open it in the user's Emacs. Returns \"Opened <file>\" or the validation errors, one per line; fix the draft and call again."
+     :args '((:name "path"
+                    :type string
+                    :description "Absolute path of the draft walkthrough JSON file"))
+     :function
+     (lambda (path)
+       (require 'walkthrough)
+       (let* ((context (claude-code-ide-mcp-server-get-session-context))
+              (default-directory (or (plist-get context :project-dir)
+                                     default-directory))
+              (result (walkthrough-install (expand-file-name path))))
+         (if (eq (car result) 'ok)
+             (format "Opened %s" (cdr result))
+           (string-join (cdr result) "\n"))))))
 #+end_src
 
 Magit-todos for integrating TODO keywords with magit's overview screen

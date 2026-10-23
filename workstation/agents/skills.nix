@@ -145,12 +145,52 @@ let
     builtins.any (other: other.name != name && lib.hasInfix ''"${name}"'' other.body) mattpocockAll
   ) (map (s: s.name) mattpocockAll);
 
+  # Skills installed under another name, because a built-in Claude Code skill
+  # has the upstream one. A personal skill shadows the built-in of the same
+  # name, and the walkthrough skill calls the built-in `code-review` through
+  # the Skill tool, which only answers to the unshadowed name.
+  mattpocockRenames = {
+    "code-review" = "code-review-axes";
+  };
+
+  # A skill whose SKILL.md names a renamed skill, in its frontmatter or in a
+  # "call the Skill tool with" instruction, gets the new name written in, so
+  # `implement` still reaches the two-axis review rather than the built-in.
+  renameSkillRefs =
+    name: src:
+    pkgs.runCommand "skill-${name}-renamed" { } ''
+      cp -r ${src} $out
+      chmod -R u+w $out
+      ${lib.concatStrings (
+        lib.mapAttrsToList (from: to: ''
+          ${pkgs.gnused}/bin/sed -i -E 's/${from}([^-a-z]|$)/${to}\1/g' $out/SKILL.md
+        '') mattpocockRenames
+      )}
+    '';
+
   mattpocockSkills = pkgs.linkFarm "mattpocock-skills" (
     map (
-      { name, subdir, ... }:
-      mkSkillEntry { repo = inputs.mattpocock-skills; } {
-        inherit name subdir;
-        disableAuto = !(builtins.elem name (mattpocockAutoInvoke ++ mattpocockCallees));
+      {
+        name,
+        subdir,
+        body,
+      }:
+      let
+        newName = mattpocockRenames.${name} or name;
+        src = "${inputs.mattpocock-skills}/${subdir}/${name}";
+        renamed =
+          if builtins.any (from: lib.hasInfix from body) (builtins.attrNames mattpocockRenames) then
+            renameSkillRefs name src
+          else
+            src;
+      in
+      {
+        name = newName;
+        path =
+          if builtins.elem name (mattpocockAutoInvoke ++ mattpocockCallees) then
+            renamed
+          else
+            patchSkill newName renamed;
       }
     ) mattpocockAll
   );
