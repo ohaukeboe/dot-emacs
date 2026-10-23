@@ -789,6 +789,123 @@ with ◆ and the severity, and the whole block has the finding face."
                    (overlay-get (walkthrough-test--finding-overlay "s1-f1")
                                 'after-string))))))))
 
+;;; Replies
+
+(defun walkthrough-test--finding (file id)
+  "Return finding ID in FILE, as stored."
+  (seq-some (lambda (step)
+              (seq-find (lambda (f) (equal (alist-get 'id f) id))
+                        (alist-get 'findings step)))
+            (alist-get 'steps (walkthrough--read file))))
+
+(ert-deftest walkthrough-test-reply ()
+  "A reply is kept in the file, accepts its finding and is drawn in its block."
+  (walkthrough-test--with-repo
+    (let* ((buffer (walkthrough-test--open (walkthrough-test--draft base head)))
+           (file (buffer-local-value 'walkthrough--file buffer)))
+      (with-current-buffer buffer
+        (walkthrough-test--goto-finding "s1-f2")
+        (walkthrough-reply "s1-f2" "Yes, but use json-insert.")
+        (should (equal (alist-get 'reply (walkthrough-test--finding file "s1-f2"))
+                       "Yes, but use json-insert."))
+        (should (equal (walkthrough-test--state file "s1-f2") "accepted"))
+        ;; Inside the block, below the body, in the reply face.
+        (let* ((general (walkthrough-test--finding-section "s1-f2"))
+               (text (buffer-substring (oref general start) (oref general end)))
+               (at (string-match "▶ Yes, but use json-insert\\." text)))
+          (walkthrough-test--check-block text "low" 'font-lock-face)
+          (should (> at (string-match "Not tied to a line" text)))
+          (should (memq 'walkthrough-reply
+                        (walkthrough-test--faces text at 'font-lock-face))))
+        ;; A placed finding draws it too.
+        (walkthrough-reply "s1-f1" "Why is this a problem?")
+        (should (string-match-p
+                 "▶ Why is this a problem\\?"
+                 (overlay-get (walkthrough-test--finding-overlay "s1-f1")
+                              'after-string))))
+      ;; Replies survive killing the buffer and opening the file again.
+      (kill-buffer buffer)
+      (with-current-buffer (walkthrough-open file)
+        (should (string-match-p "▶ Yes, but use json-insert"
+                                (walkthrough-test--text
+                                 (walkthrough-test--finding-section "s1-f2"))))))))
+
+(ert-deftest walkthrough-test-reply-states ()
+  "Replying accepts any finding; an empty reply deletes it, marks keep it."
+  (walkthrough-test--with-repo
+    (let* ((buffer (walkthrough-test--open (walkthrough-test--draft base head)))
+           (file (buffer-local-value 'walkthrough--file buffer)))
+      (with-current-buffer buffer
+        ;; A dismissed finding is accepted, and not a follow-up.
+        (walkthrough--set-state file "s1-f2" "dismissed")
+        (walkthrough-reply "s1-f2" "On second thought, fix it.")
+        (should (equal (walkthrough-test--state file "s1-f2") "accepted"))
+        (should-not (alist-get 'follow_up (walkthrough-test--finding file "s1-f2")))
+        ;; Commenting again edits the one reply, the old text pre-filled.
+        (walkthrough-test--goto-finding "s1-f2")
+        (let (initial)
+          (cl-letf (((symbol-function 'read-string)
+                     (lambda (_prompt &optional init &rest _)
+                       (setq initial init)
+                       "Fix it in b.el.")))
+            (call-interactively #'walkthrough-reply))
+          (should (equal initial "On second thought, fix it.")))
+        (should (equal (alist-get 'reply (walkthrough-test--finding file "s1-f2"))
+                       "Fix it in b.el."))
+        (should (= 1 (walkthrough-test--count "▶")))
+        ;; Dismissing and unmarking keep the reply, still shown.
+        (walkthrough-test--goto-finding "s1-f2")
+        (walkthrough-dismiss)
+        (walkthrough-test--goto-finding "s1-f2")
+        (walkthrough-unmark)
+        (should (equal (alist-get 'reply (walkthrough-test--finding file "s1-f2"))
+                       "Fix it in b.el."))
+        (should (string-match-p "▶ Fix it in b\\.el\\."
+                                (walkthrough-test--text
+                                 (walkthrough-test--finding-section "s1-f2"))))
+        ;; An empty reply deletes it and leaves the mark.
+        (walkthrough-reply "s1-f2" "  ")
+        (should-not (alist-get 'reply (walkthrough-test--finding file "s1-f2")))
+        (should (eq (walkthrough-test--state file "s1-f2") 'unmarked))
+        (should (= 0 (walkthrough-test--count "▶")))
+        ;; A sent finding is accepted again, as a follow-up.
+        (walkthrough--set-state file "s1-f1" "sent")
+        (walkthrough-reply "s1-f1" "That fix was wrong; also handle 0.")
+        (should (equal (walkthrough-test--state file "s1-f1") "accepted"))
+        (should (alist-get 'follow_up (walkthrough-test--finding file "s1-f1")))))))
+
+(ert-deftest walkthrough-test-reply-hand-off ()
+  "A reply is handed off with its finding; sending ends a follow-up."
+  (walkthrough-test--with-repo
+    (let* ((draft (walkthrough-test--draft base head))
+           (buffer (walkthrough-test--open draft))
+           (file (buffer-local-value 'walkthrough--file buffer)))
+      (with-current-buffer buffer
+        (should-not (progn (goto-char (point-min)) (walkthrough-finding-at-point-p)))
+        (walkthrough-test--goto-finding "s1-f1")
+        (should (walkthrough-finding-at-point-p))
+        (walkthrough-reply "s1-f1" "Use json-insert.")
+        (let ((item (car (walkthrough-accepted-findings walkthrough-test--repo))))
+          (should (equal (plist-get item :reply) "Use json-insert."))
+          (should-not (plist-get item :follow-up))
+          (walkthrough-mark-sent (list item)))
+        (walkthrough-reply "s1-f1" "That was wrong; also handle 0.")
+        (let ((items (walkthrough-accepted-findings walkthrough-test--repo)))
+          (should (= 1 (length items)))
+          (should (equal (plist-get (car items) :reply) "That was wrong; also handle 0."))
+          (should (plist-get (car items) :follow-up))
+          (walkthrough-mark-sent items))
+        (should (equal (walkthrough-test--state file "s1-f1") "sent"))
+        (should-not (alist-get 'follow_up (walkthrough-test--finding file "s1-f1")))
+        (should (alist-get 'reply (walkthrough-test--finding file "s1-f1"))))
+      ;; Replies are Emacs's: installing a walkthrough drops any.
+      (let ((finding (aref (alist-get 'findings (aref (alist-get 'steps draft) 0)) 0)))
+        (setf (alist-get 'reply finding) "Written by the agent")
+        (setf (alist-get 'follow_up finding) t))
+      (walkthrough-test--open draft)
+      (should-not (alist-get 'reply (walkthrough-test--finding file "s1-f1")))
+      (should-not (alist-get 'follow_up (walkthrough-test--finding file "s1-f1"))))))
+
 ;;; Patch excerpts
 
 (defconst walkthrough-test--hunk

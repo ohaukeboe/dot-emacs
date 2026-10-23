@@ -19,7 +19,8 @@
 ;; made with the configuration's `@' are drawn as anywhere else.
 ;;
 ;; Findings are marked accepted or dismissed in place, and the marks are
-;; written back to the file.  `walkthrough-accepted-findings' returns the
+;; written back to the file, as is the user's reply to a finding
+;; (`walkthrough-reply'), which accepts it.  `walkthrough-accepted-findings' returns the
 ;; accepted ones shaped like review comments, for the configuration's
 ;; hand-off to send; `walkthrough-mark-sent' records that it did.  The
 ;; agent is plugged in through `walkthrough-request-function'; this file
@@ -374,16 +375,17 @@ schema and the commits are sound, since it needs both."
 ;;; Installing
 
 (defun walkthrough--assign-ids (data)
-  "Return DATA with an id on every finding and no marks."
+  "Return DATA with an id on every finding and no marks or replies."
   (let ((steps (copy-sequence (alist-get 'steps data))))
     (dotimes (i (length steps))
       (let* ((step (aref steps i))
              (findings (copy-sequence (alist-get 'findings step))))
         (dotimes (k (length findings))
           (aset findings k
-                (walkthrough--put
-                 (walkthrough--put (aref findings k) 'state nil)
-                 'id (format "s%d-f%d" (1+ i) (1+ k)))))
+                (seq-reduce (lambda (finding key) (walkthrough--put finding key nil))
+                            '(state reply follow_up)
+                            (walkthrough--put (aref findings k)
+                                              'id (format "s%d-f%d" (1+ i) (1+ k))))))
         (aset steps i (walkthrough--put step 'findings findings))))
     (walkthrough--put data 'steps steps)))
 
@@ -499,8 +501,14 @@ Faces are copied to `font-lock-face', which Magit buffers keep.  Without
 (defface walkthrough-sent '((t :inherit shadow :extend t))
   "Face that dims a finding that was handed off.")
 
+;; The look of the configuration's review comments, which this file does
+;; not depend on.
+(defface walkthrough-reply '((t :inherit font-lock-warning-face))
+  "Face for the user's reply to a finding.")
+
 (defconst walkthrough--known-keys
-  '(id state severity title body failure_scenario verdict category anchor)
+  '(id state severity title body failure_scenario verdict category anchor
+       reply follow_up)
   "Finding keys this file knows; any other key is shown as text.")
 
 (defvar-keymap walkthrough-finding-map
@@ -526,7 +534,7 @@ appended to the heading.  Faces are set as `font-lock-face'."
                             finding))
          (bar (propertize "▎" 'font-lock-face
                           (intern (format "walkthrough-%s-bar" severity))))
-         ;; The lines below the heading; a reply would go after them.
+         ;; The lines below the heading, the user's reply last.
          (lines
           (concat
            (walkthrough--indent (walkthrough--render-markdown (alist-get 'body finding))
@@ -537,7 +545,12 @@ appended to the heading.  Faces are set as `font-lock-face'."
            (when meta
              (format "  %s\n" (string-join meta " · ")))
            (mapconcat (lambda (pair) (format "  %s: %s\n" (car pair) (cdr pair)))
-                      extra "")))
+                      extra "")
+           (when-let* ((reply (alist-get 'reply finding)))
+             (walkthrough--indent
+              (propertize (concat "▶ " (string-trim-right reply) "\n")
+                          'font-lock-face 'walkthrough-reply)
+              "  "))))
          (text
           (mapconcat
            (lambda (line) (concat bar line "\n"))
@@ -982,6 +995,10 @@ SEVERITY is the highest one present and J how many have it."
                         (alist-get 'findings step)))
             (alist-get 'steps data)))
 
+(defun walkthrough-finding-at-point-p ()
+  "Return non-nil when point is on a finding."
+  (and (walkthrough--findings-at-point) t))
+
 (defun walkthrough--finding-for-command ()
   "Return the id of the finding a mark command acts on.
 With several findings on the line, ask which."
@@ -1032,6 +1049,34 @@ A sent finding cannot be marked again."
   "Remove the mark from the finding at point."
   (interactive)
   (walkthrough--mark nil '(nil "accepted" "dismissed")))
+
+(defun walkthrough-reply (id text)
+  "Reply TEXT to finding ID, by default the finding at point.
+The reply is kept with the finding and accepts it, even a dismissed or
+sent one; a sent one is then handed off again as a follow-up.  Empty
+TEXT deletes the reply and leaves the mark as it is."
+  (interactive
+   (let ((id (walkthrough--finding-for-command)))
+     (list id (read-string "Reply: "
+                           (alist-get 'reply (walkthrough--finding-by-id
+                                              (walkthrough--read walkthrough--file)
+                                              id))))))
+  (let ((text (string-trim text)))
+    ;; Re-read, like the marks, so other changes to the file are kept.
+    (walkthrough--write
+     (walkthrough--map-findings
+      (walkthrough--read walkthrough--file)
+      (lambda (finding)
+        (cond ((not (equal (alist-get 'id finding) id)) finding)
+              ((string-empty-p text) (walkthrough--put finding 'reply nil))
+              (t (walkthrough--put
+                  (walkthrough--put
+                   (walkthrough--put finding 'reply text)
+                   'follow_up (or (alist-get 'follow_up finding)
+                                  (equal (alist-get 'state finding) "sent")))
+                  'state "accepted")))))
+     walkthrough--file))
+  (walkthrough--refresh-file-buffers walkthrough--file))
 
 (keymap-set walkthrough-finding-map "a" #'walkthrough-accept)
 (keymap-set walkthrough-finding-map "x" #'walkthrough-dismiss)
@@ -1205,13 +1250,16 @@ patch excerpt is cut."
           :text (concat (string-trim-right (alist-get 'body finding))
                         (when-let* ((failure (alist-get 'failure_scenario finding)))
                           (concat "\n\nFailure scenario: " failure)))
+          :reply (alist-get 'reply finding)
+          :follow-up (and (alist-get 'follow_up finding) t)
           :sent (equal (alist-get 'state finding) "sent"))))
 
 (defun walkthrough-accepted-findings (repo &optional include-sent)
   "Return the accepted findings of REPO's walkthroughs as hand-off items.
 Each is a plist shaped like a review comment (:repo :file :new :old
-:where :patch :text :sent) plus :kind `finding', :id, :severity, :title
-and :walkthrough, the file it came from.  :patch is the anchored lines'
+:where :patch :text :sent) plus :kind `finding', :id, :severity, :title,
+:reply, :follow-up (handed off before, accepted again by a reply) and
+:walkthrough, the file it came from.  :patch is the anchored lines'
 excerpt (`walkthrough-patch-excerpt').  Sent findings are included
 only when INCLUDE-SENT.  Oldest walkthrough first."
   (let ((default-directory (file-name-as-directory repo)))
@@ -1237,8 +1285,8 @@ only when INCLUDE-SENT.  Oldest walkthrough first."
 
 (defun walkthrough-mark-sent (items)
   "Mark the findings of hand-off ITEMS sent, in their files.
-Items that are not findings are ignored.  Open walkthrough buffers are
-refreshed."
+That ends a follow-up.  Items that are not findings are ignored.  Open
+walkthrough buffers are refreshed."
   (let ((by-file (seq-group-by (lambda (item) (plist-get item :walkthrough))
                                (seq-filter (lambda (item) (eq (plist-get item :kind) 'finding))
                                            items))))
@@ -1249,7 +1297,8 @@ refreshed."
           (walkthrough--read file)
           (lambda (finding)
             (if (member (alist-get 'id finding) ids)
-                (walkthrough--put finding 'state "sent")
+                (walkthrough--put (walkthrough--put finding 'state "sent")
+                                  'follow_up nil)
               finding)))
          file))
       (walkthrough--refresh-file-buffers file))))
