@@ -81,7 +81,9 @@ renamed over it, so a reader never sees half a walkthrough."
                               nil ".json"))
         (coding-system-for-write 'utf-8))
     (with-temp-file temp
-      (insert (json-serialize data))
+      ;; Not `json-serialize': it returns unibyte UTF-8, whose bytes the
+      ;; pretty-printer would write back as octal escapes.
+      (json-insert data)
       (json-pretty-print-buffer))
     (rename-file temp file t)))
 
@@ -144,10 +146,11 @@ with :header, :start and :length (the new side), :old-start,
               (plist-put file :old (match-string 1 line)))
              ((string-match "\\`rename to \\(.*\\)" line)
               (plist-put file :file (match-string 1 line)))
-             ((string-match "\\`--- \\(.*\\)" line)
+             ;; git ends these with a TAB when the path holds a space.
+             ((string-match "\\`--- \\([^\t]*\\)" line)
               (unless (equal (match-string 1 line) "/dev/null")
                 (plist-put file :old (match-string 1 line))))
-             ((string-match "\\`\\+\\+\\+ \\(.*\\)" line)
+             ((string-match "\\`\\+\\+\\+ \\([^\t]*\\)" line)
               (if (equal (match-string 1 line) "/dev/null")
                   (plist-put file :deleted t)
                 (plist-put file :file (match-string 1 line))))))
@@ -172,8 +175,9 @@ no longer exists, but each hunk also carries its :text."
 
 (defun walkthrough--hunk-span (hunk)
   "Return the (START . END) new-side lines HUNK covers.
-A hunk with no new-side lines covers the single position it starts at."
-  (let ((start (plist-get hunk :start)))
+A hunk with no new-side lines covers the single position it starts at,
+which is line 1 for one deleting the first lines of a file (+0,0)."
+  (let ((start (max 1 (plist-get hunk :start))))
     (cons start (max start (+ start (plist-get hunk :length) -1)))))
 
 (defun walkthrough--hunk-overlaps-p (hunk range)
@@ -190,11 +194,15 @@ A hunk with no new-side lines covers the single position it starts at."
 
 (defun walkthrough--entry (entry)
   "Return ENTRY of a step's files as (FILE . RANGES).
-RANGES is nil for a whole file.  Return nil when ENTRY is malformed."
+RANGES is nil for a whole file.  Return nil when ENTRY is malformed;
+ranges that are not arrays are left out, for the schema check to name."
   (cond ((walkthrough--string-p entry) (cons entry nil))
         ((and (listp entry) (walkthrough--string-p (alist-get 'file entry)))
-         (cons (alist-get 'file entry)
-               (mapcar (lambda (r) (append r nil)) (alist-get 'ranges entry))))))
+         (let ((ranges (alist-get 'ranges entry)))
+           (cons (alist-get 'file entry)
+                 (and (vectorp ranges)
+                      (mapcar (lambda (r) (append r nil))
+                              (seq-filter #'vectorp ranges))))))))
 
 (defun walkthrough--validate-schema (data)
   "Return the schema errors of walkthrough DATA."
@@ -210,62 +218,71 @@ RANGES is nil for a whole file.  Return nil when ENTRY is malformed."
           (err "steps: must be a non-empty array")
         (seq-do-indexed
          (lambda (step i)
-           (dolist (key '(title explanation))
-             (unless (walkthrough--string-p (alist-get key step))
-               (err "steps[%d].%s: must be a non-empty string" i key)))
-           (if (not (vec-p (alist-get 'files step)))
-               (err "steps[%d].files: must be a non-empty array" i)
-             (seq-do-indexed
-              (lambda (entry j)
-                (if-let* ((parsed (walkthrough--entry entry)))
-                    (when (and (listp entry) (not (vec-p (alist-get 'ranges entry))))
-                      (err "steps[%d].files[%d].ranges: must be a non-empty array"
-                           i j))
-                  (err "steps[%d].files[%d]: must be a path or {file, ranges}" i j))
-                (when (listp entry)
-                  (seq-do-indexed
-                   (lambda (range k)
-                     (unless (and (vectorp range) (= (length range) 2)
-                                  (natnump (aref range 0)) (natnump (aref range 1))
-                                  (<= 1 (aref range 0) (aref range 1)))
-                       (err "steps[%d].files[%d].ranges[%d]: %s must satisfy 1 <= start <= end"
-                            i j k (if (vectorp range)
-                                      (format "[%s]" (mapconcat (lambda (n) (format "%s" n))
-                                                                range ", "))
-                                    range))))
-                   (alist-get 'ranges entry))))
-              (alist-get 'files step)))
-           (let ((owned (delq nil (mapcar (lambda (e) (car (walkthrough--entry e)))
-                                          (alist-get 'files step)))))
-             (seq-do-indexed
-              (lambda (finding k)
-                (unless (member (alist-get 'severity finding) '("high" "medium" "low"))
-                  (err "steps[%d].findings[%d].severity: must be one of high, medium, low"
-                       i k))
-                (dolist (key '(title body))
-                  (unless (walkthrough--string-p (alist-get key finding))
-                    (err "steps[%d].findings[%d].%s: must be a non-empty string"
-                         i k key)))
-                (when-let* ((anchor (alist-get 'anchor finding)))
-                  (let ((file (alist-get 'file anchor))
-                        (line (alist-get 'line anchor))
-                        (end (alist-get 'end_line anchor)))
-                    (cond ((not (walkthrough--string-p file))
-                           (err "steps[%d].findings[%d].anchor.file: must be a non-empty string"
-                                i k))
-                          ((not (member file owned))
-                           (err "steps[%d].findings[%d].anchor.file: %s is not owned by this step"
-                                i k file)))
-                    (unless (and (natnump line) (>= line 1))
-                      (err "steps[%d].findings[%d].anchor.line: must be a positive integer"
-                           i k))
-                    (when (and end (not (and (natnump line) (natnump end) (>= end line))))
-                      (err "steps[%d].findings[%d].anchor.end_line: must be an integer >= line"
-                           i k))
-                    (unless (member (alist-get 'side anchor) '(nil "new" "old"))
-                      (err "steps[%d].findings[%d].anchor.side: must be new or old"
-                           i k)))))
-              (alist-get 'findings step))))
+           (if (not (listp step))
+               (err "steps[%d]: must be an object" i)
+             (dolist (key '(title explanation))
+               (unless (walkthrough--string-p (alist-get key step))
+                 (err "steps[%d].%s: must be a non-empty string" i key)))
+             (if (not (vec-p (alist-get 'files step)))
+                 (err "steps[%d].files: must be a non-empty array" i)
+               (seq-do-indexed
+                (lambda (entry j)
+                  (if-let* ((parsed (walkthrough--entry entry)))
+                      (when (and (listp entry) (not (vec-p (alist-get 'ranges entry))))
+                        (err "steps[%d].files[%d].ranges: must be a non-empty array"
+                             i j))
+                    (err "steps[%d].files[%d]: must be a path or {file, ranges}" i j))
+                  (when (and (listp entry) (vectorp (alist-get 'ranges entry)))
+                    (seq-do-indexed
+                     (lambda (range k)
+                       (unless (and (vectorp range) (= (length range) 2)
+                                    (natnump (aref range 0)) (natnump (aref range 1))
+                                    (<= 1 (aref range 0) (aref range 1)))
+                         (err "steps[%d].files[%d].ranges[%d]: %s must satisfy 1 <= start <= end"
+                              i j k (if (vectorp range)
+                                        (format "[%s]" (mapconcat (lambda (n) (format "%s" n))
+                                                                  range ", "))
+                                      range))))
+                     (alist-get 'ranges entry))))
+                (alist-get 'files step)))
+             (let ((owned (delq nil (mapcar (lambda (e) (car (walkthrough--entry e)))
+                                            (alist-get 'files step))))
+                   (findings (alist-get 'findings step)))
+               (if (not (vectorp (or findings [])))
+                   (err "steps[%d].findings: must be an array" i)
+                 (seq-do-indexed
+                  (lambda (finding k)
+                    (if (not (listp finding))
+                        (err "steps[%d].findings[%d]: must be an object" i k)
+                      (unless (member (alist-get 'severity finding) '("high" "medium" "low"))
+                        (err "steps[%d].findings[%d].severity: must be one of high, medium, low"
+                             i k))
+                      (dolist (key '(title body))
+                        (unless (walkthrough--string-p (alist-get key finding))
+                          (err "steps[%d].findings[%d].%s: must be a non-empty string"
+                               i k key)))
+                      (when-let* ((anchor (alist-get 'anchor finding)))
+                        (if (not (listp anchor))
+                            (err "steps[%d].findings[%d].anchor: must be an object" i k)
+                          (let ((file (alist-get 'file anchor))
+                                (line (alist-get 'line anchor))
+                                (end (alist-get 'end_line anchor)))
+                            (cond ((not (walkthrough--string-p file))
+                                   (err "steps[%d].findings[%d].anchor.file: must be a non-empty string"
+                                        i k))
+                                  ((not (member file owned))
+                                   (err "steps[%d].findings[%d].anchor.file: %s is not owned by this step"
+                                        i k file)))
+                            (unless (and (natnump line) (>= line 1))
+                              (err "steps[%d].findings[%d].anchor.line: must be a positive integer"
+                                   i k))
+                            (when (and end (not (and (natnump line) (natnump end) (>= end line))))
+                              (err "steps[%d].findings[%d].anchor.end_line: must be an integer >= line"
+                                   i k))
+                            (unless (member (alist-get 'side anchor) '(nil "new" "old"))
+                              (err "steps[%d].findings[%d].anchor.side: must be new or old"
+                                   i k)))))))
+                  findings)))))
          (alist-get 'steps data))))
     (nreverse errors)))
 

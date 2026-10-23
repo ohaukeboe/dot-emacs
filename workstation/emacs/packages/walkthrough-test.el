@@ -123,9 +123,10 @@ OVERRIDES is a plist of top-level keys to replace, e.g. :steps."
 
 (defun walkthrough-test--write-draft (draft)
   "Write DRAFT as JSON to a temporary file and return its name."
-  (let ((file (make-temp-file "walkthrough-draft" nil ".json")))
+  (let ((file (make-temp-file "walkthrough-draft" nil ".json"))
+        (coding-system-for-write 'utf-8))
     (with-temp-file file
-      (insert (json-serialize draft)))
+      (json-insert draft))
     file))
 
 (defun walkthrough-test--step (title files &optional findings)
@@ -176,7 +177,11 @@ OVERRIDES is a plist of top-level keys to replace, e.g. :steps."
     (should (walkthrough--hunk-overlaps-p (funcall hunk 12 0) '(12 20)))
     (should (walkthrough--hunk-overlaps-p (funcall hunk 12 0) '(1 12)))
     (should-not (walkthrough--hunk-overlaps-p (funcall hunk 12 0) '(13 20)))
-    (should (walkthrough--hunk-overlaps-p (funcall hunk 12 1) '(12 12)))))
+    (should (walkthrough--hunk-overlaps-p (funcall hunk 12 1) '(12 12)))
+    ;; Emptying a file gives +0,0, which no range starting at 1 would reach
+    ;; if it covered line 0.
+    (should (walkthrough--hunk-overlaps-p (funcall hunk 0 0) '(1 1)))
+    (should-not (walkthrough--hunk-overlaps-p (funcall hunk 0 0) '(2 5)))))
 
 ;;; Validation
 
@@ -257,6 +262,53 @@ OVERRIDES is a plist of top-level keys to replace, e.g. :steps."
     (let ((errors (walkthrough-validate (walkthrough-test--draft head base))))
       (walkthrough-test--has-error errors "^base: is not an ancestor of head$"))))
 
+(ert-deftest walkthrough-test-validate-malformed ()
+  "Values of the wrong type are errors that name the field, not signals."
+  (walkthrough-test--with-repo
+    (let* ((walkthrough-open-after-install nil)
+           (finding (lambda (anchor)
+                      `((severity . "low") (title . "t") (body . "b")
+                        (anchor . ,anchor))))
+           (result (walkthrough-install
+                    (walkthrough-test--write-draft
+                     (walkthrough-test--draft
+                      base head
+                      :steps (vector
+                              "not a step"
+                              (walkthrough-test--step
+                               "Ranges" [((file . "a.el") (ranges . "10-20"))
+                                         "b.el" "c.el" "img.bin"]
+                               (vector (funcall finding "a.el:3")))
+                              `((title . "Findings") (explanation . "x")
+                                (files . ["b.el"]) (findings . "none"))
+                              (walkthrough-test--step
+                               "Finding" ["b.el"] ["just text"])))))))
+      (should (eq (car result) 'error))
+      (let ((errors (cdr result)))
+        (walkthrough-test--has-error errors "^steps\\[0\\]: must be an object$")
+        (walkthrough-test--has-error errors "^steps\\[1\\]\\.files\\[0\\]\\.ranges: must be a non-empty array$")
+        (walkthrough-test--has-error errors "^steps\\[1\\]\\.findings\\[0\\]\\.anchor: must be an object$")
+        (walkthrough-test--has-error errors "^steps\\[2\\]\\.findings: must be an array$")
+        (walkthrough-test--has-error errors "^steps\\[3\\]\\.findings\\[0\\]: must be an object$")))))
+
+(ert-deftest walkthrough-test-validate-unusual-files ()
+  "A path with a space, and a file emptied (+0,0), can be owned."
+  (walkthrough-test--with-repo
+    (walkthrough-test--write "my file.el" "spaced\n")
+    ;; c.el is back, emptied: against main that is a hunk -1 +0,0.
+    (walkthrough-test--write "c.el" "")
+    (walkthrough-test--git "add" ".")
+    (walkthrough-test--git "commit" "--quiet" "-m" "four")
+    (let* ((head (walkthrough-test--git "rev-parse" "HEAD"))
+           (files (walkthrough--parse-diff base head '("-U3"))))
+      (should (member "my file.el" (mapcar (lambda (f) (plist-get f :file)) files)))
+      (should (null (walkthrough-validate
+                     (walkthrough-test--draft
+                      base head
+                      :steps (vector (walkthrough-test--step
+                                      "All" ["a.el" "b.el" "img.bin" "my file.el"
+                                             ((file . "c.el") (ranges . [[1 1]]))])))))))))
+
 ;;; Installing
 
 (ert-deftest walkthrough-test-install ()
@@ -285,6 +337,12 @@ OVERRIDES is a plist of top-level keys to replace, e.g. :steps."
         (walkthrough-test--has-error (cdr bad) "^title: ")
         (should (equal before (with-temp-buffer (insert-file-contents-literally file)
                                                 (buffer-string)))))
+      ;; Text outside ASCII survives the write, both at install and on a mark.
+      (walkthrough-install
+       (walkthrough-test--write-draft
+        (walkthrough-test--draft base head :title "\u00c6 \u2014 \u00f8")))
+      (walkthrough--set-state file "s1-f1" "accepted")
+      (should (equal (alist-get 'title (walkthrough--read file)) "\u00c6 \u2014 \u00f8"))
       ;; A file that is not JSON at all is an error, not a signal.
       (let ((junk (make-temp-file "walkthrough-junk" nil ".json" "{nope")))
         (should (eq (car (walkthrough-install junk)) 'error)))
