@@ -979,7 +979,9 @@ new/old line range, the diff it refers to and the (hunk or region) patch.
 
 The review is sent as a bracketed paste, because typing a multi-line string
 into the terminal would submit it at the first newline.  =@ p= pastes without
-submitting so the prompt can still be edited.  Claude can also re-read the
+submitting so the prompt can still be edited.  =@ d= writes a direct
+comment: one comment sent at once on its own, for a quick question, leaving
+other pending comments queued.  Claude can also re-read the
 review through the =magit_review_comments= MCP tool.
 
 Comments are drawn below the last commented line (unsent ones highlighted,
@@ -1033,34 +1035,51 @@ visible while a file is collapsed.
                (format "diff of %s" rev)
              "diff"))))
 
-    (defun my/magit-review-comment (text)
-      "Attach review comment TEXT to the hunk, hunk region or file at point."
-      (interactive
-       (progn
-         (unless (magit-section-match '(hunk file))
-           (user-error "Not on a diff file or hunk"))
-         (list (read-string "Review comment: "))))
+    (defun my/magit-review--read ()
+      "Read a review comment for the hunk, hunk region or file at point."
+      (unless (magit-section-match '(hunk file))
+        (user-error "Not on a diff file or hunk"))
+      (list (read-string "Review comment: ")))
+
+    (defun my/magit-review--add (text)
+      "Record review comment TEXT on the thing at point and return it."
       (when (string-empty-p text)
         (user-error "Empty comment"))
       (let* ((section (magit-current-section))
-             (hunk (and (magit-section-match 'hunk section) section)))
-        (push (list :repo (magit-toplevel)
-                    :file (magit-file-at-point)
-                    :where (my/magit-review--where section)
-                    :new (and hunk (my/magit-review--range hunk nil))
-                    :old (and hunk (my/magit-review--range hunk t))
-                    :patch (and hunk
-                                (if (magit-diff-use-hunk-region-p)
-                                    (magit-diff-hunk-region-patch hunk)
-                                  (buffer-substring-no-properties
-                                   (oref hunk start) (oref hunk end))))
-                    :text text
-                    :sent nil)
-              my/magit-review-comments)
+             (hunk (and (magit-section-match 'hunk section) section))
+             (comment (list :repo (magit-toplevel)
+                            :file (magit-file-at-point)
+                            :where (my/magit-review--where section)
+                            :new (and hunk (my/magit-review--range hunk nil))
+                            :old (and hunk (my/magit-review--range hunk t))
+                            :patch (and hunk
+                                        (if (magit-diff-use-hunk-region-p)
+                                            (magit-diff-hunk-region-patch hunk)
+                                          (buffer-substring-no-properties
+                                           (oref hunk start) (oref hunk end))))
+                            :text text
+                            :sent nil)))
+        (push comment my/magit-review-comments)
         (deactivate-mark)
-        (my/magit-review--redecorate (magit-toplevel))
-        (message "%d pending review comment(s)"
-                 (length (my/magit-review--pending (magit-toplevel))))))
+        comment))
+
+    (defun my/magit-review-comment (text)
+      "Attach review comment TEXT to the hunk, hunk region or file at point."
+      (interactive (my/magit-review--read))
+      (my/magit-review--add text)
+      (my/magit-review--redecorate (magit-toplevel))
+      (message "%d pending review comment(s)"
+               (length (my/magit-review--pending (magit-toplevel)))))
+
+    (defun my/magit-review-comment-send (text &optional no-submit)
+      "Send review comment TEXT on the thing at point to Claude Code at once.
+  Other pending comments stay pending.  With prefix argument NO-SUBMIT,
+  only paste it and show the Claude buffer."
+      (interactive (append (my/magit-review--read) (list current-prefix-arg)))
+      (my/magit-review--hand-off
+       (list (my/magit-review--add text))
+       "Here is a comment on this diff: a question or a request.  It names "
+       no-submit))
 
     (defun my/magit-review--pending (repo &optional include-sent)
       "Return REPO's review comments, oldest first.
@@ -1070,13 +1089,16 @@ visible while a file is collapsed.
                                   (or include-sent (not (plist-get c :sent)))))
                            my/magit-review-comments)))
 
-    (defun my/magit-review--format (comments)
-      "Format COMMENTS as a Markdown review prompt."
+    (defun my/magit-review--format (comments &optional intro)
+      "Format COMMENTS as a Markdown review prompt.
+  INTRO starts the prompt's opening sentence, which goes on to say what
+  each comment names."
       (cl-flet ((lines (label range)
                   (when range
                     (format " %s L%d-%d" label (car range) (cdr range)))))
         (concat
-         "Please address my review comments on this diff.  Each one names "
+         (or intro
+             "Please address my review comments on this diff.  Each one names ")
          "the file, the new/old line range and the diff it refers to.\n\n"
          (mapconcat
           (lambda (c)
@@ -1099,15 +1121,23 @@ visible while a file is collapsed.
   With prefix argument NO-SUBMIT, only paste them and show the Claude
   buffer so the prompt can be edited first."
       (interactive "P")
-      (let* ((repo (or (magit-toplevel) (user-error "Not in a Git repository")))
-             (pending (or (my/magit-review--pending repo)
-                          (user-error "No pending review comments")))
+      (let ((repo (or (magit-toplevel) (user-error "Not in a Git repository"))))
+        (my/magit-review--hand-off
+         (or (my/magit-review--pending repo)
+             (user-error "No pending review comments"))
+         nil no-submit)))
+
+    (defun my/magit-review--hand-off (comments intro no-submit)
+      "Send COMMENTS to Claude Code, opening the prompt with INTRO.
+  Mark them sent.  If NO-SUBMIT, only paste them and show the Claude buffer."
+      (let* ((repo (magit-toplevel))
              ;; The prefix argument means "don't submit" here, not "ask
              ;; which instance".
              (buffer (let ((current-prefix-arg nil))
-                       (my/claude-code-ide-paste (my/magit-review--format pending)
-                                                 (not no-submit)))))
-        (dolist (c pending)
+                       (my/claude-code-ide-paste
+                        (my/magit-review--format comments intro)
+                        (not no-submit)))))
+        (dolist (c comments)
           (plist-put c :sent t))
         (my/magit-review--redecorate repo)
         (when no-submit
@@ -1115,7 +1145,7 @@ visible while a file is collapsed.
               (select-window window)
             (pop-to-buffer buffer)))
         (message "%s %d review comment(s)"
-                 (if no-submit "Pasted" "Sent") (length pending))))
+                 (if no-submit "Pasted" "Sent") (length comments))))
 
     (defun my/magit-review-paste ()
       "Paste pending review comments into Claude Code without submitting."
@@ -1253,7 +1283,8 @@ visible while a file is collapsed.
     (transient-define-prefix my/magit-review ()
       "Comment on diffs and hand the review to Claude Code."
       [["Comment"
-        ("c" "Hunk, region or file" my/magit-review-comment)]
+        ("c" "Hunk, region or file" my/magit-review-comment)
+        ("d" "Comment and send now" my/magit-review-comment-send)]
        ["Review"
         ("s" "Send to Claude" my/magit-review-send)
         ("p" "Paste, don't submit" my/magit-review-paste)

@@ -44,6 +44,21 @@ _Avoid_: Claude frame, Claude popup
 The set of Claude side windows visible in the current tab. Hiding the panel
 remembers the set so a project's members can be restored later.
 
+**Review comment**:
+A remark the user attaches to a hunk, a region of a hunk, or a whole file in a
+Magit diff. Pending until handed off, then sent; sent comments stay visible,
+dimmed, until discarded.
+
+**Review hand-off**:
+Sending the repository's pending review comments to its Claude instance as one
+prompt, which marks them sent.
+
+**Direct comment**:
+A review comment handed off alone, the moment it is written, leaving other
+pending comments untouched. Phrased neutrally, since it is often a question
+rather than a change request.
+_Avoid_: quick comment (clashes with quick prompt)
+
 ### Agents / command rewriting
 
 **Rewriter chain**:
