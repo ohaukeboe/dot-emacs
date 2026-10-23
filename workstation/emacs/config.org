@@ -1057,11 +1057,16 @@ visible while a file is collapsed.
                             :where (my/magit-review--where section)
                             :new (and hunk (my/magit-review--range hunk nil))
                             :old (and hunk (my/magit-review--range hunk t))
+                            ;; A region is sent as it is; a whole hunk
+                            ;; is capped, a new file's being all of it.
                             :patch (and hunk
                                         (if (magit-diff-use-hunk-region-p)
                                             (magit-diff-hunk-region-patch hunk)
-                                          (buffer-substring-no-properties
-                                           (oref hunk start) (oref hunk end))))
+                                          (let ((patch (buffer-substring-no-properties
+                                                        (oref hunk start) (oref hunk end))))
+                                            (if (require 'walkthrough nil t)
+                                                (walkthrough-patch-excerpt patch)
+                                              patch))))
                             :text text
                             :sent nil)))
         (push comment my/magit-review-comments)

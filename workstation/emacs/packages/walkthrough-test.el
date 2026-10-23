@@ -652,7 +652,7 @@ OVERRIDES is a plist of top-level keys to replace, e.g. :steps."
           (should (equal (plist-get item :title) "Line 10 is wrong"))
           (should (string-match-p "breaks the count" (plist-get item :text)))
           (should (string-match-p "Read line 10" (plist-get item :text)))
-          (should (string-prefix-p "@@ -7,7 +7,7 @@" (plist-get item :patch)))
+          (should (string-prefix-p "@@ -8,6 +8,6 @@" (plist-get item :patch)))
           (should (string-match-p "^\\+line 10 changed$" (plist-get item :patch)))
           (should (equal (plist-get item :where) (format "diff of %s..%s" base head)))
           (should (equal (plist-get item :walkthrough) file))
@@ -668,6 +668,88 @@ OVERRIDES is a plist of top-level keys to replace, e.g. :steps."
                    "\\[sent\\]"
                    (overlay-get (walkthrough-test--finding-overlay "s1-f1")
                                 'after-string))))))))
+
+;;; Patch excerpts
+
+(defconst walkthrough-test--hunk
+  (concat "@@ -10,12 +10,13 @@ (defun foo ()\n"
+          " l10\n l11\n l12\n l13\n l14\n"
+          "-l15\n+l15 new\n+l15b\n"
+          " l16\n l17\n l18\n l19\n l20\n l21\n")
+  "A hunk replacing old line 15 by new lines 15 and 16.")
+
+(ert-deftest walkthrough-test-excerpt-range ()
+  "A range is cut out with three lines of context and a corrected header."
+  (should (equal (walkthrough-patch-excerpt walkthrough-test--hunk '(16 . 16))
+                 (concat "@@ -14,5 +14,6 @@ (defun foo ()\n"
+                         " l14\n-l15\n+l15 new\n+l15b\n l16\n l17\n l18\n"))))
+
+(ert-deftest walkthrough-test-excerpt-old-side-and-edges ()
+  "Old-side ranges count old lines; the context stops at the hunk's edges."
+  (should (equal (walkthrough-patch-excerpt walkthrough-test--hunk '(15 . 15) "old")
+                 (concat "@@ -12,5 +12,6 @@ (defun foo ()\n"
+                         " l12\n l13\n l14\n-l15\n+l15 new\n+l15b\n l16\n")))
+  (should (equal (walkthrough-patch-excerpt walkthrough-test--hunk '(10 . 10))
+                 "@@ -10,4 +10,4 @@ (defun foo ()\n l10\n l11\n l12\n l13\n"))
+  ;; A combined diff's hunk is not cut.
+  (let ((combined (concat "@@@ -1,2 -1,2 +1,3 @@@\n" (make-string 50 ?x) "\n")))
+    (should (equal (walkthrough-patch-excerpt combined) combined)))
+  ;; A short hunk comes back whole, its header kept for a side with no lines.
+  (let ((new-file "@@ -0,0 +1,2 @@\n+new file\n+second line\n"))
+    (should (equal (walkthrough-patch-excerpt new-file '(2 . 2)) new-file)))
+  (let ((pure-addition "@@ -4,0 +5,1 @@\n+added\n"))
+    (should (equal (walkthrough-patch-excerpt pure-addition '(5 . 5)) pure-addition))))
+
+(defun walkthrough-test--hunk-of (header rows)
+  "Return a hunk with HEADER and ROWS, each a string or (FROM TO PREFIX).
+(FROM TO PREFIX) stands for the lines PREFIX\"lI\" for I from FROM to TO."
+  (concat header "\n"
+          (mapconcat (lambda (row)
+                       (if (stringp row)
+                           (concat row "\n")
+                         (pcase-let ((`(,from ,to ,prefix) row))
+                           (mapconcat (lambda (i) (format "%sl%d\n" prefix i))
+                                      (number-sequence from to) ""))))
+                     rows "")))
+
+(ert-deftest walkthrough-test-excerpt-capped-hunk ()
+  "A whole hunk is capped at 40 lines around its changes, with … for cuts."
+  ;; A hunk within the cap comes back as it is.
+  (should (equal (walkthrough-patch-excerpt walkthrough-test--hunk)
+                 walkthrough-test--hunk))
+  ;; A new file keeps its first 40 lines.
+  (let ((excerpt (walkthrough-patch-excerpt
+                  (walkthrough-test--hunk-of "@@ -0,0 +1,100 @@" '((1 100 "+"))))))
+    (should (equal excerpt (walkthrough-test--hunk-of
+                            "@@ -0,0 +1,40 @@" '((1 40 "+") "…")))))
+  ;; One change in a long hunk keeps the context nearest it, cut on both ends.
+  (let ((excerpt (walkthrough-patch-excerpt
+                  (walkthrough-test--hunk-of "@@ -1,60 +1,60 @@ (defun bar ()"
+                                             '((1 30 " ") "-l31" "+l31 new" (32 60 " "))))))
+    (should (equal excerpt (walkthrough-test--hunk-of
+                            "@@ -12,39 +12,39 @@ (defun bar ()"
+                            '("…" (12 30 " ") "-l31" "+l31 new" (32 50 " ") "…")))))
+  ;; Changes far apart keep the lines around each, the cut between marked.
+  (let ((excerpt (walkthrough-patch-excerpt
+                  (walkthrough-test--hunk-of "@@ -1,59 +1,61 @@"
+                                             '((1 5 " ") "+a" (6 54 " ") "+b" (55 59 " "))))))
+    (should (equal excerpt (walkthrough-test--hunk-of
+                            "@@ -1,59 +1,61 @@"
+                            '((1 5 " ") "+a" (6 19 " ") "…" (41 54 " ") "+b" (55 59 " ")))))))
+
+(ert-deftest walkthrough-test-accepted-finding-excerpt ()
+  "A hand-off item's patch is its anchored lines with three lines of context."
+  (walkthrough-test--with-repo
+    (let* ((draft (walkthrough-test--draft base head))
+           (finding (aref (alist-get 'findings (aref (alist-get 'steps draft) 0)) 0)))
+      (setf (alist-get 'line (alist-get 'anchor finding)) 8)
+      (let ((file (buffer-local-value 'walkthrough--file (walkthrough-test--open draft))))
+        (walkthrough--set-state file "s1-f1" "accepted")
+        (let ((patch (plist-get (car (walkthrough-accepted-findings walkthrough-test--repo))
+                                :patch)))
+          (should (string-prefix-p "@@ -7,4 +7,4 @@" patch))
+          (should (string-suffix-p "\n line 7\n line 8\n line 9\n-line 10\n+line 10 changed\n"
+                                   patch)))))))
 
 ;;; Comment identity
 

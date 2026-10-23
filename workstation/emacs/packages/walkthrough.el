@@ -963,6 +963,129 @@ A sent finding cannot be marked again."
 (keymap-set walkthrough-finding-map "x" #'walkthrough-dismiss)
 (keymap-set walkthrough-finding-map "u" #'walkthrough-unmark)
 
+;;; Patch excerpts
+
+(defconst walkthrough-excerpt-context 3
+  "Lines of context `walkthrough-patch-excerpt' keeps around a range.")
+
+(defcustom walkthrough-excerpt-max-lines 40
+  "About how many lines of a hunk `walkthrough-patch-excerpt' keeps.
+Only a whole hunk is capped; an excerpt of a range is not."
+  :type 'natnum)
+
+(defun walkthrough--hunk-rows (hunk)
+  "Split HUNK, a hunk's text, into its header's tail and its rows.
+Return (TAIL . ROWS): TAIL is what follows the second @@ of the header,
+and each row is (LINE OLD NEW), where OLD and NEW are the numbers of the
+next line on each side at that row, which is the row's own line on the
+sides it belongs to.  Return nil when HUNK is not a two-sided hunk,
+such as a combined diff's."
+  (let* ((lines (split-string hunk "\n"))
+         (header (car lines)))
+    (when (string-match
+           "\\`@@ -\\([0-9]+\\)\\(?:,[0-9]+\\)? \\+\\([0-9]+\\)\\(?:,[0-9]+\\)? @@"
+           header)
+      (let ((tail (substring header (match-end 0)))
+            ;; A side with no lines names the line before the hunk.
+            (old (string-to-number (match-string 1 header)))
+            (new (string-to-number (match-string 2 header)))
+            (body (cdr lines))
+            rows)
+        (when (string-match-p "\\`@@ -[0-9]+,0 " header) (cl-incf old))
+        (when (string-match-p " \\+[0-9]+,0 @@" header) (cl-incf new))
+        (when (equal (car (last body)) "")
+          (setq body (butlast body)))
+        (dolist (line body)
+          (push (list line old new) rows)
+          (pcase (and (> (length line) 0) (aref line 0))
+            (?\s (cl-incf old) (cl-incf new))
+            (?- (cl-incf old))
+            (?+ (cl-incf new))))
+        (cons tail (nreverse rows))))))
+
+(defun walkthrough--row-on-side-p (row side)
+  "Return non-nil when ROW (see `walkthrough--hunk-rows') is a line of SIDE."
+  (memq (and (> (length (car row)) 0) (aref (car row) 0))
+        (if (equal side "old") '(?\s ?-) '(?\s ?+))))
+
+(defun walkthrough--excerpt (tail rows kept &optional mark-cuts)
+  "Return the ROWS whose index is in KEPT as a hunk with header TAIL.
+The header spans the first to the last kept row.  With MARK-CUTS, a line
+\"…\" stands for each run of rows left out."
+  (let* ((first (seq-min kept))
+         (span (seq-subseq rows first (1+ (seq-max kept)))))
+    (cl-flet ((side (side n)
+                (let ((count (seq-count (lambda (row) (walkthrough--row-on-side-p row side))
+                                        span)))
+                  (format "%d,%d" (if (zerop count) (1- (nth n (car span))) (nth n (car span)))
+                          count))))
+      (concat
+       (format "@@ -%s +%s @@%s\n" (side "old" 1) (side "new" 2) tail)
+       (mapconcat
+        #'identity
+        (delq nil (seq-map-indexed
+                   (lambda (row i)
+                     (cond ((memq i kept) (concat (car row) "\n"))
+                           ((and mark-cuts (or (zerop i) (memq (1- i) kept))) "…\n")))
+                   rows))
+        "")))))
+
+(defun walkthrough-patch-excerpt (hunk &optional range side)
+  "Return an excerpt of HUNK, a hunk's text: its @@ header and its lines.
+RANGE is a (START . END) range of lines on SIDE, \"old\" or \"new\" (the
+default).  The excerpt is the lines of RANGE with
+`walkthrough-excerpt-context' lines of context around them, under a
+header recomputed for them.  Without RANGE, or when no line of the hunk
+is in it, the whole hunk is returned, cut to about
+`walkthrough-excerpt-max-lines' lines kept around its changed lines,
+with \"…\" where lines were left out; its header then spans the first to
+the last line kept.  A hunk that is not two-sided is returned as it is."
+  (pcase-let* ((parsed (walkthrough--hunk-rows hunk))
+               (`(,tail . ,rows) parsed)
+               (in-range (and range
+                              (seq-filter
+                               #'identity
+                               (seq-map-indexed
+                                (lambda (row i)
+                                  (and (walkthrough--row-on-side-p row side)
+                                       (<= (car range)
+                                           (nth (if (equal side "old") 1 2) row)
+                                           (cdr range))
+                                       i))
+                                rows)))))
+    (cond
+     ((null parsed) hunk)
+     (in-range
+      (walkthrough--excerpt
+       tail rows
+       (number-sequence (max 0 (- (seq-min in-range) walkthrough-excerpt-context))
+                        (min (1- (length rows))
+                             (+ (seq-max in-range) walkthrough-excerpt-context)))))
+     ((<= (length rows) walkthrough-excerpt-max-lines) hunk)
+     (t
+      ;; Keep the rows within the widest distance of a change that fits;
+      ;; when even the changes alone do not, the first of them.
+      (let* ((changes (seq-filter
+                       #'identity
+                       (seq-map-indexed (lambda (row i)
+                                          (and (string-match-p "\\`[-+]" (car row)) i))
+                                        rows)))
+             (distance (seq-map-indexed
+                        (lambda (_ i)
+                          (if changes
+                              (seq-min (mapcar (lambda (c) (abs (- c i))) changes))
+                            i))
+                        rows))
+             (within (lambda (r)
+                       (seq-filter #'identity
+                                   (seq-map-indexed (lambda (d i) (and (<= d r) i))
+                                                    distance))))
+             (r 0))
+        (while (<= (length (funcall within (1+ r))) walkthrough-excerpt-max-lines)
+          (cl-incf r))
+        (walkthrough--excerpt
+         tail rows (seq-take (funcall within r) walkthrough-excerpt-max-lines) t))))))
+
 ;;; Handing findings off
 
 (defun walkthrough--range-label (base head)
@@ -984,8 +1107,8 @@ same commits."
 
 (defun walkthrough--hand-off-item (data file finding diff)
   "Return FINDING of DATA (installed in FILE) as a hand-off item.
-DIFF is the parsed diff of DATA's range, which the anchored hunk is cut
-from."
+DIFF is the parsed diff of DATA's range, from whose anchored hunk the
+patch excerpt is cut."
   (pcase-let* ((`(,name ,line ,side) (walkthrough--anchor-line finding))
                (anchor (alist-get 'anchor finding))
                (range (and anchor (cons (alist-get 'line anchor)
@@ -1002,7 +1125,7 @@ from."
           :new (and range (not (equal side "old")) range)
           :old (and range (equal side "old") range)
           :where (walkthrough--range-label (alist-get 'base data) (alist-get 'head data))
-          :patch (and hunk (plist-get hunk :text))
+          :patch (and hunk (walkthrough-patch-excerpt (plist-get hunk :text) range side))
           :severity (alist-get 'severity finding)
           :title (alist-get 'title finding)
           :text (concat (string-trim-right (alist-get 'body finding))
@@ -1014,7 +1137,8 @@ from."
   "Return the accepted findings of REPO's walkthroughs as hand-off items.
 Each is a plist shaped like a review comment (:repo :file :new :old
 :where :patch :text :sent) plus :kind `finding', :id, :severity, :title
-and :walkthrough, the file it came from.  Sent findings are included
+and :walkthrough, the file it came from.  :patch is the anchored lines'
+excerpt (`walkthrough-patch-excerpt').  Sent findings are included
 only when INCLUDE-SENT.  Oldest walkthrough first."
   (let ((default-directory (file-name-as-directory repo)))
     (mapcan
