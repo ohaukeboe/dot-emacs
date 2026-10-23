@@ -78,6 +78,13 @@ and usually anchored to lines of one file. Unmarked until the user accepts
 or dismisses it. Only accepted findings are handed off.
 _Avoid_: review comment, which is always the user's own remark
 
+**Reply**:
+The user's answer to a finding: agreement with a twist, a correction or a
+question. A finding has at most one, kept with it and handed off under it.
+Replying accepts the finding, even a dismissed or already sent one, which
+is then handed off again.
+_Avoid_: review comment (that is on a diff, not on a finding)
+
 ### Agents / command rewriting
 
 **Rewriter chain**:
