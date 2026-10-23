@@ -370,6 +370,14 @@ may be obsolete. Three kinds:
   other version, but the override keeps applying until a human re-checks.
 - **while-marked-broken**: expires when nixpkgs drops `meta.broken`.
 
+**Fix reference**:
+A nixpkgs PR (preferred) or issue recorded next to a workaround, naming the
+change that should make it obsolete. Evaluation cannot tell whether that
+change has reached the pinned nixpkgs, so a separate check, run by hand,
+reports it. May stand alone or accompany one expiry condition; it is not an
+expiry condition itself.
+_Avoid_: tracking issue, upstream link
+
 **Expiry warning**:
 The evaluation warning an expired workaround override emits. A prompt to
 re-check, never a build failure.
