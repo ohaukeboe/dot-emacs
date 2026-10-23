@@ -263,9 +263,6 @@
       # Machine definitions
       machines = import ./machines/machines.nix { };
 
-      linuxSystems = builtins.filter (nixpkgs.lib.hasSuffix "linux") supportedSystems;
-      forLinuxSystems = nixpkgs.lib.genAttrs linuxSystems;
-
       # The installer entrypoint: `nix run github:ohaukeboe/dot-emacs#install`
       # from a NixOS installer. See scripts/installer.sh and docs/new-machine.md.
       # Nothing here touches `private`, so it evaluates while private/** is still
@@ -283,6 +280,24 @@
             vim
           ];
           text = builtins.readFile ./scripts/installer.sh;
+        };
+
+      # Reports whether the nixpkgs fix behind each fix reference has reached
+      # the pinned nixpkgs. Run by hand: `just check-fixes`. Needs network, so
+      # it is an app; its tests are a check. See scripts/check-fixes.sh.
+      checkFixesFor =
+        system:
+        let
+          pkgs = nixpkgsFor.${system};
+        in
+        pkgs.writeShellApplication {
+          name = "check-fixes";
+          runtimeInputs = with pkgs; [
+            curl
+            git
+            jq
+          ];
+          text = builtins.readFile ./scripts/check-fixes.sh;
         };
     in
     {
@@ -304,6 +319,7 @@
         system:
         {
           default = self.homeConfigurations."oskar@${system}".activationPackage;
+          check-fixes = checkFixesFor system;
         }
         # Deliberately a package rather than a check: `nix flake check` runs
         # before every commit and a VM test would add minutes to that loop.
@@ -336,13 +352,23 @@
         }
       );
 
-      apps = forLinuxSystems (system: {
-        install = {
-          type = "app";
-          program = nixpkgs.lib.getExe self.packages.${system}.installer;
-          meta.description = "Install a NixOS machine from this flake, from the installer ISO";
-        };
-      });
+      apps = forAllSystems (
+        system:
+        {
+          check-fixes = {
+            type = "app";
+            program = nixpkgs.lib.getExe self.packages.${system}.check-fixes;
+            meta.description = "Report whether the fix behind each fix reference reached the pinned nixpkgs";
+          };
+        }
+        // nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "linux" system) {
+          install = {
+            type = "app";
+            program = nixpkgs.lib.getExe self.packages.${system}.installer;
+            meta.description = "Install a NixOS machine from this flake, from the installer ISO";
+          };
+        }
+      );
 
       checks = forAllSystems (
         system:
@@ -350,6 +376,11 @@
           formatting = treefmtEval.${system}.config.build.check self;
           # Pure evaluation; see the file.
           expiring-override = nixpkgsFor.${system}.callPackage ./tests/expiring-override.nix { };
+          # The check-fixes app against a fixture repo and file:// API; see the
+          # file. Building the app also shellchecks it.
+          check-fixes = nixpkgsFor.${system}.callPackage ./tests/check-fixes.nix {
+            check-fixes = self.packages.${system}.check-fixes;
+          };
         }
         # writeShellApplication runs shellcheck at build time.
         // nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "linux" system) {
