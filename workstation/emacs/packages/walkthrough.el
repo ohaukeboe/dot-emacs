@@ -479,11 +479,25 @@ Faces are copied to `font-lock-face', which Magit buffers keep.  Without
 (defface walkthrough-low '((t :inherit shadow :weight bold))
   "Face for the severity of a low-severity finding.")
 
-(defface walkthrough-finding '((t :inherit magit-diff-context-highlight :extend t))
-  "Face for the text of a finding.")
+;; The finding background is not derived from the diff faces, so a finding
+;; never reads as a highlighted diff line.
+(defface walkthrough-finding
+  '((((class color) (min-colors 88) (background light)) :background "#eef0f7" :extend t)
+    (((class color) (min-colors 88) (background dark)) :background "#262a38" :extend t)
+    (t :inherit secondary-selection :extend t))
+  "Face for the background of a finding.")
+
+(defface walkthrough-high-bar '((t :inherit error))
+  "Face for the gutter bar of a high-severity finding.")
+
+(defface walkthrough-medium-bar '((t :inherit warning))
+  "Face for the gutter bar of a medium-severity finding.")
+
+(defface walkthrough-low-bar '((t :inherit shadow))
+  "Face for the gutter bar of a low-severity finding.")
 
 (defface walkthrough-sent '((t :inherit shadow :extend t))
-  "Face for a finding that was handed off.")
+  "Face that dims a finding that was handed off.")
 
 (defconst walkthrough--known-keys
   '(id state severity title body failure_scenario verdict category anchor)
@@ -493,13 +507,15 @@ Faces are copied to `font-lock-face', which Magit buffers keep.  Without
   :doc "Keys that act on the finding at point.")
 
 (defun walkthrough--indent (text prefix)
-  "Return TEXT with PREFIX before each of its lines."
-  (replace-regexp-in-string "^" prefix text))
+  "Return TEXT with PREFIX before each of its lines.
+The empty line after a final newline gets none."
+  (replace-regexp-in-string "^\\(?:.\\|\n\\)" (concat prefix "\\&") text t))
 
-(defun walkthrough--finding-text (finding &optional note)
-  "Return FINDING rendered as lines of text, ending in a newline.
-NOTE, when non-nil, is appended to the first line.  Faces are set as
-`font-lock-face'."
+(defun walkthrough--finding-block (finding &optional note)
+  "Return FINDING rendered as a block of lines, ending in a newline.
+Each line starts with a gutter bar in the severity's colour, so the text
+after it sits in the code column of a diff.  NOTE, when non-nil, is
+appended to the heading.  Faces are set as `font-lock-face'."
   (let* ((severity (alist-get 'severity finding))
          (state (alist-get 'state finding))
          (meta (delq nil (list (when-let* ((v (alist-get 'verdict finding)))
@@ -508,14 +524,11 @@ NOTE, when non-nil, is appended to the first line.  Faces are set as
                                  (format "category %s" c)))))
          (extra (seq-remove (lambda (pair) (memq (car pair) walkthrough--known-keys))
                             finding))
-         (text
+         (bar (propertize "▎" 'font-lock-face
+                          (intern (format "walkthrough-%s-bar" severity))))
+         ;; The lines below the heading; a reply would go after them.
+         (lines
           (concat
-           (propertize (format "%-6s" (upcase severity))
-                       'font-lock-face (intern (format "walkthrough-%s" severity)))
-           " " (propertize (alist-get 'title finding) 'font-lock-face 'bold)
-           (if state (format "  [%s]" state) "")
-           (if note (propertize (format "  (%s)" note) 'font-lock-face 'italic) "")
-           "\n"
            (walkthrough--indent (walkthrough--render-markdown (alist-get 'body finding))
                                 "  ")
            (when-let* ((failure (alist-get 'failure_scenario finding)))
@@ -524,15 +537,31 @@ NOTE, when non-nil, is appended to the first line.  Faces are set as
            (when meta
              (format "  %s\n" (string-join meta " · ")))
            (mapconcat (lambda (pair) (format "  %s: %s\n" (car pair) (cdr pair)))
-                      extra ""))))
-    (add-face-text-property 0 (length text)
-                            (if (equal state "sent") 'walkthrough-sent 'walkthrough-finding)
-                            t text)
+                      extra "")))
+         (text
+          (mapconcat
+           (lambda (line) (concat bar line "\n"))
+           (cons (concat
+                  "◆ "
+                  (propertize (upcase severity)
+                              'font-lock-face (intern (format "walkthrough-%s" severity)))
+                  "  " (propertize (alist-get 'title finding) 'font-lock-face 'bold)
+                  (if state (format "  [%s]" state) "")
+                  (if note (propertize (format "  (%s)" note) 'font-lock-face 'italic) ""))
+                 (split-string (string-remove-suffix "\n" lines) "\n"))
+           "")))
+    ;; Wrapped lines keep the bar, so the block's extent stays visible.
+    (put-text-property 0 (length text) 'wrap-prefix
+                       (walkthrough--display-string (concat bar "  "))
+                       text)
+    (add-face-text-property 0 (length text) 'walkthrough-finding t text)
+    (when (equal state "sent")
+      (add-face-text-property 0 (length text) 'walkthrough-sent nil text))
     ;; `add-face-text-property' sets `face'; Magit buffers keep only
     ;; `font-lock-face', so move it there, merged with what is there.
     (let ((pos 0))
       (while (< pos (length text))
-        (let ((next (next-single-property-change pos 'face text (length text))))
+        (let ((next (next-property-change pos text (length text))))
           (when-let* ((face (get-text-property pos 'face text)))
             (put-text-property pos next 'font-lock-face
                                (delete-dups
@@ -557,7 +586,7 @@ NOTE, when non-nil, is appended to the first line.  Faces are set as
   "Insert FINDING as a section of its own, with NOTE on its first line."
   (let ((id (alist-get 'id finding)))
     (magit-insert-section (walkthrough-finding id)
-      (insert (propertize (walkthrough--finding-text finding note)
+      (insert (propertize (walkthrough--finding-block finding note)
                           'walkthrough-finding (list id)
                           'keymap walkthrough-finding-map)))))
 
@@ -645,9 +674,7 @@ LINE is the last anchored line, below which the finding is drawn."
          (overlay-put ov 'keymap walkthrough-finding-map)
          (overlay-put ov 'after-string
                       (walkthrough--display-string
-                       (mapconcat (lambda (f)
-                                    (walkthrough--indent (walkthrough--finding-text f) " "))
-                                  found "")))))
+                       (mapconcat #'walkthrough--finding-block found "")))))
      at)))
 
 ;;; The buffer
@@ -801,13 +828,28 @@ raw text is cut before Magit washes it, so its sections stay sound."
             (goto-char end)
             (set-marker end nil)))))))
 
+(defun walkthrough--finding-count (findings)
+  "Return \"K findings (J SEVERITY)\" for FINDINGS, or nil when there are none.
+SEVERITY is the highest one present and J how many have it."
+  (when-let* ((severity (seq-find (lambda (severity)
+                                    (seq-some (lambda (f) (equal (alist-get 'severity f) severity))
+                                              findings))
+                                  '("high" "medium" "low"))))
+    (format "%d finding%s (%d %s)"
+            (length findings) (if (cdr findings) "s" "")
+            (seq-count (lambda (f) (equal (alist-get 'severity f) severity)) findings)
+            severity)))
+
 (defun walkthrough--insert-step (step index count diff args)
   "Insert STEP, number INDEX of COUNT, with DIFF and diff ARGS."
   (magit-insert-section (walkthrough-step index)
     (magit-insert-heading
       (propertize (format "Step %d/%d  " (1+ index) count)
                   'font-lock-face 'magit-dimmed)
-      (propertize (alist-get 'title step) 'font-lock-face 'magit-section-heading))
+      (propertize (alist-get 'title step) 'font-lock-face 'magit-section-heading)
+      (when-let* ((found (walkthrough--finding-count
+                          (append (alist-get 'findings step) nil))))
+        (propertize (concat "  " found) 'font-lock-face 'magit-dimmed)))
     (insert (walkthrough--render-markdown (alist-get 'explanation step)) "\n")
     (let* ((shown (walkthrough--shown-hunks step diff))
            (findings (append (alist-get 'findings step) nil))

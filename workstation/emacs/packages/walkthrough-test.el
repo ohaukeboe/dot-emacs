@@ -549,6 +549,79 @@ OVERRIDES is a plist of top-level keys to replace, e.g. :steps."
       (with-current-buffer (walkthrough-test--open draft)
         (should (string-match-p "No findings" (buffer-string)))))))
 
+(defun walkthrough-test--faces (string pos &optional prop)
+  "Return the faces of STRING at POS under PROP (default `face'), as a list."
+  (flatten-tree (get-text-property pos (or prop 'face) string)))
+
+(defun walkthrough-test--check-block (text severity prop)
+  "Check that TEXT is one finding block of SEVERITY, faces under PROP.
+Every line starts with the bar in the severity's bar face, the heading
+with ◆ and the severity, and the whole block has the finding face."
+  (let ((bar (intern (format "walkthrough-%s-bar" severity)))
+        (pos 0))
+    (should (string-match-p (format "\\`▎◆ %s " (upcase severity)) text))
+    (dolist (line (split-string text "\n" t))
+      (should (string-prefix-p "▎" line))
+      (should (memq bar (walkthrough-test--faces text pos prop)))
+      (setq pos (+ pos (length line) 1)))
+    (dotimes (i (length text))
+      (should (memq 'walkthrough-finding (walkthrough-test--faces text i prop))))))
+
+(ert-deftest walkthrough-test-finding-blocks ()
+  "Placed and unplaced findings are the same block, unlike the diff."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--with-extra-findings
+                           (walkthrough-test--draft base head)))
+      ;; The finding background is its own, not a diff face's.
+      (should-not (memq 'magit-diff-context-highlight
+                        (ensure-list (face-attribute 'walkthrough-finding :inherit))))
+      (walkthrough-test--check-block
+       (overlay-get (walkthrough-test--finding-overlay "s1-f1") 'after-string)
+       "high" 'face)
+      (let ((general (walkthrough-test--finding-section "s1-f2")))
+        (walkthrough-test--check-block
+         (buffer-substring (oref general start) (oref general end))
+         "low" 'font-lock-face))
+      (let* ((far (walkthrough-test--finding-section "s1-f3"))
+             (text (buffer-substring (oref far start) (oref far end))))
+        (walkthrough-test--check-block text "medium" 'font-lock-face)
+        (should (string-match-p "\\`▎◆ MEDIUM +Far away.*not placed" text)))
+      ;; A sent finding keeps its block, dimmed, with its state in the heading.
+      (walkthrough--set-state walkthrough--file "s1-f1" "sent")
+      (magit-refresh-buffer)
+      (let ((text (overlay-get (walkthrough-test--finding-overlay "s1-f1")
+                               'after-string)))
+        (walkthrough-test--check-block text "high" 'face)
+        (should (string-match-p "\\`▎◆ HIGH +Line 10 is wrong +\\[sent\\]" text))
+        (dotimes (i (length text))
+          (should (memq 'walkthrough-sent (walkthrough-test--faces text i))))))))
+
+(ert-deftest walkthrough-test-step-finding-count ()
+  "A step heading ends in a dimmed finding count, left out without findings."
+  (walkthrough-test--with-repo
+    (let ((draft (walkthrough-test--with-extra-findings
+                  (walkthrough-test--draft base head))))
+      (setf (alist-get 'steps draft)
+            (vconcat (alist-get 'steps draft)
+                     (vector (walkthrough-test--step
+                              "Quiet" [((file . "a.el") (ranges . [[100 120]]))]))))
+      (with-current-buffer (walkthrough-test--open draft)
+        (let ((headings (mapcar (lambda (s)
+                                  (buffer-substring (oref s start)
+                                                    (save-excursion
+                                                      (goto-char (oref s start))
+                                                      (line-end-position))))
+                                (walkthrough-test--sections 'walkthrough-step))))
+          (should (equal (mapcar #'substring-no-properties headings)
+                         '("Step 1/3  Core  3 findings (1 high)"
+                           "Step 2/3  Cleanup  1 finding (1 low)"
+                           "Step 3/3  Quiet")))
+          (let ((first (car headings)))
+            (should (memq 'magit-dimmed
+                          (walkthrough-test--faces
+                           first (string-match "3 findings" first) 'font-lock-face)))))))))
+
 (ert-deftest walkthrough-test-finding-navigation ()
   "n and p move between findings across steps; unknown keys survive."
   (walkthrough-test--with-repo
