@@ -42,7 +42,8 @@ src.github = "emacs-languagetool/lsp-ltex-plus"
 # Oslo kommune infrastructure CLI (Go). Built from source with buildGoModule,
 # so vendorHash in workstation/packages/ok.nix still has to be bumped by hand.
 # Versions come from git tags (ls-remote), not the GitHub API: the org enforces
-# SAML SSO, so the API rejects the update-sources token on non-work machines.
+# SAML SSO, so the API rejects the update-sources token on non-work machines
+# (docs/adr/0007-saml-sso-github-sources.md).
 [ok]
 fetch.github = "oslokommune/ok"
 src.cmd = "git ls-remote --tags --refs https://github.com/oslokommune/ok | grep -oE 'v[0-9]+\\.[0-9]+\\.[0-9]+$' | sort -V | tail -n1"
