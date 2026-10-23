@@ -70,7 +70,10 @@ in
     };
     "github-mcp" = mkMcpServer {
       command = "github-mcp-server";
-      args = [ "stdio" ];
+      args = [
+        "stdio"
+        "--toolsets=default,actions"
+      ];
       env.GITHUB_PERSONAL_ACCESS_TOKEN.file = config.sops.secrets."authinfo/github_pat".path;
       shrink = true;
     };
