@@ -80,14 +80,22 @@ in
               builtins.attrValues (
                 g
                 // {
-                  # Grammar master, for the null_literal and
-                  # interpolation_*_start nodes kotlin-ts-mode queries.
-                  tree-sitter-kotlin = pkgs.tree-sitter.buildGrammar {
-                    language = "kotlin";
-                    # Upstream base version; buildGrammar checks it against tree-sitter.json
-                    version = "0.4.0+${inputs.tree-sitter-kotlin-src.shortRev or "unstable"}";
-                    src = inputs.tree-sitter-kotlin-src;
-                  };
+                  tree-sitter-kotlin =
+                    pkgs.expiringOverride
+                      {
+                        pkg = g.tree-sitter-kotlin;
+                        brokenAt = "0.3.8";
+                        reason = "kotlin-ts-mode queries null_literal and interpolation_*_start nodes, only on grammar master";
+                      }
+                      (
+                        _:
+                        pkgs.tree-sitter.buildGrammar {
+                          language = "kotlin";
+                          # Upstream base version; buildGrammar checks it against tree-sitter.json
+                          version = "0.4.0+${inputs.tree-sitter-kotlin-src.shortRev or "unstable"}";
+                          src = inputs.tree-sitter-kotlin-src;
+                        }
+                      );
                 }
               )
             ))
@@ -288,23 +296,20 @@ in
       (python313.withPackages (
         ps: with ps; [
           python-lsp-server
-          # python-lsp-ruff's test suite flakily fails asserting 'E402' diagnostic
-          # ordering (test_ruff_settings/test_notebook_input); plugin itself works.
-          (python-lsp-ruff.overridePythonAttrs (_: {
-            doCheck = false;
-          }))
+          (pkgs.expiringSkipTests python-lsp-ruff {
+            brokenAt = "2.3.4";
+            reason = "test suite flakily fails asserting 'E402' diagnostic ordering (test_ruff_settings/test_notebook_input); plugin itself works";
+          })
 
           # I want these globally for use in org-mode
           matplotlib
           scipy
           pandas
-          # pandas-stubs' build-time pytest suite fails against current numpy
-          # (deprecated 'generic' timedelta unit, dropped FutureWarnings).
-          # Upstream packaging lag; stubs themselves are fine, so skip checks.
-          (pandas-stubs.overridePythonAttrs (_: {
-            doCheck = false;
-            pythonImportsCheck = [ ];
-          }))
+          (pkgs.expiringSkipTests pandas-stubs {
+            brokenAt = "3.0.5.260914";
+            reason = "pytest suite fails against current numpy (deprecated 'generic' timedelta unit, dropped FutureWarnings); stubs themselves are fine";
+            skipImportsCheck = true;
+          })
         ]
       ))
 

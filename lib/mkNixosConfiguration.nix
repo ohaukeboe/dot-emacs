@@ -33,6 +33,8 @@ let
             emacs-overlay.overlays.default
             # Fix sops.el hanging on save (see the file for the why).
             (import ../common/emacs-sops-fix-overlay.nix)
+            # pkgs.expiringOverride / pkgs.expiringSkipTests (see lib/expiring-override.nix)
+            (import ../common/expiring-override-overlay.nix)
             # nvfetcher-managed sources (see nvfetcher.toml), exposed as pkgs.nvSources
             (final: prev: { nvSources = final.callPackage ../_sources/generated.nix { }; })
           ];

@@ -21,6 +21,8 @@ let
       emacs-overlay.overlay
       # Fix sops.el hanging on save (see the file for the why).
       (import ../common/emacs-sops-fix-overlay.nix)
+      # pkgs.expiringOverride / pkgs.expiringSkipTests (see lib/expiring-override.nix)
+      (import ../common/expiring-override-overlay.nix)
       # Only add nixGL overlay for Linux. Inline nixgl.overlay logic to avoid
       # final.system (deprecated; nixgl upstream uses it in their overlay).
       (

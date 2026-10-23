@@ -17,17 +17,30 @@
 # file-notify watch still active, and the ciphertext round-trips.
 #
 # Upstream: https://github.com/djgoku/sops — drop this overlay once fixed there.
+# Needs common/expiring-override-overlay.nix.
 final: prev: {
   emacsPackagesFor =
     emacs:
     (prev.emacsPackagesFor emacs).overrideScope (
       _efinal: eprev: {
-        sops = eprev.sops.overrideAttrs (old: {
-          postPatch = (old.postPatch or "") + ''
-            substituteInPlace sops.el \
-              --replace-fail "(accept-process-output proc 0.1)" "(accept-process-output nil 0.1)"
-          '';
-        });
+        # A new upstream commit warns; one that rewrites the line fails the
+        # build through --replace-fail.
+        sops =
+          final.expiringOverride
+            {
+              pkg = eprev.sops;
+              brokenAt = "20260920.2121";
+              reason = "sops--run waits on its own process and hangs on save";
+            }
+            (
+              p:
+              p.overrideAttrs (old: {
+                postPatch = (old.postPatch or "") + ''
+                  substituteInPlace sops.el \
+                    --replace-fail "(accept-process-output proc 0.1)" "(accept-process-output nil 0.1)"
+                '';
+              })
+            );
       }
     );
 }

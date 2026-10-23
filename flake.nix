@@ -319,11 +319,16 @@
           # Regression test for the sops.el save hang; see the file and
           # common/emacs-sops-fix-overlay.nix.
           #   nix build .#test-emacs-sops-save -L
-          # Needs the overlay, which lives outside nixpkgsFor.
+          # Needs the overlays, which live outside nixpkgsFor. emacs-overlay
+          # gives the same sops build the configs deploy.
           test-emacs-sops-save =
             (import nixpkgs {
               inherit system;
-              overlays = [ (import ./common/emacs-sops-fix-overlay.nix) ];
+              overlays = [
+                emacs-overlay.overlay
+                (import ./common/emacs-sops-fix-overlay.nix)
+                (import ./common/expiring-override-overlay.nix)
+              ];
             }).callPackage
               ./tests/emacs-sops-save.nix
               { };
@@ -343,6 +348,8 @@
         system:
         {
           formatting = treefmtEval.${system}.config.build.check self;
+          # Pure evaluation; see the file.
+          expiring-override = nixpkgsFor.${system}.callPackage ./tests/expiring-override.nix { };
         }
         # writeShellApplication runs shellcheck at build time.
         // nixpkgs.lib.optionalAttrs (nixpkgs.lib.hasSuffix "linux" system) {

@@ -348,3 +348,28 @@ instead of a static kernel parameter.
 **NoCOW (`chattr +C`)**:
 btrfs attribute disabling copy-on-write; required for swapfiles on btrfs.
 NixOS sets it automatically when creating a swapfile via `swapDevices.*.size`.
+
+### Package overrides
+
+**Workaround override**:
+An override that exists only because a package in nixpkgs is broken, flaky or
+lagging upstream. Meant to be deleted once nixpkgs catches up, so it always
+carries an expiry condition.
+_Avoid_: hack, patch (a patch is one possible body of an override)
+
+**Preference override**:
+An override expressing how this config wants a package built (e.g.
+`LSP_USE_PLISTS`, extra Lutris libraries). Permanent; no expiry condition.
+
+**Expiry condition**:
+The check, evaluated against pinned nixpkgs, that says a workaround override
+may be obsolete. Three kinds:
+- **fixed-in**: the fix release is known; expires when nixpkgs reaches it and
+  the override stops being applied.
+- **broken-at**: the version observed broken; expires when nixpkgs ships any
+  other version, but the override keeps applying until a human re-checks.
+- **while-marked-broken**: expires when nixpkgs drops `meta.broken`.
+
+**Expiry warning**:
+The evaluation warning an expired workaround override emits. A prompt to
+re-check, never a build failure.
