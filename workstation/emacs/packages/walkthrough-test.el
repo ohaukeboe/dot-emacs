@@ -622,19 +622,41 @@ with ◆ and the severity, and the whole block has the finding face."
                           (walkthrough-test--faces
                            first (string-match "3 findings" first) 'font-lock-face)))))))))
 
+(defun walkthrough-test--stop ()
+  "Name the stop at point: a finding's id, or the step heading's index."
+  (or (car (walkthrough--findings-at-point))
+      (when-let* ((section (magit-current-section))
+                  ((magit-section-match 'walkthrough-step section))
+                  ((= (point) (oref section start))))
+        (oref section value))))
+
 (ert-deftest walkthrough-test-finding-navigation ()
-  "n and p move between findings across steps; unknown keys survive."
+  "n and p stop at step headings and findings, in buffer order, at the window top."
   (walkthrough-test--with-repo
     (with-current-buffer (walkthrough-test--open
                           (walkthrough-test--with-extra-findings
                            (walkthrough-test--draft base head)))
+      ;; Window-start is only meaningful for a buffer shown in a window.
+      (switch-to-buffer (current-buffer))
       (goto-char (point-min))
       (let (visited)
-        (while (ignore-errors (walkthrough-next-finding) t)
-          (push (car (walkthrough--findings-at-point)) visited))
-        (should (equal (nreverse visited) '("s1-f2" "s1-f3" "s1-f1" "s2-f1"))))
-      (walkthrough-previous-finding)
+        (while (ignore-errors (walkthrough-next) t)
+          (should (= (window-start) (line-beginning-position)))
+          (push (walkthrough-test--stop) visited))
+        (should (equal (nreverse visited) '(0 "s1-f2" "s1-f3" "s1-f1" 1 "s2-f1"))))
+      (should-error (walkthrough-next) :type 'user-error)
+      (walkthrough-previous)
+      (should (eql (walkthrough-test--stop) 1))
+      (should (= (window-start) (point)))
+      (walkthrough-previous)
       (should (equal (walkthrough--findings-at-point) '("s1-f1")))
+      (goto-char (point-min))
+      (should-error (walkthrough-previous) :type 'user-error)
+      ;; N and P still jump by step, also to the window top.
+      (walkthrough-next-step)
+      (walkthrough-next-step)
+      (should (eql (walkthrough-test--stop) 1))
+      (should (= (window-start) (point)))
       ;; Marking rewrites the file; the unknown key is still there.
       (walkthrough--set-state walkthrough--file "s1-f1" "accepted")
       (let ((finding (aref (alist-get 'findings
@@ -643,6 +665,31 @@ with ◆ and the severity, and the whole block has the finding face."
                                             1))
                            0)))
         (should (equal (alist-get 'confidence finding) "x"))))))
+
+(defun walkthrough-test--header-line ()
+  "Return the header line after a command, without properties."
+  (run-hooks 'post-command-hook)
+  (string-trim (substring-no-properties header-line-format)))
+
+(ert-deftest walkthrough-test-header-line ()
+  "The header line names the step point is in and its finding count."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--with-extra-findings
+                           (walkthrough-test--draft base head)))
+      (let ((steps (walkthrough-test--sections 'walkthrough-step)))
+        (goto-char (point-min))
+        (should (equal (walkthrough-test--header-line) "Walkthrough: Fixture change"))
+        (goto-char (oref (car steps) start))
+        (should (equal (walkthrough-test--header-line)
+                       "Walkthrough: Fixture change — Step 1/2: Core · 3 findings"))
+        ;; Deep inside a step's diff, still that step.
+        (goto-char (overlay-start (walkthrough-test--finding-overlay "s1-f1")))
+        (should (string-suffix-p "Step 1/2: Core · 3 findings"
+                                 (walkthrough-test--header-line)))
+        (goto-char (oref (cadr steps) start))
+        (should (string-suffix-p "Step 2/2: Cleanup · 1 finding"
+                                 (walkthrough-test--header-line)))))))
 
 ;;; Marks
 
@@ -658,7 +705,7 @@ with ◆ and the severity, and the whole block has the finding face."
   "Move point to the start of finding ID."
   (goto-char (point-min))
   (while (not (member id (walkthrough--findings-at-point)))
-    (walkthrough-next-finding)))
+    (walkthrough-next)))
 
 (ert-deftest walkthrough-test-marks ()
   "Marks follow the state machine, land in the file and survive a reload."

@@ -1366,11 +1366,14 @@ the only writer there, since in an agent worktree that directory is outside
 what the agent's sandbox may write.
 
 The walkthrough buffer is a Magit diff of the two commits, arranged in steps,
-so =RET=, folding and =@= comments work as in any diff buffer.  =N= and =P=
-move between steps, =n= and =p= between findings.  On a finding, =a=
-accepts it, =x= dismisses it and =u= unmarks it; the mark is written to the
-walkthrough's file at once.  =@ s= then sends the accepted findings together
-with the pending review comments, in one prompt, and marks both sent.
+so =RET=, folding and =@= comments work as in any diff buffer.  The header
+line names the step point is in and its number of findings.  =n= and =p=
+move between step headings and findings in reading order, =N= and =P= only
+between steps; either way the stop lands at the top of the window.  On a
+finding, =a= accepts it, =x= dismisses it and =u= unmarks it; the mark is
+written to the walkthrough's file at once.  =@ s= then sends the accepted
+findings together with the pending review comments, in one prompt, and marks
+both sent.
 
 A comment is labelled with the commits of the diff it was made in, so a
 comment made in a walkthrough shows in =magit-diff= of the same commits too.

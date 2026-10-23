@@ -687,8 +687,8 @@ LINE is the last anchored line, below which the finding is drawn."
 
 (defvar-keymap walkthrough-mode-map
   :doc "Keymap for `walkthrough-mode'."
-  "n" #'walkthrough-next-finding
-  "p" #'walkthrough-previous-finding
+  "n" #'walkthrough-next
+  "p" #'walkthrough-previous
   "N" #'walkthrough-next-step
   "P" #'walkthrough-previous-step)
 
@@ -702,7 +702,8 @@ the walkthrough's steps; diff commands work as in any other diff buffer.
   (add-to-invisibility-spec 'markdown-markup)
   ;; Explanations and findings are prose, often longer than the window is
   ;; wide; wrapping them is what makes them readable at all.
-  (visual-line-mode 1))
+  (visual-line-mode 1)
+  (add-hook 'post-command-hook #'walkthrough--update-header-line nil t))
 
 (with-eval-after-load 'magit-mode
   (add-to-list 'magit-xref-modes 'walkthrough-mode))
@@ -878,8 +879,6 @@ SEVERITY is the highest one present and J how many have it."
     (setq walkthrough--data data)
     (setq magit-buffer-diff-range-oids (magit-hash-range magit-buffer-diff-range))
     (remove-overlays (point-min) (point-max) 'walkthrough t)
-    (magit-set-header-line-format
-     (format "Walkthrough: %s" (alist-get 'title data)))
     (let* ((args (walkthrough--diff-args magit-buffer-diff-args))
            (steps (alist-get 'steps data))
            (diff (walkthrough--parse-diff (alist-get 'base data)
@@ -889,7 +888,30 @@ SEVERITY is the highest one present and J how many have it."
         (seq-do-indexed (lambda (step index)
                           (walkthrough--insert-step step index (length steps)
                                                     diff args))
-                        steps)))))
+                        steps))))
+  (walkthrough--update-header-line))
+
+(defun walkthrough--step-at-point ()
+  "Return the index of the step whose section contains point, or nil."
+  (let ((section (magit-current-section)))
+    (while (and section (not (magit-section-match 'walkthrough-step section)))
+      (setq section (oref section parent)))
+    (and section (oref section value))))
+
+(defun walkthrough--update-header-line ()
+  "Name the walkthrough, and the step point is in, in the header line."
+  (let* ((title (format "Walkthrough: %s" (alist-get 'title walkthrough--data)))
+         (steps (alist-get 'steps walkthrough--data))
+         (index (walkthrough--step-at-point))
+         (line (if-let* ((step (and index (elt steps index))))
+                   (let ((count (length (alist-get 'findings step))))
+                     (format "%s — Step %d/%d: %s · %d finding%s"
+                             title (1+ index) (length steps) (alist-get 'title step)
+                             count (if (= count 1) "" "s")))
+                 title)))
+    ;; After every command, so only touch it when it changes.
+    (unless (equal line (string-trim-left (or header-line-format "")))
+      (magit-set-header-line-format line))))
 
 ;;; Moving around
 
@@ -901,45 +923,55 @@ SEVERITY is the highest one present and J how many have it."
                             (push (oref section start) starts))))
     (sort starts #'<)))
 
+(defun walkthrough--goto-top (pos)
+  "Move to POS and, when the buffer is shown, put its line at the window top."
+  (goto-char pos)
+  (when (eq (window-buffer) (current-buffer))
+    (set-window-start nil (line-beginning-position))))
+
+(defun walkthrough--next-of (starts what)
+  "Move to the first of STARTS after point, or say there is no next WHAT."
+  (walkthrough--goto-top (or (seq-find (lambda (pos) (> pos (point))) starts)
+                             (user-error "No next %s" what))))
+
+(defun walkthrough--previous-of (starts what)
+  "Move to the last of STARTS before point, or say there is no previous WHAT."
+  (walkthrough--goto-top (or (car (last (seq-filter (lambda (pos) (< pos (point)))
+                                                    starts)))
+                             (user-error "No previous %s" what))))
+
 (defun walkthrough-next-step ()
   "Move to the heading of the next step."
   (interactive)
-  (goto-char (or (seq-find (lambda (pos) (> pos (point)))
-                           (walkthrough--starts 'walkthrough-step))
-                 (user-error "No next step"))))
+  (walkthrough--next-of (walkthrough--starts 'walkthrough-step) "step"))
 
 (defun walkthrough-previous-step ()
   "Move to the heading of the previous step."
   (interactive)
-  (goto-char (or (car (last (seq-filter (lambda (pos) (< pos (point)))
-                                        (walkthrough--starts 'walkthrough-step))))
-                 (user-error "No previous step"))))
+  (walkthrough--previous-of (walkthrough--starts 'walkthrough-step) "step"))
 
 (defun walkthrough--findings-at-point ()
   "Return the ids of the findings at point, or nil."
   (get-char-property (point) 'walkthrough-finding))
 
-(defun walkthrough--finding-starts ()
-  "Return the positions where findings start, in order."
+(defun walkthrough--stops ()
+  "Return the positions of step headings and findings, in order."
   (sort (delete-dups
-         (append (walkthrough--starts 'walkthrough-finding)
+         (append (walkthrough--starts '(walkthrough-step walkthrough-finding))
                  (mapcar #'overlay-start
                          (seq-filter (lambda (ov) (overlay-get ov 'walkthrough-finding))
                                      (overlays-in (point-min) (point-max))))))
         #'<))
 
-(defun walkthrough-next-finding ()
-  "Move to the next finding, in any step."
+(defun walkthrough-next ()
+  "Move to the next step heading or finding."
   (interactive)
-  (goto-char (or (seq-find (lambda (pos) (> pos (point))) (walkthrough--finding-starts))
-                 (user-error "No next finding"))))
+  (walkthrough--next-of (walkthrough--stops) "step or finding"))
 
-(defun walkthrough-previous-finding ()
-  "Move to the previous finding, in any step."
+(defun walkthrough-previous ()
+  "Move to the previous step heading or finding."
   (interactive)
-  (goto-char (or (car (last (seq-filter (lambda (pos) (< pos (point)))
-                                        (walkthrough--finding-starts))))
-                 (user-error "No previous finding"))))
+  (walkthrough--previous-of (walkthrough--stops) "step or finding"))
 
 ;;; Marking findings
 
