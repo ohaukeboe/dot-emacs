@@ -1,7 +1,11 @@
 {
   "sandbox": {
     "filesystem": {
-      "allowWrite": ["~/.local/share/nvfetcher", "~/.npm/_cacache"]
+      "allowWrite": [
+        "~/.local/share/nvfetcher",
+        "~/.npm/_cacache",
+        "~/.cache/treefmt"
+      ]
     }
   }
 }
