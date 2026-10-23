@@ -24,7 +24,7 @@ evaluation time and emit a warning with `lib.warnIf`. Its examples are
 **Every workaround override goes through `pkgs.expiringOverride` (or the
 `pkgs.expiringSkipTests` shorthand) and states exactly one expiry condition.**
 Preference overrides (`LSP_USE_PLISTS`, Lutris `extraPkgs`) stay plain; they
-never expire. The terms are defined under "Package overrides" in `CONTEXT.md`.
+never expire. The terms are defined under "Package overrides" in `GLOSSARY.md`.
 
 Three conditions, because the blog's version check alone fits almost none of
 the existing overrides:
@@ -63,7 +63,7 @@ on the narrowest fact available (here, the pin in upstream's `pyproject.toml`).
 
 ## Amendment (2026-10-23): fix references are checked outside evaluation
 
-A workaround can now carry a **fix reference** (`CONTEXT.md`): the nixpkgs PR
+A workaround can now carry a **fix reference** (`GLOSSARY.md`): the nixpkgs PR
 or issue whose change should make it obsolete, written `owner/repo#N`. On an
 override it is the `fixedBy` field, alone or next to one expiry condition;
 elsewhere, such as the pinned `nixpkgs-zotero` input in `flake.nix`, it is a

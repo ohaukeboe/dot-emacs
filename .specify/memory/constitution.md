@@ -86,7 +86,7 @@ Each fact lives in exactly one place, and generated artifacts are never edited.
   does not exist.
 - The username MUST be read from `config.user.username`; the literal `"oskar"`
   MUST NOT appear in module or workstation code.
-- Domain terms are defined once in `CONTEXT.md`; decisions with lasting
+- Domain terms are defined once in `GLOSSARY.md`; decisions with lasting
   consequences are recorded as an ADR under `docs/adr/`. A change that
   contradicts an ADR MUST supersede it in the same change.
 - Secrets are SOPS (`sops/**`), private-but-not-secret data is git-agecrypt

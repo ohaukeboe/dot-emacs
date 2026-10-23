@@ -1,5 +1,5 @@
 # Workaround overrides that say when they may be obsolete (see "Package
-# overrides" in CONTEXT.md). Each takes at most one expiry condition, checked
+# overrides" in GLOSSARY.md). Each takes at most one expiry condition, checked
 # against the pinned nixpkgs at evaluation time, and at least one unless it
 # has a fix reference:
 #

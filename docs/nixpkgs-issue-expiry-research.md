@@ -12,7 +12,7 @@ against `api.github.com`.
 ## TL;DR
 
 > Note: the adopted design treats `fixedBy` as a *fix reference*, not an
-> expiry condition (see "Fix reference" in CONTEXT.md and the amendment to
+> expiry condition (see "Fix reference" in GLOSSARY.md and the amendment to
 > ADR 0005); this report's "condition" wording predates that decision.
 
 **Not at evaluation time.** Pure evaluation cannot reach GitHub, and nothing

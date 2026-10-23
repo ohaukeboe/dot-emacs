@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Report, for every fix reference in this repo, whether the nixpkgs change it
-# names has reached the pinned nixpkgs. See "Fix reference" in CONTEXT.md.
+# names has reached the pinned nixpkgs. See "Fix reference" in GLOSSARY.md.
 #
 #   just check-fixes            (or: nix run .#check-fixes)
 #

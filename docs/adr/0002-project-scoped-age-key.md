@@ -4,7 +4,7 @@
 
 ## Context
 
-`nix-init` gained an optional **secrets backend** (see `CONTEXT.md`) that any
+`nix-init` gained an optional **secrets backend** (see `GLOSSARY.md`) that any
 scaffolded project can carry. Two of the three backends — `sops` and
 `secretspec`, the latter driving sops underneath — encrypt a file that is
 committed to the project's own repository. Every such file needs an age
