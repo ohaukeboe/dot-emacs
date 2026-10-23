@@ -42,9 +42,10 @@ in
 
   manual.manpages.enable = false;
 
-  # Let the agent commit without asking in worktrees Claude Code created for
-  # it; commits elsewhere keep the gate's mode. See
+  # Review the agent's commits in Magit instead of at a permission prompt, and
+  # let it commit without asking in worktrees Claude Code created for it. See
   # docs/adr/0006-agent-commit-gate.md.
+  agents.commitGate.mainCheckout = "emacs";
   agents.commitGate.claudeWorktrees = "free";
 
   # This value determines the Home Manager release that your configuration is
