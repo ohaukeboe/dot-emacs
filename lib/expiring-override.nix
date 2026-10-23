@@ -1,6 +1,7 @@
 # Workaround overrides that say when they may be obsolete (see "Package
-# overrides" in CONTEXT.md). Each takes exactly one expiry condition, checked
-# against the pinned nixpkgs at evaluation time:
+# overrides" in CONTEXT.md). Each takes at most one expiry condition, checked
+# against the pinned nixpkgs at evaluation time, and at least one unless it
+# has a fix reference:
 #
 #   fixedIn = "X";            the fix release is known. Once nixpkgs reaches it,
 #                             the override is dropped and a warning says so.
@@ -9,6 +10,12 @@
 #                             override keeps applying until then.
 #   whileMarkedBroken = true; once nixpkgs drops meta.broken, the override is
 #                             dropped and a warning says so.
+#
+#   fixedBy = "owner/repo#N"; the fix reference: the nixpkgs PR (preferred) or
+#                             issue whose change obsoletes the override. Not
+#                             judged at evaluation time (`just check-fixes`
+#                             does that); alone, the override always applies.
+#                             Expiry warnings name it.
 #
 #   pkgs.expiringOverride {
 #     pkg = pyprev.anyio;
@@ -38,8 +45,20 @@ let
     in
     if builtins.length given == 1 then
       builtins.head given
+    else if given == [ ] && args ? fixedBy then
+      null
     else
-      throw "expiringOverride: give exactly one of ${lib.concatStringsSep ", " conditionKinds} (got: [ ${toString given} ])";
+      throw "expiringOverride: give at most one of ${lib.concatStringsSep ", " conditionKinds}, and at least one unless fixedBy is set (got: [ ${toString given} ])";
+
+  # A fix reference: owner/repo#N, as `just check-fixes` parses it.
+  checkFixedBy =
+    args:
+    if
+      !(args ? fixedBy) || builtins.match "[A-Za-z0-9._-]+/[A-Za-z0-9._-]+#[0-9]+" args.fixedBy != null
+    then
+      args
+    else
+      throw "expiringOverride: fixedBy must look like owner/repo#N (got: ${args.fixedBy})";
 
   # Everything but the warning itself, so tests can inspect it without one.
   resolve =
@@ -50,10 +69,11 @@ let
     }@args:
     override:
     let
-      kind = conditionOf args;
+      kind = conditionOf (checkFixedBy args);
       name = lib.getName pkg;
       expired =
-        {
+        kind != null
+        && {
           fixedIn = lib.versionAtLeast pkg.version args.fixedIn;
           brokenAt = pkg.version != args.brokenAt;
           whileMarkedBroken = !(pkg.meta.broken or false);
@@ -65,7 +85,8 @@ let
           brokenAt = "expiring override: ${name} ${args.brokenAt} -> ${pkg.version} (${reason}). Try removing it, or bump brokenAt.";
           whileMarkedBroken = "expiring override: ${name} is no longer marked broken, override dropped (${reason}). Remove it.";
         }
-        .${kind};
+        .${kind}
+        + lib.optionalString (args ? fixedBy) " Fix tracked in ${args.fixedBy} (just check-fixes).";
     in
     {
       inherit expired message;

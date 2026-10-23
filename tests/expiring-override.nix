@@ -149,6 +149,86 @@ let
       expected = false;
     };
 
+    testFixedByAloneNeverExpires = {
+      expr =
+        let
+          r = run {
+            pkg = pkg { version = "9.9.9"; };
+            fixedBy = "NixOS/nixpkgs#572466";
+          };
+        in
+        [
+          r.expired
+          (r.result.overridden or false)
+        ];
+      expected = [
+        false
+        true
+      ];
+    };
+
+    testFixedByWithBrokenAtNamesFixInWarning = {
+      expr =
+        let
+          r = run {
+            pkg = pkg { version = "1.2.1"; };
+            brokenAt = "1.2.0";
+            fixedBy = "NixOS/nixpkgs#572466";
+          };
+        in
+        [
+          r.expired
+          (r.result.overridden or false)
+          r.message
+        ];
+      expected = [
+        true
+        true
+        "expiring override: demo 1.2.0 -> 1.2.1 (test). Try removing it, or bump brokenAt. Fix tracked in NixOS/nixpkgs#572466 (just check-fixes)."
+      ];
+    };
+
+    testTwoConditionsWithFixedByThrow = {
+      expr =
+        (builtins.tryEval
+          (run {
+            pkg = pkg { };
+            fixedIn = "1.3.0";
+            brokenAt = "1.2.0";
+            fixedBy = "NixOS/nixpkgs#572466";
+          }).expired
+        ).success;
+      expected = false;
+    };
+
+    testMalformedFixedByThrows = {
+      expr =
+        map
+          (
+            ref:
+            (builtins.tryEval
+              (run {
+                pkg = pkg { };
+                fixedBy = ref;
+              }).expired
+            ).success
+          )
+          [
+            "nixpkgs#572466"
+            "NixOS/nixpkgs572466"
+            "NixOS/nixpkgs#"
+            "NixOS/nixpkgs#57a"
+            "https://github.com/NixOS/nixpkgs/pull/572466"
+          ];
+      expected = [
+        false
+        false
+        false
+        false
+        false
+      ];
+    };
+
     # Not expired, so no warning; falls back to overrideAttrs for a package
     # without overridePythonAttrs.
     testSkipTestsDisablesChecks = {
