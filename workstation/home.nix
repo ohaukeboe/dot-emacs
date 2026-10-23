@@ -42,6 +42,11 @@ in
 
   manual.manpages.enable = false;
 
+  # Let the agent commit without asking in worktrees Claude Code created for
+  # it; commits elsewhere keep the gate's mode. See
+  # docs/adr/0006-agent-commit-gate.md.
+  agents.commitGate.claudeWorktrees = "free";
+
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
   # introduces backwards incompatible changes.

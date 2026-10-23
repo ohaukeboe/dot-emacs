@@ -92,3 +92,14 @@ with redirects, pipes, `cd`, substitutions or chaining are never treated as
 excluded, because Claude Code keeps those sandboxed anyway. The cost is that
 excluded commands run uncapped, outside the sandbox's PID-namespace cleanup.
 See `docs/adr/0004-agent-sandbox-policy.md`.
+
+## Amendment (2026-10-23): the chain owns the commit decision
+
+The open question above is settled: Claude Code matches permission rules
+against the hook's `updatedInput`, so the static `Bash(git commit:*)` rule
+never matches a command the chain rewrote. The chain now calls the commit
+gate on the original text of any `git commit` and emits the gate's
+`allow`, `ask` or `deny` decision in place of the generic re-assertion. Unlike
+the stages, the gate fails closed: no decision means `ask`. The separate
+`commit-guard` hook is folded into the gate. See
+`docs/adr/0006-agent-commit-gate.md`.

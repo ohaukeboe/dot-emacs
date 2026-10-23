@@ -75,6 +75,30 @@ The journal entry a capped termination leaves behind — command text, time and
 the allowance that applied, all tagged `claude-cap`. Read them with
 `journalctl --user -g claude-cap`. The only durable trace; there is no log file.
 
+### Agents / commits
+
+**Commit gate**:
+The decision on every `git commit` an agent runs, made by
+`agent-commit-gate` inside the rewriter chain. It denies a commit that stages
+in the same call, lets commits through in an agent worktree when that is
+enabled, and otherwise applies the gate mode. Fails closed: when it cannot
+decide, it asks. See `docs/adr/0006-agent-commit-gate.md`.
+_Avoid_: commit guard (its predecessor, which only did the staging check),
+commit hook
+
+**Gate mode**:
+How the commit gate handles a commit outside agent worktrees: `ask` (the
+permission prompt), `emacs` (review in Magit, where Emacs makes the commit) or
+`deny`. Taken from `AGENT_COMMIT_GATE` at launch, then the override file that
+`agent-commit-gate-set` writes, then `agents.commitGate.mainCheckout`.
+
+**Agent worktree**:
+A linked worktree that Claude Code created for an agent:
+`.claude/worktrees/<name>` on the branch `worktree-<name>`, with the
+`CLAUDE_BASE` marker in its git dir. A worktree the user made, or an agent
+worktree with another branch checked out, is not one.
+_Avoid_: Claude worktree, isolated checkout
+
 ### Agents / sandbox
 
 **Sandbox baseline**:

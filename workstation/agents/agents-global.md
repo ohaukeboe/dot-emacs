@@ -5,6 +5,8 @@
 - NixOS with flakes. If a program is missing, run it through `nix-shell -p <package> --run '<command>'` rather than installing it or giving up.
 - Never `git commit`, `git push`, amend, or force-push without an explicit instruction. Stage the changes, summarize them, then wait.
 - Stage and commit in separate Bash calls. First `git add` exactly the files for the commit. Then run `git commit -m ...` alone: no `-a`, no pathspecs, no `git add` chained in. The user reviews the staged diff at the commit prompt, so the commit must contain exactly what is staged. A hook denies commits that break this.
+- A commit gate decides each `git commit`. It may prompt, refuse, or open the commit in the user's Emacs for review, where the user can edit the message. A denial saying "The user reviewed and committed this in Emacs as <sha>" means the commit is done: report the sha and do not run `git commit` again. "The user did not commit" means nothing was committed: ask before trying again.
+- In a worktree Claude Code created for you (`.claude/worktrees/<name>` on branch `worktree-<name>`) the gate may let a commit through without asking. That is permission to commit your own work there, not to merge or push it.
 
 ## Code navigation
 

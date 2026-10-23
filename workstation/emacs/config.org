@@ -1443,6 +1443,34 @@ unbound, since no prefix has an obvious free key for it yet.
     (keymap-set magit-mode-map "#" #'beads-dispatch))
 #+end_src
 
+** Agent commit review
+
+When a coding agent wants to commit, the commit gate
+(=workstation/agents/commit-gate.py=) decides what happens.  In its =emacs=
+mode the gate does not let the agent's =git commit= run: it calls
+=agent-commit-gate-review= through emacsclient, and Magit opens its ordinary
+commit buffer with the agent's message beside the staged diff.  =C-c C-c=
+commits, possibly with an edited message, and =C-c C-k= declines; either
+way the agent is told what happened and does not commit again.  A review
+the agent has stopped waiting for -- interrupted, or past the gate's
+deadline -- refuses to commit.
+
+The mode comes from =AGENT_COMMIT_GATE= when the agent session was started
+with it, then from the override file written by =M-x agent-commit-gate-set=
+(for this repository, or for all), then from
+=agents.commitGate.mainCheckout= in Nix.  =M-x agent-commit-gate-show= says
+which override applies here.
+
+#+begin_src elisp
+  ;; Autoloaded rather than loaded after Magit: the gate's emacsclient call
+  ;; may be the first thing in the session to need Magit.
+  (use-package agent-commit-gate
+    :commands (agent-commit-gate-review
+               agent-commit-gate-review-cancel
+               agent-commit-gate-set
+               agent-commit-gate-show))
+#+end_src
+
 ** Gitignore
 
 #+begin_src elisp

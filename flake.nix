@@ -342,6 +342,10 @@
           # A package rather than a check because it builds an Emacs closure.
           #   nix build .#test-beads -L
           test-beads = nixpkgsFor.${system}.callPackage ./tests/beads.nix { };
+          # The ERT suite of workstation/emacs/packages/agent-commit-gate.el;
+          # see the file. A package for the same reason as test-beads.
+          #   nix build .#test-agent-commit-review -L
+          test-agent-commit-review = nixpkgsFor.${system}.callPackage ./tests/agent-commit-review.nix { };
           # Regression test for the sops.el save hang; see the file and
           # common/emacs-sops-fix-overlay.nix.
           #   nix build .#test-emacs-sops-save -L
@@ -386,6 +390,8 @@
           formatting = treefmtEval.${system}.config.build.check self;
           # Pure evaluation; see the file.
           expiring-override = nixpkgsFor.${system}.callPackage ./tests/expiring-override.nix { };
+          # The agent commit gate against fixture repositories; see the file.
+          agent-commit-gate = nixpkgsFor.${system}.callPackage ./tests/agent-commit-gate.nix { };
           # The check-fixes app against a fixture repo and file:// API; see the
           # file. Building the app also shellchecks it.
           check-fixes = nixpkgsFor.${system}.callPackage ./tests/check-fixes.nix {

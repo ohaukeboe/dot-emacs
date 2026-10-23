@@ -81,6 +81,30 @@ let
       }
       is_excluded "$original" && exit 0
 
+      # The commit gate decides `git commit` on the command as the agent wrote
+      # it. Its decision replaces the generic "git commit" re-assertion below:
+      # an allow (a commit in the agent's own worktree) only holds because the
+      # stages still rewrite the text, so the static ask rule stops matching.
+      # No decision, or output that is not one, asks. See commit-gate.py.
+      gate_decision=""
+      gate_reason=""
+      ${lib.optionalString config.agents.commitGate.enable ''
+        if [[ $original == *commit* ]] &&
+          ${lib.getExe config.agents.commitGate.package} has-commit <<<"$payload" 2>/dev/null; then
+          gate_out=$(AGENT_COMMIT_GATE_CONFIG=${config.agents.commitGate.configFile} \
+            ${lib.getExe config.agents.commitGate.package} decide <<<"$payload" 2>/dev/null) || true
+          gate_decision=$(jq -r '.decision // empty' <<<"$gate_out" 2>/dev/null || true)
+          gate_reason=$(jq -r '.reason // empty' <<<"$gate_out" 2>/dev/null || true)
+          case $gate_decision in
+            allow | ask | deny) ;;
+            *)
+              gate_decision=ask
+              gate_reason="the commit gate gave no decision"
+              ;;
+          esac
+        fi
+      ''}
+
       # Every failure path keeps the previous command text and carries on: a
       # stage that exits non-zero, prints nothing, or prints something without
       # an updatedInput is treated as "no change". The chain always exits 0,
@@ -108,13 +132,23 @@ let
       done
 
       # Nothing changed and nothing to re-assert: stay silent.
-      if [ -z "$matched" ] && [ "$final" = "$original" ]; then
+      if [ -z "$gate_decision" ] && [ -z "$matched" ] && [ "$final" = "$original" ]; then
         exit 0
       fi
 
       input=$(jq -c '.tool_input' <<<"$current")
 
-      if [ -n "$matched" ]; then
+      # The gate saw every segment of the command and allows only a lone
+      # commit, so its decision stands for any prefix the command starts with.
+      if [ -n "$gate_decision" ]; then
+        jq -n --argjson input "$input" --arg decision "$gate_decision" --arg reason "$gate_reason" \
+          '{hookSpecificOutput: {
+              hookEventName: "PreToolUse",
+              permissionDecision: $decision,
+              permissionDecisionReason: ("commit gate: " + $reason),
+              updatedInput: $input
+            }}'
+      elif [ -n "$matched" ]; then
         jq -n --argjson input "$input" --arg matched "$matched" \
           '{hookSpecificOutput: {
               hookEventName: "PreToolUse",
@@ -278,7 +312,7 @@ in
     ./caveman.nix
     ./claude-pointer.nix
     ./code-review-graph.nix
-    ./commit-guard.nix
+    ./commit-gate.nix
     ./format-on-edit.nix
     ./mcp-servers.nix
     ./memory-cap.nix
@@ -344,10 +378,27 @@ in
           {
             matcher = "Bash";
             hooks = [
-              {
-                type = "command";
-                command = lib.getExe bashRewriterChain;
-              }
+              (
+                {
+                  type = "command";
+                  command = lib.getExe bashRewriterChain;
+                }
+                # The commit gate may wait on an Emacs review. It cancels the
+                # review at emacsTimeout, so the hook must outlive that: a
+                # PreToolUse hook that times out fails open into the normal
+                # permission flow, where only the static ask rule still holds.
+                // lib.optionalAttrs config.agents.commitGate.enable {
+                  timeout = config.agents.commitGate.emacsTimeout + 60;
+                }
+                # Fail closed when the chain itself fails. Older Claude Code
+                # versions do not know the key.
+                //
+                  lib.optionalAttrs
+                    (lib.versionAtLeast (lib.getVersion config.programs.claude-code.package) "2.1.295")
+                    {
+                      onFailure = "block";
+                    }
+              )
             ];
           }
         ];

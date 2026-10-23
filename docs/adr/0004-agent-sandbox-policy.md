@@ -80,3 +80,11 @@ already stop commands outliving their session.
   whole-process boundary.
 - Supersedes the "Keep the Claude Code sandbox off" comment in
   `workstation/agents/default.nix`.
+
+## Amendment (2026-10-23): an unsandboxed hook reaches Emacs
+
+The Emacs server socket stays hidden from sandboxed commands. The commit gate
+(ADR 0006) reaches Emacs anyway, because Claude Code runs command hooks
+outside the sandbox. It is a fixed program that decides only commits, and
+it opens a review the user must finish. It is not a path for agent-written
+elisp.
