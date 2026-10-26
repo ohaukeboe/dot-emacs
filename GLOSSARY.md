@@ -145,6 +145,15 @@ A linked worktree that Claude Code created for an agent:
 worktree with another branch checked out, is not one.
 _Avoid_: Claude worktree, isolated checkout
 
+**Worktree include list**:
+A repository's own list of local-only paths (`.worktreeinclude` at the root of
+the main worktree, itself kept out of git) that every new linked worktree gets
+from the main worktree. Each path is linked back to the main worktree's copy,
+so all worktrees share one; paths under `.claude/` are copied instead, so each
+worktree keeps its own approvals. Claude Code reads the same list for agent
+worktrees.
+_Avoid_: worktree template, shared files
+
 ### Agents / sandbox
 
 **Sandbox baseline**:

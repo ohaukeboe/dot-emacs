@@ -31,6 +31,7 @@ in
     ./sops.nix
     ./agents
     ./rm-push.nix
+    ./worktree-include.nix
     inputs.zen-browser.homeModules.beta
   ];
 
