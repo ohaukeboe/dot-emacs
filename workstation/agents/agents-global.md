@@ -17,6 +17,11 @@
 
 - Do not retry a failed approach unchanged. Say what failed, then change the approach.
 
+## Tables in Markdown and Org files
+
+- Always align table columns: pad cells so every pipe lines up in plain text.
+- Keep each table row at most 90 characters wide, the `olivetti-body-width` the user reads these files at. If a table would be wider, shorten cell text, split the table, or use a list instead.
+
 ## Sandbox
 
 - Shell commands run in Claude Code's sandbox. Credentials, the container and VM sockets, the main ssh-agent, the keyring and the session bus are hidden on purpose. Project policy cannot lift those.
