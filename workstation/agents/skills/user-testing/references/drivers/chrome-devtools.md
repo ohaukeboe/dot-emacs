@@ -2,7 +2,11 @@
 
 Tool names below are bare. The MCP prefix depends on how the server is
 registered (`mcp__chrome-devtools__click`,
-`mcp__plugin_hm_chrome-devtools__click`, …) — match on the suffix when probing.
+`mcp__plugin_hm-browser_chrome-devtools__click`, …) — match on the suffix when probing.
+
+The home-manager config ships this server off by default. A repository turns it
+on with `enabledPlugins."hm-browser@skills-dir": true` in its
+`.claude/settings.local.json`.
 
 Surface verified 2026-09-21. **Re-probe rather than trust this list**; it is
 version-pinned and will drift.

@@ -71,11 +71,8 @@ in
   };
 
   # Edge-case settings bypass the submodule shape — gated directly on enable.
+  # The status line, which shows caveman's badge, lives in statusline.nix.
   programs.claude-code = lib.mkIf cfg.enable {
     hooksDir = "${inputs.caveman}/src/hooks";
-    settings.statusLine = {
-      type = "command";
-      command = ''bash "${installedHooksDir}/caveman-statusline.sh"'';
-    };
   };
 }

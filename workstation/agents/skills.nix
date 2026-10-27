@@ -22,6 +22,7 @@ let
 
   # Build a linkFarm entry from a record. `repo` and `defaultSubdir` are
   # bound per skill source; the record supplies name + optional overrides.
+  # `listing` is not used here: `listingOverrides` reads it off the records.
   mkSkillEntry =
     {
       repo,
@@ -31,6 +32,7 @@ let
       name,
       disableAuto ? false,
       subdir ? defaultSubdir,
+      listing ? null,
     }:
     let
       src = "${repo}/${subdir}/${name}";
@@ -58,18 +60,33 @@ let
       { name = "caveman-help"; }
       { name = "caveman-review"; }
       { name = "caveman-stats"; }
-      { name = "cavecrew"; }
     ]
   );
 
+  # `name-only` keeps these out of the listing's descriptions but leaves them
+  # model-invocable: `build/SKILL.md` calls `backprop` and `spec` through the
+  # Skill tool, the same callee rule as the mattpocock skills below.
+  cavekitRecords = [
+    {
+      name = "backprop";
+      listing = "name-only";
+    }
+    {
+      name = "build";
+      listing = "name-only";
+    }
+    # { name = "caveman"; }
+    {
+      name = "check";
+      listing = "name-only";
+    }
+    {
+      name = "spec";
+      listing = "name-only";
+    }
+  ];
   cavekitSkills = pkgs.linkFarm "cavekit-skills" (
-    map (mkSkillEntry { repo = inputs.cavekit; }) [
-      { name = "backprop"; }
-      { name = "build"; }
-      # { name = "caveman"; }
-      { name = "check"; }
-      { name = "spec"; }
-    ]
+    map (mkSkillEntry { repo = inputs.cavekit; }) cavekitRecords
   );
 
   humanizerSkill = pkgs.linkFarm "humanizer-skill" [
@@ -197,22 +214,31 @@ let
 
   # Lum1104/Understand-Anything — uncomment skills you want
   # All use plugin layout: understand-anything-plugin/skills/<name>
+  # Domain skills, entered by slash command only, so they stay out of the
+  # automatic listing (`user-invocable-only`).
+  understandRecords = map (r: r // { listing = "user-invocable-only"; }) [
+    { name = "understand"; } # Analyze codebase → interactive knowledge graph
+    { name = "understand-chat"; } # Ask questions about a codebase using the knowledge graph
+    { name = "understand-dashboard"; } # Launch web dashboard to visualize codebase knowledge graph
+    { name = "understand-diff"; } # Analyze git diffs/PRs to understand what changed
+    { name = "understand-domain"; } # Extract business domain knowledge → interactive graph
+    { name = "understand-explain"; } # Deep-dive explanation of a specific file, function, or module
+    { name = "understand-knowledge"; } # Analyze Karpathy-pattern LLM wiki knowledge base
+    { name = "understand-onboard"; } # Generate onboarding guide for new team members
+  ];
   understandAnythingSkills = pkgs.linkFarm "understand-anything-skills" (
-    map
-      (mkSkillEntry {
-        repo = inputs.understand-anything;
-        defaultSubdir = "understand-anything-plugin/skills";
-      })
-      [
-        { name = "understand"; } # Analyze codebase → interactive knowledge graph
-        { name = "understand-chat"; } # Ask questions about a codebase using the knowledge graph
-        { name = "understand-dashboard"; } # Launch web dashboard to visualize codebase knowledge graph
-        { name = "understand-diff"; } # Analyze git diffs/PRs to understand what changed
-        { name = "understand-domain"; } # Extract business domain knowledge → interactive graph
-        { name = "understand-explain"; } # Deep-dive explanation of a specific file, function, or module
-        { name = "understand-knowledge"; } # Analyze Karpathy-pattern LLM wiki knowledge base
-        { name = "understand-onboard"; } # Generate onboarding guide for new team members
-      ]
+    map (mkSkillEntry {
+      repo = inputs.understand-anything;
+      defaultSubdir = "understand-anything-plugin/skills";
+    }) understandRecords
+  );
+
+  # skillOverrides entries from the records' `listing` field: the runtime
+  # filter that keeps a skill installed but out of the automatic listing.
+  listingOverrides = lib.listToAttrs (
+    map (r: lib.nameValuePair r.name r.listing) (
+      builtins.filter (r: (r.listing or null) != null) (cavekitRecords ++ understandRecords)
+    )
   );
 
   # trailofbits/skills — plugin layout: plugins/<name>/skills/<name>.
@@ -242,10 +268,11 @@ let
       trailofbitsSkills
       # Bulk skill packs disabled: together ~1101 skills, all model-invocable,
       # none relevant to this NixOS/Emacs workflow. They blow the skill-listing
-      # budget (skillListingBudgetFraction 0.02 → listing truncated,
-      # skills_truncated), hiding the curated dev skills above. Re-enable a line
-      # to bring a pack back; CLAUDE_SKILL_FILTER does NOT exist in claude-code
-      # 2.1.270, so there is no runtime filter — gate at build time here instead.
+      # budget (the harness default skillListingBudgetFraction 0.01 → listing
+      # truncated, skills_truncated), hiding the curated dev skills above.
+      # Re-enable a line to bring a pack back, and give its skills
+      # `agents.skillOverrides` entries (the runtime filter) so they stay out
+      # of the listing.
       #
       # anthropic-cybersecurity-skills — 818 skills (offensive-sec / DFIR).
       # "${inputs.anthropic-cybersecurity-skills}/skills"
@@ -261,6 +288,21 @@ in
   options.agents.extraSkillPaths = lib.mkOption {
     type = lib.types.listOf lib.types.package;
     default = [ ];
+  };
+
+  # Written to Claude Code's `skillOverrides`. Applies to user skills only,
+  # not plugin skills. Hosts add entries for the skills they install.
+  options.agents.skillOverrides = lib.mkOption {
+    type = lib.types.attrsOf (
+      lib.types.enum [
+        "on"
+        "name-only"
+        "user-invocable-only"
+        "off"
+      ]
+    );
+    default = { };
+    description = "Per-skill listing in Claude Code: skill name to `skillOverrides` value.";
   };
 
   config =
@@ -289,10 +331,20 @@ in
               path = ccPluginSource;
             }
           ])
+          # Claude-only skills, kept out of `mergedSkills`: opencode and
+          # ~/.agents/skills readers may not honour `disable-model-invocation`,
+          # and /bead-handoff must never run on its own.
+          ./skills-claude-only
+          # Opt-in MCP servers as skills-dir plugins (hm-mobile, hm-browser),
+          # off by default; mcp-servers.nix builds them. Their names must not
+          # clash with any skill name.
+          (pkgs.linkFarm "claude-opt-in-plugins" config.agents.claudeSkillsDirPlugins)
         ];
       };
     in
     {
+      agents.skillOverrides = listingOverrides;
+      programs.claude-code.settings.skillOverrides = config.agents.skillOverrides;
       home.file.${ccPluginKey}.enable = lib.mkForce false;
       home.file."${config.home.homeDirectory}/.claude/skills".source = skillsWithPlugin;
       xdg.configFile."opencode/skills".source = mergedSkills;

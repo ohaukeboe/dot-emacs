@@ -11,8 +11,7 @@ Spawn when:
 - A side task would flood the main context with logs, search hits, or file
   contents not referenced again (research, broad codebase exploration, log
   triage).
-- The work fits a specialized agent definition (`Explore`, `Plan`,
-  `code-review-graph`, `cavecrew-*`).
+- The work fits a specialized agent definition (`Explore`, `Plan`).
 - Multiple independent lookups can run in parallel — issue them in a single
   message with multiple `Agent` tool calls.
 
@@ -37,14 +36,3 @@ single-track work. Token cost scales linearly per teammate.
 
 Always confirm with the user before creating a team. Clean up via the lead
 when done to avoid orphaned resources.
-
-### Cavecrew shortcut
-
-For caveman-compressed delegation (~60% smaller tool result, preserving main
-context), prefer:
-
-- `cavecrew-investigator` — locate code
-- `cavecrew-builder` — 1–2 file edits
-- `cavecrew-reviewer` — diff review
-
-over vanilla `Explore` when context conservation matters mid-session.

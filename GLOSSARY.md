@@ -181,6 +181,36 @@ served by its own ssh-agent. Registered on the code host for signatures, never
 for authentication, so the agent can sign but not push.
 _Avoid_: agent key, bot key
 
+### Agents / context
+
+**Context size**:
+The number of tokens the agent currently holds for the session. Read-only,
+supplied by Claude Code to the status line. See
+`docs/adr/0008-agent-context-hygiene.md`.
+_Avoid_: context window, which is the model's maximum, not the current size
+
+**Warning point**:
+A context size at which the status line changes state. There are two: 200K
+(yellow) and 400K (bold red), set by `agents.context.warnTokens` and
+`agents.context.strongTokens`.
+_Avoid_: threshold, limit
+
+**Summarization point**:
+The context size at which the agent automatically summarizes its
+conversation: 400K, set by `agents.context.autoCompactTokens`.
+_Avoid_: compaction limit, auto-compact window
+
+**Handoff note**:
+A short note with "Tried", "Failed" and "Next" parts, appended to the
+in-progress bead by `/bead-handoff` before a reset. Lives with the bead, not
+in the conversation, so the next session finds it through `bd prime`.
+_Avoid_: summary, session notes
+
+**Tool-server loadout**:
+The set of MCP servers connected for a session: the global default plus the
+servers a repository opts in to (`hm-mobile`, `hm-browser`).
+_Avoid_: MCP config, server list
+
 ### Emacs / beads
 
 **Bead**:

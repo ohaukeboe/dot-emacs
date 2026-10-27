@@ -394,6 +394,18 @@
           expiring-override = nixpkgsFor.${system}.callPackage ./tests/expiring-override.nix { };
           # The agent commit gate against fixture repositories; see the file.
           agent-commit-gate = nixpkgsFor.${system}.callPackage ./tests/agent-commit-gate.nix { };
+          # The context status line; see the file.
+          context-statusline = nixpkgsFor.${system}.callPackage ./tests/context-statusline.nix {
+            caveman-src = inputs.caveman;
+          };
+          # rtk is unfree (BUSL-1.1); `nixpkgsFor` has no unfree predicate.
+          rtk-banner = nixpkgsFor.${system}.callPackage ./tests/rtk-banner.nix {
+            rtk =
+              (import nixpkgs {
+                inherit system;
+                config.allowUnfreePredicate = import ./common/unfree-predicates.nix { inherit (nixpkgs) lib; };
+              }).rtk;
+          };
           # The check-fixes app against a fixture repo and file:// API; see the
           # file. Building the app also shellchecks it.
           check-fixes = nixpkgsFor.${system}.callPackage ./tests/check-fixes.nix {

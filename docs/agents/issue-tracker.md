@@ -2,8 +2,8 @@
 
 Issues for this repo live in **beads**, a local issue tracker backed by Dolt
 (`.beads/`), synced to a Dolt remote. GitHub Issues are **not** used, even
-though the repo has a GitHub remote. Do not use TodoWrite, TaskCreate, or
-markdown TODO lists.
+though the repo has a GitHub remote. Built-in task tools are denied by
+settings; use `bd`.
 
 Run `bd prime` at session start for the full command reference.
 

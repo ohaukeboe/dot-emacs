@@ -320,6 +320,7 @@ in
     ./rtk.nix
     ./sandbox.nix
     ./skills.nix
+    ./statusline.nix
   ];
 
   config = {
@@ -346,7 +347,8 @@ in
     programs.claude-code.settings.remoteControlAtStartup = true;
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
-    programs.claude-code.settings.skillListingBudgetFraction = 0.02;
+    # `bd remember` is the single memory store; see docs/adr/0008-agent-context-hygiene.md.
+    programs.claude-code.settings.autoMemoryEnabled = false;
     # Give the CLAUDE.md git rule teeth. Prompt text only shapes what the
     # agent tries; an ask rule is enforced by the harness, and still prompts
     # inside a sandboxed auto-allow session. The Bash rules are generated from

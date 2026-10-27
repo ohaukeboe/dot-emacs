@@ -66,7 +66,7 @@ work in beads.
 **Purpose**: the `agents.context` option namespace, which both the status
 line and the compaction point read.
 
-- [ ] T003 Create `workstation/agents/statusline.nix`, a module taking
+- [X] T003 Create `workstation/agents/statusline.nix`, a module taking
   `{ inputs, lib, pkgs, config, ... }`.
   - Declare these options:
     - `agents.context.statusLine.enable` (`lib.types.bool`, default `true`)
@@ -80,7 +80,7 @@ line and the compaction point read.
     `autoCompactTokens >= strongTokens`. Each message names
     `workstation/agents/statusline.nix` and the fix.
   - Leave `config` otherwise empty for now.
-- [ ] T004 Add `./statusline.nix` to the `imports` list in
+- [X] T004 Add `./statusline.nix` to the `imports` list in
   `workstation/agents/default.nix` (lines 309-323, alphabetical, after
   `./skills.nix`). Then `git add workstation/agents/statusline.nix` and run
   `nix flake check`. It must pass.
@@ -99,7 +99,7 @@ FR-003).
 **Independent test**: `nix flake check` passes `context-statusline`. After
 deploying, quickstart check Q1 shows a dim size after the first prompt.
 
-- [ ] T005 [P] [US1] Create `workstation/agents/packages/context-statusline.nix`,
+- [X] T005 [P] [US1] Create `workstation/agents/packages/context-statusline.nix`,
   a callPackage function.
   - **Signature:** `{ writeShellApplication, jq, coreutils, gnugrep, gnused,
     bash, warnTokens, strongTokens, cavemanScript ? null }`. It returns a
@@ -125,7 +125,7 @@ deploying, quickstart check Q1 shows a dim size after the first prompt.
        then the size. Print no trailing newline. Always `exit 0`.
   - Guard every command that can fail with `|| true`. writeShellApplication
     turns on errexit, nounset and pipefail.
-- [ ] T006 [US1] In `workstation/agents/statusline.nix`, under
+- [X] T006 [US1] In `workstation/agents/statusline.nix`, under
   `lib.mkIf cfg.statusLine.enable`, call the T005 package with
   `pkgs.callPackage ./packages/context-statusline.nix { ... }`.
   - Pass `warnTokens`/`strongTokens` from `config.agents.context`.
@@ -133,11 +133,11 @@ deploying, quickstart check Q1 shows a dim size after the first prompt.
     "${inputs.caveman}/src/hooks/caveman-statusline.sh" else null`.
   - Set `programs.claude-code.settings.statusLine = { type = "command";
     command = lib.getExe <pkg>; }`.
-- [ ] T007 [US1] Remove the `settings.statusLine` attribute from
+- [X] T007 [US1] Remove the `settings.statusLine` attribute from
   `workstation/agents/caveman.nix` (lines 74-79). Keep `hooksDir` and the
   rest of the `lib.mkIf cfg.enable` block. Without this, two modules define
   `statusLine` and evaluation fails.
-- [ ] T008 [P] [US1] Create `tests/context-statusline.nix`, a `runCommand`
+- [X] T008 [P] [US1] Create `tests/context-statusline.nix`, a `runCommand`
   check in the style of `tests/agent-commit-gate.nix`.
   - Build the T005 package with `warnTokens = 200000`,
     `strongTokens = 400000`, and `cavemanScript` set to the caveman input's
@@ -157,11 +157,11 @@ deploying, quickstart check Q1 shows a dim size after the first prompt.
     leading space.
   - Also run one case with `cavemanScript` set to a script that runs
     `exit 1`, and `38211`: dim `38K`, no leading space, exit code 0.
-- [ ] T009 [US1] Register the check in `flake.nix` `checks` (around lines
+- [X] T009 [US1] Register the check in `flake.nix` `checks` (around lines
   389-401), next to `agent-commit-gate`, with a one-line comment
   `# The context status line; see the file.`:
   `context-statusline = nixpkgsFor.${system}.callPackage ./tests/context-statusline.nix { caveman-src = inputs.caveman; };`.
-- [ ] T010 [US1] `git add` the new files and run `nix flake check` and
+- [X] T010 [US1] `git add` the new files and run `nix flake check` and
   `nix build '.#homeConfigurations."oskar@x86_64-linux".activationPackage'`.
   `jq .statusLine` on the generated `settings.json` shows
   `type = "command"` and the store path of `context-statusline`.
@@ -177,7 +177,7 @@ in-progress bead, then tells the user to `/clear` (FR-004 to FR-009).
 
 **Independent test**: the quickstart "Handoff round trip".
 
-- [ ] T011 [P] [US2] Create
+- [X] T011 [P] [US2] Create
   `workstation/agents/skills-claude-only/bead-handoff/SKILL.md`, exactly per
   `specs/007-context-hygiene/contracts/bead-handoff.md`.
   - Frontmatter: `name: bead-handoff`, the `description`,
@@ -195,13 +195,13 @@ in-progress bead, then tells the user to `/clear` (FR-004 to FR-009).
     4. Print `Note saved to <id>. You can now run /clear.`
   - Say explicitly: never run `bd update --notes`, `bd close`,
     `bd update --status` or `/clear`.
-- [ ] T012 [US2] In `workstation/agents/skills.nix`, add
+- [X] T012 [US2] In `workstation/agents/skills.nix`, add
   `./skills-claude-only` to the `paths` of `skillsWithPlugin` (the `paths`
   list at lines 284-292, after the `claude-code-hm-plugin-skill` linkFarm),
   with a comment. These skills go to `~/.claude/skills` only. They are
   not in `mergedSkills`, so opencode and `~/.agents/skills` do not get a
   skill that might be auto-invoked (FR-007).
-- [ ] T013 [US2] Check that `bd note` appends rather than replaces, using a
+- [X] T013 [US2] Check that `bd note` appends rather than replaces, using a
   scratch bead:
   1. `bd create --title="note append probe" --type=task`
   2. Run `bd note <id> --stdin` twice with different text.
@@ -210,7 +210,7 @@ in-progress bead, then tells the user to `/clear` (FR-004 to FR-009).
 
   If it replaces, stop and report: `contracts/bead-handoff.md` would need
   another append method.
-- [ ] T014 [US2] `git add` the skill, then build the home configuration. The
+- [X] T014 [US2] `git add` the skill, then build the home configuration. The
   generated `.claude/skills/bead-handoff/SKILL.md` must exist, and must be
   absent from `.config/opencode/skills` and `.agents/skills`.
 
@@ -226,13 +226,13 @@ still on (FR-016, FR-017).
 **Independent test**: `nix flake check` passes `rtk-banner`; quickstart
 check Q2.
 
-- [ ] T015 [P] [US5] In `workstation/agents/rtk.nix`, add
+- [X] T015 [P] [US5] In `workstation/agents/rtk.nix`, add
   `programs.claude-code.settings.env.RTK_SUPPRESS_HOOK_WARNING = "1";` under
   `lib.mkIf cfg.enable`. Bind the variable name in a `let` (for example
   `suppressVar`). Add a comment giving the cause: rtk recognises only its own
   `rtk hook claude` command, and the sandbox's read-only `~/.local/share`
   defeats its daily rate limit. Do not widen the sandbox.
-- [ ] T016 [P] [US5] Create `tests/rtk-banner.nix`, a `runCommand` taking
+- [X] T016 [P] [US5] Create `tests/rtk-banner.nix`, a `runCommand` taking
   `rtk` as an explicit argument. `flake.nix` passes in an rtk evaluated with
   the repo's unfree predicate, because rtk is BUSL-1.1 (unfree).
   - Set up a fake HOME:
@@ -245,12 +245,12 @@ check Q2.
       warning path still exists.
     - **Suppression:** with `RTK_SUPPRESS_HOOK_WARNING=1`, stderr is empty
       and stdout is non-empty.
-- [ ] T017 [US5] Register the check in `flake.nix` `checks`:
+- [X] T017 [US5] Register the check in `flake.nix` `checks`:
   `rtk-banner = nixpkgsFor.${system}.callPackage ./tests/rtk-banner.nix { rtk = (import nixpkgs { inherit system; config.allowUnfreePredicate = import ./common/unfree-predicates.nix { inherit (nixpkgs) lib; }; }).rtk; };`.
   Comment: "rtk is unfree (BUSL-1.1); `nixpkgsFor` has no unfree predicate".
   First check how `common/unfree-predicates.nix` is called elsewhere in
   `flake.nix`, and match that call. This task comes after T009, because both edit `flake.nix`.
-- [ ] T018 [US5] `git add`, then run `nix flake check`. The generated
+- [X] T018 [US5] `git add`, then run `nix flake check`. The generated
   settings show `env.RTK_SUPPRESS_HOOK_WARNING = "1"`.
 
 ---
@@ -264,7 +264,7 @@ smaller; per-session overrides still win (FR-010, FR-011).
 `autoCompactWindow = 400000` and no `CLAUDE_CODE_AUTO_COMPACT_WINDOW` in
 `env`. Quickstart check Q3.
 
-- [ ] T019 [US3] In `workstation/agents/statusline.nix`, set
+- [X] T019 [US3] In `workstation/agents/statusline.nix`, set
   `programs.claude-code.settings.autoCompactWindow =
   cfg.autoCompactTokens;` as a plain integer. Do not put it under
   `lib.mkIf cfg.statusLine.enable`.
@@ -272,7 +272,7 @@ smaller; per-session overrides still win (FR-010, FR-011).
     the env var outranks `/autocompact` and `--autocompact`, which would
     break FR-011.
   - Depends on T003.
-- [ ] T020 [US3] Build, then
+- [X] T020 [US3] Build, then
   `jq '.autoCompactWindow, .env.CLAUDE_CODE_AUTO_COMPACT_WINDOW'` on the
   generated settings. Expected output: `400000` and `null`.
 
@@ -285,24 +285,24 @@ tools denied by a rule; beads rules from one source (FR-012 to FR-015).
 
 **Independent test**: US4 acceptance scenarios 1–4; quickstart check Q8.
 
-- [ ] T021 [P] [US4] In `workstation/agents/subagents-docs.md`:
+- [X] T021 [P] [US4] In `workstation/agents/subagents-docs.md`:
   - Delete the "Cavecrew shortcut" section (lines 41-50).
   - In the specialised-agent list (lines 14-15), remove `cavecrew-*` and
     `code-review-graph`, leaving `Explore` and `Plan`.
-- [ ] T022 [P] [US4] In `workstation/agents/skills.nix`, delete
+- [X] T022 [P] [US4] In `workstation/agents/skills.nix`, delete
   `{ name = "cavecrew"; }` from `cavemanSkillsSubset` (line 61).
-- [ ] T023 [P] [US4] In `workstation/agents/beads.nix`, add
+- [X] T023 [P] [US4] In `workstation/agents/beads.nix`, add
   `programs.claude-code.settings.permissions.deny = [ "TodoWrite"
   "TaskCreate" "TaskGet" "TaskList" "TaskUpdate" ];`.
   - Add a comment: beads is the tracker. On Opus 5.x these tools are not
     offered anyway. The deny also turns off the agent-teams shared task
     list, which is accepted (see the spec Assumptions).
   - Do NOT deny `TaskStop`, `TaskOutput` or `SendMessage`.
-- [ ] T024 [P] [US4] In `workstation/agents/default.nix`, next to the other
+- [X] T024 [P] [US4] In `workstation/agents/default.nix`, next to the other
   scalar settings (around line 346), add
   `programs.claude-code.settings.autoMemoryEnabled = false;`, with a comment
   naming `bd remember` as the single memory store.
-- [ ] T025 [US4] In `CLAUDE.md`, delete lines 5-59: the whole
+- [X] T025 [US4] In `CLAUDE.md`, delete lines 5-59: the whole
   `<!-- BEGIN BEADS INTEGRATION ... -->` … `<!-- END BEADS INTEGRATION -->`
   block, markers included.
   - Under the existing `### Issue tracker` heading (around line 110), add
@@ -312,13 +312,13 @@ tools denied by a rule; beads rules from one source (FR-012 to FR-015).
     TodoWrite/TaskCreate sentence with: "Built-in task tools are denied by
     settings; use `bd`."
   - **(user edit)** if the sandbox refuses the write.
-- [ ] T026 [US4] Make the same change in `AGENTS.md`. Delete the
+- [X] T026 [US4] Make the same change in `AGENTS.md`. Delete the
   `BEGIN/END BEADS INTEGRATION` block (lines 342-396), and add the same
   one-line pointer under `### Issue tracker` (around line 400).
   - Leave the `BEADS CODEX SETUP` block (lines 412-434) alone. Codex gets no
     `bd prime` hook.
   - The constitution requires parity with CLAUDE.md. Depends on T025.
-- [ ] T027 [US4] Build. In the generated settings:
+- [X] T027 [US4] Build. In the generated settings:
   - `jq '.permissions.deny'` contains the five task tools, and none of
     `TaskStop`, `TaskOutput`, `SendMessage`.
   - `jq '.autoMemoryEnabled'` gives `false`.
@@ -335,7 +335,7 @@ by a preview (FR-018, SC-007).
 **Independent test**: generated `env.MAX_MCP_OUTPUT_TOKENS = "10000"`;
 quickstart check Q7.
 
-- [ ] T028 [US7] In `workstation/agents/mcp-servers.nix`:
+- [X] T028 [US7] In `workstation/agents/mcp-servers.nix`:
   - Declare `options.agents.mcp.optIn.outputTokens`
     (`lib.types.ints.between 1000 100000`, default `10000`).
   - Bind `cfg = config.agents.mcp.optIn;` in the file's `let`.
@@ -348,7 +348,7 @@ quickstart check Q7.
     comment each server that declares it, or "none". This covers US7
     scenario 4.
   - The file has no `options`/`config` split today, so add one.
-- [ ] T029 [US7] Build. `jq '.env.MAX_MCP_OUTPUT_TOKENS'` gives `"10000"`.
+- [X] T029 [US7] Build. `jq '.env.MAX_MCP_OUTPUT_TOKENS'` gives `"10000"`.
 
 ---
 
@@ -363,7 +363,7 @@ Q5, Q6 and "Per-repository opt-in".
 
 ### Tool-server loadout (FR-019)
 
-- [ ] T030 [US6] In `workstation/agents/mcp-servers.nix`, declare
+- [X] T030 [US6] In `workstation/agents/mcp-servers.nix`, declare
   `options.agents.mcp.optIn.servers` (`lib.types.listOf (lib.types.enum [
   "mobile-mcp" "chrome-devtools" ])`, default both).
   - Move the `mobile-mcp` and `chrome-devtools` `mkMcpServer` definitions
@@ -371,7 +371,7 @@ Q5, Q6 and "Per-repository opt-in".
   - `programs.mcp.servers` gets every server except those in
     `cfg.servers`.
   - Depends on T028, which edits the same file.
-- [ ] T031 [US6] In the same file, build one plugin directory per opt-in
+- [X] T031 [US6] In the same file, build one plugin directory per opt-in
   server with `pkgs.runCommand`:
   - Define in the `let`: `pluginNames = { "mobile-mcp" = "hm-mobile";
     "chrome-devtools" = "hm-browser"; };` and `pluginName = s:
@@ -389,21 +389,21 @@ Q5, Q6 and "Per-repository opt-in".
     It maps each plugin name to its directory, which `linkFarm` accepts
     as is.
   - Per `specs/007-context-hygiene/contracts/mcp-opt-in.md`.
-- [ ] T032 [US6] In `workstation/agents/skills.nix`, add
+- [X] T032 [US6] In `workstation/agents/skills.nix`, add
   `(pkgs.linkFarm "claude-opt-in-plugins" config.agents.claudeSkillsDirPlugins)`
   to `skillsWithPlugin` `paths`, next to `./skills-claude-only` from T012.
   Keep the plugin names `hm-mobile` and `hm-browser` distinct from every
   skill name.
-- [ ] T033 [US6] Make the default visible in `workstation/agents/mcp-servers.nix`:
+- [X] T033 [US6] Make the default visible in `workstation/agents/mcp-servers.nix`:
   `programs.claude-code.settings.enabledPlugins = lib.genAttrs (map (s:
   "${pluginName s}@skills-dir") cfg.servers) (_: false);`. It merges
   with `default.nix`'s `enabledPlugins`.
-- [ ] T034 [US6] Keep opencode unchanged. In `workstation/agents/mcp-servers.nix`,
+- [X] T034 [US6] Keep opencode unchanged. In `workstation/agents/mcp-servers.nix`,
   add each `optInServers` entry to `programs.opencode.settings.mcp.<name>`
   in opencode's local-server shape:
   `{ type = "local"; command = [ command ] ++ args; enabled = true; }`.
   Then confirm that the generated `opencode.json` still lists both servers.
-- [ ] T035 [P] [US6] Update the quoted tool prefixes:
+- [X] T035 [P] [US6] Update the quoted tool prefixes:
   - In `workstation/agents/skills/user-testing/references/drivers/mobile.md`,
     `mcp__plugin_hm_mobile-mcp__` becomes
     `mcp__plugin_hm-mobile_mobile-mcp__`.
@@ -421,7 +421,7 @@ Q5, Q6 and "Per-repository opt-in".
 
 ### Skill listing (FR-020, FR-021)
 
-- [ ] T037 [US6] In `workstation/agents/skills.nix`:
+- [X] T037 [US6] In `workstation/agents/skills.nix`:
   - Declare `options.agents.skillOverrides` (`lib.types.attrsOf
     (lib.types.enum [ "on" "name-only" "user-invocable-only" "off" ])`,
     default `{ }`), and set `programs.claude-code.settings.skillOverrides =
@@ -439,7 +439,7 @@ Q5, Q6 and "Per-repository opt-in".
     ```
 
   - Set `agents.skillOverrides = listingOverrides;` in `config`.
-- [ ] T038 [US6] Set `listing` on the records in `workstation/agents/skills.nix`:
+- [X] T038 [US6] Set `listing` on the records in `workstation/agents/skills.nix`:
   - `"user-invocable-only"` on all 8 `understandAnythingSkills` entries
     (lines 207-214).
   - `"name-only"` on the `cavekitSkills` entries `backprop`, `build`,
@@ -447,14 +447,14 @@ Q5, Q6 and "Per-repository opt-in".
   - Comment: `build/SKILL.md` invokes `backprop` and `spec`, so they must
     stay model-invocable. This is the same rule as lines 107-113.
   - Do not touch `speckit-*`. They are project skills of this repo.
-- [ ] T039 [P] [US6] In `machines/dig-laptop/default.nix`, set
+- [X] T039 [P] [US6] In `machines/dig-laptop/default.nix`, set
   `home-manager.users.${config.user.username}.agents.skillOverrides` from
   `lib.mapAttrs (_: _: "user-invocable-only") (lib.filterAttrs (_: t: t ==
   "directory") (builtins.readDir "${inputs.punkt-skills}/skills"))`, so skills
   added upstream are covered without listing them by hand. Add `lib` to the
   module arguments; today they are only `{ config, inputs, pkgs, ... }`. Five
   directories exist today.
-- [ ] T040 [US6] In `workstation/agents/beads.nix`, replace
+- [X] T040 [US6] In `workstation/agents/beads.nix`, replace
   `programs.claude-code.marketplaces.beads-marketplace =
   pkgs.nvSources.beads.src;` with a `pkgs.runCommand` copy of that source.
   - Insert `disable-model-invocation: true` into the frontmatter of every
@@ -471,14 +471,14 @@ Q5, Q6 and "Per-repository opt-in".
     same suffix to `.plugins[0].version` in `.claude-plugin/marketplace.json`
     (`jq '.plugins[0].version += "+hm1"'`), so the two versions agree.
   - Leave the `beads:beads` skill itself unchanged.
-- [ ] T041 [US6] Remove
+- [X] T041 [US6] Remove
   `programs.claude-code.settings.skillListingBudgetFraction = 0.02;` from
   `workstation/agents/default.nix` (line 349), so the harness default 0.01
   applies. Update the stale comment at `workstation/agents/skills.nix:243-248`:
   - It says `0.02`.
   - It says `CLAUDE_SKILL_FILTER` does not exist. Name `skillOverrides` as the
     runtime filter instead.
-- [ ] T042 [US6] Build every host:
+- [X] T042 [US6] Build every host:
   - `nix build ".#nixosConfigurations.<h>.config.system.build.toplevel"`
     for `work-laptop`, `desktop`, `laptop` and `dig-laptop`.
   - The generated settings match
@@ -491,7 +491,7 @@ Q5, Q6 and "Per-repository opt-in".
 
 ## Phase 10: Polish & Cross-Cutting
 
-- [ ] T043 [P] Write `docs/adr/0008-agent-context-hygiene.md` in the format
+- [X] T043 [P] Write `docs/adr/0008-agent-context-hygiene.md` in the format
   of `docs/adr/0006-agent-commit-gate.md`. Record:
   - the single memory store (`bd remember`; auto memory off)
   - the reset workflow (`/bead-handoff` + `/clear` + `bd prime`)
@@ -502,12 +502,12 @@ Q5, Q6 and "Per-repository opt-in".
     - the vendored beads skill text that contradicts the ban
     - the global git policy, which overrides bd's profile text
   - the risk that `bd init` re-adds the CLAUDE.md block
-- [ ] T044 [P] Add a `### Agents / context` section to `GLOSSARY.md`, after
+- [X] T044 [P] Add a `### Agents / context` section to `GLOSSARY.md`, after
   the `### Agents / sandbox` section, immediately before `### Emacs / beads`
   (line 184). Define **Context size**,
   **Warning point**, **Summarization point**, **Handoff note** and
   **Tool-server loadout**, using the definitions in `spec.md` Key Entities.
-- [ ] T045 [P] File follow-up beads, linked to the T001 epic:
+- [X] T045 [P] File follow-up beads, linked to the T001 epic:
   - `rtk.nix` `home.activation.rtkHook` may be dead code.
   - Cap `bd prime` with `prime.max-memory-chars` before it reaches 10 000
     characters.
@@ -525,7 +525,7 @@ Q5, Q6 and "Per-repository opt-in".
     values" list, plus `agents.mcp.optIn.servers = [ "github-mcp" ]` and
     `agents.mcp.optIn.outputTokens = 0`. Each must fail evaluation with a
     message naming its file.
-- [ ] T047 Re-run the T002 build-derived measurements for every host and
+- [X] T047 Re-run the T002 build-derived measurements for every host and
   append them to `specs/007-context-hygiene/baseline.md`. On every host,
   SC-006 needs at least 2 fewer MCP servers and at least 20 fewer described
   skills or commands. The live-session count is taken in T048. Stage every changed file with `git add`, list them for the user,
