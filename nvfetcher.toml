@@ -39,6 +39,10 @@ src.github_tag = "tirth8205/code-review-graph"
 fetch.github = "emacs-languagetool/lsp-ltex-plus"
 src.github = "emacs-languagetool/lsp-ltex-plus"
 
+[mobile-mcp]
+fetch.url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-$ver.tgz"
+src.cmd = "npm view @mobilenext/mobile-mcp version"
+
 # Oslo kommune infrastructure CLI (Go). Built from source with buildGoModule,
 # so vendorHash in workstation/packages/ok.nix still has to be bumped by hand.
 # Versions come from git tags (ls-remote), not the GitHub API: the org enforces
@@ -47,10 +51,6 @@ src.github = "emacs-languagetool/lsp-ltex-plus"
 [ok]
 fetch.github = "oslokommune/ok"
 src.cmd = "git ls-remote --tags --refs https://github.com/oslokommune/ok | grep -oE 'v[0-9]+\\.[0-9]+\\.[0-9]+$' | sort -V | tail -n1"
-
-[mobile-mcp]
-fetch.url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-$ver.tgz"
-src.cmd = "npm view @mobilenext/mobile-mcp version"
 
 # Emacs packages (built via epkgs.trivialBuild in workstation/home.nix).
 # pgmacs publishes no GitHub releases, only tags -> github_tag.

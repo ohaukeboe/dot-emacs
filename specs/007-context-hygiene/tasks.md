@@ -517,7 +517,7 @@ Q5, Q6 and "Per-repository opt-in".
   - The rtk tracking DB cannot be written inside the sandbox.
   - Periodic review or expiry of `bd remember` memories (strategic
     forgetting). Check whether bd supports expiry.
-- [ ] T046 Run `nix fmt` and revert unrelated formatting churn
+- [X] T046 Run `nix fmt` and revert unrelated formatting churn
   (`git diff --stat` must list only this feature's files). Then run
   `nix flake check`. It must pass with `context-statusline` and
   `rtk-banner`.
