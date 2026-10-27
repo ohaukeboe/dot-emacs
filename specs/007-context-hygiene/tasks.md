@@ -413,7 +413,7 @@ Q5, Q6 and "Per-repository opt-in".
   - Add one line to each: it needs
     `enabledPlugins."hm-<x>@skills-dir": true` in the repository's
     `.claude/settings.local.json`.
-- [ ] T036 [P] [US6] **(user edit)** In `.claude/skills/add-mcp-server/SKILL.md`,
+- [X] T036 [P] [US6] **(user edit)** In `.claude/skills/add-mcp-server/SKILL.md`,
   document the opt-in path: add the server to `agents.mcp.optIn.servers`'s
   enum, plus a plugin name, instead of `programs.mcp.servers`. The sandbox
   denies agent writes to `.claude/skills`. Prepare the diff and ask the user
@@ -530,7 +530,7 @@ Q5, Q6 and "Per-repository opt-in".
   SC-006 needs at least 2 fewer MCP servers and at least 20 fewer described
   skills or commands. The live-session count is taken in T048. Stage every changed file with `git add`, list them for the user,
   and do not commit.
-- [ ] T048 **(user, after `sudo nixos-rebuild switch --flake .#<host>`)** Run
+- [X] T048 **(user, after `sudo nixos-rebuild switch --flake .#<host>`)** Run
   `specs/007-context-hygiene/quickstart.md` checks Q1–Q8, the handoff round
   trip and the per-repository opt-in, and record the results in the matching
   bead. Also:

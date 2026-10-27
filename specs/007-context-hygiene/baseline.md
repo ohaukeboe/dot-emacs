@@ -109,3 +109,11 @@ where all 29 now carry the key.
 | desktop     | 58               | 16              | 42    | 2         | holds  |
 | laptop      | 58               | 16              | 42    | 2         | holds  |
 | dig-laptop  | 63               | 16              | 47    | 2         | holds  |
+
+## Session skill listing after deploy (desktop, T048)
+
+Measured on 2026-10-27 after `nixos-rebuild switch`, from the request body of
+a headless session in this repository: **48** described entries, down from
+97 on dig-laptop at the baseline. No `beads:` commands and no `understand*`
+skills are described. `spec`, `build`, `check` and `backprop` appear by name
+only. The dig-laptop live count is not yet taken.
