@@ -6,7 +6,7 @@ This file provides instructions and context for AI coding agents working on this
 
 Personal **NixOS + Home Manager** config (flakes). Started as an Emacs config
 (hence the repo name); Emacs is literate org-mode in
-`workstation/emacs/config.org` (133K) — **edit the `.org`, never generated `.el`**.
+`workstation/emacs/config.org` — **edit the `.org`, never generated `.el`**.
 
 See **`AGENTS.md`** for the full guide (code style, module/machine patterns, structure).
 
@@ -15,23 +15,18 @@ See **`AGENTS.md`** for the full guide (code style, module/machine patterns, str
 ```bash
 nix fmt                                              # format (nixfmt/shfmt/toml-sort) — run before commit
 nix flake check                                      # validate flake
-nix build .#homeConfigurations.default.activationPackage  # test build, no activate
+nix build '.#homeConfigurations."oskar@x86_64-linux".activationPackage'  # test build, no activate
 nix build .#test-disk-layout -L                      # VM test of the disko layout (slow)
 ```
 
 ## Deploy
 
 ```bash
-sudo nixos-rebuild switch --flake .#<hostname>  # hosts: x13-laptop, work-laptop, desktop
+sudo nixos-rebuild switch --flake .#<hostname>  # hosts: attribute names in machines/machines.nix
 ```
 
 ## Key Paths
 
-- `flake.nix` — entry point
-- `workstation/home.nix` — main user config
-- `workstation/emacs/config.org` — literate Emacs (source of truth)
-- `machines/machines.nix` — machine registry
-- `modules/` — optional feature modules (gaming, cosmic-de, secure-boot, sshd)
 - secrets via **SOPS** (`workstation/sops.nix`, `sops/`); low-sensitivity private
   data via **git-agecrypt** (`private/`, `git-agecrypt.toml`) using the same age keys
 - one shared host age key for all machines, committed encrypted as

@@ -366,8 +366,8 @@ in
       "security-guidance@claude-plugins-official" = true;
       "claude-security@claude-plugins-official" = true;
       "frontend-design@claude-plugins-official" = false;
-      "code-simplifier@claude-plugins-official" = true;
-      "claude-md-management@claude-plugins-official" = true;
+      "code-simplifier@claude-plugins-official" = false;
+      "claude-md-management@claude-plugins-official" = false;
     };
 
     programs.claude-code.settings.hooks = lib.zipAttrsWith (_: lib.concatLists) (

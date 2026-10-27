@@ -10,7 +10,6 @@
 
 ## Code navigation
 
-- For symbol lookup prefer `lsp-mcp` (`lsp-find-definitions`, `lsp-find-references`, `lsp-workspace-symbols`) or `codebase-memory` (`search_graph`, `trace_path`) over text search.
 - For anything about Nix packages, options or versions use the `mcp-nixos` server rather than recalling it — training data lags nixpkgs by months.
 
 ## Failure handling

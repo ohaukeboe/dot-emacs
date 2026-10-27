@@ -157,7 +157,7 @@ Do **not** remove the `++ config.agents.extraSkillPaths;` tail — that's the se
    - Input name added
    - Number of skills found
    - The full generated linkFarm block so they can see what's available
-4. Remind them: uncomment an entry and run `home-manager switch` (or `nix run .#homeConfigurations.oskar.activationPackage`) to activate
+4. Remind them: uncomment an entry and run `sudo nixos-rebuild switch --flake .#<hostname>` to activate
 
 ## Edge cases
 

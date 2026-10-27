@@ -59,7 +59,7 @@ The user will provide a path to a git repository (or you should use the current 
     -   A comma-separated **Technologies** line listing all relevant technologies identified (e.g. `Technologies: TypeScript, React, PostgreSQL, GitHub Actions, Docker`)
     -   Optionally, a "raw themes" section listing the commit subjects grouped by category, so the user can refine
 
-## Example Output
+## Example output (illustrative: match this shape, not its length, themes or numbers)
 
 > **my-project** — 142 commits from 2023-01 to 2024-06
 >

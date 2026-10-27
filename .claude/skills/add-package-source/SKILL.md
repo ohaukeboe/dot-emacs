@@ -20,7 +20,7 @@ The decision is about **how the source moves over time**, not just where it live
 Rules of thumb that disambiguate the common confusions:
 
 - **"GitHub releases or similar" → nvfetcher.** Releases, tags, npm registry versions, PyPI versions are all version-pinned and belong in nvfetcher. nvfetcher records an exact rev + hash and bumps deterministically on `just update-sources`. This is the default for anything that publishes versions.
-- **Upstream provides a flake you consume → flake input**, even though it's on GitHub. The signal is: you write `inputs.<name>.packages.${system}.default` / `inputs.<name>.homeModules.x` rather than building the source yourself. Examples in this repo: `zen-browser`, `kotlin-lsp`, `zotra-server`, `calibre-plugins`.
+- **Upstream provides a flake you consume → flake input**, even though it's on GitHub. The signal is: you write `inputs.<name>.packages.${system}.default` / `inputs.<name>.homeModules.x` rather than building the source yourself. Examples in this repo: `zen-browser`, `kotlin-lsp`, `zotra-server`.
 - **No usable release AND you build it yourself → `flake = false`.** Two sub-cases:
   - *Tracking HEAD is what you want* (branch advances, no meaningful version) → flake input, `flake = false`. Examples: `claude-code-ide-src`, `gptel-quick-src`, `consult-mu-src`, the skills repos (`anthropics-skills`, `caveman`, …).
   - *You want a pinned tag/release of plain source* → that's case 2, **prefer nvfetcher** (e.g. `pgmacs`, `lsp-ltex-plus`, `code-review-graph`). nvfetcher keeps the pin out of `flake.lock` churn and bumps on its own cadence.
@@ -42,7 +42,7 @@ nvfetcher needs two things per entry: where to *fetch* the artifact, and what to
 | GitHub **release asset** (specific download URL) | `fetch.url = ".../$ver/asset-$ver.zip"` + `src.github_tag = "owner/repo"` (add `src.include_regex` to filter tags) |
 | **npm** package                                  | `fetch.url = "https://registry.npmjs.org/<pkg>/-/<pkg>-$ver.tgz"` + `src.cmd = "npm view <pkg> version"`           |
 
-`$ver` in `fetch.url` is substituted with the resolved version. `src.include_regex` narrows which tags count as "latest" (needed for monorepos that tag many components — see `calibre-open-with`).
+`$ver` in `fetch.url` is substituted with the resolved version. `src.include_regex` narrows which tags count as "latest" (needed for monorepos that tag many components).
 
 ### A2. Add the entry
 
@@ -79,7 +79,7 @@ The new source appears as `pkgs.nvSources.<pkg>` with `.src` and `.version` attr
   })
   ```
 - **npm / Python build** (a `packages/<pkg>.nix` derivation taking `nvSources`): see `workstation/agents/packages/chrome-devtools-mcp.nix` and the **add-mcp-server** skill.
-- **Raw source path** (e.g. a plugin zip): `pkgs.nvSources.<pkg>.src` (see `workstation/calibre/default.nix`).
+- **Raw source path** (e.g. a plugin zip): `pkgs.nvSources.<pkg>.src`.
 
 ### A5. npm caveat
 
@@ -167,7 +167,7 @@ Report to the user:
 ## Edge cases
 
 - **Release vs. tag ambiguity on GitHub**: if `src.github` (latest release) yields nothing, the repo likely only tags without publishing releases — switch to `src.github_tag`. `pgmacs` and `lsp-ltex-plus` sit on opposite sides of this.
-- **Monorepo tagging many components**: use `src.include_regex` to isolate the relevant tag prefix (see `calibre-open-with`'s `open_with-.*`).
+- **Monorepo tagging many components**: use `src.include_regex` to isolate the relevant tag prefix.
 - **Upstream is a flake but you only want its source, not its outputs**: still prefer the plain flake input without `flake = false` if it locks cleanly; only set `flake = false` if evaluating upstream's flake is undesirable (heavy inputs, broken eval).
 - **Source needs a private/secret fetch**: out of scope here — sources are public. Secrets are handled via SOPS (`workstation/sops.nix`), not the source layer.
 - **`just update-sources` needs network**: in an offline/sandboxed run you cannot resolve the hash; hand the command to the user rather than guessing.

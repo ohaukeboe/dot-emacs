@@ -9,8 +9,8 @@ This is a personal NixOS and Home Manager configuration using flakes with litera
 # Deploy NixOS configuration
 sudo nixos-rebuild switch --flake .#<hostname>
 
-# Available hostnames: x13-laptop, work-laptop, desktop
-sudo nixos-rebuild switch --flake .#x13-laptop
+# Available hostnames: the attribute names in machines/machines.nix
+sudo nixos-rebuild switch --flake .#laptop
 ```
 
 ### Home Manager outside NixOS
@@ -43,7 +43,7 @@ nix flake show
 .
 ├── flake.nix              # Main flake entry point
 ├── lib/                   # Helper functions (mkHomeConfiguration, mkNixosConfiguration)
-├── machines/              # Hardware-specific configs (desktop, x13-laptop, work-laptop)
+├── machines/              # Hardware-specific configs, one directory per host
 │   └── machines.nix       # Declarative machine definitions
 ├── common/                # Shared modules
 │   ├── caches.nix         # Nix binary cache configuration
@@ -259,7 +259,7 @@ imports `lib/disk-layouts/luks-btrfs.nix` (GPT + ESP + LUKS2 + btrfs subvolumes
 The LUKS mapper is named `crypted` because `modules/sleep-then-hibernate`
 defaults `boot.resumeDevice` to `/dev/mapper/crypted`.
 
-`desktop`, `work-laptop` and `x13-laptop` predate disko and keep their generated
+`desktop` and `work-laptop` predate disko and keep their generated
 `hardware-configuration.nix`. Do not add a `disk.nix` to them without stripping
 the filesystem, LUKS and swap stanzas in the same change — disko defines those
 same options and the two collide.

@@ -6,25 +6,13 @@ disable-model-invocation: true
 
 # Grammar Tutor (Multilingual)
 
-This skill ensures every response includes grammar, spelling, and clarity corrections followed by the answer to the user's request. It works in any language the user writes in.
+This skill appends a grammar, spelling and clarity check to the end of every response, in the language the user wrote in.
 
 ## Workflow
 
-For every user message, follow this exact structure:
+Find the grammar, spelling, punctuation and clarity errors in the user's message, and give all feedback in the language they wrote in.
 
-### Step 1: Detect Language
-
-Identify the language the user is writing in. All grammar feedback must be given in that same language.
-
-### Step 2: Identify Corrections
-
-Analyze the user's message for:
-- **Grammar errors**: Subject-verb agreement, tense issues, article usage, prepositions, case endings (if applicable)
-- **Spelling mistakes**: Misspelled words, typos
-- **Clarity issues**: Awkward phrasing, wordiness, unclear sentences
-- **Punctuation**: Missing or incorrect punctuation marks
-
-### Step 3: Provide the Corrected Version
+### Corrected version
 
 Present the user's message in its corrected form at the end of your response using this exact format:
 
@@ -45,16 +33,13 @@ Present the user's message in its corrected form at the end of your response usi
 
 ---
 
-### Step 4: Answer the Original Request
+### Order
 
-After the grammar check section, provide a clear, natural response to the user's actual question or request.
+Answer the user's request first. Put the grammar check below the answer, separated by a horizontal rule.
 
 ## Guidelines
 
-- **Always check**: Every user message gets a grammar check, no exceptions
 - **Match the language**: Give all corrections and tips in the same language the user wrote in
-- **Be constructive**: Frame corrections positively; focus on learning, not shaming
-- **Be concise**: Keep explanations brief but informative
 - **Respect intent**: Preserve the user's original meaning and tone while improving clarity
 - **No over-correction**: Only fix actual errors or significantly unclear phrasing; don't rewrite for style alone
 
@@ -141,7 +126,7 @@ After the grammar check section, provide a clear, natural response to the user's
 
 ## Important Notes
 
-- Do NOT skip the grammar check, even if the user's writing is nearly perfect — a simple "No corrections needed" confirmation is valuable feedback
+- Check every message, including near-perfect ones; when nothing needs fixing, use the no-corrections line below
 - If the user's message contains no errors, say: "**Corrected:** No corrections needed — your [language] is clear and correct!"
 - Keep the grammar check section visually separated from your main response for easy reading
 - For mixed-language messages, check the dominant language used

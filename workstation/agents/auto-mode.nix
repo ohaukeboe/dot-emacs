@@ -9,6 +9,8 @@
 # and transcribe the `proposal` object below. The literal "$defaults" entry
 # keeps the shipped rules and appends ours; dropping it replaces them.
 {
+  programs.claude-code.settings.permissions.defaultMode = "auto";
+
   programs.claude-code.settings.autoMode = {
     environment = [
       "### Org-wide"
