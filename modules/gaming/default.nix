@@ -58,6 +58,10 @@ in
     programs = {
       steam = {
         enable = true;
+        # Equivalent to `PROTON_ENABLE_WAYLAND=1 %command%` on every game
+        package = pkgs.steam.override {
+          extraEnv.PROTON_ENABLE_WAYLAND = "1";
+        };
         remotePlay.openFirewall = true;
         dedicatedServer.openFirewall = true;
         extraCompatPackages = with pkgs; [
