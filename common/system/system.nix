@@ -45,6 +45,9 @@
   # a thunderbolt device appears, so machines without one never run it.
   services.hardware.bolt.enable = true;
 
+  # Firmware updates from LVFS (BIOS, docks, SSDs) via `fwupdmgr`.
+  services.fwupd.enable = true;
+
   # For the gc to work, it is important that the boot-loader stops
   # referencing old configurations (`configurationLimit' needs to be set)
   nix.gc = {
