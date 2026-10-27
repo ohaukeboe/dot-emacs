@@ -309,6 +309,9 @@ users.users.${config.user.username}.extraGroups = [ "gamemode" ];
 
 ## 8. gamescope
 
+> **Superseded**: gamescope was removed from the configuration
+> (`specs/008-game-performance-tuning/spec.md`, ADR 0009).
+
 `gamescope-game` always nests gamescope with `--hdr-enabled`. Nesting
 gives the game its own Xwayland "sandbox"
 ([gamescope README](https://github.com/ValveSoftware/gamescope/blob/master/README.md)),

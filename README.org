@@ -52,27 +52,29 @@ The ~silent-boot~ module (on by default) shows an animated NixOS Plymouth splash
 
 * Gaming
 
-The gaming module provides a custom ~gamescope-game~ command that launches games with optimal gamescope settings:
-- Adaptive sync (VRR/FreeSync/G-Sync)
-- HDR enabled
-- Fullscreen mode
-- Auto-detected resolution (uses highest current display resolution)
-- Gamemode integration for CPU governor optimization
-- Forced cursor grab
+~modules.gaming~ (enabled on ~desktop~) sets up Steam with GE-Proton, Proton's Wayland driver and
+GameMode. Design and decisions: ~specs/008-game-performance-tuning/~.
 
-** Using with Steam
+- GameMode for a game: set its launch options to ~gamemoderun %command%~ (a global preload breaks
+  the Steam client).
+- Boot the stock kernel instead of Zen: hold =Space= at power-on and pick the entry tagged ~stock~.
 
-To use ~gamescope-game~ with Steam games, add this to the game's launch options:
+** Benchmarking
 
-#+begin_src sh
-gamescope-game -- %command%
-#+end_src
+~game-bench~ compares tunings (schedulers, CPU and GPU power settings, Proton options) with repeated,
+unattended runs of a game's built-in benchmark, and restores every setting afterwards.
 
-** Using from Terminal
+1. Set the game's launch options to ~game-bench-wrap %command%~ (outside a session it changes nothing).
+2. Run a session from a terminal, for example:
 
 #+begin_src sh
-gamescope-game /path/to/game
+game-bench list
+game-bench run -w cyberpunk -v "baseline gamemode scx-bpfland" -n 5
+game-bench compare ~/.local/share/game-bench/<session> ~/.local/share/game-bench/<session>
 #+end_src
+
+Setup and the full procedure: ~specs/008-game-performance-tuning/quickstart.md~. Results and
+decisions: ~docs/gaming-benchmarks.md~.
 
 * Some Tips
 

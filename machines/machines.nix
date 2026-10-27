@@ -27,6 +27,8 @@
       }
       { modules.cosmic-de.enable = true; }
       { modules.gaming.enable = true; }
+      # A "stock" boot entry for benchmarking Zen against stock (specs/008).
+      { modules.gaming.kernelComparison.enable = true; }
       { modules.sshd.enable = true; }
       { modules.silent-boot.earlyKms.modules = [ "amdgpu" ]; }
       # { sops.ageKey = "tpm"; }

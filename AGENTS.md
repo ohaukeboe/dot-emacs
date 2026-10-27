@@ -51,7 +51,7 @@ nix flake show
 │   ├── options.nix        # Custom options (user.username, system.audio.allowedSampleRates)
 │   └── system/            # NixOS system defaults
 ├── modules/               # Optional feature modules
-│   ├── gaming/            # Gaming setup (Steam, gamescope, Lutris)
+│   ├── gaming/            # Gaming setup (Steam, GameMode, game-bench, Lutris)
 │   ├── cosmic-de/         # COSMIC desktop environment
 │   ├── secure-boot/       # Lanzaboote secure boot
 │   └── sshd/              # SSH daemon configuration

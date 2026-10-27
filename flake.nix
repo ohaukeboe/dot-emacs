@@ -423,6 +423,8 @@
         # writeShellApplication runs shellcheck at build time.
         // onLinux system {
           installer = self.packages.${system}.installer;
+          # game-bench's summary and launch wrappers; see the file.
+          game-bench = nixpkgsFor.${system}.callPackage ./tests/game-bench.nix { };
         }
       );
     };

@@ -504,3 +504,25 @@ _Avoid_: tracking issue, upstream link
 **Expiry warning**:
 The evaluation warning an expired workaround override emits. A prompt to
 re-check, never a build failure.
+
+### Gaming / benchmarks
+
+**Variant**:
+One named tuning, or the unchanged baseline, that `game-bench` switches on
+for a single run (a scheduler, a CPU or GPU power setting, an environment
+variable for the game). Defined once in `modules.gaming.benchmark.variants`.
+See ADR 0009.
+_Avoid_: profile, preset (both are names of specific amdgpu and PPD settings)
+
+**Workload**:
+The repeatable thing a run measures: a game's built-in benchmark started
+unattended (`proton` kind, logged by the game or MangoHud) or Factorio's headless tick
+benchmark (`native` kind). A variant that cannot affect a workload's kind is
+reported as n/a for it.
+
+**Benchmark session**:
+One unattended `game-bench run`: a discarded warm-up, then every chosen
+variant run N times round-robin on one kernel, idle or under background
+load, ending in a summary table. Sessions are compared with
+`game-bench compare`.
+_Avoid_: test, run (a run is one launch inside a session)
