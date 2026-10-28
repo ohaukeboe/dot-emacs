@@ -277,15 +277,17 @@ in
         "~/.config/sops-nix"
         # Their tmpfs targets: the home-manager mount, and the system one that
         # holds the host age key, which decrypts every secret in this repo.
+        # Name /run/secrets.d, not the /run/secrets symlink: bwrap resolves it
+        # to /run/secrets.d/<generation> and fails every command on the mkdir.
         "${runtimeDir}/secrets.d"
-        "/run/secrets"
+        "/run/secrets.d"
         "~/.password-store"
         "~/.local/share/keyrings"
         "~/.config/1Password"
         "~/.zen"
         "~/.mozilla"
       ];
-      defaultText = lib.literalMD "credential stores under `~`, plus the sops-nix secret mounts under `runtimeDir` and `/run/secrets`";
+      defaultText = lib.literalMD "credential stores under `~`, plus the sops-nix secret mounts under `runtimeDir` and `/run/secrets.d`";
       description = ''
         Files and directories the agent must never read. Each one becomes a
         sandbox credential deny for shell commands and a Read() deny rule for
