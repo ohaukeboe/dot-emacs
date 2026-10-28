@@ -275,12 +275,17 @@ in
         "~/.config/sops"
         # Decrypted sops-nix secrets, ssh/main among them.
         "~/.config/sops-nix"
+        # Their tmpfs targets: the home-manager mount, and the system one that
+        # holds the host age key, which decrypts every secret in this repo.
+        "${runtimeDir}/secrets.d"
+        "/run/secrets"
         "~/.password-store"
         "~/.local/share/keyrings"
         "~/.config/1Password"
         "~/.zen"
         "~/.mozilla"
       ];
+      defaultText = lib.literalMD "credential stores under `~`, plus the sops-nix secret mounts under `runtimeDir` and `/run/secrets`";
       description = ''
         Files and directories the agent must never read. Each one becomes a
         sandbox credential deny for shell commands and a Read() deny rule for
