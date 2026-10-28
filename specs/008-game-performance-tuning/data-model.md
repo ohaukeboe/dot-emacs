@@ -100,6 +100,7 @@ Status rules:
 - `failed:start` — the game never appeared.
 - `failed:busy` — the game was still running from an earlier launch.
 - `failed:nolog` — a Proton run wrote neither frame log.
+- `failed:gamemode` — gamemoded refused the native game's PID.
 - `excluded:short` — fewer than 100 frames or ticks logged.
 - `excluded:state` — `state.json` after the run does not match the variant
   (for example `schedExt` no longer `enabled`).

@@ -368,15 +368,34 @@ run_proton() {
   echo valid >"$dir/status"
 }
 
+# Register the native game's process with gamemoded once it appears.
+# gamemoderun would preload libgamemodeauto into steam-run, bwrap and every
+# child; it aborts on exit there, as it did in the Steam client (R7).
+# Factorio re-executes itself as bin/x64/../x64_/factorio, so match the
+# run's own mod directory; -n picks the game over bwrap and steam-run.
+request_gamemode() {
+  local mods=$1 log=$2 pid="" _
+  for _ in $(seq 50); do
+    pid=$(pgrep -n -f -- "/factorio --mod-directory $mods " || true)
+    if [ -n "$pid" ]; then break; fi
+    sleep 0.2
+  done
+  if [ -z "$pid" ]; then
+    echo "no factorio process for $mods" >"$log"
+    return 1
+  fi
+  gamemoded --request="$pid" >"$log" 2>&1
+}
+
 run_native() {
-  local dir=$1 v=$2 bin cpus prefix=() work mods save
+  local dir=$1 v=$2 bin cpus prefix=() work mods save gamemode=0 game rc
   bin=$(in_library "steamapps/common/Factorio/bin/x64/factorio") || {
     echo "failed:start" >"$dir/status"
     return
   }
   cpus=$(cfg --arg v "$v" '.variants[$v].cpus // ""')
   if [ -n "$cpus" ]; then prefix+=(taskset -c "$cpus"); fi
-  if [ "$(cfg --arg v "$v" '.variants[$v].gamemode')" = true ]; then prefix+=(gamemoderun); fi
+  if [ "$(cfg --arg v "$v" '.variants[$v].gamemode')" = true ]; then gamemode=1; fi
   # Under $HOME, not /tmp: steam-run gives the game a private /tmp.
   work=$(mktemp -d -p "$data" .factorio.XXXXXX)
   # Separate dirs: Factorio loads every zip in --mod-directory as a mod.
@@ -387,15 +406,22 @@ run_native() {
   chmod u+w "$save"
   local -a env_args=()
   while IFS= read -r kv; do env_args+=("$kv"); done < <(cfg --arg v "$v" '.variants[$v].env | to_entries[] | "\(.key)=\(.value)"')
-  if env "${env_args[@]}" timeout "$timeout" "${prefix[@]}" steam-run "$bin" \
+  env "${env_args[@]}" timeout "$timeout" "${prefix[@]}" steam-run "$bin" \
     --mod-directory "$mods" --disable-audio \
     --benchmark "$save" --benchmark-ticks "$ticks" --benchmark-runs 1 \
-    --benchmark-verbose all --benchmark-sanitize >"$dir/factorio.out" 2>&1; then
-    echo valid >"$dir/status"
-  elif [ $? -eq 124 ]; then
+    --benchmark-verbose all --benchmark-sanitize >"$dir/factorio.out" 2>&1 &
+  game=$!
+  local gm_ok=1
+  if [ "$gamemode" = 1 ] && ! request_gamemode "$mods" "$dir/gamemode.log"; then gm_ok=0; fi
+  if wait "$game"; then rc=0; else rc=$?; fi
+  if [ "$rc" -eq 124 ]; then
     echo "failed:timeout" >"$dir/status"
-  else
+  elif [ "$rc" -ne 0 ]; then
     echo "failed:start" >"$dir/status"
+  elif [ "$gm_ok" = 0 ]; then
+    echo "failed:gamemode" >"$dir/status"
+  else
+    echo valid >"$dir/status"
   fi
   rm -rf "$work"
 }
