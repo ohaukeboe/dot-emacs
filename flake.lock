@@ -755,6 +755,22 @@
         "type": "github"
       }
     },
+    "oslokommune-claude-marketplace": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1790335922,
+        "narHash": "sha256-A+ajlqp/5cpMQDiLGYQyMiC0QhEX7TrHS4lO5HYbG5k=",
+        "ref": "refs/heads/main",
+        "rev": "9de31f9b50cc4774f94baed58ed2f91c09d33349",
+        "revCount": 61,
+        "type": "git",
+        "url": "https://github.com/oslokommune/claude-marketplace"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://github.com/oslokommune/claude-marketplace"
+      }
+    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -792,22 +808,6 @@
         "owner": "mukul975",
         "repo": "privacy-data-protection-skills",
         "type": "github"
-      }
-    },
-    "punkt-skills": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1792656056,
-        "narHash": "sha256-cO1poag4w/Ngqxw4s95qivXT+INdciN8oppT/OtlCi4=",
-        "ref": "refs/heads/main",
-        "rev": "29f25d1263e8d4cee8d84e277489ee3b6a2b1e2b",
-        "revCount": 126,
-        "type": "git",
-        "url": "https://github.com/oslokommune/punkt-skills"
-      },
-      "original": {
-        "type": "git",
-        "url": "https://github.com/oslokommune/punkt-skills"
       }
     },
     "rm-push": {
@@ -853,8 +853,8 @@
         "nixgl": "nixgl",
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_6",
+        "oslokommune-claude-marketplace": "oslokommune-claude-marketplace",
         "privacy-data-protection-skills": "privacy-data-protection-skills",
-        "punkt-skills": "punkt-skills",
         "rm-push": "rm-push",
         "rust-overlay": "rust-overlay",
         "sops-nix": "sops-nix",

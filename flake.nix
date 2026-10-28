@@ -134,8 +134,8 @@
 
     # git+https, not github: — the org's SAML SSO makes the GitHub API 403 on
     # tokens not authorized for it (docs/adr/0007-saml-sso-github-sources.md).
-    punkt-skills = {
-      url = "git+https://github.com/oslokommune/punkt-skills";
+    oslokommune-claude-marketplace = {
+      url = "git+https://github.com/oslokommune/claude-marketplace";
       flake = false;
     };
 
