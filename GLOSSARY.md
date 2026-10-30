@@ -90,6 +90,12 @@ A finding already handed off that the user then replied to, handed off
 again with the reply. It is marked as a follow-up, so the agent reads it as
 a continuation rather than a new finding.
 
+**LSP-enabled mode**:
+A major mode for which the user's Emacs config starts a language server,
+through lsp-mode or eglot, directly or through a parent mode. Agents start a
+language server only for files in such a mode.
+_Avoid_: LSP filetype, supported language
+
 ### Agents / command rewriting
 
 **Rewriter chain**:
