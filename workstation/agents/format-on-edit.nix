@@ -13,6 +13,10 @@ let
   # opening it headlessly when no buffer holds it yet, and its diagnostics are
   # read from Flycheck, Flymake and lsp-mode alike. See format-on-edit.el.
   #
+  # Emacs never blocks on this: `emacsclient --eval` only queues a job and
+  # returns, Emacs works through timers and server callbacks, and this script
+  # polls for the job's done marker. See docs/adr/0009-async-format-on-edit.md.
+  #
   # Diagnostics are reported through `hookSpecificOutput.additionalContext`,
   # which reaches Claude on exit 0. Exit 2 would also surface them, but as a
   # warning on every lint hit, which turns routine editing into interruptions.
@@ -53,19 +57,34 @@ let
 
       # Elisp reports through a temp file: `emacsclient --eval` prints the
       # return value as an escaped Elisp literal, which would need unquoting.
-      report=$(mktemp)
-      trap 'rm -f "$report"' EXIT
+      # The done marker is separate because the report is optional: a clean
+      # file in a non-manifest gets none.
+      out=$(mktemp -d)
+      trap 'rm -rf "$out"' EXIT
+      report="$out/report"
+      done_marker="$out/done"
 
-      timeout 25 "$emacsclient" --eval \
+      # Queueing returns at once; a stuck daemon costs at most this timeout.
+      timeout 5 "$emacsclient" --eval \
         "(progn (load \"${./format-on-edit.el}\" nil t)
-                (claude-format-on-edit $elisp_file \"$report\"))" \
-        >/dev/null 2>&1 || true
+                (claude-format-on-edit $elisp_file \"$report\" \"$done_marker\"))" \
+        >/dev/null 2>&1 || exit 0
 
-      [ -s "$report" ] || exit 0
-      jq -n --rawfile diagnostics "$report" \
+      # Emacs gives up on its own after 22 s (claude-format-on-edit-job-deadline)
+      # and still writes the marker. This deadline only covers a daemon that
+      # died mid-job, and leaves the queueing step room under the hook's 30 s
+      # timeout.
+      deadline=$((SECONDS + 24))
+      while [ ! -e "$done_marker" ] && [ "$SECONDS" -lt "$deadline" ]; do
+        sleep 0.1
+      done
+
+      # Without the marker the report may be half written.
+      [ -e "$done_marker" ] && [ -s "$report" ] || exit 0
+      jq -n --rawfile context "$report" \
         '{hookSpecificOutput: {
             hookEventName: "PostToolUse",
-            additionalContext: ("Diagnostics for the file just edited:\n" + $diagnostics)
+            additionalContext: $context
           }}'
     '';
   };

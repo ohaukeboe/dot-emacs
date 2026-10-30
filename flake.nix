@@ -348,6 +348,10 @@
           # package for the same reason as test-beads.
           #   nix build .#test-lsp-mcp -L
           test-lsp-mcp = nixpkgsFor.${system}.callPackage ./tests/lsp-mcp.nix { };
+          # The ERT suite of workstation/agents/format-on-edit.el; see the
+          # file. A package for the same reason as test-beads.
+          #   nix build .#test-format-on-edit -L
+          test-format-on-edit = nixpkgsFor.${system}.callPackage ./tests/format-on-edit.nix { };
           # The ERT suite of workstation/emacs/packages/agent-commit-gate.el;
           # see the file. A package for the same reason as test-beads.
           #   nix build .#test-agent-commit-review -L
