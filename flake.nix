@@ -344,6 +344,10 @@
           # file. A package for the same reason as test-beads.
           #   nix build .#test-walkthrough -L
           test-walkthrough = nixpkgsFor.${system}.callPackage ./tests/walkthrough.nix { };
+          # The ERT suite of workstation/emacs/packages/lsp-mcp; see the file. A
+          # package for the same reason as test-beads.
+          #   nix build .#test-lsp-mcp -L
+          test-lsp-mcp = nixpkgsFor.${system}.callPackage ./tests/lsp-mcp.nix { };
           # The ERT suite of workstation/emacs/packages/agent-commit-gate.el;
           # see the file. A package for the same reason as test-beads.
           #   nix build .#test-agent-commit-review -L

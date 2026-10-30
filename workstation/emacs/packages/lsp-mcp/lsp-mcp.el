@@ -2,7 +2,7 @@
 
 ;; Author: Oskar Haukebøe
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "29.1") (lsp-mode "9.0") (mcp-server-lib "0.1"))
+;; Package-Requires: ((emacs "30.1") (lsp-mode "9.0") (mcp-server-lib "0.1"))
 
 ;;; Commentary:
 ;; Exposes lsp-mode functionality as MCP tools so LLM agents can use the
@@ -27,6 +27,21 @@
 
 (defconst lsp-mcp--diagnostic-severity-names
   '((1 . "error") (2 . "warning") (3 . "information") (4 . "hint")))
+
+;;; LSP-enabled modes
+
+(defun lsp-mcp-enabled-mode-p (&optional mode)
+  "Return the LSP client MODE starts, or nil if MODE is not LSP-enabled.
+MODE defaults to the current buffer's `major-mode'.  MODE is LSP-enabled
+when its hook, or the hook of a mode it derives from, contains `lsp' or
+`lsp-deferred' (returns `lsp-mode') or `eglot-ensure' (returns `eglot').
+The nearest mode with such a hook decides."
+  (cl-some (lambda (m)
+             (let* ((hook (intern (format "%s-hook" m)))
+                    (fns (and (boundp hook) (default-value hook))))
+               (cond ((or (memq 'lsp fns) (memq 'lsp-deferred fns)) 'lsp-mode)
+                     ((memq 'eglot-ensure fns) 'eglot))))
+           (derived-mode-all-parents (or mode major-mode))))
 
 ;;; Helpers
 

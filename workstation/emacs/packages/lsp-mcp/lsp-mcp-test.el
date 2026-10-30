@@ -229,6 +229,44 @@ registration means a single `lsp-mcp-disable' would not remove the tool."
     (lsp-mcp-test--drain-registrations)))
 
 
+;;; LSP-enabled modes — `lsp-mcp-enabled-mode-p'
+
+;; Dummy modes whose hooks each test binds, so no real config leaks in.
+(define-derived-mode lsp-mcp-test-parent-mode fundamental-mode "LspMcpParent")
+(define-derived-mode lsp-mcp-test-child-mode lsp-mcp-test-parent-mode "LspMcpChild")
+
+(ert-deftest lsp-mcp-test-enabled-mode-p-direct-lsp ()
+  (let ((lsp-mcp-test-parent-mode-hook '(lsp)))
+    (should (eq 'lsp-mode (lsp-mcp-enabled-mode-p 'lsp-mcp-test-parent-mode)))))
+
+(ert-deftest lsp-mcp-test-enabled-mode-p-direct-lsp-deferred ()
+  (let ((lsp-mcp-test-parent-mode-hook '(lsp-deferred)))
+    (should (eq 'lsp-mode (lsp-mcp-enabled-mode-p 'lsp-mcp-test-parent-mode)))))
+
+(ert-deftest lsp-mcp-test-enabled-mode-p-eglot-ensure ()
+  (let ((lsp-mcp-test-parent-mode-hook '(eglot-ensure)))
+    (should (eq 'eglot (lsp-mcp-enabled-mode-p 'lsp-mcp-test-parent-mode)))))
+
+(ert-deftest lsp-mcp-test-enabled-mode-p-parent-hook ()
+  "A derived mode inherits its parent's LSP setup."
+  (let ((lsp-mcp-test-parent-mode-hook '(lsp-deferred))
+        (lsp-mcp-test-child-mode-hook nil))
+    (should (eq 'lsp-mode (lsp-mcp-enabled-mode-p 'lsp-mcp-test-child-mode)))))
+
+(ert-deftest lsp-mcp-test-enabled-mode-p-no-lsp-hook ()
+  (let ((lsp-mcp-test-parent-mode-hook '(display-line-numbers-mode))
+        (lsp-mcp-test-child-mode-hook nil))
+    (should-not (lsp-mcp-enabled-mode-p 'lsp-mcp-test-child-mode))))
+
+(ert-deftest lsp-mcp-test-enabled-mode-p-defaults-to-major-mode ()
+  (let ((lsp-mcp-test-parent-mode-hook '(eglot-ensure))
+        (lsp-mcp-test-child-mode-hook nil))
+    (with-temp-buffer
+      ;; Delayed, so the hook's `eglot-ensure' does not run in batch.
+      (delay-mode-hooks (lsp-mcp-test-child-mode))
+      (should (eq 'eglot (lsp-mcp-enabled-mode-p))))))
+
+
 ;;; Error paths — `lsp-mcp--ensure-lsp-buffer'
 
 (ert-deftest lsp-mcp-test-ensure-lsp-buffer-missing-file ()
@@ -510,7 +548,7 @@ registration means a single `lsp-mcp-disable' would not remove the tool."
 
 (ert-deftest lsp-mcp-test-format-buffer-calls-lsp-format-buffer ()
   "lsp-mcp--format-buffer must call lsp-format-buffer and save-buffer."
-  (let (format-called save-called)
+  (let ((lsp-format-buffer-on-save t) format-called save-called)
     (cl-letf (((symbol-function 'lsp-mcp--ensure-lsp-buffer)
                (lambda (_file) (current-buffer)))
               ((symbol-function 'lsp-format-buffer)
@@ -523,7 +561,7 @@ registration means a single `lsp-mcp-disable' would not remove the tool."
 
 (ert-deftest lsp-mcp-test-format-region-calls-lsp-format-region ()
   "lsp-mcp--format-region must call lsp-format-region with correct positions and save."
-  (let (region-start region-end save-called)
+  (let ((lsp-format-buffer-on-save t) region-start region-end save-called)
     (cl-letf (((symbol-function 'lsp-mcp--ensure-lsp-buffer)
                (lambda (_file) (current-buffer)))
               ((symbol-function 'lsp-format-region)
@@ -542,7 +580,7 @@ registration means a single `lsp-mcp-disable' would not remove the tool."
 
 (ert-deftest lsp-mcp-test-format-region-string-params ()
   "start-line/end-line/col params may arrive as strings — must parse."
-  (let (region-start)
+  (let ((lsp-format-buffer-on-save t) region-start)
     (cl-letf (((symbol-function 'lsp-mcp--ensure-lsp-buffer)
                (lambda (_file) (current-buffer)))
               ((symbol-function 'lsp-format-region)

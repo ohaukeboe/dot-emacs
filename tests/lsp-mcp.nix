@@ -1,0 +1,55 @@
+# The ERT suite of workstation/emacs/packages/lsp-mcp.
+#
+#   nix build .#test-lsp-mcp -L
+#
+# Run it after any change to lsp-mcp.el or lsp-mcp-test.el.  The suite guards
+# what Nix evaluation cannot see: which major modes count as LSP-enabled, the
+# shape of the MCP tool replies, and that every tool registers and unregisters.
+#
+# The tests stub lsp-mode's requests and use dummy major modes, so the build
+# needs no language server and no network.
+#
+# Deliberately a package rather than a check: it builds an Emacs closure, and
+# `nix flake check` runs before every commit.
+{
+  runCommand,
+  emacs,
+  emacsPackagesFor,
+}:
+
+let
+  # lsp-mode built with plists, as workstation/home.nix builds it: the
+  # fixtures are plists, and lsp-get on a hash-table build cannot read them.
+  # mcp-server-lib ships mcp-server-lib-ert, the in-process server the
+  # tool-registration tests talk to.
+  emacsWithPackages = (emacsPackagesFor emacs).emacsWithPackages (epkgs: [
+    (epkgs.lsp-mode.overrideAttrs (p: {
+      buildPhase = ''
+        export LSP_USE_PLISTS=true;
+      ''
+      + p.buildPhase;
+    }))
+    epkgs.mcp-server-lib
+  ]);
+in
+runCommand "test-lsp-mcp"
+  {
+    nativeBuildInputs = [ emacsWithPackages ];
+  }
+  ''
+    export HOME="$PWD/home"
+    mkdir -p "$HOME"
+    export LSP_USE_PLISTS=true
+
+    mkdir -p package
+    cp ${../workstation/emacs/packages/lsp-mcp/lsp-mcp.el} package/lsp-mcp.el
+    cp ${../workstation/emacs/packages/lsp-mcp/lsp-mcp-test.el} package/lsp-mcp-test.el
+    cd package
+
+    if ! emacs -batch -L . -l lsp-mcp-test.el -f ert-run-tests-batch-and-exit; then
+      echo "lsp-mcp ERT suite failed (see the report above)"
+      exit 1
+    fi
+
+    touch "$out"
+  ''
