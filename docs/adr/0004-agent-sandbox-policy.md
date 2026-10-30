@@ -76,6 +76,11 @@ already stop commands outliving their session.
   namespace cannot reach host-mapped container ports. The excluded command
   runs agent-written code with full user access, which this threat model
   accepts.
+- `git worktree remove` and `git worktree prune` are excluded in every
+  project (`agents.sandbox.excludedCommands`). Claude Code mounts
+  `.git/worktrees` read-only, so inside the sandbox they leave stale worktree
+  metadata behind, and no policy can lift a protected path. Both only delete
+  worktree checkouts and their metadata.
 - If prompt injection enters the threat model, this ADR is superseded by a
   whole-process boundary.
 - Supersedes the "Keep the Claude Code sandbox off" comment in

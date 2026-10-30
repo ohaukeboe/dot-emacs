@@ -371,6 +371,23 @@ in
       description = "Bash command prefixes the agent may never run, rendered as deny rules.";
     };
 
+    excludedCommands = lib.mkOption {
+      type = lib.types.listOf (lib.types.strMatching ".* \\*$");
+      default = [
+        # Claude Code mounts .git/worktrees and each entry read-only, so a
+        # sandboxed `git worktree remove` deletes the checkout but leaves its
+        # metadata behind ("Device or resource busy"), and no project policy
+        # can lift a protected path.
+        "git worktree remove *"
+        "git worktree prune *"
+      ];
+      description = ''
+        Command patterns run outside the sandbox in every project, with the
+        user's full access. Each names the narrowest subcommand and ends in
+        ` *`. Project-specific ones belong in the project policy instead.
+      '';
+    };
+
     signing = {
       enable = lib.mkOption {
         type = lib.types.bool;
@@ -421,6 +438,7 @@ in
           failIfUnavailable = true;
           # Widen access through project policy, never one command at a time.
           allowUnsandboxedCommands = false;
+          inherit (cfg) excludedCommands;
           filesystem.allowWrite = cfg.writablePaths;
           network = {
             allowAllUnixSockets = true;
