@@ -6,30 +6,30 @@ LSP servers already configured in Emacs.
 
 ## Tools
 
-| Tool                       | Description                                                          |
-|----------------------------|----------------------------------------------------------------------|
-| `lsp-find-definitions`     | Go-to-definition for symbol at file:line:column                      |
-| `lsp-find-references`      | Find all references to symbol at file:line:column                    |
-| `lsp-find-implementations` | Find concrete implementations of an interface/abstract symbol        |
-| `lsp-find-type-definition` | Find the type definition of a symbol (e.g. struct a function returns)|
-| `lsp-hover`                | Hover documentation for symbol at file:line:column                   |
-| `lsp-get-diagnostics`      | Errors and warnings for a file                                       |
-| `lsp-workspace-symbols`    | Search symbols across the workspace by query string                  |
-| `lsp-document-symbols`     | All symbols defined in a file                                        |
-| `lsp-call-hierarchy`       | Callers or callees of a function (incoming/outgoing)                 |
-| `lsp-signature-help`       | Signature(s) at a call site with per-parameter docs                  |
-| `lsp-inlay-hints`          | Inferred types and parameter names the server computed for a file    |
-| `lsp-document-highlight`   | Read/write occurrences of a symbol within the same file              |
-| `lsp-format-buffer`        | Format an entire file via LSP and save it                            |
-| `lsp-format-region`        | Format a region of a file via LSP and save it                        |
-| `lsp-restart-workspace`    | Restart the lsp-mode or eglot servers of a file's project            |
+| Tool                       | Description                                            |
+|----------------------------|--------------------------------------------------------|
+| `lsp-find-definitions`     | Definition of the symbol at file:line:column           |
+| `lsp-find-references`      | All references to the symbol at file:line:column       |
+| `lsp-find-implementations` | Implementations of an interface or abstract symbol     |
+| `lsp-find-type-definition` | Definition of a symbol's type                          |
+| `lsp-hover`                | Hover documentation for the symbol at file:line:column |
+| `lsp-get-diagnostics`      | Errors and warnings for a file                         |
+| `lsp-workspace-symbols`    | Symbols across the workspace matching a query          |
+| `lsp-document-symbols`     | All symbols defined in a file                          |
+| `lsp-call-hierarchy`       | Callers or callees of a function                       |
+| `lsp-signature-help`       | Signatures at a call site with per-parameter docs      |
+| `lsp-inlay-hints`          | Inferred types and parameter names for a file          |
+| `lsp-document-highlight`   | Read/write occurrences of a symbol in its file         |
+| `lsp-format-buffer`        | Format a whole file via LSP and save it                |
+| `lsp-format-region`        | Format a region of a file via LSP and save it          |
+| `lsp-restart-workspace`    | Restart the lsp-mode or eglot servers of a project     |
 
 All tools return JSON. Position tools return `{file, line, column}` arrays.
 `line` is 1-indexed; `column` is 0-indexed (LSP convention).
 
 ## Requirements
 
-- Emacs 29.1+
+- Emacs 30.1+
 - [lsp-mode](https://github.com/emacs-lsp/lsp-mode) 9.0+
 - [mcp-server-lib](https://github.com/laurynas-biveinis/mcp-server-lib) 0.1+
 
@@ -285,9 +285,10 @@ generated-code changes.
 ## Running tests
 
 ```bash
-cd workstation/emacs/packages/lsp-mcp
-emacs -batch -L . -l lsp-mcp-test.el -f ert-run-tests-batch-and-exit
+nix build .#test-lsp-mcp -L
 ```
+
+Run it from the repository root (see `tests/lsp-mcp.nix`).
 
 Tests use `mcp-server-lib-ert` for the tool-registration tests; no live LSP
 server is required.

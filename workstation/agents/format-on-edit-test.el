@@ -21,7 +21,7 @@
 
 ;;; Dummy modes
 
-(defun fot--backend (report-fn &rest _)
+(defun format-on-edit-test--backend (report-fn &rest _)
   "Flymake backend flagging every line that contains BAD, a moment later."
   (let ((buffer (current-buffer)))
     (run-at-time
@@ -40,84 +40,87 @@
                (funcall report-fn diags)))))))))
 ;; Emacs 31 Flymake disables backends in untrusted files, and the fixtures
 ;; live in fresh temp directories.  This backend runs no code from the file.
-(function-put 'fot--backend 'flymake-always-safe t)
+(function-put 'format-on-edit-test--backend 'flymake-always-safe t)
 
-(define-derived-mode fot-base-mode prog-mode "FotBase"
-  "Parent of the dummy modes; checks through `fot--backend'."
-  (add-hook 'flymake-diagnostic-functions #'fot--backend nil t))
+(define-derived-mode format-on-edit-test-base-mode prog-mode "FotBase"
+  "Parent of the dummy modes; checks through `format-on-edit-test--backend'."
+  (add-hook 'flymake-diagnostic-functions #'format-on-edit-test--backend nil t))
 
-(define-derived-mode fot-plain-mode fot-base-mode "FotPlain"
+(define-derived-mode format-on-edit-test-plain-mode
+  format-on-edit-test-base-mode "FotPlain"
   "A mode the user never enabled LSP for.")
 
-(define-derived-mode fot-lsp-mode fot-base-mode "FotLsp"
+(define-derived-mode format-on-edit-test-lsp-mode
+  format-on-edit-test-base-mode "FotLsp"
   "A mode whose hook starts lsp-mode.")
-(add-hook 'fot-lsp-mode-hook #'lsp-deferred)
+(add-hook 'format-on-edit-test-lsp-mode-hook #'lsp-deferred)
 
-(define-derived-mode fot-eglot-mode fot-base-mode "FotEglot"
+(define-derived-mode format-on-edit-test-eglot-mode
+  format-on-edit-test-base-mode "FotEglot"
   "A mode whose hook starts eglot.")
-(add-hook 'fot-eglot-mode-hook #'eglot-ensure)
+(add-hook 'format-on-edit-test-eglot-mode-hook #'eglot-ensure)
 
-(dolist (entry '(("\\.fotp\\'" . fot-plain-mode)
-                 ("\\.fotl\\'" . fot-lsp-mode)
-                 ("\\.fote\\'" . fot-eglot-mode)))
+(dolist (entry '(("\\.fotp\\'" . format-on-edit-test-plain-mode)
+                 ("\\.fotl\\'" . format-on-edit-test-lsp-mode)
+                 ("\\.fote\\'" . format-on-edit-test-eglot-mode)))
   (add-to-list 'auto-mode-alist entry))
 
 ;;; Fixture
 
-(defvar fot--starts nil
+(defvar format-on-edit-test--starts nil
   "Clients a server start was asked for, newest first.")
 
-(defvar fot--requests 0
+(defvar format-on-edit-test--requests 0
   "Number of formatting requests sent.")
 
-(defvar fot--ready t
+(defvar format-on-edit-test--ready t
   "Whether a started server offers formatting.")
 
-(defvar fot--format-delay 0.1
+(defvar format-on-edit-test--format-delay 0.1
   "Seconds the stub server takes to answer a formatting request.")
 
-(defvar-local fot--attached nil
+(defvar-local format-on-edit-test--attached nil
   "Client the stub pretends is attached to this buffer.")
 
-(defun fot--stub-start (client)
-  (push client fot--starts)
-  (setq fot--attached client))
+(defun format-on-edit-test--stub-start (client)
+  (push client format-on-edit-test--starts)
+  (setq format-on-edit-test--attached client))
 
-(defun fot--stub-request (_client on-result)
+(defun format-on-edit-test--stub-request (_client on-result)
   "Answer with edits that append a formatted-by line, after a delay."
-  (let ((n (cl-incf fot--requests)))
-    (run-at-time fot--format-delay nil
+  (let ((n (cl-incf format-on-edit-test--requests)))
+    (run-at-time format-on-edit-test--format-delay nil
                  (lambda ()
                    (funcall on-result
                             (lambda ()
                               (goto-char (point-max))
                               (insert (format "formatted %d\n" n))))))))
 
-(defmacro fot--with-stubs (&rest body)
+(defmacro format-on-edit-test--with-stubs (&rest body)
   "Run BODY with the language-server adapters stubbed."
   (declare (indent 0))
-  `(let ((fot--starts nil)
-         (fot--requests 0)
-         (fot--ready t)
-         (fot--format-delay 0.1)
+  `(let ((format-on-edit-test--starts nil)
+         (format-on-edit-test--requests 0)
+         (format-on-edit-test--ready t)
+         (format-on-edit-test--format-delay 0.1)
          (claude-format-on-edit-server-budget 1.0))
      (cl-letf (((symbol-function 'claude-format-on-edit--start-server)
-                #'fot--stub-start)
+                #'format-on-edit-test--stub-start)
                ((symbol-function 'claude-format-on-edit--attached-client)
-                (lambda () fot--attached))
+                (lambda () format-on-edit-test--attached))
                ((symbol-function 'claude-format-on-edit--format-ready-p)
-                (lambda (_client) fot--ready))
+                (lambda (_client) format-on-edit-test--ready))
                ((symbol-function 'claude-format-on-edit--request-format)
-                #'fot--stub-request))
+                #'format-on-edit-test--stub-request))
        ,@body)))
 
-(defun fot--file (name content)
+(defun format-on-edit-test--file (name content)
   "Create NAME holding CONTENT in a fresh directory; return its path."
   (let ((file (expand-file-name name (make-temp-file "fot" t))))
     (with-temp-file file (insert content))
     file))
 
-(defun fot--enqueue (file)
+(defun format-on-edit-test--enqueue (file)
   "Queue a job for FILE; return its (REPORT . DONE) paths."
   (let* ((dir (make-temp-file "fot-out" t))
          (report (expand-file-name "report" dir))
@@ -125,7 +128,7 @@
     (claude-format-on-edit file report done)
     (cons report done)))
 
-(defun fot--await (job &optional seconds)
+(defun format-on-edit-test--await (job &optional seconds)
   "Wait up to SECONDS for JOB's done marker; return the report text.
 Signals if the marker never appears."
   (let ((deadline (+ (float-time) (or seconds 10))))
@@ -140,86 +143,91 @@ Signals if the marker never appears."
           (buffer-string))
       "")))
 
-(defun fot--contents (file)
+(defun format-on-edit-test--contents (file)
   (with-temp-buffer
     (insert-file-contents file)
     (buffer-string)))
 
 ;;; Tests
 
-(ert-deftest fot-plain-mode-gets-checker-pass-and-no-server ()
+(ert-deftest format-on-edit-test-plain-mode-gets-checker-pass-and-no-server ()
   "A mode that is not LSP-enabled starts no server but is still checked."
-  (fot--with-stubs
-    (let* ((file (fot--file "a.fotp" "ok\nBAD\n"))
-           (report (fot--await (fot--enqueue file))))
-      (should (null fot--starts))
-      (should (= fot--requests 0))
+  (format-on-edit-test--with-stubs
+    (let* ((file (format-on-edit-test--file "a.fotp" "ok\nBAD\n"))
+           (report (format-on-edit-test--await
+                    (format-on-edit-test--enqueue file))))
+      (should (null format-on-edit-test--starts))
+      (should (= format-on-edit-test--requests 0))
       (should (string-match-p "a.fotp:2: error: fot: bad thing" report))
-      (should (equal (fot--contents file) "ok\nBAD\n")))))
+      (should (equal (format-on-edit-test--contents file) "ok\nBAD\n")))))
 
-(ert-deftest fot-lsp-mode-starts-server-and-formats ()
+(ert-deftest format-on-edit-test-lsp-mode-starts-server-and-formats ()
   "A file the hook opens in an LSP-enabled mode gets a server and a format."
-  (fot--with-stubs
-    (let ((file (fot--file "a.fotl" "x\n")))
-      (fot--await (fot--enqueue file))
-      (should (equal fot--starts '(lsp-mode)))
-      (should (equal (fot--contents file) "x\nformatted 1\n"))
+  (format-on-edit-test--with-stubs
+    (let ((file (format-on-edit-test--file "a.fotl" "x\n")))
+      (format-on-edit-test--await (format-on-edit-test--enqueue file))
+      (should (equal format-on-edit-test--starts '(lsp-mode)))
+      (should (equal (format-on-edit-test--contents file) "x\nformatted 1\n"))
       ;; The hook's buffer is gone again; the user never sees it.
       (should-not (get-file-buffer file)))))
 
-(ert-deftest fot-eglot-mode-starts-eglot ()
+(ert-deftest format-on-edit-test-eglot-mode-starts-eglot ()
   "A mode configured with eglot-ensure gets an eglot server."
-  (fot--with-stubs
-    (let ((file (fot--file "a.fote" "x\n")))
-      (fot--await (fot--enqueue file))
-      (should (equal fot--starts '(eglot)))
-      (should (equal (fot--contents file) "x\nformatted 1\n")))))
+  (format-on-edit-test--with-stubs
+    (let ((file (format-on-edit-test--file "a.fote" "x\n")))
+      (format-on-edit-test--await (format-on-edit-test--enqueue file))
+      (should (equal format-on-edit-test--starts '(eglot)))
+      (should (equal (format-on-edit-test--contents file)
+                     "x\nformatted 1\n")))))
 
-(ert-deftest fot-open-buffer-gets-no-server ()
+(ert-deftest format-on-edit-test-open-buffer-gets-no-server ()
   "A buffer the user already has open keeps its state: no server start."
-  (fot--with-stubs
-    (let* ((file (fot--file "b.fotl" "x\nBAD\n"))
+  (format-on-edit-test--with-stubs
+    (let* ((file (format-on-edit-test--file "b.fotl" "x\nBAD\n"))
            (buffer (find-file-noselect file t)))
       (unwind-protect
-          (let ((report (fot--await (fot--enqueue file))))
-            (should (null fot--starts))
-            (should (= fot--requests 0))
-            (should (equal (fot--contents file) "x\nBAD\n"))
+          (let ((report (format-on-edit-test--await
+                         (format-on-edit-test--enqueue file))))
+            (should (null format-on-edit-test--starts))
+            (should (= format-on-edit-test--requests 0))
+            (should (equal (format-on-edit-test--contents file) "x\nBAD\n"))
             ;; And the user's buffer stays open.
             (should (buffer-live-p buffer))
             ;; No checker was forced on the user's buffer either.
             (should (equal report "")))
         (kill-buffer buffer)))))
 
-(ert-deftest fot-open-buffer-uses-attached-server ()
+(ert-deftest format-on-edit-test-open-buffer-uses-attached-server ()
   "A buffer the user has open with a server attached is still formatted."
-  (fot--with-stubs
-    (let* ((file (fot--file "c.fotl" "x\n"))
+  (format-on-edit-test--with-stubs
+    (let* ((file (format-on-edit-test--file "c.fotl" "x\n"))
            (buffer (find-file-noselect file t)))
       (unwind-protect
           (progn
-            (with-current-buffer buffer (setq fot--attached 'lsp-mode))
-            (fot--await (fot--enqueue file))
-            (should (null fot--starts))
-            (should (equal (fot--contents file) "x\nformatted 1\n"))
+            (with-current-buffer buffer
+              (setq format-on-edit-test--attached 'lsp-mode))
+            (format-on-edit-test--await (format-on-edit-test--enqueue file))
+            (should (null format-on-edit-test--starts))
+            (should (equal (format-on-edit-test--contents file)
+                           "x\nformatted 1\n"))
             (should (buffer-live-p buffer)))
         (kill-buffer buffer)))))
 
-(ert-deftest fot-no-server-without-lsp-mcp ()
+(ert-deftest format-on-edit-test-no-server-without-lsp-mcp ()
   "Without lsp-mcp loaded there is no LSP-enabled check, so no server."
-  (fot--with-stubs
+  (format-on-edit-test--with-stubs
     (cl-letf (((symbol-function 'lsp-mcp-enabled-mode-p) nil))
-      (let ((file (fot--file "d.fotl" "x\n")))
-        (fot--await (fot--enqueue file))
-        (should (null fot--starts))
-        (should (equal (fot--contents file) "x\n"))))))
+      (let ((file (format-on-edit-test--file "d.fotl" "x\n")))
+        (format-on-edit-test--await (format-on-edit-test--enqueue file))
+        (should (null format-on-edit-test--starts))
+        (should (equal (format-on-edit-test--contents file) "x\n"))))))
 
-(ert-deftest fot-emacs-stays-responsive ()
+(ert-deftest format-on-edit-test-emacs-stays-responsive ()
   "Queueing returns at once, and other timers fire while the job runs."
-  (fot--with-stubs
-    (let* ((fot--format-delay 0.5)
-           (file (fot--file "e.fotl" "x\n"))
-           (job (fot--enqueue file))
+  (format-on-edit-test--with-stubs
+    (let* ((format-on-edit-test--format-delay 0.5)
+           (file (format-on-edit-test--file "e.fotl" "x\n"))
+           (job (format-on-edit-test--enqueue file))
            (fired-in-flight nil))
       ;; Nothing has happened yet when the entry point returns, not even
       ;; opening the file.
@@ -228,65 +236,99 @@ Signals if the marker never appears."
       (run-at-time 0.2 nil
                    (lambda ()
                      (setq fired-in-flight (not (file-exists-p (cdr job))))))
-      (fot--await job)
+      (format-on-edit-test--await job)
       (should fired-in-flight)
-      (should (equal (fot--contents file) "x\nformatted 1\n")))))
+      (should (equal (format-on-edit-test--contents file)
+                     "x\nformatted 1\n")))))
 
-(ert-deftest fot-late-format-dropped-when-file-changed ()
+(ert-deftest format-on-edit-test-late-format-dropped-when-file-changed ()
   "Formatting is not saved when the file changed after the job was queued."
-  (fot--with-stubs
-    (let* ((file (fot--file "f.fotl" "x\n"))
-           (job (fot--enqueue file)))
+  (format-on-edit-test--with-stubs
+    (let* ((file (format-on-edit-test--file "f.fotl" "x\n"))
+           (job (format-on-edit-test--enqueue file)))
       ;; The agent's next edit lands before the job has even opened the file,
       ;; so the buffer itself holds the new text and Emacs sees no conflict.
       (with-temp-file file (insert "y\n"))
       (set-file-times file (time-add nil 5))
-      (fot--await job)
-      (should (= fot--requests 1))
-      (should (equal (fot--contents file) "y\n")))))
+      (format-on-edit-test--await job)
+      (should (= format-on-edit-test--requests 1))
+      (should (equal (format-on-edit-test--contents file) "y\n")))))
 
-(ert-deftest fot-superseded-format-dropped ()
+(ert-deftest format-on-edit-test-superseded-format-dropped ()
   "Only the newest job for a file saves its formatting."
-  (fot--with-stubs
-    (let* ((fot--format-delay 0.3)
-           (file (fot--file "g.fotl" "x\n"))
-           (older (fot--enqueue file))
-           (newer (fot--enqueue file)))
-      (fot--await older)
-      (fot--await newer)
-      (should (= fot--requests 2))
+  (format-on-edit-test--with-stubs
+    (let* ((format-on-edit-test--format-delay 0.3)
+           (file (format-on-edit-test--file "g.fotl" "x\n"))
+           (older (format-on-edit-test--enqueue file))
+           (newer (format-on-edit-test--enqueue file)))
+      (format-on-edit-test--await older)
+      (format-on-edit-test--await newer)
+      (should (= format-on-edit-test--requests 2))
       ;; The newer job's request was the second one sent.
-      (should (equal (fot--contents file) "x\nformatted 2\n"))
+      (should (equal (format-on-edit-test--contents file) "x\nformatted 2\n"))
       (should-not (get-file-buffer file)))))
 
-(ert-deftest fot-manifest-reminder ()
+(ert-deftest format-on-edit-test-manifest-reminder ()
   "Editing a manifest reminds the agent to restart the language server."
-  (fot--with-stubs
-    (let ((manifest (fot--await (fot--enqueue (fot--file "package.json" "{}\n"))))
-          (cargo (fot--await (fot--enqueue (fot--file "Cargo.toml" ""))))
-          (csproj (fot--await (fot--enqueue (fot--file "App.csproj" "<x/>\n"))))
-          (plain (fot--await (fot--enqueue (fot--file "h.fotp" "ok\n")))))
-      (should (string-match-p "lsp-restart-workspace" manifest))
-      (should (string-match-p "lsp-restart-workspace" cargo))
-      (should (string-match-p "lsp-restart-workspace" csproj))
-      (should (equal plain "")))))
+  (format-on-edit-test--with-stubs
+    (cl-flet ((run (name content)
+                (format-on-edit-test--await
+                 (format-on-edit-test--enqueue
+                  (format-on-edit-test--file name content)))))
+      (let ((manifest (run "package.json" "{}\n"))
+            (cargo (run "Cargo.toml" ""))
+            (csproj (run "App.csproj" "<x/>\n"))
+            (plain (run "h.fotp" "ok\n")))
+        (should (string-match-p "lsp-restart-workspace" manifest))
+        (should (string-match-p "lsp-restart-workspace" cargo))
+        (should (string-match-p "lsp-restart-workspace" csproj))
+        (should (equal plain ""))))))
 
-(ert-deftest fot-cold-server-budget ()
+(ert-deftest format-on-edit-test-cold-server-budget ()
   "A server that never offers formatting costs the budget, then the job
 reports its diagnostics without formatting."
-  (fot--with-stubs
-    (let* ((fot--ready nil)
+  (format-on-edit-test--with-stubs
+    (let* ((format-on-edit-test--ready nil)
            (claude-format-on-edit-server-budget 0.5)
-           (file (fot--file "i.fotl" "BAD\n"))
+           (file (format-on-edit-test--file "i.fotl" "BAD\n"))
            (start (float-time))
-           (report (fot--await (fot--enqueue file) 5))
+           (report (format-on-edit-test--await
+                    (format-on-edit-test--enqueue file) 5))
            (elapsed (- (float-time) start)))
-      (should (equal fot--starts '(lsp-mode)))
-      (should (= fot--requests 0))
+      (should (equal format-on-edit-test--starts '(lsp-mode)))
+      (should (= format-on-edit-test--requests 0))
       (should (>= elapsed 0.5))
       (should (< elapsed 2.0))
       (should (string-match-p "i.fotl:1: error: fot: bad thing" report))
-      (should (equal (fot--contents file) "BAD\n")))))
+      (should (equal (format-on-edit-test--contents file) "BAD\n")))))
+
+(defun format-on-edit-test--add-save-formatters ()
+  "Install lsp-mode's format-on-save hook as lsp-mode itself does."
+  (add-hook 'before-save-hook #'lsp--format-buffer-before-save nil t))
+
+(ert-deftest format-on-edit-test-save-skips-format-on-save ()
+  "Saving the server's formatting runs no synchronous format-on-save.
+The user's `lsp-format-buffer-on-save', or an eglot formatter on
+`before-save-hook', would otherwise block Emacs and format twice."
+  (format-on-edit-test--with-stubs
+    (let ((lsp-format-buffer-on-save t)
+          (sync-formats 0)
+          (file (format-on-edit-test--file "j.fotl" "x\n")))
+      (add-hook 'format-on-edit-test-lsp-mode-hook
+                #'format-on-edit-test--add-save-formatters)
+      (add-hook 'before-save-hook #'eglot-format-buffer)
+      (unwind-protect
+          (cl-letf (((symbol-function 'lsp-format-buffer)
+                     (lambda () (cl-incf sync-formats)))
+                    ((symbol-function 'eglot-format-buffer)
+                     (lambda () (cl-incf sync-formats))))
+            (format-on-edit-test--await (format-on-edit-test--enqueue file))
+            (should (= sync-formats 0))
+            (should (equal (format-on-edit-test--contents file)
+                           "x\nformatted 1\n")))
+        (remove-hook 'before-save-hook #'eglot-format-buffer)
+        (remove-hook 'format-on-edit-test-lsp-mode-hook
+                     #'format-on-edit-test--add-save-formatters)))))
 
 (provide 'format-on-edit-test)
 ;;; format-on-edit-test.el ends here

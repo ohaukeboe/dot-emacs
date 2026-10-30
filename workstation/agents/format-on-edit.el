@@ -196,6 +196,36 @@ edits to the current buffer, or with nil when the server reported an error."
 
 ;;; Formatting
 
+(defconst claude-format-on-edit--save-formatters
+  '(lsp-format-buffer lsp--format-buffer-before-save
+    eglot-format eglot-format-buffer
+    apheleia-format-after-save)
+  "Save hooks that format the buffer again, mostly synchronously.")
+
+(defun claude-format-on-edit--without-formatters (hook)
+  "The functions HOOK runs in the current buffer, minus the formatters."
+  (seq-remove (lambda (fn) (memq fn claude-format-on-edit--save-formatters))
+              (mapcan (lambda (fn)
+                        (if (eq fn t)
+                            (copy-sequence (default-value hook))
+                          (list fn)))
+                      (copy-sequence (symbol-value hook)))))
+
+(defvar lsp-format-buffer-on-save)
+
+(defun claude-format-on-edit--save ()
+  "Save the current buffer without the user's format-on-save.
+The buffer holds the server's formatting already.  lsp-mode's
+`lsp-format-buffer-on-save', an eglot formatter or apheleia on the save
+hooks would format it a second time, synchronously for the first two,
+blocking Emacs for up to `lsp-response-timeout'."
+  (let ((lsp-format-buffer-on-save nil)
+        (before-save-hook
+         (claude-format-on-edit--without-formatters 'before-save-hook))
+        (after-save-hook
+         (claude-format-on-edit--without-formatters 'after-save-hook)))
+    (save-buffer)))
+
 (defun claude-format-on-edit--server (job)
   "Start a server for JOB if it may, then wait for formatting.
 Only a buffer the hook opened itself, in an LSP-enabled mode, gets a new
@@ -260,7 +290,7 @@ since JOB was queued, or someone edited the buffer meanwhile."
                 (ignore-errors
                   (funcall apply-edits)
                   (when (buffer-modified-p)
-                    (save-buffer))))
+                    (claude-format-on-edit--save))))
               (next)))))))))
 
 ;;; Diagnostics

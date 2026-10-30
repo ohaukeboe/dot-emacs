@@ -676,6 +676,31 @@ registration means a single `lsp-mcp-disable' would not remove the tool."
             ;; The buffer lsp-mcp opened stays alive for the server.
             (should (find-buffer-visiting file))))))))
 
+(ert-deftest lsp-mcp-test-server-start-never-prompts ()
+  "Starting a server from the timer guesses the project root and answers
+any question itself, since nobody is there to answer it."
+  (let ((lsp-mcp-test-lang-mode-hook '(lsp-deferred))
+        (lsp-auto-guess-root nil)
+        guessed answered)
+    (cl-letf (((symbol-function 'lsp-deferred) #'ignore)
+              ((symbol-function 'lsp)
+               (lambda (&rest _)
+                 (setq guessed lsp-auto-guess-root
+                       answered (list (y-or-n-p "Import project? ")
+                                      (yes-or-no-p "Really? "))))))
+      (lsp-mcp-test--with-lang-file file
+        (lsp-mcp-test--with-tools
+          (lsp-mcp-test--call-tool-error
+           "lsp-hover" `((file . ,file) (line . 1) (column . 0)))
+          ;; Stand-ins for a user prompt: answering one reaches nobody.
+          (cl-letf (((symbol-function 'y-or-n-p)
+                     (lambda (&rest _) (error "Prompted the user")))
+                    ((symbol-function 'yes-or-no-p)
+                     (lambda (&rest _) (error "Prompted the user"))))
+            (lsp-mcp-test--run-timers))
+          (should guessed)
+          (should (equal '(nil nil) answered)))))))
+
 (ert-deftest lsp-mcp-test-retry-on-starting-server-starts-once ()
   "Retrying while lsp-mcp's own buffer is still starting does not start twice."
   (let ((lsp-mcp-test-lang-mode-hook '(lsp-deferred))

@@ -18,19 +18,7 @@
 }:
 
 let
-  # lsp-mode built with plists, as workstation/home.nix builds it: the
-  # fixtures are plists, and lsp-get on a hash-table build cannot read them.
-  # mcp-server-lib ships mcp-server-lib-ert, the in-process server the
-  # tool-registration tests talk to.
-  emacsWithPackages = (emacsPackagesFor emacs).emacsWithPackages (epkgs: [
-    (epkgs.lsp-mode.overrideAttrs (p: {
-      buildPhase = ''
-        export LSP_USE_PLISTS=true;
-      ''
-      + p.buildPhase;
-    }))
-    epkgs.mcp-server-lib
-  ]);
+  emacsWithPackages = import ./lib/emacs-with-lsp-mode.nix { inherit emacs emacsPackagesFor; };
 in
 runCommand "test-lsp-mcp"
   {

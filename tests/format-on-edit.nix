@@ -22,18 +22,9 @@
 }:
 
 let
-  # lsp-mode built with plists, as workstation/home.nix builds it, because
-  # the tests load lsp-mcp for its LSP-enabled-mode check, and lsp-mcp
-  # requires lsp-mode and mcp-server-lib.
-  emacsWithPackages = (emacsPackagesFor emacs).emacsWithPackages (epkgs: [
-    (epkgs.lsp-mode.overrideAttrs (p: {
-      buildPhase = ''
-        export LSP_USE_PLISTS=true;
-      ''
-      + p.buildPhase;
-    }))
-    epkgs.mcp-server-lib
-  ]);
+  # lsp-mcp is loaded for its LSP-enabled-mode check, and it requires
+  # lsp-mode and mcp-server-lib.
+  emacsWithPackages = import ./lib/emacs-with-lsp-mode.nix { inherit emacs emacsPackagesFor; };
 in
 runCommand "test-format-on-edit"
   {
