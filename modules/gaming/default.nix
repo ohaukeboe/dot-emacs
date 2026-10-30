@@ -86,6 +86,11 @@ let
         default = null;
         description = "GPU power limit for the run: watts, a percentage of stock, or the card's maximum.";
       };
+      gpuUndervoltMv = mkOption {
+        type = types.nullOr (types.ints.between 1 200);
+        default = null;
+        description = "Lower the GPU voltage by this many mV for the run (overdrive `vo`). Needs modules.gaming.gpu.overdrive.enable; n/a without it.";
+      };
     };
   };
 
@@ -184,6 +189,17 @@ in
       description = "Add a boot entry tagged `stock` with the stock kernel of the Zen kernel's series.";
     };
 
+    gpu.overdrive.enable = mkEnableOption ''
+      amdgpu overdrive (voltage offset, clocks, higher power limit). Only the
+      overdrive bit of ppfeaturemask changes; enabling it taints the kernel
+      and changes no clock or voltage by itself'';
+
+    gpu.undervoltMv = mkOption {
+      type = types.nullOr (types.ints.between 1 200);
+      default = null;
+      description = "GPU voltage offset below stock, in mV, set at boot after the power limit. Needs gpu.overdrive.enable. null keeps stock voltage.";
+    };
+
     gpu.powerCapWatts = mkOption {
       type = types.nullOr types.ints.positive;
       default = null;
@@ -215,6 +231,7 @@ in
             && !b.zenKnobs
             && b.gpuProfile == null
             && b.gpuPowerCap == null
+            && b.gpuUndervoltMv == null
           );
         message = "modules/gaming/default.nix: modules.gaming.benchmark.variants.baseline must exist and set nothing; every variant is measured against it.";
       }

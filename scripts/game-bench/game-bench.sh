@@ -162,6 +162,20 @@ gpu_hwmon() {
   return 1
 }
 
+gpu_od_file() {
+  local h
+  h=$(gpu_hwmon) || return 1
+  echo "$(readlink -f "$h/device")/pp_od_clk_voltage"
+}
+
+# The overdrive voltage offset in mV ("0", "-50"); empty with overdrive off.
+gpu_voltage_offset() {
+  local od
+  od=$(gpu_od_file) || return 0
+  [ -r "$od" ] || return 0
+  sed -n '/^OD_VDDGFX_OFFSET:/{n;s/[^0-9-]//g;p;q}' "$od"
+}
+
 snapshot() {
   local h dev cap="" level="" profile="" preempt="" slice=""
   if h=$(gpu_hwmon); then
@@ -186,6 +200,7 @@ snapshot() {
     --arg gpuPerfLevel "$level" \
     --arg gpuProfileMode "$profile" \
     --arg gpuPowerCap "$cap" \
+    --arg gpuVoltageOffset "$(gpu_voltage_offset)" \
     --arg preempt "$preempt" \
     --arg baseSlice "$slice" \
     --argjson loadRunning "$([ -n "${load_pid:-}" ] && echo true || echo false)" \
@@ -203,6 +218,9 @@ state_matches() {
   if [ "$(cfg --arg v "$v" '.variants[$v].stopSystem76')" = true ] &&
     [ "$(jq -r .system76 <<<"$after")" = active ]; then return 1; fi
   if [ -n "${cap_watts:-}" ] && [ "$(jq -r .gpuPowerCap <<<"$after")" != "$cap_watts" ]; then return 1; fi
+  # A driver reset (a too-deep undervolt) clears the offset.
+  want=$(cfg --arg v "$v" '.variants[$v].gpuUndervoltMv // "" | tostring')
+  if [ -n "$want" ] && [ "$(jq -r .gpuVoltageOffset <<<"$after")" != "-$want" ]; then return 1; fi
   return 0
 }
 
@@ -211,17 +229,19 @@ state_matches() {
 variant_needs_root() {
   # cpuProfile is not here: powerprofilesctl works as the user.
   cfg --arg v "$1" '.variants[$v] | .scx != null or .stopSystem76 or .zenKnobs
-    or .gpuProfile != null or .gpuPowerCap != null'
+    or .gpuProfile != null or .gpuPowerCap != null or .gpuUndervoltMv != null'
 }
 
+# Running a non-Zen kernel (the default since docs/gaming-benchmarks.md, or
+# the comparison entry tagged "stock")?
 booted_stock() {
-  case "$(readlink /run/booted-system)" in *-stock-*) return 0 ;; esac
-  return 1
+  case "$(uname -r)" in *zen*) return 1 ;; esac
+  return 0
 }
 
 # Apply a variant's system-wide part; journal each undo first.
 apply_variant() {
-  local v=$1 value range
+  local v=$1 value range current offset
   cap_watts=""
   value=$(cfg --arg v "$v" '.variants[$v].cpuProfile // ""')
   if [ -n "$value" ]; then
@@ -254,8 +274,27 @@ apply_variant() {
     *%) cap_watts=$((range[1] * ${value%\%} / 100)) ;;
     *) cap_watts=$value ;;
     esac
-    journal_add priv gpu-cap default
+    # Back to the limit in force (modules.gaming.gpu.powerCapWatts), not stock.
+    # The journal replays in reverse: the offset is restored after the cap.
+    offset=$(gpu_voltage_offset)
+    if [ -n "$offset" ]; then journal_add priv gpu-undervolt "${offset#-}"; fi
+    current=$(($(cat "$(gpu_hwmon)/power1_cap") / 1000000))
+    journal_add priv gpu-cap "$current"
     priv gpu-cap "$cap_watts" || return 1
+    # The SMU rounds the limit: the overdrive maximum, 333 W, reads back 330.
+    cap_watts=$(($(cat "$(gpu_hwmon)/power1_cap") / 1000000))
+    # Keep the offset in force (modules.gaming.gpu.undervoltMv).
+    if [ -n "$offset" ]; then priv gpu-undervolt "${offset#-}" || return 1; fi
+  fi
+  # After the cap: a cap above the board's own maximum goes to the SMU in
+  # the overdrive table, and on 2026-10-30 that left the card running as
+  # if the offset were gone (uv-50-300w clocked below uv-50 at 290 W)
+  # while pp_od_clk_voltage still showed it.
+  value=$(cfg --arg v "$v" '.variants[$v].gpuUndervoltMv // "" | tostring')
+  if [ -n "$value" ]; then
+    current=$(gpu_voltage_offset)
+    journal_add priv gpu-undervolt "${current#-}"
+    priv gpu-undervolt "$value" || return 1
   fi
 }
 
@@ -284,14 +323,30 @@ game_gone() {
   done
 }
 
-# GPU board power as `epoch,microwatts`, once a second, until killed.
-sample_power() {
-  local h
+# GPU telemetry once a second until killed, as CSV: board power (µW),
+# GFX and memory clocks (Hz), edge, junction and memory temperature (m°C)
+# from amdgpu's hwmon, fan speed (RPM) and load (%). Builtin reads only.
+sample_gpu() {
+  local h dev p sclk mclk edge jct mem fan busy
   h=$(gpu_hwmon) || return 0
-  while :; do
-    printf '%s,%s\n' "$EPOCHREALTIME" "$(cat "$h/power1_average")"
-    sleep 1
-  done >"$1"
+  dev=$(readlink -f "$h/device")
+  {
+    echo "epoch,power_uw,sclk_hz,mclk_hz,edge_mc,junction_mc,mem_mc,fan_rpm,busy_pct"
+    while :; do
+      read -r p 2>/dev/null <"$h/power1_average" || p=""
+      read -r sclk 2>/dev/null <"$h/freq1_input" || sclk=""
+      read -r mclk 2>/dev/null <"$h/freq2_input" || mclk=""
+      read -r edge 2>/dev/null <"$h/temp1_input" || edge=""
+      read -r jct 2>/dev/null <"$h/temp2_input" || jct=""
+      read -r mem 2>/dev/null <"$h/temp3_input" || mem=""
+      read -r fan 2>/dev/null <"$h/fan1_input" || fan=""
+      read -r busy 2>/dev/null <"$dev/gpu_busy_percent" || busy=""
+      # EPOCHREALTIME uses the locale's decimal separator.
+      printf '%s,%s,%s,%s,%s,%s,%s,%s,%s\n' "${EPOCHREALTIME/,/.}" \
+        "$p" "$sclk" "$mclk" "$edge" "$jct" "$mem" "$fan" "$busy"
+      sleep 1
+    done
+  } >"$1"
 }
 
 stop_sampler() {
@@ -299,16 +354,46 @@ stop_sampler() {
   sampler_pid=""
 }
 
+# The reaper and everything under it. The game and its Wine processes are
+# its descendants; killing the reaper alone leaves a game frozen on a lost
+# GPU device running, and Steam then refuses every later launch.
+game_tree() {
+  local pids next
+  pids=$(pgrep -d, -f -- "$(reaper_pattern "$appid")") || return 0
+  while [ -n "$pids" ]; do
+    tr , '\n' <<<"$pids"
+    next=$(pgrep -d, -P "$pids") || break
+    pids=$next
+  done
+}
+
+# Fails when part of the game survives SIGKILL, stuck in the driver.
 kill_game() {
-  local pattern
-  pattern=$(reaper_pattern "$appid")
-  pkill -f -- "$pattern" 2>/dev/null || true
+  local pids _
+  mapfile -t pids < <(game_tree | sort -u)
+  [ ${#pids[@]} -gt 0 ] || return 0
+  kill "${pids[@]}" 2>/dev/null || true
   sleep 5
-  pkill -KILL -f -- "$pattern" 2>/dev/null || true
+  kill -KILL "${pids[@]}" 2>/dev/null || true
+  for _ in $(seq 30); do
+    kill -0 "${pids[@]}" 2>/dev/null || return 0
+    sleep 1
+  done
+  say "game processes survived SIGKILL: $(ps -o pid=,stat=,comm= -p "${pids[*]}" | tr '\n' ' ')"
+  return 1
+}
+
+# Did amdgpu log a ring timeout or a GPU reset since epoch $1? A ring
+# reset leaves the game frozen on a lost device and it never exits (a
+# too-deep undervolt, ADR 0010). grep reads all input: -q would end
+# journalctl early, and pipefail would report its SIGPIPE.
+gpu_hung() {
+  journalctl -k -q -o cat --since "@$1" 2>/dev/null |
+    grep -E 'amdgpu .*(ring [^ ]+ timeout|GPU reset begin)' >/dev/null
 }
 
 run_proton() {
-  local dir=$1 v=$2 pattern started=0 marker
+  local dir=$1 v=$2 pattern started=0 marker since=$EPOCHSECONDS
   pattern=$(reaper_pattern "$appid")
   # Steam refuses to launch over a running instance ("already running").
   if ! game_gone "$pattern"; then
@@ -332,13 +417,20 @@ run_proton() {
     rm -f "$runenv"
     return
   fi
-  sample_power "$dir/power.csv" &
+  sample_gpu "$dir/gpu.csv" &
   sampler_pid=$!
   local deadline=$((SECONDS + timeout))
   until game_gone "$pattern"; do
+    if gpu_hung "$since"; then
+      stop_sampler
+      kill_game || game_stuck=1
+      echo "failed:gpu-hang" >"$dir/status"
+      rm -f "$runenv"
+      return
+    fi
     if ((SECONDS >= deadline)); then
       stop_sampler
-      kill_game
+      kill_game || true
       echo "failed:timeout" >"$dir/status"
       rm -f "$runenv"
       return
@@ -348,7 +440,7 @@ run_proton() {
   stop_sampler
   rm -f "$runenv"
   local log
-  log=$(find "$dir" -maxdepth 1 -name '*.csv' ! -name '*_summary.csv' ! -name power.csv -newer "$marker" -printf '%T@ %p\n' | sort -n | tail -n1 | cut -d' ' -f2-)
+  log=$(find "$dir" -maxdepth 1 -name '*.csv' ! -name '*_summary.csv' ! -name gpu.csv -newer "$marker" -printf '%T@ %p\n' | sort -n | tail -n1 | cut -d' ' -f2-)
   find "$dir" -maxdepth 1 -name '*_summary.csv' -delete
   if [ -n "$log" ]; then mv "$log" "$dir/frames.csv"; fi
   # Cyberpunk writes summary.json and a per-frame frames.csv for exactly
@@ -468,7 +560,7 @@ cleanup() {
   stop_load
   stop_sampler
   if [ -n "${appid:-}" ] && [ "${kind:-}" = proton ] && pgrep -f -- "$(reaper_pattern "$appid")" >/dev/null; then
-    kill_game
+    kill_game || true
   fi
   replay_all
   rm -f "$runenv" "$lock"
@@ -519,7 +611,9 @@ cmd_run() {
   for v in $chosen; do
     [ "$(cfg --arg v "$v" '.variants | has($v)')" = true ] || die "unknown variant '$v' (game-bench list)"
     if [ "$(cfg --arg v "$v" --arg k "$kind" '.variants[$v].workloads | index($k) != null')" != true ] ||
-      { [ "$(cfg --arg v "$v" '.variants[$v].zenKnobs')" = true ] && ! booted_stock; }; then
+      { [ "$(cfg --arg v "$v" '.variants[$v].zenKnobs')" = true ] && ! booted_stock; } ||
+      { [ "$(cfg --arg v "$v" '.variants[$v].gpuUndervoltMv != null')" = true ] &&
+        [ -z "$(gpu_voltage_offset)" ]; }; then
       na+=("$v")
     else
       variants+=("$v")
@@ -581,12 +675,27 @@ cmd_run() {
   one_run baseline "$session/.warmup"
   rm -rf "$session/.warmup"
 
+  # A variant that hung the GPU once would hang it again; a full reset
+  # also ends the desktop session and this script with it.
   local i
+  local -A hung=()
   for i in $(seq "$runs"); do
     for v in "${variants[@]}"; do
+      if [ -n "${hung[$v]:-}" ]; then
+        mkdir -p "$session/$v/$i"
+        echo "skipped:gpu-hang" >"$session/$v/$i/status"
+        continue
+      fi
       sleep "$cool"
       one_run "$v" "$session/$v/$i"
       say "[$i/$runs] $v: $(cat "$session/$v/$i/status")"
+      if [ -n "${game_stuck:-}" ]; then
+        die "the game is stuck after a GPU hang and Steam will not launch it again; reboot"
+      fi
+      if [ "$(cat "$session/$v/$i/status")" = failed:gpu-hang ]; then
+        hung[$v]=1
+        say "$v hung the GPU; skipping its remaining runs"
+      fi
     done
   done
 

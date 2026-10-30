@@ -29,13 +29,13 @@ amdgpu_hwmon() {
   exit 1
 }
 
-# Booted into the specialisation tagged "stock" (modules/gaming/kernel.nix)?
-# Tags sit before the version in the toplevel name.
+# Running a non-Zen kernel? Either the default (stock since
+# docs/gaming-benchmarks.md) or the comparison entry tagged "stock".
 booted_stock() {
-  case "$(readlink /run/booted-system)" in
-  *-stock-*) return 0 ;;
+  case "$(uname -r)" in
+  *zen*) return 1 ;;
   esac
-  return 1
+  return 0
 }
 
 # The selected entry of a sysfs list such as "none [kyber] bfq" or
@@ -87,7 +87,7 @@ s76-start)
 zen-knobs)
   case "$arg" in
   on)
-    booted_stock || die "zen-knobs: the booted system is not the 'stock' entry; Zen already has these values"
+    booted_stock || die "zen-knobs: the running kernel is Zen, which already has these values"
     mkdir -p "$state_dir"
     if [ ! -e "$state_dir/zen-knobs" ]; then
       {
@@ -169,6 +169,22 @@ gpu-cap)
     echo $((arg * 1000000)) >"$h/power1_cap"
     ;;
   esac
+  ;;
+
+gpu-undervolt)
+  # Overdrive's one voltage offset for the whole V/F curve (SMU 13,
+  # docs.kernel.org/gpu/amdgpu/thermal.html): `vo -<mV>` then commit `c`.
+  # 0 removes the offset. A driver reset also clears it.
+  if ! [[ $arg =~ ^(0|[1-9][0-9]{0,2})$ ]] || ((arg > 200)); then
+    die "gpu-undervolt: expected 0-200 (mV below stock), got '$arg'"
+  fi
+  od="$(readlink -f "$(amdgpu_hwmon)/device")/pp_od_clk_voltage"
+  [ -e "$od" ] || {
+    echo "game-bench-priv: amdgpu overdrive is off (no pp_od_clk_voltage); set modules.gaming.gpu.overdrive.enable" >&2
+    exit 1
+  }
+  if ((arg == 0)); then echo "vo 0" >"$od"; else echo "vo -$arg" >"$od"; fi
+  echo c >"$od"
   ;;
 
 gpu-cap-range)

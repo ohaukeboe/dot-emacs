@@ -6,7 +6,8 @@
 Metric definitions are in
 specs/008-game-performance-tuning/data-model.md ("Metrics").
 Proton runs are the game's own per-frame log (game-frames.csv), else a
-MangoHud CSV (frames.csv), with GPU power from game-bench's power.csv.
+MangoHud CSV (frames.csv), with GPU power, clock and junction temperature
+from game-bench's gpu.csv (power.csv in sessions before it).
 Native runs are Factorio's --benchmark-verbose output (factorio.out).
 """
 
@@ -96,6 +97,33 @@ def read_power(path, window):
     return power
 
 
+def read_gpu(path, window):
+    """Power (W), GFX clock (MHz), junction temperature (°C) from gpu.csv.
+
+    Only samples inside window count; a missing cell skips that value.
+    """
+    power, sclk, junction = [], [], []
+    columns = (
+        (power, "power_uw", 1e6),
+        (sclk, "sclk_hz", 1e6),
+        (junction, "junction_mc", 1e3),
+    )
+    with path.open(newline="") as f:
+        for row in csv.DictReader(f):
+            try:
+                when = float(row["epoch"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            if window is not None and not window[0] <= when <= window[1]:
+                continue
+            for out, key, scale in columns:
+                try:
+                    out.append(float(row[key]) / scale)
+                except (KeyError, TypeError, ValueError):
+                    pass
+    return power, sclk, junction
+
+
 def read_factorio(path):
     """Tick times (ms) from Factorio's --benchmark-verbose output.
 
@@ -138,17 +166,21 @@ def run_metrics(run_dir, kind):
         samples = read_factorio(run_dir / "factorio.out") if (
             run_dir / "factorio.out"
         ).exists() else []
-        power = []
+        power, sclk, junction = [], [], []
     else:
         game_frames = run_dir / "game-frames.csv"
         mangohud = run_dir / "frames.csv"
-        samples, power = [], []
+        samples, power, sclk, junction = [], [], [], []
         if game_frames.exists():
             samples = read_game_frames(game_frames)
         elif mangohud.exists():
             samples, power = read_mangohud(mangohud)
-        power_csv = run_dir / "power.csv"
-        if power_csv.exists():
+        gpu_csv, power_csv = run_dir / "gpu.csv", run_dir / "power.csv"
+        if gpu_csv.exists():
+            power, sclk, junction = read_gpu(
+                gpu_csv, benchmark_window(run_dir)
+            )
+        elif power_csv.exists():
             power = read_power(power_csv, benchmark_window(run_dir))
     if len(samples) < MIN_SAMPLES:
         return None, "excluded:short"
@@ -166,6 +198,8 @@ def run_metrics(run_dir, kind):
             "p01": 1000 / percentile(ordered, 99.9),
         }
     metrics["power"] = statistics.median(power) if power else None
+    metrics["sclk"] = statistics.median(sclk) if sclk else None
+    metrics["tj_max"] = max(junction) if junction else None
     return metrics, "valid"
 
 
@@ -198,11 +232,15 @@ def summarise(session_dir):
             row[key + "_spread"] = spread(values)
         power = [m["power"] for m in good if m["power"] is not None]
         row["power"] = statistics.median(power) if power else None
+        sclk = [m["sclk"] for m in good if m["sclk"] is not None]
+        row["sclk"] = round(statistics.median(sclk)) if sclk else None
+        tj = [m["tj_max"] for m in good if m["tj_max"] is not None]
+        row["tj_max"] = round(max(tj)) if tj else None
         rows.append(row)
 
     columns = [
         "variant", "runs", "excluded", "avg", "avg_spread", "p1",
-        "p1_spread", "p01", "p01_spread", "power",
+        "p1_spread", "p01", "p01_spread", "power", "sclk", "tj_max",
     ]
     with open(session_dir / "summary.tsv", "w") as out:
         out.write("\t".join(columns) + "\tunit\n")
@@ -237,7 +275,7 @@ def render(rows, unit, session):
     better = "lower" if unit == "ms" else "higher"
     head = [
         "variant", "runs", "excl", "p1", "±", "p0.1", "±", "avg", "±",
-        "power W",
+        "power W", "GPU MHz", "Tj max C",
     ]
     table = [head]
     for r in rows:
@@ -246,7 +284,7 @@ def render(rows, unit, session):
             fmt(r["p1"]), fmt(r["p1_spread"]),
             fmt(r["p01"]), fmt(r["p01_spread"]),
             fmt(r["avg"]), fmt(r["avg_spread"]),
-            fmt(r["power"]),
+            fmt(r["power"]), fmt(r["sclk"]), fmt(r["tj_max"]),
         ])
     widths = [max(len(row[i]) for row in table) for i in range(len(head))]
     lines = [
@@ -266,8 +304,8 @@ def render(rows, unit, session):
 
 
 def label(session):
-    booted = session.get("versions", {}).get("bootedSystem", "")
-    tag = "stock" if "-stock-" in booted else "default"
+    kernel = session.get("versions", {}).get("kernel", "")
+    tag = "zen" if "zen" in kernel else "stock"
     return f"{tag}/{'load' if session.get('load') else 'idle'}"
 
 

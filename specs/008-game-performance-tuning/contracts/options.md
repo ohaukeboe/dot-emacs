@@ -32,6 +32,9 @@ modules.gaming = {
           gpuPowerCap  = mkOption { type = types.nullOr (types.oneOf [ types.ints.positive
                                       (types.strMatching "[0-9]{1,3}%") (types.enum [ "max" ]) ]);
                                     default = null; };
+          # FR-029 amendment: needs gpu.overdrive.enable; n/a without it.
+          gpuUndervoltMv = mkOption { type = types.nullOr (types.ints.between 1 200);
+                                      default = null; };
         };
       });
       # Defaults: the FR-008 set (see below).
@@ -65,6 +68,13 @@ modules.gaming = {
   # power1_cap_{min,max}; out of range = unit fails, cap stays stock.
   gpu.powerCapWatts = mkOption { type = types.nullOr types.ints.positive; default = null; };
 
+  # FR-029 amendment (ADR 0010): hardware.amdgpu.overdrive with
+  # ppfeaturemask 0xfff7ffff (kernel default + overdrive bit only).
+  gpu.overdrive.enable = mkEnableOption "amdgpu overdrive";
+
+  # ADR 0010: adopted offset in mV below stock, set at boot after the cap.
+  gpu.undervoltMv = mkOption { type = types.nullOr (types.ints.between 1 200); default = null; };
+
   # Phase 2, FR-019: adopted per-game tunings, merged into Steam's env.
   tunings.env = mkOption { type = types.attrsOf types.str; default = { }; };
 };
@@ -72,22 +82,25 @@ modules.gaming = {
 
 ## Default variants (FR-008)
 
-| Name                 | Settings                                                    |
-| -------------------- | ----------------------------------------------------------- |
-| `baseline`           | none                                                        |
-| `gamemode`           | `gamemode = true`                                           |
-| `ppd-performance`    | `cpuProfile = "performance"`                                |
-| `ccd0`               | `cpus = "0-7,16-23"`                                        |
-| `scx-bpfland`        | `scx = "scx_bpfland"`                                       |
-| `scx-lavd`           | `scx = "scx_lavd"`                                          |
-| `scx-bpfland-no-s76` | `scx = "scx_bpfland"; stopSystem76 = true`                  |
-| `scx-lavd-no-s76`    | `scx = "scx_lavd"; stopSystem76 = true`                     |
-| `zen-knobs`          | `zenKnobs = true`                                           |
-| `wayland-off`        | `env.PROTON_ENABLE_WAYLAND = "0"`, proton only              |
-| `nggc`               | `env.RADV_PERFTEST = "nggc"`, proton only                   |
-| `gpu-3dfs`           | `gpuProfile = "3d-full-screen"`, proton only                |
-| `cap-max`            | `gpuPowerCap = "max"`, proton only                          |
-| `cap-95`, `cap-90`   | `gpuPowerCap = "95%"` / `"90%"`, proton only                |
+| Name                 | Settings                                                |
+| -------------------- | ------------------------------------------------------- |
+| `baseline`           | none                                                    |
+| `gamemode`           | `gamemode = true`                                       |
+| `ppd-performance`    | `cpuProfile = "performance"`                            |
+| `ccd0`               | `cpus = "0-7,16-23"`                                    |
+| `scx-bpfland`        | `scx = "scx_bpfland"`                                   |
+| `scx-lavd`           | `scx = "scx_lavd"`                                      |
+| `scx-bpfland-no-s76` | `scx = "scx_bpfland"; stopSystem76 = true`              |
+| `scx-lavd-no-s76`    | `scx = "scx_lavd"; stopSystem76 = true`                 |
+| `zen-knobs`          | `zenKnobs = true`                                       |
+| `wayland-off`        | `env.PROTON_ENABLE_WAYLAND = "0"`, proton only          |
+| `nggc`               | `env.RADV_PERFTEST = "nggc"`, proton only               |
+| `gpu-3dfs`           | `gpuProfile = "3d-full-screen"`, proton only            |
+| `cap-max`            | `gpuPowerCap = "max"`, proton only                      |
+| `cap-95`, `cap-90`   | `gpuPowerCap = "95%"` / `"90%"`, proton only            |
+| `uv-50`, `uv-75`     | `gpuUndervoltMv = 50` / `75`, proton only               |
+| `uv-50-cap-max`      | `gpuUndervoltMv = 50; gpuPowerCap = "max"`, proton only |
+| `uv-50-300w`/`310w`  | `uv-50` plus `gpuPowerCap = 300` / `310`, proton only   |
 
 `no-ntsync` from the research note is not a default: ntsync is on and
 needs no decision. Users add variants by adding an attrset entry.
@@ -101,6 +114,7 @@ needs no decision. Users add variants by adding an attrset entry.
   message names `common/system/system.nix`.
 - `gpu.powerCapWatts` set requires an amdgpu GPU (`hardware.amdgpu` or the
   `amdgpu` early-KMS module present).
+- `gpu.undervoltMv` set requires `gpu.overdrive.enable`.
 
 ## Machine wiring (`machines/machines.nix`, desktop)
 

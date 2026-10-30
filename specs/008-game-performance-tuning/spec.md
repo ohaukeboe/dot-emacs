@@ -443,8 +443,12 @@ describes with the command it gives.
   several lowered limits qualify, the lowest one wins.
 - **FR-028**: An adopted power limit MUST apply at every boot, and MUST be
   revertible to the stock limit with one configuration change.
-- **FR-029**: This feature MUST NOT change GPU voltages or clock offsets, or
-  set a power limit outside the firmware's allowed range.
+- **FR-029**: This feature MUST NOT raise GPU voltages, change clock
+  offsets, or set a power limit outside the driver's allowed range. Amended
+  2026-10-30 at the user's request: a voltage *offset below stock* (an
+  undervolt, at most 200 mV) is allowed as a benchmark variant once amdgpu
+  overdrive is enabled (`modules.gaming.gpu.overdrive.enable`), and the
+  power limit may then use overdrive's wider range. See ADR 0010.
 
 ### Key Entities
 
@@ -528,7 +532,8 @@ describes with the command it gives.
   higher on this CPU.
 - The firmware-allowed power-limit range on this card is 238–290 W, with
   265 W stock, and the driver accepts the whole range without the overdrive
-  feature unlocked (see `research.md`). Overdrive stays locked.
+  feature unlocked (see `research.md`). Overdrive was locked until the
+  FR-029 amendment of 2026-10-30.
 - The Steam extest input shim and the desktop UI scaling variable are kept.
   They serve Steam Input and scaling under Wayland, not gamescope.
 - The research report's section on gamescope (recommendation 8) and its

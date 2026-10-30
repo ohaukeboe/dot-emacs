@@ -71,6 +71,37 @@ in
       workloads = protonOnly;
       gpuPowerCap = "90%";
     };
+    # Undervolts need modules.gaming.gpu.overdrive.enable; n/a without it.
+    uv-50 = {
+      description = "GPU voltage 50 mV below stock (overdrive)";
+      workloads = protonOnly;
+      gpuUndervoltMv = 50;
+    };
+    # -100 mV hung the GPU in Cyberpunk on 2026-10-30, twice.
+    uv-75 = {
+      description = "GPU voltage 75 mV below stock (overdrive)";
+      workloads = protonOnly;
+      gpuUndervoltMv = 75;
+    };
+    uv-50-cap-max = {
+      description = "GPU voltage 50 mV below stock and the overdrive power limit";
+      workloads = protonOnly;
+      gpuUndervoltMv = 50;
+      gpuPowerCap = "max";
+    };
+    # uv-50 at 290 W ran 24 MHz under the 330 W clock ceiling.
+    uv-50-300w = {
+      description = "GPU voltage 50 mV below stock and a 300 W limit";
+      workloads = protonOnly;
+      gpuUndervoltMv = 50;
+      gpuPowerCap = 300;
+    };
+    uv-50-310w = {
+      description = "GPU voltage 50 mV below stock and a 310 W limit";
+      workloads = protonOnly;
+      gpuUndervoltMv = 50;
+      gpuPowerCap = 310;
+    };
   };
 
   workloads =

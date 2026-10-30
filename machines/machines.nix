@@ -27,13 +27,15 @@
       }
       { modules.cosmic-de.enable = true; }
       { modules.gaming.enable = true; }
-      # Stock kernel and the card's maximum power limit, decided by
-      # game-bench (docs/gaming-benchmarks.md).
+      # Stock kernel and the GPU's overdrive power limit with a -50 mV
+      # undervolt, decided by game-bench (docs/gaming-benchmarks.md).
       (
         { pkgs, lib, ... }:
         {
           boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
-          modules.gaming.gpu.powerCapWatts = 290;
+          modules.gaming.gpu.overdrive.enable = true;
+          modules.gaming.gpu.powerCapWatts = 330;
+          modules.gaming.gpu.undervoltMv = 50;
         }
       )
       { modules.sshd.enable = true; }

@@ -6,7 +6,7 @@
 # GPU and sudo, which a build sandbox cannot; quickstart.md covers those.
 # This checks what decides results and what protects normal play:
 #   - summary: medians, a short run excluded, the noise flag, the game's own
-#     frame log with windowed power, Factorio ticks.
+#     frame log with windowed power, GPU clock and temperature, Factorio ticks.
 #   - compare: warns when Mesa differs, not when only the kernel does.
 #   - game-bench-wrap: passes through with no lock, a dead lock, or no
 #     run.env, and applies run.env only for a live session.
@@ -55,10 +55,12 @@ runCommand "game-bench"
     }
 
     session_json() { # dir workload kind variants mesa booted
+      local kernel=7.2.11-zen1
+      case $6 in *-stock-*) kernel=7.2.11 ;; esac
       mkdir -p "$1"
       cat > "$1/session.json" <<EOF
     {"workload":"$2","kind":"$3","variants":$4,"na":[],"runs":3,"load":false,
-     "versions":{"mesa":"$5","kernel":"7.2.11","bootedSystem":"$6"}}
+     "versions":{"mesa":"$5","kernel":"$kernel","bootedSystem":"$6"}}
     EOF
     }
 
@@ -101,6 +103,21 @@ runCommand "game-bench"
     awk -F'\t' '$1 == "baseline" { exit !($4 > 49.9 && $4 < 50.1 && $10 > 199 && $10 < 201) }' \
       $g/summary.tsv || fail "game log and windowed power not used: $(cat $g/summary.tsv)"
 
+    # gpu.csv wins over power.csv: median power and GFX clock and the peak
+    # junction temperature, all inside the pass (1900-2000); a blank cell is
+    # skipped, and the 105 C sample after the pass does not count.
+    {
+      echo "epoch,power_uw,sclk_hz,mclk_hz,edge_mc,junction_mc,mem_mc,fan_rpm,busy_pct"
+      echo "1850.5,50000000,500000000,96000000,40000,45000,50000,600,0"
+      echo "1950.5,280000000,2400000000,1249000000,70000,90000,80000,1800,99"
+      echo "1960.5,290000000,,1249000000,71000,95000,81000,1850,99"
+      echo "1990.5,270000000,2500000000,1249000000,72000,92000,82000,1900,99"
+      echo "2050.5,60000000,500000000,96000000,60000,105000,70000,1500,0"
+    } > $g/baseline/1/gpu.csv
+    game-bench-summary summarise $g > /dev/null
+    awk -F'\t' '$1 == "baseline" { exit !($10 == "280.00" && $11 == 2450 && $12 == 95) }' \
+      $g/summary.tsv || fail "gpu.csv power, clock or junction wrong: $(cat $g/summary.tsv)"
+
     # --- summary, native (Factorio) ------------------------------------
     f=native
     session_json $f factorio native '["baseline"]' 26.2.5 nixos-system-desktop-26.11
@@ -124,6 +141,7 @@ runCommand "game-bench"
     game-bench-summary compare $s $k > cmp.txt
     grep -q "versions differ" cmp.txt && fail "kernel-only difference must not warn: $(cat cmp.txt)"
     grep -q "stock/idle" cmp.txt || fail "stock session not labelled: $(cat cmp.txt)"
+    grep -q "zen/idle" cmp.txt || fail "Zen session not labelled: $(cat cmp.txt)"
 
     m=mesa
     session_json $m cyberpunk proton '["baseline","gamemode"]' 26.3.0 nixos-system-desktop-26.11

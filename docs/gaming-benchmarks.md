@@ -116,6 +116,25 @@ limit. Zen, idle; the stock session agrees within spread.
   4.1%, beyond the spread, so frame rates do not stay within noise.
 - **wayland-off, nggc, gpu-3dfs: drop.** No difference beyond the spread.
 
+### GPU undervolt (2026-10-30)
+
+Stock kernel, idle, same scene. Overdrive on (ADR 0010); the offset is set
+after the power limit. `uv-75` and `uv-100` hung the GPU and were dropped.
+
+| Variant       | p1           | avg          | Power W | GPU MHz | Tj max C |
+| ------------- | ------------ | ------------ | ------- | ------- | -------- |
+| baseline      | 40.83 ± 0.22 | 47.06 ± 0.13 | 289     | 2518    | 90       |
+| uv-50         | 41.98 ± 0.37 | 48.43 ± 0.23 | 290     | 2616    | 90       |
+| uv-50-300w    | 42.14 ± 0.25 | 48.80 ± 0.15 | 298     | 2650    | 91       |
+| uv-50-310w    | 42.55 ± 0.42 | 49.16 ± 0.25 | 307     | 2677    | 93       |
+| uv-50-cap-max | 42.86 ± 0.39 | 49.89 ± 0.17 | 330     | 2740    | 96       |
+| cap-max       | 42.03 ± 0.76 | 48.71 ± 0.26 | 330     | 2648    | 96       |
+
+- **uv-50-cap-max: keep.** +5.0% p1 and +6.0% average over the 290 W
+  baseline, for 41 W more and 6 °C more junction temperature. Set with
+  `modules.gaming.gpu.powerCapWatts = 330` and `gpu.undervoltMv = 50`.
+  Pending a soak test in normal play (ADR 0010).
+
 ## Kernel
 
 Baselines only. Build time is `game-bench build-time` (Emacs, 5 runs).
@@ -164,6 +183,7 @@ Limits of this data:
 | Tuning                | Where it is set                         | Opt-out            |
 | --------------------- | --------------------------------------- | ------------------ |
 | Stock kernel          | `machines/machines.nix` (`desktop`)     | none               |
-| GPU power limit 290 W | `modules.gaming.gpu.powerCapWatts`      | none (system-wide) |
+| GPU power limit 330 W | `modules.gaming.gpu.powerCapWatts`      | none (system-wide) |
+| GPU undervolt -50 mV  | `modules.gaming.gpu.undervoltMv`        | none (system-wide) |
 | ntsync loaded at boot | `modules.gaming` (`boot.kernelModules`) | none               |
 | GameMode for Factorio | launch option `gamemoderun %command%`   | remove the option  |

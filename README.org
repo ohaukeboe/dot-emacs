@@ -76,7 +76,9 @@ game-bench compare ~/.local/share/game-bench/<session> ~/.local/share/game-bench
 #+end_src
 
 Setup and the full procedure: ~specs/008-game-performance-tuning/quickstart.md~. Results and
-decisions: ~docs/gaming-benchmarks.md~.
+decisions: ~docs/gaming-benchmarks.md~. Each Proton run logs GPU power, clocks and temperatures to
+~gpu.csv~ in its run directory. The undervolt variants (~uv-*~) need
+~modules.gaming.gpu.overdrive.enable~ (ADR 0010).
 
 * Some Tips
 

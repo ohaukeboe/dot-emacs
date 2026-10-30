@@ -60,7 +60,8 @@ gamescope session and `gamescope-wsi`.
   helper's subcommands: stopping system76-scheduler, loading a sched_ext
   scheduler, changing scheduler and I/O knobs on the stock kernel, and
   setting the GPU power limit within the firmware's range. Overdrive,
-  voltages and clocks are out of reach (FR-029).
+  voltages and clocks were out of reach (FR-029); ADR 0010 later allowed a
+  voltage offset below stock (an undervolt) with overdrive enabled.
 - GameMode needs a launch option per game, so the spec's "every game with
   no launch options" (FR-016) is not met.
 - `game-bench` drives Steam, the GPU and sudo, so the agent sandbox cannot
