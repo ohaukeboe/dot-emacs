@@ -20,6 +20,10 @@
 
 (setq mcp-server-lib-ert-server-id "lsp-mcp")
 
+;; eglot is loaded only by the tests that need it; lsp-mcp must not need it.
+(defvar eglot--servers-by-project)
+(defvar eglot-sync-connect)
+
 
 ;;; Pure helpers — no LSP required
 
@@ -181,7 +185,8 @@
     "lsp-inlay-hints"
     "lsp-document-highlight"
     "lsp-format-buffer"
-    "lsp-format-region"))
+    "lsp-format-region"
+    "lsp-restart-workspace"))
 
 (defun lsp-mcp-test--drain-registrations ()
   "Fully remove any lingering lsp-mcp registrations.
@@ -592,6 +597,219 @@ registration means a single `lsp-mcp-disable' would not remove the tool."
         (lsp-mcp--format-region "fake.el" "2" "0" "2" "3")
         ;; "abc\n" = 4 chars; line 2 col 0 = position 5
         (should (= 5 region-start))))))
+
+
+;;; Tool replies through the MCP interface
+;;
+;; These tests call the tools as an agent does, through `mcp-server-lib-ert'.
+;; `lsp' and the restart functions are stubbed; no language server runs.
+
+(define-derived-mode lsp-mcp-test-lang-mode fundamental-mode "LspMcpLang")
+(add-to-list 'auto-mode-alist '("\\.lspmcptest\\'" . lsp-mcp-test-lang-mode))
+
+(defmacro lsp-mcp-test--with-tools (&rest body)
+  "Run BODY with the lsp-mcp tools registered on a test MCP server."
+  (declare (indent 0))
+  `(unwind-protect
+       (progn
+         (lsp-mcp-test--drain-registrations)
+         (lsp-mcp-enable)
+         (mcp-server-lib-ert-with-server :tools t :resources nil
+           ,@body))
+     (lsp-mcp-test--drain-registrations)))
+
+(defun lsp-mcp-test--call-tool-error (tool params)
+  "Call TOOL with PARAMS, expect a tool error and return its text."
+  (mcp-server-lib-ert-check-text-response
+   (mcp-server-lib-process-jsonrpc-parsed
+    (mcp-server-lib-create-tools-call-request tool nil params)
+    mcp-server-lib-ert-server-id)
+   t))
+
+(defmacro lsp-mcp-test--with-lang-file (var &rest body)
+  "Bind VAR to a fresh file in `lsp-mcp-test-lang-mode', run BODY, clean up."
+  (declare (indent 1))
+  `(let ((,var (make-temp-file "lsp-mcp-test" nil ".lspmcptest" "x = 1\n")))
+     (unwind-protect (progn ,@body)
+       (when-let ((buf (find-buffer-visiting ,var)))
+         (with-current-buffer buf (set-buffer-modified-p nil))
+         (kill-buffer buf))
+       (delete-file ,var))))
+
+(defun lsp-mcp-test--run-timers ()
+  "Let pending zero-delay timers fire."
+  (accept-process-output nil 0.05))
+
+(defun lsp-mcp-test--make-workspace (server-id root)
+  "Return an initialized lsp-mode workspace for SERVER-ID rooted at ROOT."
+  (make-lsp--workspace :client (make-lsp--client :server-id server-id)
+                       :root root
+                       :status 'initialized))
+
+(defun lsp-mcp-test--attach-ready-server (file)
+  "Open FILE as the user would, with an initialized lsp-mode server attached."
+  (with-current-buffer (find-file-noselect file)
+    (setq-local lsp-mode t)
+    (setq-local lsp--buffer-workspaces
+                (list (lsp-mcp-test--make-workspace 'test-ls
+                                                    (file-name-directory file))))))
+
+(ert-deftest lsp-mcp-test-cold-server-replies-starting-at-once ()
+  "A file whose server is not up gets a retry reply; the start is scheduled."
+  (let ((lsp-mcp-test-lang-mode-hook '(lsp-deferred))
+        (lsp-calls 0))
+    (cl-letf (((symbol-function 'lsp-deferred) #'ignore)
+              ((symbol-function 'lsp) (lambda (&rest _) (cl-incf lsp-calls))))
+      (lsp-mcp-test--with-lang-file file
+        (lsp-mcp-test--with-tools
+          (let ((start (float-time))
+                (reply (lsp-mcp-test--call-tool-error
+                        "lsp-hover" `((file . ,file) (line . 1) (column . 0)))))
+            (should (string= (format "LSP server for %s is starting; retry in a few seconds."
+                                     file)
+                             reply))
+            (should (< (- (float-time) start) 1))
+            ;; Not started inside the tool call, but right after it.
+            (should (= 0 lsp-calls))
+            (lsp-mcp-test--run-timers)
+            (should (= 1 lsp-calls))
+            ;; The buffer lsp-mcp opened stays alive for the server.
+            (should (find-buffer-visiting file))))))))
+
+(ert-deftest lsp-mcp-test-retry-on-starting-server-starts-once ()
+  "Retrying while lsp-mcp's own buffer is still starting does not start twice."
+  (let ((lsp-mcp-test-lang-mode-hook '(lsp-deferred))
+        (lsp-calls 0))
+    (cl-letf (((symbol-function 'lsp-deferred) #'ignore)
+              ((symbol-function 'lsp)
+               (lambda (&rest _) (cl-incf lsp-calls) (setq-local lsp-mode t))))
+      (lsp-mcp-test--with-lang-file file
+        (lsp-mcp-test--with-tools
+          (let ((params `((file . ,file) (line . 1) (column . 0))))
+            (lsp-mcp-test--call-tool-error "lsp-hover" params)
+            (lsp-mcp-test--run-timers)
+            (should (string-match-p "is starting; retry"
+                                    (lsp-mcp-test--call-tool-error "lsp-hover" params)))
+            (lsp-mcp-test--run-timers)
+            (should (= 1 lsp-calls))))))))
+
+(ert-deftest lsp-mcp-test-no-server-start-in-users-open-buffer ()
+  "A buffer the user already had open never gets a server from lsp-mcp."
+  (let ((lsp-mcp-test-lang-mode-hook '(lsp-deferred))
+        (lsp-calls 0))
+    (cl-letf (((symbol-function 'lsp-deferred) #'ignore)
+              ((symbol-function 'lsp) (lambda (&rest _) (cl-incf lsp-calls))))
+      (lsp-mcp-test--with-lang-file file
+        (find-file-noselect file)
+        (lsp-mcp-test--with-tools
+          (should (string= (format "lsp-mode is not active in %s (major-mode: lsp-mcp-test-lang-mode)"
+                                   file)
+                           (lsp-mcp-test--call-tool-error
+                            "lsp-hover" `((file . ,file) (line . 1) (column . 0)))))
+          (lsp-mcp-test--run-timers)
+          (should (= 0 lsp-calls)))))))
+
+(ert-deftest lsp-mcp-test-mode-without-lsp-is-not-active ()
+  (let ((lsp-mcp-test-lang-mode-hook nil)
+        (lsp-calls 0))
+    (cl-letf (((symbol-function 'lsp) (lambda (&rest _) (cl-incf lsp-calls))))
+      (lsp-mcp-test--with-lang-file file
+        (lsp-mcp-test--with-tools
+          (should (string-match-p "lsp-mode is not active"
+                                  (lsp-mcp-test--call-tool-error
+                                   "lsp-hover" `((file . ,file) (line . 1) (column . 0)))))
+          (lsp-mcp-test--run-timers)
+          (should (= 0 lsp-calls)))))))
+
+(ert-deftest lsp-mcp-test-ready-server-answers ()
+  "A buffer with an initialized server attached is queried right away."
+  (let ((lsp-mcp-test-lang-mode-hook nil))
+    (cl-letf (((symbol-function 'lsp-request)
+               (lambda (&rest _) (list :contents "the docs"))))
+      (lsp-mcp-test--with-lang-file file
+        (lsp-mcp-test--attach-ready-server file)
+        (lsp-mcp-test--with-tools
+          (should (string= "the docs"
+                           (mcp-server-lib-ert-call-tool
+                            "lsp-hover" `((file . ,file) (line . 1) (column . 0))))))))))
+
+(ert-deftest lsp-mcp-test-request-timeout-replies-retry ()
+  "Requests run with a 3 s timeout; a timeout asks the agent to retry."
+  (let ((lsp-mcp-test-lang-mode-hook nil)
+        seen-timeout)
+    (cl-letf (((symbol-function 'lsp-request)
+               (lambda (method &rest _)
+                 (setq seen-timeout lsp-response-timeout)
+                 (error "Timeout while waiting for response.  Method: %s" method))))
+      (lsp-mcp-test--with-lang-file file
+        (lsp-mcp-test--attach-ready-server file)
+        (lsp-mcp-test--with-tools
+          (should (string= "LSP request timed out; retry"
+                           (lsp-mcp-test--call-tool-error
+                            "lsp-hover" `((file . ,file) (line . 1) (column . 0)))))
+          (should (= 3 seen-timeout)))))))
+
+
+;;; lsp-restart-workspace
+
+(defun lsp-mcp-test--session-with (root &rest workspaces)
+  "Return an lsp-mode session holding WORKSPACES for folder ROOT."
+  (let ((session (make-lsp-session :folders (list root))))
+    (puthash root workspaces (lsp-session-folder->servers session))
+    session))
+
+(defmacro lsp-mcp-test--with-project (root &rest body)
+  "Bind ROOT to a fresh project directory around BODY, with no servers."
+  (declare (indent 1))
+  `(let* ((,root (file-name-as-directory (make-temp-file "lsp-mcp-root" t)))
+          (lsp--session (make-lsp-session))
+          (project-find-functions nil))
+     (unwind-protect (progn ,@body)
+       (delete-directory ,root t))))
+
+(ert-deftest lsp-mcp-test-restart-lsp-mode-workspace ()
+  (lsp-mcp-test--with-project root
+    (let* ((ws (lsp-mcp-test--make-workspace 'ts-ls root))
+           (lsp--session (lsp-mcp-test--session-with root ws))
+           restarted)
+      (cl-letf (((symbol-function 'lsp-workspace-restart)
+                 (lambda (w) (push w restarted))))
+        (lsp-mcp-test--with-tools
+          (should (string= "Restarted: ts-ls"
+                           (mcp-server-lib-ert-call-tool
+                            "lsp-restart-workspace"
+                            `((file . ,(expand-file-name "src/main.ts" root))))))
+          (should (equal (list ws) restarted)))))))
+
+(ert-deftest lsp-mcp-test-restart-eglot-server ()
+  (require 'eglot)
+  (lsp-mcp-test--with-project root
+    (let ((project-find-functions (list (lambda (_dir) (cons 'transient root))))
+          (eglot--servers-by-project (make-hash-table :test #'equal))
+          restarted sync-connect)
+      (puthash (cons 'transient root) (list 'fake-server) eglot--servers-by-project)
+      (cl-letf (((symbol-function 'eglot--server-info)
+                 (lambda (_s) (list :name "vscode-json-language-server")))
+                ((symbol-function 'eglot-reconnect)
+                 (lambda (s &rest _)
+                   (setq sync-connect eglot-sync-connect)
+                   (push s restarted))))
+        (lsp-mcp-test--with-tools
+          (should (string= "Restarted: vscode-json-language-server"
+                           (mcp-server-lib-ert-call-tool
+                            "lsp-restart-workspace"
+                            `((file . ,(expand-file-name "data.json" root))))))
+          (should (equal '(fake-server) restarted))
+          ;; Reconnecting must not wait for the server to come back.
+          (should-not sync-connect))))))
+
+(ert-deftest lsp-mcp-test-restart-without-server ()
+  (lsp-mcp-test--with-project root
+    (lsp-mcp-test--with-tools
+      (should (string= "no server running"
+                       (mcp-server-lib-ert-call-tool
+                        "lsp-restart-workspace"
+                        `((file . ,(expand-file-name "main.ts" root)))))))))
 
 
 (provide 'lsp-mcp-test)

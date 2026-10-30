@@ -45,59 +45,84 @@ The nearest mode with such a hook decides."
 
 ;;; Helpers
 
-(defconst lsp-mcp--init-timeout 15
-  "Seconds to wait for an LSP workspace to reach `initialized' status.")
+;; mcp-server-lib has no async tools: a tool holds Emacs until it returns.
+;; So tools never wait for a server to start, and requests time out fast.
+
+(defconst lsp-mcp--response-timeout 3
+  "Seconds a tool waits for an LSP response; binds `lsp-response-timeout'.")
+
+(defvar-local lsp-mcp--own-buffer nil
+  "Non-nil in a buffer lsp-mcp opened itself, where it may start a server.")
+(put 'lsp-mcp--own-buffer 'permanent-local t)
 
 (defun lsp-mcp--workspaces-ready-p ()
   "Return non-nil when all workspaces for current buffer are initialized."
-  (when-let ((workspaces (lsp-workspaces)))
+  (when-let ((workspaces (and (bound-and-true-p lsp-mode) (lsp-workspaces))))
     (cl-every (lambda (ws) (eq (lsp--workspace-status ws) 'initialized))
               workspaces)))
 
-(defun lsp-mcp--accept-output-until (predicate timeout)
-  "Pump process output until PREDICATE returns non-nil or TIMEOUT seconds pass.
-Return non-nil if PREDICATE eventually held."
-  (let ((deadline (+ (float-time) timeout)))
-    (while (and (< (float-time) deadline)
-                (not (funcall predicate)))
-      (accept-process-output nil 0.1))
-    (funcall predicate)))
+(defun lsp-mcp--start-server (buf)
+  "Start lsp-mode in BUF unless it is dead or already has it.
+Run from a timer, so a failure must not escape as a timer error."
+  (when (buffer-live-p buf)
+    (with-current-buffer buf
+      (unless (bound-and-true-p lsp-mode)
+        (condition-case err
+            (lsp)
+          (error (message "lsp-mcp: starting LSP in %s failed: %S"
+                          (buffer-name) err)))))))
 
 (defun lsp-mcp--ensure-lsp-buffer (file-path)
-  "Return a buffer visiting FILE-PATH with `lsp-mode' active.
-Opens the file if needed; calls `lsp' if lsp-mode is not yet active (e.g.
-when the buffer was opened via `find-file-noselect' and `lsp-deferred' is
-in use).  Throws an MCP tool error if the file is missing, lsp-mode fails
-to activate (i.e. not configured for this major-mode), or the workspace
-times out initializing."
+  "Return a buffer visiting FILE-PATH with an initialized lsp-mode server.
+Never waits for a server.  Throws an MCP tool error if the file is
+missing, its mode is not an LSP-enabled mode using lsp-mode, or the user
+already had it open without lsp-mode.  If the server is not ready yet,
+schedules its start (only in a buffer lsp-mcp opened) and throws an
+error asking the agent to retry."
   (unless (file-exists-p file-path)
     (mcp-server-lib-tool-throw (format "File not found: %s" file-path)))
   (let* ((abs (expand-file-name file-path))
          (existing (find-buffer-visiting abs))
-         (buf (or existing (find-file-noselect abs))))
+         (buf (or existing
+                  (with-current-buffer (find-file-noselect abs)
+                    (setq lsp-mcp--own-buffer t)
+                    (current-buffer)))))
     (with-current-buffer buf
-      (unless (bound-and-true-p lsp-mode)
-        (let ((mode-hook (intern (concat (symbol-name major-mode) "-hook"))))
-          (if (and (boundp mode-hook)
-                   (or (memq 'lsp (symbol-value mode-hook))
-                       (memq 'lsp-deferred (symbol-value mode-hook))))
-              (lsp)
-            (mcp-server-lib-tool-throw
-             (format "lsp-mode is not active in %s (major-mode: %s)"
-                     file-path major-mode)))))
-      (unless (lsp-mcp--accept-output-until
-               (lambda () (bound-and-true-p lsp-mode))
-               lsp-mcp--init-timeout)
+      (cond
+       ((lsp-mcp--workspaces-ready-p) buf)
+       ((or (not (eq (lsp-mcp-enabled-mode-p) 'lsp-mode))
+            (and (not lsp-mcp--own-buffer)
+                 (not (bound-and-true-p lsp-mode))))
         (mcp-server-lib-tool-throw
          (format "lsp-mode is not active in %s (major-mode: %s)"
                  file-path major-mode)))
-      (unless (lsp-mcp--accept-output-until
-               #'lsp-mcp--workspaces-ready-p
-               lsp-mcp--init-timeout)
+       (t
+        (unless (bound-and-true-p lsp-mode)
+          (run-at-time 0 nil #'lsp-mcp--start-server buf))
         (mcp-server-lib-tool-throw
-         (format "Timed out after %ds waiting for LSP workspace in %s"
-                 lsp-mcp--init-timeout file-path))))
-    buf))
+         (format "LSP server for %s is starting; retry in a few seconds."
+                 file-path)))))))
+
+(defun lsp-mcp--timeout-error-p (err)
+  "Return non-nil if ERR is lsp-mode giving up waiting for a response."
+  (or (eq (car err) 'lsp-timed-out-error)
+      (string-prefix-p "Timeout while waiting for response"
+                       (error-message-string err))))
+
+(defmacro lsp-mcp--with-tool-handling (&rest body)
+  "Run tool BODY with a short LSP timeout, turning errors into tool errors.
+Tool errors pass through unchanged, a timed-out request asks the agent to
+retry, and any other error is reported with its data."
+  (declare (indent 0) (debug t))
+  `(condition-case err
+       (let ((lsp-response-timeout lsp-mcp--response-timeout))
+         ,@body)
+     (mcp-server-lib-tool-error (signal (car err) (cdr err)))
+     (error
+      (mcp-server-lib-tool-throw
+       (if (lsp-mcp--timeout-error-p err)
+           "LSP request timed out; retry"
+         (format "Error: %S" err))))))
 
 (defun lsp-mcp--position-params (file-path line column)
   "LSP TextDocumentPositionParams for FILE-PATH at LINE (1-indexed) COLUMN (0-indexed)."
@@ -166,7 +191,7 @@ MCP Parameters:
   file   - Absolute path to the file
   line   - Line number (1-indexed)
   column - Column number (0-indexed)"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
          (params (lsp-mcp--position-params file
                                            (lsp-mcp--parse-int line)
@@ -182,7 +207,7 @@ MCP Parameters:
   file   - Absolute path to the file
   line   - Line number (1-indexed)
   column - Column number (0-indexed)"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let* ((buf (lsp-mcp--ensure-lsp-buffer file))
           (params (append (lsp-mcp--position-params file
                                                     (lsp-mcp--parse-int line)
@@ -199,7 +224,7 @@ MCP Parameters:
   file   - Absolute path to the file
   line   - Line number (1-indexed)
   column - Column number (0-indexed)"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
          (params (lsp-mcp--position-params file
                                            (lsp-mcp--parse-int line)
@@ -228,7 +253,7 @@ MCP Parameters:
 
 MCP Parameters:
   file - Absolute path to the file"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
      (with-current-buffer buf
        (let* ((path (expand-file-name file))
@@ -255,7 +280,7 @@ MCP Parameters:
 
 MCP Parameters:
   query - Search string for symbol names (empty string returns all symbols)"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((any-buf (lsp-mcp--any-lsp-buffer)))
      (unless any-buf
        (mcp-server-lib-tool-throw "No active LSP buffers found"))
@@ -312,7 +337,7 @@ Parents appear before their children in the returned list."
 
 MCP Parameters:
   file - Absolute path to the file"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
      (with-current-buffer buf
        (let* ((params (list :textDocument
@@ -345,7 +370,7 @@ MCP Parameters:
   file   - Absolute path to the file
   line   - Line number (1-indexed)
   column - Column number (0-indexed)"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
          (params (lsp-mcp--position-params file
                                            (lsp-mcp--parse-int line)
@@ -361,7 +386,7 @@ MCP Parameters:
   file   - Absolute path to the file
   line   - Line number (1-indexed)
   column - Column number (0-indexed)"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
          (params (lsp-mcp--position-params file
                                            (lsp-mcp--parse-int line)
@@ -390,7 +415,7 @@ MCP Parameters:
   line      - Line number (1-indexed)
   column    - Column number (0-indexed)
   direction - \"incoming\" for callers, \"outgoing\" for callees"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let* ((buf (lsp-mcp--ensure-lsp-buffer file))
           (params (lsp-mcp--position-params file
                                             (lsp-mcp--parse-int line)
@@ -428,7 +453,7 @@ MCP Parameters:
   file   - Absolute path to the file
   line   - Line number (1-indexed)
   column - Column number (0-indexed)"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
          (params (lsp-mcp--position-params file
                                            (lsp-mcp--parse-int line)
@@ -481,7 +506,7 @@ MCP Parameters:
 
 MCP Parameters:
   file - Absolute path to the file"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
      (with-current-buffer buf
        (let* ((params
@@ -522,7 +547,7 @@ MCP Parameters:
   file   - Absolute path to the file
   line   - Line number (1-indexed)
   column - Column number (0-indexed)"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file))
          (params (lsp-mcp--position-params file
                                            (lsp-mcp--parse-int line)
@@ -563,7 +588,7 @@ Skips formatting if `lsp-format-buffer-on-save' is nil in the buffer.
 
 MCP Parameters:
   file - Absolute path to the file"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
      (with-current-buffer buf
        (if lsp-format-buffer-on-save
@@ -580,7 +605,7 @@ MCP Parameters:
   start-column - Start column (0-indexed)
   end-line     - End line (1-indexed)
   end-column   - End column (0-indexed)"
-  (mcp-server-lib-with-error-handling
+  (lsp-mcp--with-tool-handling
    (let ((buf (lsp-mcp--ensure-lsp-buffer file)))
      (with-current-buffer buf
        (if lsp-format-buffer-on-save
@@ -592,6 +617,50 @@ MCP Parameters:
              (save-buffer)
              "formatted")
          "skipped (lsp-format-buffer-on-save is nil)")))))
+
+;;; Restarting servers
+
+;; eglot is optional: lsp-mcp loads without it and restarts its servers
+;; only when it is loaded.
+(defvar eglot--servers-by-project)
+(defvar eglot-sync-connect)
+(declare-function eglot-reconnect "eglot" (server &optional interactive))
+(declare-function eglot--server-info "eglot" (server))
+(declare-function jsonrpc-name "jsonrpc" (connection))
+
+(defun lsp-mcp--restart-lsp-mode (file)
+  "Restart the lsp-mode workspaces of FILE's project; return their names."
+  (when-let* ((session (lsp-session))
+              (folder (lsp-find-session-folder session file)))
+    (mapcar (lambda (ws)
+              (lsp-workspace-restart ws)
+              (symbol-name (lsp--workspace-server-id ws)))
+            (gethash folder (lsp-session-folder->servers session)))))
+
+(defun lsp-mcp--restart-eglot (file)
+  "Reconnect the eglot servers of FILE's project; return their names.
+Does not wait for the servers to come back up."
+  (when-let* (((featurep 'eglot))
+              (project (project-current nil (file-name-directory file))))
+    (mapcar (lambda (server)
+              (let ((eglot-sync-connect nil))
+                (eglot-reconnect server))
+              (or (plist-get (eglot--server-info server) :name)
+                  (jsonrpc-name server)))
+            (gethash project eglot--servers-by-project))))
+
+(defun lsp-mcp--restart-workspace (file)
+  "Restart the language servers of FILE's project.
+
+MCP Parameters:
+  file - Absolute path to a file in the project"
+  (lsp-mcp--with-tool-handling
+    (let* ((abs (expand-file-name file))
+           (names (append (lsp-mcp--restart-lsp-mode abs)
+                          (lsp-mcp--restart-eglot abs))))
+      (if names
+          (concat "Restarted: " (string-join names ", "))
+        "no server running"))))
 
 ;;; Enable / Disable
 
@@ -680,7 +749,12 @@ MCP Parameters:
    #'lsp-mcp--format-region
    :id "lsp-format-region"
    :server-id lsp-mcp--server-id
-   :description "Format a region of a file using the LSP server and save it. start-line/end-line are 1-indexed, start-column/end-column are 0-indexed. Returns \"formatted\"."))
+   :description "Format a region of a file using the LSP server and save it. start-line/end-line are 1-indexed, start-column/end-column are 0-indexed. Returns \"formatted\".")
+  (mcp-server-lib-register-tool
+   #'lsp-mcp--restart-workspace
+   :id "lsp-restart-workspace"
+   :server-id lsp-mcp--server-id
+   :description "Restart the language servers (lsp-mode or eglot) for the project containing file. Call it yourself, without asking the user, after changing dependencies (once they are installed), build configuration or generated code, so diagnostics and navigation are not stale. Returns at once without waiting for the servers to come back: \"Restarted: <server names>\" or \"no server running\"."))
 
 ;;;###autoload
 (defun lsp-mcp-disable ()
@@ -690,7 +764,7 @@ MCP Parameters:
                 "lsp-get-diagnostics" "lsp-workspace-symbols" "lsp-document-symbols"
                 "lsp-find-implementations" "lsp-find-type-definition" "lsp-call-hierarchy"
                 "lsp-signature-help" "lsp-inlay-hints" "lsp-document-highlight"
-                "lsp-format-buffer" "lsp-format-region"))
+                "lsp-format-buffer" "lsp-format-region" "lsp-restart-workspace"))
     (mcp-server-lib-unregister-tool id lsp-mcp--server-id)))
 
 (provide 'lsp-mcp)

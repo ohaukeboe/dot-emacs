@@ -22,6 +22,7 @@ LSP servers already configured in Emacs.
 | `lsp-document-highlight`   | Read/write occurrences of a symbol within the same file              |
 | `lsp-format-buffer`        | Format an entire file via LSP and save it                            |
 | `lsp-format-region`        | Format a region of a file via LSP and save it                        |
+| `lsp-restart-workspace`    | Restart the lsp-mode or eglot servers of a file's project            |
 
 All tools return JSON. Position tools return `{file, line, column}` arrays.
 `line` is 1-indexed; `column` is 0-indexed (LSP convention).
@@ -63,8 +64,20 @@ to `mcp-server-lib-after-start-hook`.
 ## How it works
 
 When a tool is called with a file path, `lsp-mcp` opens the file in a buffer
-(if not already open), starts an LSP workspace if needed, waits up to 15 s for
-initialization, then issues the LSP request synchronously and returns JSON.
+(if not already open) and issues the LSP request synchronously, returning JSON.
+
+`mcp-server-lib` tools block Emacs until they return, so `lsp-mcp` never waits
+for a server:
+
+- If the server is not ready, the tool schedules its start on a timer and
+  fails at once with `LSP server for <file> is starting; retry in a few
+  seconds.`
+- A server is started only when the file's mode is an LSP-enabled mode
+  (`lsp-mcp-enabled-mode-p`) using lsp-mode, and only in a buffer `lsp-mcp`
+  opened itself. A buffer you already had open keeps its state: if lsp-mode is
+  not active there, the tool reports `lsp-mode is not active`.
+- Requests time out after 3 s (`lsp-response-timeout`) and then fail with
+  `LSP request timed out; retry`.
 
 Buffers opened this way remain open; Emacs reuses them on subsequent calls.
 
@@ -256,6 +269,18 @@ end-column   – end column (0-indexed)
 
 Formats the specified region using the LSP server
 (`textDocument/rangeFormatting`) and saves the file. Returns `"formatted"`.
+
+### `lsp-restart-workspace`
+
+```
+file – absolute path to a file in the project
+```
+
+Restarts the servers attached to the file's project: `lsp-workspace-restart`
+for lsp-mode, `eglot-reconnect` for eglot (when eglot is loaded). Returns at
+once, without waiting for the servers to come back: `"Restarted: <names>"` or
+`"no server running"`. Agents should call it after dependency, build-config or
+generated-code changes.
 
 ## Running tests
 

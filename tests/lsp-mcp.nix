@@ -46,6 +46,13 @@ runCommand "test-lsp-mcp"
     cp ${../workstation/emacs/packages/lsp-mcp/lsp-mcp-test.el} package/lsp-mcp-test.el
     cd package
 
+    # The eglot dependency is soft: loading lsp-mcp must not load eglot.
+    if ! emacs -batch -L . -l lsp-mcp.el \
+      --eval '(when (featurep (quote eglot)) (error "lsp-mcp loaded eglot"))'; then
+      echo "lsp-mcp must load without eglot"
+      exit 1
+    fi
+
     if ! emacs -batch -L . -l lsp-mcp-test.el -f ert-run-tests-batch-and-exit; then
       echo "lsp-mcp ERT suite failed (see the report above)"
       exit 1
