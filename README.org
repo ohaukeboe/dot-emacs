@@ -53,11 +53,13 @@ The ~silent-boot~ module (on by default) shows an animated NixOS Plymouth splash
 * Gaming
 
 ~modules.gaming~ (enabled on ~desktop~) sets up Steam with GE-Proton, Proton's Wayland driver and
-GameMode. Design and decisions: ~specs/008-game-performance-tuning/~.
+GameMode. Design: ~specs/008-game-performance-tuning/~. Measured decisions (stock kernel, GPU power
+limit 290 W, GameMode for Factorio): ~docs/gaming-benchmarks.md~.
 
 - GameMode for a game: set its launch options to ~gamemoderun %command%~ (a global preload breaks
   the Steam client).
-- Boot the stock kernel instead of Zen: hold =Space= at power-on and pick the entry tagged ~stock~.
+- Compare Zen against stock again: set ~boot.kernelPackages~ back to Zen and turn on
+  ~modules.gaming.kernelComparison.enable~; it adds a boot entry tagged ~stock~.
 
 ** Benchmarking
 

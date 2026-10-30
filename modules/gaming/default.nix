@@ -275,6 +275,11 @@ in
       };
     };
 
+    # Proton uses ntsync when /dev/ntsync exists, else the slower fsync.
+    # Zen builds it in; stock kernels build it as a module nothing loads
+    # (docs/zen-kernel-nobara-research.md).
+    boot.kernelModules = [ "ntsync" ];
+
     # renice and core parking need the group (gamemode example.ini).
     users.users.${config.user.username}.extraGroups = [ "gamemode" ];
 

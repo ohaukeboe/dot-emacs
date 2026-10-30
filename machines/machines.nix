@@ -27,8 +27,15 @@
       }
       { modules.cosmic-de.enable = true; }
       { modules.gaming.enable = true; }
-      # A "stock" boot entry for benchmarking Zen against stock (specs/008).
-      { modules.gaming.kernelComparison.enable = true; }
+      # Stock kernel and the card's maximum power limit, decided by
+      # game-bench (docs/gaming-benchmarks.md).
+      (
+        { pkgs, lib, ... }:
+        {
+          boot.kernelPackages = lib.mkForce pkgs.linuxPackages_latest;
+          modules.gaming.gpu.powerCapWatts = 290;
+        }
+      )
       { modules.sshd.enable = true; }
       { modules.silent-boot.earlyKms.modules = [ "amdgpu" ]; }
       # { sops.ageKey = "tpm"; }
