@@ -349,6 +349,11 @@ in
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
     # `bd remember` is the single memory store; see docs/adr/0008-agent-context-hygiene.md.
     programs.claude-code.settings.autoMemoryEnabled = false;
+    # Start worktrees (subagent `isolation: worktree` too) from the local HEAD,
+    # not origin's default branch. From main, an agent has to reset onto the
+    # feature branch, and that fails in the sandbox with EBUSY whenever the
+    # branch changes the masked .claude/settings.json.
+    programs.claude-code.settings.worktree.baseRef = "head";
     # Give the CLAUDE.md git rule teeth. Prompt text only shapes what the
     # agent tries; an ask rule is enforced by the harness, and still prompts
     # inside a sandboxed auto-allow session. The Bash rules are generated from
