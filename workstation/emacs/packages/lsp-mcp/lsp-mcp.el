@@ -57,44 +57,70 @@ The nearest mode with such a hook decides."
   "Non-nil in a buffer lsp-mcp opened itself, where it may start a server.")
 (put 'lsp-mcp--own-buffer 'permanent-local t)
 
+(defvar-local lsp-mcp--start-failed nil
+  "Why starting a server in this buffer failed, or nil.
+A request then reports the failure instead of starting the server again.")
+(put 'lsp-mcp--start-failed 'permanent-local t)
+
 (defun lsp-mcp--workspaces-ready-p ()
   "Return non-nil when all workspaces for current buffer are initialized."
   (when-let ((workspaces (and (bound-and-true-p lsp-mode) (lsp-workspaces))))
     (cl-every (lambda (ws) (eq (lsp--workspace-status ws) 'initialized))
               workspaces)))
 
+(defun lsp-mcp-start-lsp ()
+  "Start lsp-mode in the current buffer with nobody there to answer it.
+Return non-nil when lsp-mode is on afterwards; errors propagate.  The
+project root is guessed and any question lsp-mode asks gets a \"no\".
+File watchers stay off: the server learns that at initialization, and a
+later registration would ask about watching a big repository from a
+process filter, where no binding here applies.  `lsp-deferred' never
+fires in a buffer nobody displays, hence the explicit start."
+  (let ((lsp-auto-guess-root t)
+        (lsp-restart 'ignore)
+        (lsp-enable-file-watchers nil))
+    (cl-letf (((symbol-function 'y-or-n-p) #'ignore)
+              ((symbol-function 'yes-or-no-p) #'ignore))
+      (lsp)))
+  (bound-and-true-p lsp-mode))
+
 (defun lsp-mcp--start-server (buf)
   "Start lsp-mode in BUF unless it is dead or already has it.
-Run from a timer, so a failure must not escape as a timer error.  Nobody
-is there to answer a prompt, so the project root is guessed and any
-question lsp-mode asks gets a \"no\"."
+Run from a timer, so a failure must not escape as a timer error.  A
+failure is remembered in `lsp-mcp--start-failed'."
   (when (buffer-live-p buf)
     (with-current-buffer buf
       (unless (bound-and-true-p lsp-mode)
-        (condition-case err
-            (let ((lsp-auto-guess-root t))
-              (cl-letf (((symbol-function 'y-or-n-p) #'ignore)
-                        ((symbol-function 'yes-or-no-p) #'ignore))
-                (lsp)))
-          (error (message "lsp-mcp: starting LSP in %s failed: %S"
-                          (buffer-name) err)))))))
+        (setq lsp-mcp--start-failed
+              (condition-case err
+                  (unless (lsp-mcp-start-lsp)
+                    "no language server could be started for it")
+                (error (format "%S" err))))
+        (when lsp-mcp--start-failed
+          (message "lsp-mcp: starting LSP in %s failed: %s"
+                   (buffer-name) lsp-mcp--start-failed))))))
 
 (defun lsp-mcp--ensure-lsp-buffer (file-path)
   "Return a buffer visiting FILE-PATH with an initialized lsp-mode server.
 Never waits for a server.  Throws an MCP tool error if the file is
-missing, its mode is not an LSP-enabled mode using lsp-mode, or the user
-already had it open without lsp-mode.  If the server is not ready yet,
-schedules its start (only in a buffer lsp-mcp opened) and throws an
-error asking the agent to retry."
+missing, its mode is not an LSP-enabled mode using lsp-mode, the user
+already had it open without lsp-mode, or its server failed to start.  If
+the server is not ready yet, schedules its start (only in a buffer lsp-mcp
+opened) and throws an error asking the agent to retry.  An unmodified
+buffer is first reverted if the file changed on disk, say through sed."
   (unless (file-exists-p file-path)
     (mcp-server-lib-tool-throw (format "File not found: %s" file-path)))
   (let* ((abs (expand-file-name file-path))
          (existing (find-buffer-visiting abs))
+         ;; Nobody is there to approve unsafe file-local variables.
+         (enable-local-variables :safe)
          (buf (or existing
                   (with-current-buffer (find-file-noselect abs)
                     (setq lsp-mcp--own-buffer t)
                     (current-buffer)))))
     (with-current-buffer buf
+      (unless (or (buffer-modified-p) (verify-visited-file-modtime))
+        (revert-buffer :ignore-auto :noconfirm :preserve-modes))
       (cond
        ((lsp-mcp--workspaces-ready-p) buf)
        ((or (not (eq (lsp-mcp-enabled-mode-p) 'lsp-mode))
@@ -103,6 +129,11 @@ error asking the agent to retry."
         (mcp-server-lib-tool-throw
          (format "lsp-mode is not active in %s (major-mode: %s)"
                  file-path major-mode)))
+       ((and lsp-mcp--start-failed (not (bound-and-true-p lsp-mode)))
+        (mcp-server-lib-tool-throw
+         (format (concat "lsp-mode is not active in %s: %s.  Once the server "
+                         "is installed, call lsp-restart-workspace for it.")
+                 file-path lsp-mcp--start-failed)))
        (t
         (unless (bound-and-true-p lsp-mode)
           (run-at-time 0 nil #'lsp-mcp--start-server buf))
@@ -667,10 +698,16 @@ MCP Parameters:
   (lsp-mcp--with-tool-handling
     (let* ((abs (expand-file-name file))
            (names (append (lsp-mcp--restart-lsp-mode abs)
-                          (lsp-mcp--restart-eglot abs))))
-      (if names
-          (concat "Restarted: " (string-join names ", "))
-        "no server running"))))
+                          (lsp-mcp--restart-eglot abs)))
+           (buf (find-buffer-visiting abs))
+           (failed (and buf (buffer-local-value 'lsp-mcp--start-failed buf))))
+      ;; A failed start is retried once asked, the server now installed.
+      (when failed
+        (with-current-buffer buf
+          (setq lsp-mcp--start-failed nil)))
+      (cond (names (concat "Restarted: " (string-join names ", ")))
+            (failed "no server running; the next request starts one")
+            (t "no server running")))))
 
 ;;; Enable / Disable
 

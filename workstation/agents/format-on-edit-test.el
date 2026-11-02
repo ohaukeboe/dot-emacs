@@ -330,5 +330,65 @@ The user's `lsp-format-buffer-on-save', or an eglot formatter on
         (remove-hook 'format-on-edit-test-lsp-mode-hook
                      #'format-on-edit-test--add-save-formatters)))))
 
+(ert-deftest format-on-edit-test-truename-buffer-stays ()
+  "The user's buffer visiting the file under another name is left alone."
+  (format-on-edit-test--with-stubs
+    (let* ((file (format-on-edit-test--file "k.fotl" "x\n"))
+           (link (make-temp-name
+                  (expand-file-name "fot-link" temporary-file-directory)))
+           (buffer (find-file-noselect file t)))
+      (make-symbolic-link (directory-file-name (file-name-directory file))
+                          link)
+      (unwind-protect
+          (progn
+            (format-on-edit-test--await
+             (format-on-edit-test--enqueue (expand-file-name "k.fotl" link)))
+            (should (buffer-live-p buffer))
+            (should-not (memq buffer claude-format-on-edit--owned))
+            (should (null format-on-edit-test--starts)))
+        (kill-buffer buffer)
+        (delete-file link)))))
+
+(ert-deftest format-on-edit-test-run-after-watchdog-opens-nothing ()
+  "A job the watchdog finished before it ran opens no buffer."
+  (let* ((file (format-on-edit-test--file "l.fotp" "x\n"))
+         (dir (make-temp-file "fot-out" t))
+         (job (claude-format-on-edit--job-create
+               :file file
+               :report (expand-file-name "report" dir)
+               :done (expand-file-name "done" dir))))
+    (claude-format-on-edit--finish job)
+    (claude-format-on-edit--run job)
+    (should-not (get-file-buffer file))))
+
+(ert-deftest format-on-edit-test-cleanup-of-modified-buffer-never-asks ()
+  "A buffer the hook opened is killed without a question, even modified.
+Its formatting may have been applied and then failed to save."
+  (let* ((file (format-on-edit-test--file "m.fotp" "x\n"))
+         (buffer (find-file-noselect file t)))
+    (push buffer claude-format-on-edit--owned)
+    (with-current-buffer buffer
+      (insert "unsaved"))
+    (cl-letf (((symbol-function 'read-multiple-choice)
+               (lambda (&rest _) (error "Prompted the user")))
+              ((symbol-function 'yes-or-no-p)
+               (lambda (&rest _) (error "Prompted the user")))
+              ((symbol-function 'y-or-n-p)
+               (lambda (&rest _) (error "Prompted the user"))))
+      (claude-format-on-edit--cleanup buffer))
+    (should-not (buffer-live-p buffer))
+    (should (equal (format-on-edit-test--contents file) "x\n"))))
+
+(ert-deftest format-on-edit-test-unsafe-local-variables-never-ask ()
+  "Opening a file with unsafe file-local variables asks nobody."
+  (format-on-edit-test--with-stubs
+    (let ((file (format-on-edit-test--file
+                 "n.fotp" "-*- format-on-edit-test-unsafe: 1 -*-\nBAD\n"))
+          asked)
+      (cl-letf (((symbol-function 'hack-local-variables-confirm)
+                 (lambda (&rest _) (setq asked t) nil)))
+        (format-on-edit-test--await (format-on-edit-test--enqueue file)))
+      (should-not asked))))
+
 (provide 'format-on-edit-test)
 ;;; format-on-edit-test.el ends here

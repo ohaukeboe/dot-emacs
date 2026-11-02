@@ -136,18 +136,17 @@ PRED is tried from a timer, so Emacs keeps running while it holds."
   (cond ((bound-and-true-p lsp-mode) 'lsp-mode)
         ((and (fboundp 'eglot-managed-p) (eglot-managed-p)) 'eglot)))
 
+(declare-function lsp-mcp-start-lsp "lsp-mcp")
+
 (defun claude-format-on-edit--start-server (client)
   "Start CLIENT's server for the current buffer without waiting for it.
-`lsp-deferred' never fires in a buffer nobody displays, hence the explicit
-start."
+lsp-mode goes through `lsp-mcp-start-lsp', which lsp-mcp shares, so both
+start a headless server the same way."
   (pcase client
     ('lsp-mode
-     (let ((lsp-auto-guess-root t)
-           (lsp-restart 'ignore)
-           (lsp-enable-file-watchers nil))
-       ;; No client for this major mode simply signals; the diagnostics pass
-       ;; still runs.
-       (ignore-errors (lsp))))
+     ;; No client for this major mode simply signals; the diagnostics pass
+     ;; still runs.
+     (ignore-errors (lsp-mcp-start-lsp)))
     ('eglot
      (when (and (fboundp 'eglot--guess-contact) (fboundp 'eglot--connect))
        ;; The default is to block for a few seconds on the connection.
@@ -369,17 +368,12 @@ Buffers the user already had open keep whatever they were using."
            (ignore-errors (flymake-diagnostics))))))
 
 (defun claude-format-on-edit--lsp-raw (file)
-  "The diagnostics lsp-mode holds for FILE, unconverted."
+  "The diagnostics lsp-mode holds for FILE, unconverted.
+Looked up the way lsp-mode does for a buffer: called on every poll tick, it
+must not touch the file system for each file of a large workspace."
   (when (fboundp 'lsp-diagnostics)
-    (let ((table (ignore-errors (lsp-diagnostics t)))
-          (diagnostics nil))
-      (when table
-        ;; Key spelling differs between clients, so match on the file itself.
-        (maphash (lambda (path diags)
-                   (when (ignore-errors (file-equal-p path file))
-                     (setq diagnostics diags)))
-                 table))
-      diagnostics)))
+    (when-let* ((table (ignore-errors (lsp-diagnostics t))))
+      (gethash (lsp--fix-path-casing (or buffer-file-name file)) table))))
 
 (defun claude-format-on-edit--lsp (file)
   "Diagnostics lsp-mode holds for FILE as (LINE LEVEL MESSAGE) records.
@@ -460,12 +454,19 @@ finding arrives twice."
 (defun claude-format-on-edit--cleanup (buffer)
   "Kill BUFFER but leave its language server running.
 The next edit in the same project then finds a warm server instead of paying
-for a cold start, and the user finds it already up when they open a file."
+for a cold start, and the user finds it already up when they open a file.
+A buffer the user has since displayed is theirs and stays."
   (when (buffer-live-p buffer)
     (setq claude-format-on-edit--owned
           (delq buffer claude-format-on-edit--owned))
-    (let ((lsp-keep-workspace-alive t))
-      (kill-buffer buffer))))
+    (unless (get-buffer-window-list buffer nil t)
+      ;; Unsaved changes here are formatting whose save failed; the file
+      ;; on disk is what counts.  Killing a modified buffer would ask.
+      (with-current-buffer buffer
+        (set-buffer-modified-p nil))
+      (let ((lsp-keep-workspace-alive t)
+            (kill-buffer-query-functions nil))
+        (kill-buffer buffer)))))
 
 (defun claude-format-on-edit--finish (job)
   "Write JOB's report, then its done marker, and let go of its buffer.
@@ -497,11 +498,22 @@ Safe to call more than once; only the first call does anything."
           (ignore-errors (claude-format-on-edit--cleanup buffer)))))))
 
 (defun claude-format-on-edit--run (job)
-  "Open JOB's file and start its work.  Runs from a timer."
+  "Open JOB's file and start its work.  Runs from a timer.
+Does nothing if the watchdog finished JOB first, so no buffer is opened
+that nothing would kill."
+  (unless (claude-format-on-edit--job-finished job)
+    (claude-format-on-edit--open job)))
+
+(defun claude-format-on-edit--open (job)
+  "Open JOB's file and hand it to the server step."
   (let* ((file (claude-format-on-edit--job-file job))
-         (existing (get-file-buffer file))
+         ;; Also finds a buffer visiting the file under another name, such
+         ;; as its truename, which `find-file-noselect' would return.
+         (existing (find-buffer-visiting file))
          (opened (or (not existing)
                      (memq existing claude-format-on-edit--owned)))
+         ;; Nobody is there to approve unsafe file-local variables.
+         (enable-local-variables :safe)
          ;; NOWARN: a file that changed on disk must not raise a prompt.
          (buffer (or existing
                      (claude-format-on-edit--quietly

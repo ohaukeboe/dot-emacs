@@ -774,6 +774,62 @@ any question itself, since nobody is there to answer it."
                             "lsp-hover" `((file . ,file) (line . 1) (column . 0)))))
           (should (= 3 seen-timeout)))))))
 
+(ert-deftest lsp-mcp-test-failed-start-is-reported ()
+  "A server that never comes up is reported as not active, not retried.
+Restarting the workspace lets the next request try again."
+  (let ((lsp-mcp-test-lang-mode-hook '(lsp-deferred))
+        (lsp-calls 0))
+    (cl-letf (((symbol-function 'lsp-deferred) #'ignore)
+              ;; As with no server installed: lsp-mode stays off.
+              ((symbol-function 'lsp) (lambda (&rest _) (cl-incf lsp-calls))))
+      (lsp-mcp-test--with-lang-file file
+        (lsp-mcp-test--with-tools
+          (let ((params `((file . ,file) (line . 1) (column . 0))))
+            (lsp-mcp-test--call-tool-error "lsp-hover" params)
+            (lsp-mcp-test--run-timers)
+            (should (string-match-p
+                     "lsp-mode is not active in .*: no language server"
+                     (lsp-mcp-test--call-tool-error "lsp-hover" params)))
+            (lsp-mcp-test--run-timers)
+            (should (= 1 lsp-calls))
+            (should (string= "no server running; the next request starts one"
+                             (mcp-server-lib-ert-call-tool
+                              "lsp-restart-workspace" `((file . ,file)))))
+            (should (string-match-p "is starting; retry"
+                                    (lsp-mcp-test--call-tool-error "lsp-hover" params)))
+            (lsp-mcp-test--run-timers)
+            (should (= 2 lsp-calls))))))))
+
+(ert-deftest lsp-mcp-test-stale-buffer-is-reverted ()
+  "A file rewritten behind Emacs's back is queried as it is on disk."
+  (let ((lsp-mcp-test-lang-mode-hook nil)
+        seen)
+    (cl-letf (((symbol-function 'lsp-request)
+               (lambda (&rest _) (setq seen (buffer-string)) nil)))
+      (lsp-mcp-test--with-lang-file file
+        (lsp-mcp-test--attach-ready-server file)
+        ;; As sed would, leaving a modification time Emacs has not seen.
+        (with-temp-file file (insert "x = 2\n"))
+        (set-file-times file (time-add nil 10))
+        (lsp-mcp-test--with-tools
+          (mcp-server-lib-ert-call-tool
+           "lsp-hover" `((file . ,file) (line . 1) (column . 0)))
+          (should (equal "x = 2\n" seen)))))))
+
+(ert-deftest lsp-mcp-test-unsafe-local-variables-never-ask ()
+  "Opening a file with unsafe file-local variables asks nobody."
+  (let ((lsp-mcp-test-lang-mode-hook nil)
+        asked)
+    (cl-letf (((symbol-function 'hack-local-variables-confirm)
+               (lambda (&rest _) (setq asked t) nil)))
+      (lsp-mcp-test--with-lang-file file
+        (with-temp-file file
+          (insert "-*- lsp-mcp-test-unsafe: 1 -*-\nx = 1\n"))
+        (lsp-mcp-test--with-tools
+          (lsp-mcp-test--call-tool-error
+           "lsp-hover" `((file . ,file) (line . 1) (column . 0)))
+          (should-not asked))))))
+
 
 ;;; lsp-restart-workspace
 
