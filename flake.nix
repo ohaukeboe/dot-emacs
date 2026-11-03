@@ -350,6 +350,10 @@
           # file. A package for the same reason as test-beads.
           #   nix build .#test-walkthrough -L
           test-walkthrough = nixpkgsFor.${system}.callPackage ./tests/walkthrough.nix { };
+          # The ERT suite of workstation/emacs/packages/magit-review.el; see
+          # the file. A package for the same reason as test-beads.
+          #   nix build .#test-magit-review -L
+          test-magit-review = nixpkgsFor.${system}.callPackage ./tests/magit-review.nix { };
           # The ERT suite of workstation/emacs/packages/lsp-mcp; see the file. A
           # package for the same reason as test-beads.
           #   nix build .#test-lsp-mcp -L

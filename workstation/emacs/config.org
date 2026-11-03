@@ -990,443 +990,23 @@ Comments are drawn below the last commented line (unsent ones highlighted,
 sent ones dimmed) and file headings show a comment count, so they stay
 visible while a file is collapsed.
 
+The loop lives in =magit-review.el= (=packages/=), with its ERT suite
+(=nix build .#test-magit-review -L=).  The package names no agent: the
+hand-off goes through =magit-review-send-function=, set here to the shared
+Claude Code paste helper, and the MCP tool is an adapter over
+=magit-review-items= and =magit-review-format=.  Loading it changes
+nothing, so this block binds =@= and draws the comments on every Magit
+refresh.
+
 #+begin_src elisp
-  (use-package magit
-    :defer t
+  (use-package magit-review
+    :after magit
+    :demand t
+    :custom
+    (magit-review-send-function #'my/claude-code-ide-paste)
     :config
-    (defvar my/magit-review-comments nil
-      "Review comments on Magit diffs, newest first.
-  Each comment is a plist with :repo, :file, :where, :new, :old, :patch,
-  :text and :sent.  :new and :old are (START . END) line ranges or nil.
-  A comment on a walkthrough's step or a passage of its explanation also
-  has :target, what `walkthrough-comment-target' returned, and no :file,
-  :new, :old or :patch.")
-
-    (defun my/magit-review--step-comment-p (comment)
-      "Return non-nil when COMMENT is on a walkthrough step or passage."
-      (and (plist-get comment :target) t))
-
-    (defun my/magit-review--range (section from)
-      "Return the (START . END) lines of hunk SECTION on the old side if FROM.
-  Uses the active region when there is one, else the whole hunk.  Returns
-  nil when the region has no lines on that side (only additions for the
-  old side, only removals for the new side)."
-      (if (magit-diff-use-hunk-region-p)
-          (let* ((beg (magit-diff-hunk-region-beginning))
-                 ;; A region ending at the start of a line doesn't cover it.
-                 (end (save-excursion
-                        (goto-char (region-end))
-                        (if (and (bolp) (> (point) beg)) (1- (point)) (point)))))
-            (when (save-excursion
-                    (goto-char beg)
-                    (re-search-forward (if from "^[- ]" "^[+ ]") end t))
-              (cons (save-excursion
-                      (goto-char beg)
-                      (magit-diff-hunk-line section from))
-                    (save-excursion
-                      (goto-char end)
-                      (magit-diff-hunk-line section from)))))
-        ;; A range is (START LENGTH); LENGTH defaults to 1 and is 0 when
-        ;; that side has no lines (new/deleted file, pure removal/addition).
-        (when-let* ((range (slot-value section (if from 'from-range 'to-range)))
-                    (length (or (cadr range) 1))
-                    ((> length 0)))
-          (cons (car range) (+ (car range) length -1)))))
-
-    (defun my/magit-review--where (section)
-      "Describe which diff SECTION belongs to.
-  A committed range is named by its commit ids (`walkthrough-diff-label'),
-  so a comment made in a walkthrough is the same comment in `magit-diff'
-  of the same commits.  Magit renamed `magit-buffer-range' to
-  `magit-buffer-diff-range' without an alias; reading the old name made
-  every range diff plain \"diff\"."
-      (pcase (magit-diff-type section)
-        ('unstaged "unstaged changes")
-        ('staged "staged changes")
-        ('untracked "untracked file")
-        (_ (cond ((and (require 'walkthrough nil t) (walkthrough-diff-label)))
-                 ((bound-and-true-p magit-buffer-revision)
-                  (format "diff of %s" magit-buffer-revision))
-                 ("diff")))))
-
-    (defun my/magit-review--read ()
-      "Read a review comment for the thing at point.
-  Return (TEXT TARGET).  In a walkthrough, TARGET is the step heading or
-  passage of its explanation at point (`walkthrough-comment-target');
-  elsewhere it is nil and the comment is on the hunk, hunk region or file."
-      (let ((target (and (derived-mode-p 'walkthrough-mode)
-                         (walkthrough-comment-target))))
-        (unless (or target (magit-section-match '(hunk file)))
-          (user-error "Not on a diff file or hunk"))
-        (list (read-string "Review comment: ") target)))
-
-    (defun my/magit-review--add (text &optional target)
-      "Record review comment TEXT on the thing at point and return it.
-  TARGET, from `my/magit-review--read', is the walkthrough step or
-  passage the comment is about.  Such a comment is labelled with the
-  walkthrough's commits like a hunk comment there, but has no file, lines
-  or patch, so the hunk and file drawing leaves it alone."
-      (when (string-empty-p text)
-        (user-error "Empty comment"))
-      (let ((comment
-             (append
-              (list :repo (magit-toplevel) :text text :sent nil)
-              (if target
-                  (list :file nil
-                        :where (walkthrough-diff-label)
-                        :new nil
-                        :old nil
-                        :patch nil
-                        :target target)
-                (let* ((section (magit-current-section))
-                       (hunk (and (magit-section-match 'hunk section) section)))
-                  (list :file (magit-file-at-point)
-                        :where (my/magit-review--where section)
-                        :new (and hunk (my/magit-review--range hunk nil))
-                        :old (and hunk (my/magit-review--range hunk t))
-                        ;; A region is sent as it is; a whole hunk
-                        ;; is capped, a new file's being all of it.
-                        :patch (and hunk
-                                    (if (magit-diff-use-hunk-region-p)
-                                        (magit-diff-hunk-region-patch hunk)
-                                      (let ((patch (buffer-substring-no-properties
-                                                    (oref hunk start) (oref hunk end))))
-                                        (if (require 'walkthrough nil t)
-                                            (walkthrough-patch-excerpt patch)
-                                          patch))))))))))
-        (push comment my/magit-review-comments)
-        (deactivate-mark)
-        comment))
-
-    (defun my/magit-review--on-finding-p ()
-      "Return non-nil when point is on a walkthrough finding."
-      (and (derived-mode-p 'walkthrough-mode) (walkthrough-finding-at-point-p)))
-
-    (defun my/magit-review-comment (&optional text target)
-      "Attach review comment TEXT to the thing at point.
-  That is the walkthrough step or passage TARGET when non-nil, else the
-  hunk, hunk region or file at point.  Interactively on a walkthrough
-  finding, TEXT is nil and this replies to the finding instead
-  (`walkthrough-reply')."
-      (interactive (if (my/magit-review--on-finding-p)
-                       (list nil nil)
-                     (my/magit-review--read)))
-      (if (null text)
-          (call-interactively #'walkthrough-reply)
-        (my/magit-review--add text target)
-        (my/magit-review--redecorate (magit-toplevel))
-        (message "%d pending review comment(s)"
-                 (length (my/magit-review--pending (magit-toplevel))))))
-
-    (defun my/magit-review-comment-send (text &optional target no-submit)
-      "Send review comment TEXT on the thing at point to Claude Code at once.
-  TARGET is as for `my/magit-review-comment'.  Other pending comments
-  stay pending.  With prefix argument NO-SUBMIT, only paste it and show
-  the Claude buffer."
-      (interactive
-       (if (my/magit-review--on-finding-p)
-           (user-error "On a finding, reply with `@ c' instead")
-         (append (my/magit-review--read) (list current-prefix-arg))))
-      (let ((comment (my/magit-review--add text target)))
-        (my/magit-review--hand-off
-         (list comment)
-         (if (my/magit-review--step-comment-p comment)
-             "Here is a comment on the walkthrough of this diff: a question or a request.  It names "
-           "Here is a comment on this diff: a question or a request.  It names ")
-         no-submit)))
-
-    (defun my/magit-review--pending (repo &optional include-sent)
-      "Return REPO's review comments, oldest first.
-  Sent comments are left out unless INCLUDE-SENT."
-      (reverse (seq-filter (lambda (c)
-                             (and (equal (plist-get c :repo) repo)
-                                  (or include-sent (not (plist-get c :sent)))))
-                           my/magit-review-comments)))
-
-    (defun my/magit-review--items (repo &optional include-sent)
-      "Return REPO's pending review comments and accepted findings.
-  The findings come from the repository's walkthroughs, shaped like
-  comments with :kind `finding'.  Sent ones are left out unless
-  INCLUDE-SENT."
-      (append (my/magit-review--pending repo include-sent)
-              (and (require 'walkthrough nil t)
-                   (walkthrough-accepted-findings repo include-sent))))
-
-    (defun my/magit-review--finding-p (item)
-      "Return non-nil when hand-off ITEM is a walkthrough finding."
-      (eq (plist-get item :kind) 'finding))
-
-    (defun my/magit-review--format (comments &optional intro)
-      "Format COMMENTS as a Markdown review prompt.
-  COMMENTS may include accepted walkthrough findings, which are headed by
-  their severity and title, followed by the user's reply; one handed off
-  before is headed as a follow-up.  A comment on a walkthrough's step or
-  passage is headed by the step, its files and the diff, and quotes the
-  passage; the prompt then closes by saying how to treat such comments.
-  INTRO starts the prompt's opening sentence, which goes on to say what
-  each comment names."
-      (let ((on-steps (seq-filter #'my/magit-review--step-comment-p comments)))
-        (cl-flet ((lines (label range)
-                    (when range
-                      (format " %s L%d-%d" label (car range) (cdr range))))
-                  (sent (c)
-                    (if (plist-get c :sent) " [already sent]" ""))
-                  (blockquote (text)
-                    (mapconcat (lambda (line)
-                                 (if (string-empty-p line) ">" (concat "> " line)))
-                               (split-string text "\n")
-                               "\n")))
-          (concat
-           (or intro
-               (if (seq-some #'my/magit-review--finding-p comments)
-                   "Please address my review comments and the review findings I accepted.  Each one names "
-                 "Please address my review comments on this diff.  Each one names "))
-           (cond ((null on-steps)
-                  "the file, the new/old line range and the diff it refers to.\n\n")
-                 ((length= on-steps (length comments))
-                  "the walkthrough step it refers to, the step's files and the diff.\n\n")
-                 (t
-                  "either the file, the new/old line range and the diff, or the walkthrough step it refers to.\n\n"))
-           (mapconcat
-            (lambda (c)
-              (if (my/magit-review--step-comment-p c)
-                  (let* ((target (plist-get c :target))
-                         (files (plist-get target :files))
-                         (passage (plist-get target :quote)))
-                    (format "## Step %d/%d: %s (%s%s)%s\n\n%s%s\n"
-                            (plist-get target :step) (plist-get target :steps)
-                            (plist-get target :title)
-                            (if files (format "files %s; " (string-join files ", ")) "")
-                            (plist-get c :where)
-                            (sent c)
-                            (if passage (concat (blockquote passage) "\n\n") "")
-                            (plist-get c :text)))
-                (let ((patch (plist-get c :patch)))
-                  (concat
-                   (format "## %s%s%s%s (%s)%s\n\n%s\n"
-                           (if (my/magit-review--finding-p c)
-                               (format "%s [%s] %s: "
-                                       (if (plist-get c :follow-up)
-                                           "Follow-up on finding"
-                                         "Finding")
-                                       (plist-get c :severity) (plist-get c :title))
-                             "")
-                           (or (plist-get c :file) "no file")
-                           (or (lines "new" (plist-get c :new)) "")
-                           (or (lines "old" (plist-get c :old)) "")
-                           (plist-get c :where)
-                           (sent c)
-                           (concat (plist-get c :text)
-                                   (when-let* ((reply (plist-get c :reply)))
-                                     (format "\n\nMy reply: %s" reply))))
-                   (when patch
-                     (format "\n```diff\n%s%s```\n" patch
-                             (if (string-suffix-p "\n" patch) "" "\n")))))))
-            comments "\n")
-           (when on-steps
-             (concat "\nA comment on a walkthrough step quotes the passage of the"
-                     " step's explanation it answers, or quotes nothing when it is"
-                     " about the step as a whole.  Answer or act on these comments"
-                     " here in the conversation; do not rewrite or re-issue the"
-                     " walkthrough.\n"))))))
-
-    (defun my/magit-review-send (&optional no-submit)
-      "Send pending review comments and accepted findings to Claude Code.
-  Mark them sent.  With prefix argument NO-SUBMIT, only paste them and
-  show the Claude buffer so the prompt can be edited first."
-      (interactive "P")
-      (let ((repo (or (magit-toplevel) (user-error "Not in a Git repository"))))
-        (my/magit-review--hand-off
-         (or (my/magit-review--items repo)
-             (user-error "No pending review comments or accepted findings"))
-         nil no-submit)))
-
-    (defun my/magit-review--hand-off (comments intro no-submit)
-      "Send COMMENTS to Claude Code, opening the prompt with INTRO.
-  Mark them sent.  If NO-SUBMIT, only paste them and show the Claude buffer."
-      (let* ((repo (magit-toplevel))
-             ;; The prefix argument means "don't submit" here, not "ask
-             ;; which instance".
-             (buffer (let ((current-prefix-arg nil))
-                       (my/claude-code-ide-paste
-                        (my/magit-review--format comments intro)
-                        (not no-submit)))))
-        ;; Comments live in memory; findings in their walkthrough's file.
-        (dolist (c (seq-remove #'my/magit-review--finding-p comments))
-          (plist-put c :sent t))
-        (when-let* ((findings (seq-filter #'my/magit-review--finding-p comments)))
-          (walkthrough-mark-sent findings))
-        (my/magit-review--redecorate repo)
-        (when no-submit
-          (if-let* ((window (get-buffer-window buffer t)))
-              (select-window window)
-            (pop-to-buffer buffer)))
-        (message "%s %d review item(s)"
-                 (if no-submit "Pasted" "Sent") (length comments))))
-
-    (defun my/magit-review-paste ()
-      "Paste pending review comments into Claude Code without submitting."
-      (interactive)
-      (my/magit-review-send t))
-
-    (defun my/magit-review-list (&optional include-sent)
-      "Show this repository's pending review comments.
-  With prefix argument INCLUDE-SENT, show sent comments too."
-      (interactive "P")
-      (let* ((repo (or (magit-toplevel) (user-error "Not in a Git repository")))
-             (comments (or (my/magit-review--items repo include-sent)
-                           (user-error "No review comments"))))
-        (with-current-buffer (get-buffer-create "*magit-review*")
-          (let ((inhibit-read-only t))
-            (erase-buffer)
-            (insert (my/magit-review--format comments)))
-          (if (fboundp 'gfm-view-mode) (gfm-view-mode) (view-mode))
-          (goto-char (point-min))
-          (display-buffer (current-buffer)))))
-
-    (defun my/magit-review-discard (&optional all)
-      "Discard this repository's pending review comments.
-  With prefix argument ALL, also forget the sent ones."
-      (interactive "P")
-      (let* ((repo (or (magit-toplevel) (user-error "Not in a Git repository")))
-             (doomed (my/magit-review--pending repo all)))
-        (unless doomed
-          (user-error "No review comments to discard"))
-        (when (y-or-n-p (format "Discard %d review comment(s)? " (length doomed)))
-          (setq my/magit-review-comments
-                (cl-set-difference my/magit-review-comments doomed :test #'eq))
-          (my/magit-review--redecorate repo))))
-
-    (defface my/magit-review-comment
-      '((t :inherit font-lock-warning-face))
-      "Face for unsent review comments shown in Magit buffers.")
-
-    (defface my/magit-review-sent
-      '((t :inherit shadow))
-      "Face for review comments already sent to Claude Code.")
-
-    (defun my/magit-review--hunk-lines (hunk)
-      "Return an alist mapping (SIDE . LINE) to line starts in HUNK.
-  SIDE is `new' or `old'; context lines are listed under both."
-      (let ((new (car (oref hunk to-range)))
-            (old (car (oref hunk from-range)))
-            lines)
-        (save-excursion
-          (goto-char (oref hunk content))
-          (while (< (point) (oref hunk end))
-            (let ((char (char-after)))
-              (unless (eq char ?-)
-                (push (cons (cons 'new new) (point)) lines)
-                (cl-incf new))
-              (unless (eq char ?+)
-                (push (cons (cons 'old old) (point)) lines)
-                (cl-incf old)))
-            (forward-line)))
-        lines))
-
-    (defun my/magit-review--annotate (pos comments &optional prefix)
-      "Show PREFIX and then COMMENTS below the line containing POS."
-      (let* ((eol (save-excursion (goto-char pos) (line-end-position)))
-             (overlay (make-overlay eol eol)))
-        (overlay-put overlay 'my/magit-review t)
-        (overlay-put
-         overlay 'after-string
-         (concat
-          prefix
-          (mapconcat
-           (lambda (c)
-             (let ((sent (plist-get c :sent)))
-               (propertize (format "\n    ▶ %s%s" (plist-get c :text)
-                                   (if sent " (sent)" ""))
-                           'face (if sent 'my/magit-review-sent
-                                   'my/magit-review-comment))))
-           comments "")))))
-
-    (defun my/magit-review--decorate ()
-      "Show this repository's review comments in the current Magit buffer.
-  File headings get a comment count; hunk comments appear below the last
-  commented line, file comments below the file heading."
-      (remove-overlays (point-min) (point-max) 'my/magit-review t)
-      (when-let* (((derived-mode-p 'magit-status-mode 'magit-diff-mode))
-                  (repo (magit-toplevel))
-                  (comments (my/magit-review--pending repo t)))
-        (save-excursion
-          (magit-map-sections
-           (lambda (section)
-             (when (magit-section-match '(file hunk) section)
-               (let* ((hunk (and (magit-section-match 'hunk section) section))
-                      (file (oref (if hunk (oref section parent) section) value))
-                      (where (my/magit-review--where section))
-                      (mine (seq-filter
-                             (lambda (c)
-                               (and (equal (plist-get c :file) file)
-                                    (equal (plist-get c :where) where)))
-                             comments)))
-                 (cond
-                  ((null mine))
-                  ((null hunk)
-                   (my/magit-review--annotate
-                    (oref section start)
-                    (seq-remove (lambda (c)
-                                  (or (plist-get c :new) (plist-get c :old)))
-                                mine)
-                    (propertize (format "  [%d review comment%s]"
-                                        (length mine)
-                                        (if (cdr mine) "s" ""))
-                                'face 'my/magit-review-comment)))
-                  ((not (oref hunk combined))
-                   (let ((lines (my/magit-review--hunk-lines hunk))
-                         anchored)
-                     (dolist (c mine)
-                       (when-let* ((anchor (if-let* ((new (plist-get c :new)))
-                                               (cons 'new (cdr new))
-                                             (and (plist-get c :old)
-                                                  (cons 'old (cdr (plist-get c :old))))))
-                                   (pos (alist-get anchor lines nil nil #'equal)))
-                         (push c (alist-get pos anchored))))
-                     (pcase-dolist (`(,pos . ,cs) anchored)
-                       (my/magit-review--annotate pos (nreverse cs)))))))))))))
-
-    (defun my/magit-review--redecorate (repo)
-      "Redraw review comments in every Magit buffer of REPO.
-  A walkthrough buffer also redraws those on its steps and passages."
-      (dolist (buffer (buffer-list))
-        (with-current-buffer buffer
-          (when (and (derived-mode-p 'magit-status-mode 'magit-diff-mode)
-                     (equal (magit-toplevel) repo))
-            (my/magit-review--decorate)
-            (when (derived-mode-p 'walkthrough-mode)
-              (walkthrough-redraw-comments))))))
-
-    (defun my/magit-review--walkthrough-comments (label)
-      "Return this repository's comments on walkthrough steps of diff LABEL.
-  Pending and sent, oldest first, each its :text and :sent followed by
-  its target's keys, for `walkthrough-comments-function' to draw."
-      (mapcan (lambda (c)
-                (when (and (my/magit-review--step-comment-p c)
-                           (equal (plist-get c :where) label))
-                  (list (append (list :text (plist-get c :text)
-                                      :sent (plist-get c :sent))
-                                (plist-get c :target)))))
-              (my/magit-review--pending (magit-toplevel) t)))
-
-    (add-hook 'magit-refresh-buffer-hook #'my/magit-review--decorate)
-
-    (transient-define-prefix my/magit-review ()
-      "Comment on diffs and hand the review to Claude Code."
-      [["Comment"
-        ("c" "Hunk, file, step or passage" my/magit-review-comment)
-        ("d" "Comment and send now" my/magit-review-comment-send)]
-       ["Review"
-        ("s" "Send to Claude" my/magit-review-send)
-        ("p" "Paste, don't submit" my/magit-review-paste)
-        ("l" "List" my/magit-review-list)
-        ("k" "Discard" my/magit-review-discard)]
-       ["Walkthrough"
-        ("w" "Open (C-u: pick)" walkthrough-open-current)
-        ("W" "Ask for one (C-u: base)" walkthrough-request)]])
-
-    (keymap-set magit-mode-map "@" #'my/magit-review))
+    (add-hook 'magit-refresh-buffer-hook #'magit-review-decorate)
+    (keymap-set magit-mode-map "@" #'magit-review))
 
   (use-package claude-code-ide
     :defer t
@@ -1440,17 +1020,17 @@ visible while a file is collapsed.
                     :optional t))
      :function
      (lambda (&optional include-sent)
-       (require 'magit)
+       (require 'magit-review)
        (let* ((context (claude-code-ide-mcp-server-get-session-context))
               (repo (let ((default-directory
                            (or (plist-get context :project-dir)
                                default-directory)))
                       (magit-toplevel)))
               (comments (and repo
-                             (my/magit-review--items
+                             (magit-review-items
                               repo (eq include-sent t)))))
          (if comments
-             (my/magit-review--format comments)
+             (magit-review-format comments)
            "No review comments for this project.")))))
 #+end_src
 
@@ -1506,7 +1086,7 @@ and =@ W= asks the Claude session for one (=C-u= reads the base).
     :demand t
     :custom
     (walkthrough-request-function #'my/claude-code-ide-paste)
-    (walkthrough-comments-function #'my/magit-review--walkthrough-comments))
+    (walkthrough-comments-function #'magit-review-walkthrough-comments))
 
   (use-package claude-code-ide
     :defer t
