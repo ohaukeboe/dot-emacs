@@ -513,6 +513,12 @@ Faces are copied to `font-lock-face', which Magit buffers keep.  Without
 (defface walkthrough-reply '((t :inherit font-lock-warning-face))
   "Face for the user's reply to a finding.")
 
+(defface walkthrough-review-comment '((t :inherit font-lock-warning-face))
+  "Face for a pending review comment on a step or a passage.")
+
+(defface walkthrough-review-sent '((t :inherit shadow))
+  "Face for a review comment on a step or a passage that was handed off.")
+
 (defconst walkthrough--known-keys
   '(id state severity title body failure_scenario verdict category anchor
        reply follow_up)
@@ -941,6 +947,10 @@ SEVERITY is the highest one present and J how many have it."
       (setq section (oref section parent)))
     section))
 
+(defun walkthrough--step (section)
+  "Return the step that the step SECTION shows."
+  (elt (alist-get 'steps walkthrough--data) (oref section value)))
+
 (defun walkthrough--step-at-point ()
   "Return the index of the step whose section contains point, or nil."
   (when-let* ((section (walkthrough--step-section-at-point)))
@@ -987,23 +997,11 @@ each a plist with :text, :sent and the target's keys :step :steps :title
 no such comments are drawn."
   :type '(choice (const :tag "No comments" nil) function))
 
-;; The look of the configuration's review comments, which this file does
-;; not depend on.
-(defface walkthrough-review-comment '((t :inherit font-lock-warning-face))
-  "Face for a pending review comment on a step or a passage.")
-
-(defface walkthrough-review-sent '((t :inherit shadow))
-  "Face for a review comment on a step or a passage that was handed off.")
-
 (defun walkthrough--passage-end (section quote)
   "Return the end of QUOTE in the explanation of the step SECTION, or nil."
   (pcase-let ((`(,start . ,end) (walkthrough--explanation-bounds section)))
     (when-let* ((at (string-search quote (buffer-substring-no-properties start end))))
       (+ start at (length quote)))))
-
-(defun walkthrough--step-title (section)
-  "Return the title of the step SECTION."
-  (alist-get 'title (elt (alist-get 'steps walkthrough--data) (oref section value))))
 
 (defun walkthrough--comment-place (comment sections)
   "Return (SECTION . POS) for COMMENT, or nil when it matches nothing.
@@ -1021,7 +1019,7 @@ quote that several steps share stays in its own."
                       (cons own sections)
                     sections)))
     (when-let* ((section (seq-find (lambda (section)
-                                     (equal (walkthrough--step-title section)
+                                     (equal (alist-get 'title (walkthrough--step section))
                                             (plist-get comment :title)))
                                    sections)))
       (cons section (oref section start)))))
@@ -1148,10 +1146,9 @@ discarded.  Outside a walkthrough buffer it does nothing."
 
 (defun walkthrough--comment-target (section quote)
   "Return the comment target of step SECTION with QUOTE."
-  (let* ((steps (alist-get 'steps walkthrough--data))
-         (step (elt steps (oref section value))))
+  (let ((step (walkthrough--step section)))
     (list :step (1+ (oref section value))
-          :steps (length steps)
+          :steps (length (alist-get 'steps walkthrough--data))
           :title (alist-get 'title step)
           :files (delq nil (mapcar (lambda (e) (car (walkthrough--entry e)))
                                    (alist-get 'files step)))
@@ -1162,8 +1159,8 @@ discarded.  Outside a walkthrough buffer it does nothing."
 The explanation is inserted first in the step's body, so it starts at
 the body.  END is the end of its last line, before the newline."
   (let ((start (oref section content))
-        (step (elt (alist-get 'steps walkthrough--data) (oref section value))))
-    (cons start (+ start (length (string-trim-right (alist-get 'explanation step)))))))
+        (explanation (alist-get 'explanation (walkthrough--step section))))
+    (cons start (+ start (length (string-trim-right explanation))))))
 
 (defconst walkthrough--list-item-regexp "\\`[ \t]*\\([-*+]\\|[0-9]+[.)]\\)[ \t]"
   "Regexp matching the first line of a Markdown list item.")

@@ -1002,6 +1002,10 @@ visible while a file is collapsed.
   has :target, what `walkthrough-comment-target' returned, and no :file,
   :new, :old or :patch.")
 
+    (defun my/magit-review--step-comment-p (comment)
+      "Return non-nil when COMMENT is on a walkthrough step or passage."
+      (and (plist-get comment :target) t))
+
     (defun my/magit-review--range (section from)
       "Return the (START . END) lines of hunk SECTION on the old side if FROM.
   Uses the active region when there is one, else the whole hunk.  Returns
@@ -1065,35 +1069,31 @@ visible while a file is collapsed.
       (when (string-empty-p text)
         (user-error "Empty comment"))
       (let ((comment
-             (if target
-                 (list :repo (magit-toplevel)
-                       :file nil
-                       :where (walkthrough-diff-label)
-                       :new nil
-                       :old nil
-                       :patch nil
-                       :text text
-                       :sent nil
-                       :target target)
-               (let* ((section (magit-current-section))
-                      (hunk (and (magit-section-match 'hunk section) section)))
-                 (list :repo (magit-toplevel)
-                       :file (magit-file-at-point)
-                       :where (my/magit-review--where section)
-                       :new (and hunk (my/magit-review--range hunk nil))
-                       :old (and hunk (my/magit-review--range hunk t))
-                       ;; A region is sent as it is; a whole hunk
-                       ;; is capped, a new file's being all of it.
-                       :patch (and hunk
-                                   (if (magit-diff-use-hunk-region-p)
-                                       (magit-diff-hunk-region-patch hunk)
-                                     (let ((patch (buffer-substring-no-properties
-                                                   (oref hunk start) (oref hunk end))))
-                                       (if (require 'walkthrough nil t)
-                                           (walkthrough-patch-excerpt patch)
-                                         patch))))
-                       :text text
-                       :sent nil)))))
+             (append
+              (list :repo (magit-toplevel) :text text :sent nil)
+              (if target
+                  (list :file nil
+                        :where (walkthrough-diff-label)
+                        :new nil
+                        :old nil
+                        :patch nil
+                        :target target)
+                (let* ((section (magit-current-section))
+                       (hunk (and (magit-section-match 'hunk section) section)))
+                  (list :file (magit-file-at-point)
+                        :where (my/magit-review--where section)
+                        :new (and hunk (my/magit-review--range hunk nil))
+                        :old (and hunk (my/magit-review--range hunk t))
+                        ;; A region is sent as it is; a whole hunk
+                        ;; is capped, a new file's being all of it.
+                        :patch (and hunk
+                                    (if (magit-diff-use-hunk-region-p)
+                                        (magit-diff-hunk-region-patch hunk)
+                                      (let ((patch (buffer-substring-no-properties
+                                                    (oref hunk start) (oref hunk end))))
+                                        (if (require 'walkthrough nil t)
+                                            (walkthrough-patch-excerpt patch)
+                                          patch))))))))))
         (push comment my/magit-review-comments)
         (deactivate-mark)
         comment))
@@ -1127,12 +1127,13 @@ visible while a file is collapsed.
        (if (my/magit-review--on-finding-p)
            (user-error "On a finding, reply with `@ c' instead")
          (append (my/magit-review--read) (list current-prefix-arg))))
-      (my/magit-review--hand-off
-       (list (my/magit-review--add text target))
-       (if target
-           "Here is a comment on the walkthrough of this diff: a question or a request.  It names "
-         "Here is a comment on this diff: a question or a request.  It names ")
-       no-submit))
+      (let ((comment (my/magit-review--add text target)))
+        (my/magit-review--hand-off
+         (list comment)
+         (if (my/magit-review--step-comment-p comment)
+             "Here is a comment on the walkthrough of this diff: a question or a request.  It names "
+           "Here is a comment on this diff: a question or a request.  It names ")
+         no-submit)))
 
     (defun my/magit-review--pending (repo &optional include-sent)
       "Return REPO's review comments, oldest first.
@@ -1164,7 +1165,7 @@ visible while a file is collapsed.
   passage; the prompt then closes by saying how to treat such comments.
   INTRO starts the prompt's opening sentence, which goes on to say what
   each comment names."
-      (let ((on-steps (seq-filter (lambda (c) (plist-get c :target)) comments)))
+      (let ((on-steps (seq-filter #'my/magit-review--step-comment-p comments)))
         (cl-flet ((lines (label range)
                     (when range
                       (format " %s L%d-%d" label (car range) (cdr range))))
@@ -1188,9 +1189,10 @@ visible while a file is collapsed.
                   "either the file, the new/old line range and the diff, or the walkthrough step it refers to.\n\n"))
            (mapconcat
             (lambda (c)
-              (if-let* ((target (plist-get c :target)))
-                  (let ((files (plist-get target :files))
-                        (passage (plist-get target :quote)))
+              (if (my/magit-review--step-comment-p c)
+                  (let* ((target (plist-get c :target))
+                         (files (plist-get target :files))
+                         (passage (plist-get target :quote)))
                     (format "## Step %d/%d: %s (%s%s)%s\n\n%s%s\n"
                             (plist-get target :step) (plist-get target :steps)
                             (plist-get target :title)
@@ -1401,11 +1403,11 @@ visible while a file is collapsed.
   Pending and sent, oldest first, each its :text and :sent followed by
   its target's keys, for `walkthrough-comments-function' to draw."
       (mapcan (lambda (c)
-                (when-let* ((target (plist-get c :target))
-                            ((equal (plist-get c :where) label)))
+                (when (and (my/magit-review--step-comment-p c)
+                           (equal (plist-get c :where) label))
                   (list (append (list :text (plist-get c :text)
                                       :sent (plist-get c :sent))
-                                target))))
+                                (plist-get c :target)))))
               (my/magit-review--pending (magit-toplevel) t)))
 
     (add-hook 'magit-refresh-buffer-hook #'my/magit-review--decorate)
@@ -1413,7 +1415,7 @@ visible while a file is collapsed.
     (transient-define-prefix my/magit-review ()
       "Comment on diffs and hand the review to Claude Code."
       [["Comment"
-        ("c" "Hunk, region or file" my/magit-review-comment)
+        ("c" "Hunk, file, step or passage" my/magit-review-comment)
         ("d" "Comment and send now" my/magit-review-comment-send)]
        ["Review"
         ("s" "Send to Claude" my/magit-review-send)
