@@ -1027,6 +1027,93 @@ refreshes, which would strip the step being read of its syntax faces."
   (interactive)
   (walkthrough--previous-of (walkthrough--stops) "step or finding"))
 
+;;; Comment targets
+
+(defun walkthrough--comment-target (section quote)
+  "Return the comment target of step SECTION with QUOTE."
+  (let* ((steps (alist-get 'steps walkthrough--data))
+         (step (elt steps (oref section value))))
+    (list :step (1+ (oref section value))
+          :steps (length steps)
+          :title (alist-get 'title step)
+          :files (delq nil (mapcar (lambda (e) (car (walkthrough--entry e)))
+                                   (alist-get 'files step)))
+          :quote quote)))
+
+(defun walkthrough--explanation-bounds (section)
+  "Return (START . END) of the explanation of step SECTION.
+The explanation is inserted first in the step's body, so it starts at
+the body.  END is the end of its last line, before the newline."
+  (let ((start (oref section content))
+        (step (elt (alist-get 'steps walkthrough--data) (oref section value))))
+    (cons start (+ start (length (string-trim-right (alist-get 'explanation step)))))))
+
+(defconst walkthrough--list-item-regexp "\\`[ \t]*\\([-*+]\\|[0-9]+[.)]\\)[ \t]"
+  "Regexp matching the first line of a Markdown list item.")
+
+(defun walkthrough--passage (lines index)
+  "Return the list item or paragraph of LINES that line INDEX is in.
+A list item is its first line and the lines that continue it, without
+its nested items.  A paragraph ends at a blank line or a list item."
+  (cl-flet ((blank-p (i) (string-blank-p (nth i lines)))
+            (item-p (i) (string-match-p walkthrough--list-item-regexp (nth i lines))))
+    (when (blank-p index)
+      (user-error "No passage at point"))
+    (let ((from index) (to index))
+      (while (not (or (item-p from) (= from 0) (blank-p (1- from))))
+        (cl-decf from))
+      (while (not (or (= to (1- (length lines))) (blank-p (1+ to)) (item-p (1+ to))))
+        (cl-incf to))
+      (string-trim-right (string-join (seq-subseq lines from (1+ to)) "\n")))))
+
+(defun walkthrough--explanation-at (pos)
+  "Return the section of the step whose explanation holds POS, or nil.
+The newline that ends the explanation's last line counts as in it."
+  (when-let* ((section (save-excursion
+                         (goto-char pos)
+                         (walkthrough--step-section-at-point))))
+    (pcase-let ((`(,start . ,end) (walkthrough--explanation-bounds section)))
+      (and (<= start pos end) section))))
+
+(defun walkthrough--target-at-point ()
+  "Return the comment target of the step heading or passage at point, or nil."
+  (when-let* ((section (walkthrough--step-section-at-point)))
+    (pcase-let ((`(,start . ,end) (walkthrough--explanation-bounds section)))
+      (cond ((< (point) start) (walkthrough--comment-target section nil))
+            ((<= (point) end)
+             (walkthrough--comment-target
+              section
+              (walkthrough--passage
+               (split-string (buffer-substring-no-properties start end) "\n")
+               (- (line-number-at-pos) (line-number-at-pos start)))))))))
+
+(defun walkthrough-comment-target ()
+  "Return what a review comment at point would be about, or nil.
+Point must be on a step heading or in a step's explanation; anywhere
+else, findings, hunks, file headings and the intro included, the value
+is nil.  Otherwise it is a plist: :step, the step's number from 1;
+:steps, the number of steps; :title, the step's title; :files, the
+names of the files it owns; and :quote, the passage commented on, or
+nil on the heading, for a comment on the step as a whole.
+
+The passage is the active region, which must lie within one step's
+explanation; without one, it is the innermost list item at point, or
+else the paragraph.  It is the explanation's Markdown source, hidden
+markup included, with trailing whitespace trimmed.  A region with one
+end outside the explanation, or point on a blank line between its
+blocks, signals a `user-error'."
+  (if (use-region-p)
+      (let ((first (walkthrough--explanation-at (region-beginning)))
+            (last (walkthrough--explanation-at (1- (region-end)))))
+        (cond ((and first (eq first last))
+               (walkthrough--comment-target
+                first (string-trim-right (buffer-substring-no-properties
+                                          (region-beginning) (region-end)))))
+              ((or first last)
+               (user-error "Region must stay within the explanation"))
+              (t (walkthrough--target-at-point))))
+    (walkthrough--target-at-point)))
+
 ;;; Marking findings
 
 (defun walkthrough--finding-by-id (data id)
