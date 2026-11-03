@@ -988,16 +988,6 @@ no such comments are drawn."
 (defface walkthrough-review-sent '((t :inherit shadow))
   "Face for a review comment on a step or a passage that was handed off.")
 
-(defun walkthrough--explanation-bounds (section)
-  "Return (START . END) of the explanation of the step SECTION.
-END is the end of its last line, before the newline."
-  (let ((start (oref section content)))
-    (cons start
-          (+ start (length (string-trim-right
-                            (alist-get 'explanation
-                                       (elt (alist-get 'steps walkthrough--data)
-                                            (oref section value)))))))))
-
 (defun walkthrough--passage-end (section quote)
   "Return the end of QUOTE in the explanation of the step SECTION, or nil."
   (pcase-let ((`(,start . ,end) (walkthrough--explanation-bounds section)))
