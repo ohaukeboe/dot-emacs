@@ -14,10 +14,14 @@
 ;; buffers, and `magit-review-items'.
 ;;
 ;; Every test runs in a throwaway repository built by
-;; `magit-review-test--with-repo': `main' has a.el (30 lines) and b.el, and
-;; the branch `feat/x' changes line 20 of a.el in one commit.  In the work
-;; tree line 10 of a.el is changed and not staged, and b.el's second line
-;; is changed and staged.
+;; `magit-review-test--with-repo'.  `main' has two commits: `init' adds a
+;; README and is pushed to `origin' (a bare repository beside it), and
+;; `base', tagged `v1', adds a.el (30 lines) and b.el.  The checked-out
+;; branch `feat/x' tracks `origin/main' and changes line 20 of a.el in one
+;; commit, `one', whose message names `base' by its commit id.  The
+;; status buffer lists `one' and `base' as \"Unmerged into origin/main\".  One stash changes b.el's first line.  In
+;; the work tree line 10 of a.el is changed and not staged, b.el's second
+;; line is changed and staged, and new.el is untracked.
 
 ;;; Code:
 
@@ -63,10 +67,12 @@ Return its trimmed standard output."
 Hand-offs go to `magit-review-test--sent' instead of an agent, and Magit
 buffers draw review comments on refresh, as the configuration has them."
   (declare (indent 0))
-  `(let* ((magit-review-test--repo (file-name-as-directory
-                                    (file-truename
-                                     (make-temp-file "magit-review-test" t))))
-          (default-directory magit-review-test--repo)
+  `(let* ((root (file-name-as-directory
+                 (file-truename (make-temp-file "magit-review-test" t))))
+          (magit-review-test--repo (file-name-as-directory
+                                    (expand-file-name "repo" root)))
+          (default-directory (progn (make-directory magit-review-test--repo)
+                                    magit-review-test--repo))
           (magit-refresh-verbose nil)
           ;; Off in batch Emacs, and a region is only active with it.
           (transient-mark-mode t)
@@ -80,17 +86,32 @@ buffers draw review comments on refresh, as the configuration has them."
            (cons #'magit-review-decorate magit-refresh-buffer-hook)))
      (unwind-protect
          (progn
+           (magit-review-test--git "init" "--quiet" "--bare" "-b" "main"
+                                   (expand-file-name "origin.git" root))
            (magit-review-test--git "init" "--quiet" "-b" "main" ".")
+           (magit-review-test--git "remote" "add" "origin"
+                                   (expand-file-name "origin.git" root))
+           (magit-review-test--write "README" "fixture\n")
+           (magit-review-test--git "add" ".")
+           (magit-review-test--git "commit" "--quiet" "-m" "init")
+           (magit-review-test--git "push" "--quiet" "-u" "origin" "main")
            (magit-review-test--write "a.el" (magit-review-test--lines 30))
            (magit-review-test--write "b.el" "b line 1\nb line 2\n")
            (magit-review-test--git "add" ".")
            (magit-review-test--git "commit" "--quiet" "-m" "base")
+           (magit-review-test--git "tag" "v1")
            (magit-review-test--git "checkout" "--quiet" "-b" "feat/x")
+           (magit-review-test--git "branch" "--quiet" "--set-upstream-to=origin/main")
            (magit-review-test--write "a.el" (magit-review-test--lines 30 '(20)))
-           (magit-review-test--git "commit" "--quiet" "-am" "one")
+           (magit-review-test--git "commit" "--quiet" "-am"
+                                   (format "one\n\nLine 20 needs what %s left out."
+                                           (magit-review-test--git "rev-parse" "HEAD")))
+           (magit-review-test--write "b.el" "b line 1 stashed\nb line 2\n")
+           (magit-review-test--git "stash" "push" "--quiet" "-m" "stashed b")
            (magit-review-test--write "b.el" "b line 1\nb line 2 staged\n")
            (magit-review-test--git "add" "b.el")
            (magit-review-test--write "a.el" (magit-review-test--lines 30 '(10 20)))
+           (magit-review-test--write "new.el" "new\n")
            (let ((base (magit-review-test--git "rev-parse" "main"))
                  (head (magit-review-test--git "rev-parse" "HEAD")))
              (ignore base head)
@@ -105,7 +126,7 @@ buffers draw review comments on refresh, as the configuration has them."
        (dolist (name '(" *magit-review-test-agent*" "*magit-review*"))
          (when-let* ((buffer (get-buffer name)))
            (kill-buffer buffer)))
-       (delete-directory magit-review-test--repo t))))
+       (delete-directory root t))))
 
 (defun magit-review-test--expand ()
   "Expand every file section of the current buffer, as the user would."
@@ -140,12 +161,18 @@ With SECTION-TYPE, skip lines outside a section of that type, such as
       (ert-fail (list "no line matching" regexp section-type)))
     (goto-char found)))
 
-(defun magit-review-test--select (from to)
-  "Select from the line matching FROM to the end of the line matching TO."
-  (magit-review-test--goto from)
+(defun magit-review-test--select (from to &optional section-type)
+  "Select from the line matching FROM to the end of the line matching TO.
+SECTION-TYPE is as for `magit-review-test--goto'."
+  (magit-review-test--goto from section-type)
   (push-mark (point) t t)
-  (magit-review-test--goto to)
+  (magit-review-test--goto to section-type)
   (goto-char (line-end-position)))
+
+(defconst magit-review-test--on
+  (concat "what it is on: a file with its new/old line range and the diff it "
+          "refers to, one or more commits, or another item Magit shows.\n\n")
+  "How the opening sentence of every prompt ends.")
 
 (defun magit-review-test--prompt ()
   "Return the text of the latest hand-off; fail when there was none."
@@ -163,10 +190,8 @@ With SECTION-TYPE, skip lines outside a section of that type, such as
       (magit-review-send))
     (should (equal magit-review-test--sent
                    `((,(concat
-                        "Please address my review comments on this diff.  "
-                        "Each one names the file, the new/old line range and "
-                        "the diff it refers to.\n"
-                        "\n"
+                        "Please address my review comments.  Each one names "
+                        magit-review-test--on
                         "## a.el new L7-13 old L7-13 (unstaged changes)\n"
                         "\n"
                         "Rename this\n"
@@ -196,10 +221,8 @@ The comments are handed off oldest first."
       (magit-review-send))
     (should (equal (magit-review-test--prompt)
                    (concat
-                    "Please address my review comments on this diff.  "
-                    "Each one names the file, the new/old line range and "
-                    "the diff it refers to.\n"
-                    "\n"
+                    "Please address my review comments.  Each one names "
+                    magit-review-test--on
                     "## a.el new L10-10 (unstaged changes)\n"
                     "\n"
                     "Added line\n"
@@ -255,10 +278,8 @@ The comments are handed off oldest first."
       (magit-review-send))
     (should (equal (magit-review-test--prompt)
                    (concat
-                    "Please address my review comments on this diff.  "
-                    "Each one names the file, the new/old line range and "
-                    "the diff it refers to.\n"
-                    "\n"
+                    "Please address my review comments.  Each one names "
+                    magit-review-test--on
                     "## a.el (unstaged changes)\n"
                     "\n"
                     "Whole file\n"
@@ -299,10 +320,8 @@ Sent items are left out unless INCLUDE-SENT; each sent one is marked
       (magit-review-comment-send "Why staged?")
       (should (equal magit-review-test--sent
                      `((,(concat
-                          "Here is a comment on this diff: a question or a "
-                          "request.  It names the file, the new/old line range "
-                          "and the diff it refers to.\n"
-                          "\n"
+                          "Here is a review comment: a question or a request.  "
+                          "It names " magit-review-test--on
                           "## b.el new L1-2 old L1-2 (staged changes)\n"
                           "\n"
                           "Why staged?\n"
@@ -315,7 +334,7 @@ Sent items are left out unless INCLUDE-SENT; each sent one is marked
       (should (equal (magit-review-test--texts) '("Queued")))
       (should (equal (magit-review-test--texts t) '("Queued" "Why staged? (sent)")))
       ;; With a prefix argument it is only pasted, and the agent is shown.
-      (magit-review-comment-send "Just paste" nil t)
+      (magit-review-comment-send "Just paste" t)
       (should (equal (cadr (car magit-review-test--sent)) nil))
       (should (get-buffer-window (magit-review-test--agent)))
       (should (equal (magit-review-test--texts) '("Queued"))))))
@@ -560,6 +579,367 @@ label is that range's."
                      ")\n\nCommit note\n\n```diff\n@@ -17,7 \\+17,7 @@ line 16\n")
              (magit-review-test--prompt)))))
 
+;;; Commits and stashes
+
+(defun magit-review-test--log (&rest args)
+  "Show the log of `feat/x' with extra ARGS, such as \"--patch\"; return it."
+  (magit-review-test--show 'magit-log-mode #'magit-log-setup-buffer
+                           (list "feat/x") (append '("-n256" "--decorate") args) nil))
+
+(defun magit-review-test--short (rev)
+  "Return the abbreviated commit id of REV, as git shows it."
+  (magit-review-test--git "rev-parse" "--short" rev))
+
+(ert-deftest magit-review-test-commit-in-log ()
+  "A comment on a commit line names it by short id and subject, with no patch."
+  (magit-review-test--with-repo
+    (let ((one (magit-review-test--short "HEAD")))
+      (with-current-buffer (magit-review-test--log)
+        (magit-review-test--goto " one$")
+        (magit-review-comment "Split this")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,(concat one " feat/x one") . "\n    ▶ Split this"))))
+        (magit-review-send))
+      (should (equal (magit-review-test--prompt)
+                     (concat "Please address my review comments.  Each one names "
+                             magit-review-test--on
+                             "## Commit " one " one\n"
+                             "\n"
+                             "Split this\n"))))))
+
+(ert-deftest magit-review-test-commit-in-status ()
+  "A comment on a commit in the status buffer's list is drawn in the log too."
+  (magit-review-test--with-repo
+    (let ((short-base (magit-review-test--short "main")))
+      (with-current-buffer (magit-review-test--status)
+        (magit-review-test--goto " base$" 'unpushed)
+        (magit-review-comment "Reword")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,(concat short-base " v1 main base") . "\n    ▶ Reword")))))
+      (with-current-buffer (magit-review-test--log)
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,(concat short-base " v1 main base") . "\n    ▶ Reword"))))
+        (magit-review-send))
+      (should (string-match-p (concat "^## Commit " short-base " base\n\nReword\n\\'")
+                              (magit-review-test--prompt))))))
+
+(ert-deftest magit-review-test-several-commits ()
+  "A region over commit lines puts one comment on all of them.
+It is drawn once, below the last of them in the buffer, and the prompt
+lists them."
+  (magit-review-test--with-repo
+    (let* ((one (magit-review-test--short "HEAD"))
+           (short-base (magit-review-test--short "main"))
+           (both (concat "- " one " one\n- " short-base " base\n")))
+      (with-current-buffer (magit-review-test--log)
+        ;; Selected upwards, so point is on the first of them.
+        (magit-review-test--select " base$" " one$")
+        (magit-review-comment "Squash these")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,(concat short-base " v1 main base") . "\n    ▶ Squash these")))))
+      (with-current-buffer (magit-review-test--status)
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,(concat short-base " v1 main base") . "\n    ▶ Squash these"))))
+        (magit-review-test--select " one$" " base$" 'unpushed)
+        (magit-review-comment "Or reorder them")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,(concat short-base " v1 main base")
+                          . "\n    ▶ Squash these\n    ▶ Or reorder them"))))
+        (magit-review-send))
+      (should (equal (magit-review-test--prompt)
+                     (concat "Please address my review comments.  Each one names "
+                             magit-review-test--on
+                             "## Commits\n\n" both "\nSquash these\n"
+                             "\n"
+                             "## Commits\n\n" both "\nOr reorder them\n"))))))
+
+(ert-deftest magit-review-test-rewritten-commit ()
+  "A comment on a commit that is rewritten later stays pending, undrawn.
+It is listed and handed off with the commit's old id and subject."
+  (magit-review-test--with-repo
+    (let ((one (concat "## Commit " (magit-review-test--short "HEAD") " one\n\nSplit this")))
+      (with-current-buffer (magit-review-test--log)
+        (magit-review-test--goto " one$")
+        (magit-review-comment "Split this"))
+      ;; Reword it, leaving the staged change out.
+      (magit-review-test--git "commit" "--quiet" "--amend" "--only" "-m" "one, reworded")
+      (with-current-buffer (magit-review-test--log)
+        (should (null (magit-review-test--drawn))))
+      (with-current-buffer (magit-review-test--status)
+        (should (null (magit-review-test--drawn)))
+        (should (equal (magit-review-test--texts) '("Split this")))
+        (magit-review-list)
+        (should (string-search one (with-current-buffer "*magit-review*"
+                                     (buffer-string))))
+        (magit-review-send))
+      (should (string-search (concat one "\n") (magit-review-test--prompt))))))
+
+(defun magit-review-test--revision (rev)
+  "Show the revision buffer of REV; return it."
+  (magit-review-test--show 'magit-revision-mode #'magit-show-commit rev))
+
+(ert-deftest magit-review-test-revision-headers-and-message ()
+  "A revision buffer's headers and commit message are on its commit.
+A region of the message is quoted, and a commit id that the message
+mentions does not make the comment about that commit."
+  (magit-review-test--with-repo
+    (let ((one (concat "## Commit " (magit-review-test--short "HEAD") " one\n\n")))
+      (with-current-buffer (magit-review-test--revision head)
+        (magit-review-test--goto (concat "^feat/x " head "$"))
+        (magit-review-comment "On the headers")
+        (magit-review-test--goto "^Author:")
+        (magit-review-comment "On the author")
+        (magit-review-test--goto "^one$")
+        (magit-review-comment "On the summary")
+        (magit-review-test--goto "^Line 20 needs")
+        (search-forward base)
+        (backward-char)
+        (magit-review-comment "On the mention")
+        (magit-review-test--goto "^Line 20 needs")
+        (search-forward "needs")
+        (push-mark (match-beginning 0) t t)
+        (search-forward "left out")
+        (magit-review-comment "Reword")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,(concat "feat/x " head)
+                          . ,(concat "\n    ▶ On the headers"
+                                     "\n    ▶ On the author"
+                                     "\n    ▶ On the summary"
+                                     "\n    ▶ On the mention"
+                                     "\n    ▶ Reword")))))
+        (magit-review-send))
+      (should (equal (magit-review-test--prompt)
+                     (concat "Please address my review comments.  Each one names "
+                             magit-review-test--on
+                             one "On the headers\n\n"
+                             one "On the author\n\n"
+                             one "On the summary\n\n"
+                             one "On the mention\n\n"
+                             one "> needs what " base " left out\n\nReword\n"))))))
+
+(ert-deftest magit-review-test-revision-parent ()
+  "A parent row in a revision buffer is on the parent commit.
+The comment is drawn there, in the log and in the parent's own revision
+buffer, below its headers."
+  (magit-review-test--with-repo
+    (let ((short-base (magit-review-test--short "main")))
+      (with-current-buffer (magit-review-test--revision head)
+        (magit-review-test--goto "^Parent: ")
+        (magit-review-comment "Parent note")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,(concat "Parent: " short-base " base") . "\n    ▶ Parent note")))))
+      (with-current-buffer (magit-review-test--log)
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,(concat short-base " v1 main base") . "\n    ▶ Parent note")))))
+      (with-current-buffer (magit-review-test--revision base)
+        (let ((drawn (magit-review-test--plain (magit-review-test--drawn))))
+          (should (= 1 (length drawn)))
+          (should (string-suffix-p (concat " " base) (car (car drawn))))
+          (should (equal (cdr (car drawn)) "\n    ▶ Parent note"))))
+      (magit-review-send)
+      (should (equal (magit-review-test--prompt)
+                     (concat "Please address my review comments.  Each one names "
+                             magit-review-test--on
+                             "## Commit " short-base " base\n\nParent note\n"))))))
+
+(ert-deftest magit-review-test-stash ()
+  "A stash comment names the stash by short id, `stash@{N}' and message.
+It stays on the same stash when another one is pushed, and is drawn in
+the status, stash list and stash buffers."
+  (magit-review-test--with-repo
+    (let ((stash (magit-review-test--short "stash@{0}")))
+      (with-current-buffer (magit-review-test--status)
+        (magit-review-test--goto "^stash@{0} ")
+        (magit-review-comment "Still needed?")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       '(("stash@{0} On feat/x: stashed b" . "\n    ▶ Still needed?")))))
+      (magit-review-test--write "README" "fixture changed\n")
+      (magit-review-test--git "stash" "push" "--quiet" "-m" "second" "--" "README")
+      (with-current-buffer (magit-review-test--status)
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       '(("stash@{1} On feat/x: stashed b" . "\n    ▶ Still needed?")))))
+      (with-current-buffer (magit-review-test--show 'magit-stash-mode
+                                                    #'magit-stash-show "stash@{1}")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       '(("Unstaged" . "\n    ▶ Still needed?")))))
+      (with-current-buffer (magit-review-test--show 'magit-stashes-mode #'magit-stash-list)
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       '(("stash@{1} On feat/x: stashed b" . "\n    ▶ Still needed?"))))
+        (magit-review-send)
+        (should (equal (magit-review-test--prompt)
+                       (concat "Please address my review comments.  Each one names "
+                               magit-review-test--on
+                               "## Stash " stash " (stash@{0}) On feat/x: stashed b\n"
+                               "\n"
+                               "Still needed?\n")))
+        (magit-review-test--select "^stash@{0} " "^stash@{1} ")
+        (magit-review-comment "Drop both")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       '(("stash@{1} On feat/x: stashed b"
+                          . "\n    ▶ Still needed? (sent)\n    ▶ Drop both"))))
+        (magit-review-send)
+        (should (equal (magit-review-test--prompt)
+                       (concat "Please address my review comments.  Each one names "
+                               magit-review-test--on
+                               "## Stashes\n"
+                               "\n"
+                               "- " (magit-review-test--short "stash@{0}")
+                               " (stash@{0}) On feat/x: second\n"
+                               "- " stash " (stash@{1}) On feat/x: stashed b\n"
+                               "\n"
+                               "Drop both\n")))))))
+
+;;; Groups and other sections
+
+(ert-deftest magit-review-test-groups ()
+  "A comment on a group heading is on all its changes, with no patch."
+  (magit-review-test--with-repo
+    (with-current-buffer (magit-review-test--status)
+      (magit-review-test--goto "^Staged changes")
+      (magit-review-comment "Write a commit message")
+      (magit-review-test--goto "^Unstaged changes")
+      (magit-review-comment "Stage these?")
+      (magit-review-test--goto "^Untracked files")
+      (magit-review-comment "Ignore these")
+      (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                     '(("Untracked files (1)" . "\n    ▶ Ignore these")
+                       ("Unstaged changes (1)" . "\n    ▶ Stage these?")
+                       ("Staged changes (1)" . "\n    ▶ Write a commit message"))))
+      (magit-review-send))
+    (should (equal (magit-review-test--prompt)
+                   (concat "Please address my review comments.  Each one names "
+                           magit-review-test--on
+                           "## All staged changes\n\nWrite a commit message\n\n"
+                           "## All unstaged changes\n\nStage these?\n\n"
+                           "## All untracked files\n\nIgnore these\n")))))
+
+(defun magit-review-test--refs ()
+  "Show the refs buffer; return it."
+  (magit-review-test--show 'magit-refs-mode #'magit-refs-setup-buffer "HEAD" nil))
+
+(ert-deftest magit-review-test-other-sections ()
+  "A comment on any other section names its kind, value and heading.
+It is drawn below every heading of the same kind and value, so a branch
+comment shows in the status and refs buffers alike."
+  (magit-review-test--with-repo
+    (with-current-buffer (magit-review-test--status)
+      (magit-review-test--goto "^Head:")
+      (magit-review-comment "Rebase onto main")
+      (magit-review-test--goto "^Unmerged into")
+      (magit-review-comment "Too many")
+      (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                     '(("Head: feat/x one" . "\n    ▶ Rebase onto main")
+                       ("Unmerged into origin/main (2)" . "\n    ▶ Too many")))))
+    (with-current-buffer (magit-review-test--refs)
+      (let ((drawn (magit-review-test--plain (magit-review-test--drawn))))
+        (should (= 1 (length drawn)))
+        (should (string-match-p "\\`@ feat/x.* one\\'" (car (car drawn))))
+        (should (equal (cdr (car drawn)) "\n    ▶ Rebase onto main")))
+      (magit-review-send))
+    (should (equal (magit-review-test--prompt)
+                   (concat "Please address my review comments.  Each one names "
+                           magit-review-test--on
+                           "## branch feat/x, shown as \"Head: feat/x one\"\n"
+                           "\n"
+                           "Rebase onto main\n"
+                           "\n"
+                           "## unpushed @{upstream}.., shown as "
+                           "\"Unmerged into origin/main (2)\"\n"
+                           "\n"
+                           "Too many\n")))))
+
+(ert-deftest magit-review-test-direct-comment-on-tag ()
+  "A direct comment works on any item, such as a tag."
+  (magit-review-test--with-repo
+    (with-current-buffer (magit-review-test--refs)
+      (magit-review-test--goto "^  v1 ")
+      (magit-review-comment-send "Is this released?"))
+    (should (equal magit-review-test--sent
+                   `((,(concat "Here is a review comment: a question or a request.  "
+                               "It names " magit-review-test--on
+                               "## tag v1, shown as \"v1 base\"\n"
+                               "\n"
+                               "Is this released?\n")
+                      t))))))
+
+(ert-deftest magit-review-test-root-refused ()
+  "Commenting on a buffer as a whole is refused before asking for the text."
+  (magit-review-test--with-repo
+    (with-current-buffer (magit-review-test--status)
+      (goto-char (point-max))
+      (cl-letf (((symbol-function 'read-string)
+                 (lambda (&rest _) (ert-fail "asked for a comment"))))
+        (should (string-match-p
+                 "Nothing to comment on here"
+                 (cadr (should-error (call-interactively #'magit-review-comment)
+                                     :type 'user-error)))))
+      (should-error (magit-review-comment "Whole buffer") :type 'user-error)
+      (should (null (magit-review-items magit-review-test--repo t))))))
+
+(ert-deftest magit-review-test-branch-region-single ()
+  "A region over several branches comments only on the one at point."
+  (magit-review-test--with-repo
+    (with-current-buffer (magit-review-test--refs)
+      (magit-review-test--select "^@ feat/x" "^  main")
+      (magit-review-comment "Delete it")
+      (let ((drawn (magit-review-test--plain (magit-review-test--drawn))))
+        (should (= 1 (length drawn)))
+        (should (string-match-p "\\` main.* base\\'" (car (car drawn)))))
+      (magit-review-send))
+    (should (string-match-p "^## branch main, shown as \"main.* base\"\n\nDelete it\n\\'"
+                            (magit-review-test--prompt)))
+    (should (= 1 (length (magit-review-items magit-review-test--repo t))))))
+
+;;; Diff labels
+
+(ert-deftest magit-review-test-log-patch-label ()
+  "A hunk in a log showing patches is labelled with its commit's diff.
+So the comment is on the same hunk in the commit's revision buffer and
+in a walkthrough of that one commit."
+  (magit-review-test--with-repo
+    (with-current-buffer (magit-review-test--log "--patch")
+      (magit-review-test--goto "^@@ -17,7 \\+17,7 @@")
+      (magit-review-comment "Log note")
+      (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                     '(("modified a.el" . "  [1 review comment]")
+                       (" line 23" . "\n    ▶ Log note")))))
+    (with-current-buffer (magit-review-test--revision head)
+      (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                     '(("modified a.el" . "  [1 review comment]")
+                       (" line 23" . "\n    ▶ Log note")))))
+    (with-current-buffer (magit-review-test--walkthrough base head)
+      (should (equal (assoc " line 23" (magit-review-test--plain (magit-review-test--drawn)))
+                     '(" line 23" . "\n    ▶ Log note")))
+      (magit-review-send))
+    (should (string-match-p
+             (concat "^## a\\.el new L17-23 old L17-23 (diff of " base "\\.\\." head
+                     ")\n\nLog note\n")
+             (magit-review-test--prompt)))))
+
+(ert-deftest magit-review-test-root-commit-label ()
+  "A root commit's hunks are labelled by its full id, however it was named."
+  (magit-review-test--with-repo
+    (let ((init (magit-review-test--git "rev-parse" "main~1")))
+      (with-current-buffer (magit-review-test--revision "main~1")
+        (magit-review-test--goto "^@@ -0,0 \\+1 @@")
+        (magit-review-comment "Root note")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       '(("new file README" . "  [1 review comment]")
+                         ("+fixture" . "\n    ▶ Root note")))))
+      (with-current-buffer (magit-review-test--log "--patch")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       '(("new file README" . "  [1 review comment]")
+                         ("+fixture" . "\n    ▶ Root note"))))
+        (magit-review-send))
+      (should (equal (magit-review-test--prompt)
+                     (concat "Please address my review comments.  Each one names "
+                             magit-review-test--on
+                             "## README new L1-1 (diff of " init ")\n"
+                             "\n"
+                             "Root note\n"
+                             "\n"
+                             "```diff\n@@ -0,0 +1 @@\n+fixture\n```\n"))))))
+
 ;;; Walkthrough findings
 
 (defun magit-review-test--goto-finding (title)
@@ -620,9 +1000,7 @@ A reply to a finding already handed off sends it again, as a follow-up."
       (should (equal (magit-review-test--prompt)
                      (concat
                       "Please address my review comments and the review "
-                      "findings I accepted.  Each one names the file, the "
-                      "new/old line range and the diff it refers to.\n"
-                      "\n"
+                      "findings I accepted.  Each one names " magit-review-test--on
                       "## a.el new L17-23 old L17-23 (" label ")\n"
                       "\n"
                       "Hunk note\n"
@@ -648,9 +1026,7 @@ A reply to a finding already handed off sends it again, as a follow-up."
       (should (equal (magit-review-test--prompt)
                      (concat
                       "Please address my review comments and the review "
-                      "findings I accepted.  Each one names the file, the "
-                      "new/old line range and the diff it refers to.\n"
-                      "\n"
+                      "findings I accepted.  Each one names " magit-review-test--on
                       "## Follow-up on finding [high] Line 20 is wrong: "
                       "a.el new L20-20 (" label ")\n"
                       "\n"

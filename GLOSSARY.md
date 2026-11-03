@@ -45,10 +45,10 @@ The set of Claude side windows visible in the current tab. Hiding the panel
 remembers the set so a project's members can be restored later.
 
 **Review comment**:
-A remark the user attaches to a hunk, a region of a hunk, or a whole file in a
-Magit diff, or to a walkthrough's step or a passage of its explanation.
-Pending until handed off, then sent; sent comments stay visible, dimmed, until
-discarded.
+A remark the user attaches to something Magit shows: a hunk, a region of a
+hunk, a whole file, one or more commits, or another item such as a branch; or
+to a walkthrough's step or a passage of its explanation. Pending until handed
+off, then sent; sent comments stay visible, dimmed, until discarded.
 
 **Passage**:
 The part of a step's explanation a review comment is about: the text the user

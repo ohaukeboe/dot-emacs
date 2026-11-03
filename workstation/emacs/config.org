@@ -970,12 +970,21 @@ enough. =difftastic-bindings-mode= adds =M-d= / =M-c= to the magit diff menu,
     (difftastic-bindings-mode 1))
 #+end_src
 
-**** Reviewing diffs with Claude Code
+**** Reviewing in Magit with Claude Code
 
 A [[https://www.hunk.dev/][hunk.dev]]-style review loop: press =@= in a Magit buffer, comment on
-the hunk, active region or file at point, then send all pending comments to
-the running Claude Code instance as one prompt.  Each comment carries the file,
-new/old line range, the diff it refers to and the (hunk or region) patch.  In
+the thing at point, then send all pending comments to the running Claude
+Code instance as one prompt.  A comment on a hunk, active region or file
+carries the file, new/old line range, the diff it refers to and the (hunk
+or region) patch.  A comment can also go on a commit in a log or the
+status buffer's commit lists (or on all the commits an active region
+selects), on a stash, on a revision buffer's headers or commit message
+(its commit, with a region of the message quoted), on the staged, unstaged
+or untracked changes, or on anything else Magit shows, such as a branch, a
+tag or the "Unmerged into" heading.  Those carry no patch: commits are
+named by short id and subject, a stash also by =stash@{N}= and message, a
+group by its name and anything else by its kind, value and heading, and
+Claude reads the rest itself.  Only the buffer as a whole is refused.  In
 a walkthrough, =@= also comments on a step or a passage of its explanation
 (below).
 
@@ -986,9 +995,15 @@ comment: one comment sent at once on its own, for a quick question, leaving
 other pending comments queued.  Claude can also re-read the
 review through the =magit_review_comments= MCP tool.
 
-Comments are drawn below the last commented line (unsent ones highlighted,
-sent ones dimmed) and file headings show a comment count, so they stay
-visible while a file is collapsed.
+Comments are drawn in status, diff, revision, log, refs and stash buffers,
+unsent ones highlighted and sent ones dimmed.  A hunk comment sits below
+the last commented line, and file headings show a comment count, so it
+stays visible while a file is collapsed.  A comment on commits sits once
+below the last of them, wherever they appear, and any other below its
+heading.  Commits are matched by their full ids, so a stash comment stays
+on its stash as others are pushed, and a comment on a commit that is
+later amended or rebased is drawn nowhere but stays pending: =@ l= still
+lists it and the hand-off still sends it.
 
 The loop lives in =magit-review.el= (=packages/=), with its ERT suite
 (=nix build .#test-magit-review -L=).  The package names no agent: the
@@ -1013,7 +1028,7 @@ refresh.
     :config
     (claude-code-ide-make-tool
      :name "magit_review_comments"
-     :description "Return the user's review comments on the Git diff of the current project, written in Emacs/Magit, and the walkthrough findings the user accepted. Each comment names the file, the new/old line range, which diff it belongs to (unstaged, staged or a revision) and includes the commented diff hunk; a comment on a walkthrough's step names the step, its files and the diff and quotes the passage it answers; a finding is headed by its severity and title."
+     :description "Return the user's review comments on the current project, written in Emacs/Magit, and the walkthrough findings the user accepted. Each comment names what it is on: a file with its new/old line range and the diff it belongs to (unstaged, staged, a commit or a range), with the commented hunk; one or more commits or stashes, by short id and subject, without their patch; the staged, unstaged or untracked changes as a whole; or another item Magit shows, such as a branch or tag. A comment on a walkthrough's step names the step, its files and the diff and quotes the passage it answers. A finding is headed by its severity and title."
      :args '((:name "include_sent"
                     :type boolean
                     :description "Also return comments and findings already sent to Claude"
