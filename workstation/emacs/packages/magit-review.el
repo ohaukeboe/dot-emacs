@@ -9,9 +9,10 @@
 ;; comment to the thing at point in a Magit buffer: a hunk, hunk region or
 ;; file; one commit or stash, or every one a region selects; a revision
 ;; buffer's headers or commit message (its commit, with a region of the
-;; message quoted); the staged, unstaged or untracked changes; or any
-;; other section, such as a branch, a tag or the upstream's commit list;
-;; or, in a walkthrough, a step or a passage of its explanation.
+;; message quoted); a stash buffer as a whole or any of its rows (its
+;; stash); the staged, unstaged or untracked changes; or any other
+;; section, such as a branch, a tag or the upstream's commit list; or, in
+;; a walkthrough, a step or a passage of its explanation.
 ;; `magit-review-send' hands every pending comment of the repository to its
 ;; coding agent as one prompt, together with the findings the user accepted
 ;; in the repository's walkthroughs, and marks them sent.
@@ -25,10 +26,11 @@
 ;; `magit-review-decorate' draws the comments in status, diff, revision,
 ;; log, refs and stash buffers, unsent ones highlighted and sent ones
 ;; dimmed: a hunk comment below its last commented line, with a count on
-;; each file heading; a comment on commits once, below the line of the last
-;; of them in the buffer; any other below every heading it is on.  Commits
-;; are matched by their full ids, so a comment on a commit that is later
-;; rewritten is drawn nowhere but stays pending.
+;; each file heading; a comment on one commit or stash below every line
+;; that shows it, and one on several once, below the last of them in the
+;; buffer; any other below every heading it is on.  Commits are matched by
+;; their full ids, so a comment on a commit that is later rewritten is
+;; drawn nowhere but stays pending.
 ;;
 ;; The agent is plugged in through `magit-review-send-function'; this file
 ;; names no agent package.  `magit-review-items' and `magit-review-format'
@@ -51,14 +53,16 @@
 ;; Magit internals this file relies on, to recheck when bumping Magit
 ;; (Magit has renamed buffer-local variables without aliases before):
 ;; `magit-buffer-revision-oid', the full id of a revision buffer's commit;
-;; the hunk section slots `from-range', `to-range', `content' and
-;; `combined'; `magit-diff-type', `magit-diff-hunk-line',
+;; `magit-buffer-revision', a stash buffer's stash as `stash@{N}'; the
+;; hunk section slots `from-range', `to-range', `content' and `combined';
+;; `magit-diff-type', `magit-diff-hunk-line',
 ;; `magit-diff-use-hunk-region-p', `magit-diff-hunk-region-beginning' and
 ;; `magit-diff-hunk-region-patch'; `magit-region-sections',
 ;; `magit-root-section' and the section types and values: `commit' valued
-;; by an id, abbreviated in logs and status lists, or by `stash@{N}' in a
-;; stash buffer; `stash' valued `stash@{N}'; a revision buffer's `headers'
-;; and `commit-message', whose commit ids are `commit' children; `staged',
+;; by an id, abbreviated in logs and status lists, or in a stash buffer by
+;; `stash@{N}' and its `^2' and `^3'; `stash' valued `stash@{N}', or nil
+;; as a stash buffer's root; a revision buffer's `headers' and
+;; `commit-message', whose commit ids are `commit' children; `staged',
 ;; `unstaged' and `untracked'; and, in a log showing patches, hunks inside
 ;; their commit's section.  walkthrough.el's label reads
 ;; `magit-buffer-diff-range' and `magit-buffer-diff-range-oids'.
@@ -235,11 +239,13 @@ message."
 
 (defun magit-review--section-entry (section)
   "Return the commit entry of commit or stash SECTION.
-A commit section valued `stash@{N}', as in a stash buffer, is that stash."
-  (let ((value (substring-no-properties (oref section value))))
-    (magit-review--commit value
-                          (or (magit-section-match 'stash section)
-                              (string-match-p magit-review--stash-name-re value)))))
+In a stash buffer every one is the stash it shows: its root and the rows
+of the stash's own, staged (`stash@{N}^2') and untracked (`stash@{N}^3')
+commits."
+  (if (derived-mode-p 'magit-stash-mode)
+      (magit-review--commit magit-buffer-revision t)
+    (magit-review--commit (substring-no-properties (oref section value))
+                          (magit-section-match 'stash section))))
 
 (defun magit-review--in-message-p (&optional pos)
   "Return non-nil when POS, or point, is in a revision's commit message."
@@ -265,16 +271,15 @@ explanation, and `section' for any other section.  Only commits and
 stashes widen to every one a region selects.  A revision buffer's
 headers and commit message are on its commit, though Magit makes its
 parents, and commit ids the message mentions, commit sections; a region
-of the message is quoted.  The buffer as a whole is refused."
+of the message is quoted.  The buffer as a whole is refused, but a stash
+buffer's root and rows are all its stash."
   (let ((section (magit-current-section))
         (revision (and (derived-mode-p 'magit-revision-mode)
                        magit-buffer-revision-oid)))
+    (magit-review--refuse-root section)
     (cond
      ((when-let* ((step (magit-review--step-target)))
         (list :target 'step :where (walkthrough-diff-label) :step step)))
-     ;; Before the commit rule: a stash buffer's root is a stash.
-     ((eq section magit-root-section)
-      (magit-review--refuse-root))
      ((and revision (magit-review--in-message-p))
       (append (list :target 'commits
                     :commits (list (magit-review--commit revision)))
@@ -284,11 +289,13 @@ of the message is quoted.  The buffer as a whole is refused."
            (magit-section-match '[* headers] section)
            (not (magit-section-match 'commit section)))
       (list :target 'commits :commits (list (magit-review--commit revision))))
+     ;; A stash buffer's root is a `stash' section too.
      ((when-let* ((sections (or (magit-region-sections '(commit stash) t)
                                 (and (magit-section-match '(commit stash) section)
                                      (list section)))))
         (list :target 'commits
-              :commits (mapcar #'magit-review--section-entry sections))))
+              ;; A region over a stash buffer's rows is on its stash once.
+              :commits (seq-uniq (mapcar #'magit-review--section-entry sections)))))
      ((magit-section-match (mapcar #'car magit-review--groups) section)
       (list :target 'group :group (oref section type)))
      ((magit-section-match '(hunk file) section)
@@ -324,15 +331,18 @@ the graph-only lines below it."
     (oref section start)
     (save-excursion (goto-char (oref section start)) (line-end-position)))))
 
-(defun magit-review--refuse-root ()
-  "Refuse to comment on the buffer as a whole."
-  (user-error "Nothing to comment on here; move to a commit, file, hunk or other item"))
+(defun magit-review--refuse-root (section)
+  "Refuse to comment on SECTION when it is the buffer as a whole.
+A stash buffer as a whole is the stash it shows, which takes a comment,
+and so does a walkthrough's step or passage at point."
+  (when (and (eq section magit-root-section)
+             (not (derived-mode-p 'magit-stash-mode))
+             (not (magit-review--step-target)))
+    (user-error "Nothing to comment on here; move to a commit, file, hunk or other item")))
 
 (defun magit-review--read ()
   "Read a review comment for the thing at point."
-  (when (and (eq (magit-current-section) magit-root-section)
-             (not (magit-review--step-target)))
-    (magit-review--refuse-root))
+  (magit-review--refuse-root (magit-current-section))
   (list (read-string "Review comment: ")))
 
 (defun magit-review--add (text)
@@ -354,8 +364,9 @@ the graph-only lines below it."
   "Attach review comment TEXT to the thing at point.
 That is a hunk, hunk region or file; a commit or stash, or all the ones
 the region selects; a revision buffer's commit, from its headers or its
-message, a region of which is quoted; a group of changes; or any other
-section; or, in a walkthrough, a step or a passage of its explanation.
+message, a region of which is quoted; a stash buffer's stash, from
+anywhere in it; a group of changes; or any other section; or, in a
+walkthrough, a step or a passage of its explanation.
 Interactively on a walkthrough finding, TEXT is nil and this replies to
 the finding instead (`walkthrough-reply')."
   (interactive (if (magit-review--on-finding-p)
@@ -706,9 +717,10 @@ shows nothing: comments made there are on the revision's commit."
 (defun magit-review-decorate ()
   "Show this repository's review comments in the current Magit buffer.
 File headings get a comment count; hunk comments appear below the last
-commented line, file comments below the file heading.  A comment on
-commits appears once, below the line of the last of them in the buffer.
-Meant for `magit-refresh-buffer-hook'."
+commented line, file comments below the file heading.  A comment on one
+commit or stash appears below every line that shows it; one on several,
+once, below the last of them in the buffer.  Meant for
+`magit-refresh-buffer-hook'."
   (remove-overlays (point-min) (point-max) 'magit-review t)
   (when-let* (((derived-mode-p magit-review--modes))
               (repo (magit-toplevel))
@@ -741,9 +753,12 @@ Meant for `magit-refresh-buffer-hook'."
                           (id (magit-review--section-commit section stashes))
                           (start (oref section start)))
                 (dolist (c commits)
-                  (when (and (magit-review--covers-p c id)
-                             (> start (or (car (gethash c below)) 0)))
-                    (puthash c (list start) below)))))
+                  (when (magit-review--covers-p c id)
+                    ;; Sections come in buffer order, so the last one
+                    ;; seen of several commits is the last in the buffer.
+                    (if (cdr (plist-get c :commits))
+                        (puthash c (list start) below)
+                      (push start (gethash c below)))))))
              (type
               (dolist (c others)
                 (when (if (eq (plist-get c :target) 'group)

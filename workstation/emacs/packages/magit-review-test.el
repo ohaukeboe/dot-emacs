@@ -653,6 +653,30 @@ lists them."
                              "\n"
                              "## Commits\n\n" both "\nOr reorder them\n"))))))
 
+(ert-deftest magit-review-test-commit-shown-twice ()
+  "A comment on one commit is drawn below every line that shows it.
+One on several commits is still drawn once, below the last of them.
+With a push branch at `base', the status buffer lists `one' both as
+unpushed to it and as unmerged into the upstream."
+  (magit-review-test--with-repo
+    (magit-review-test--git "push" "--quiet" "origin" "main:refs/heads/feat/x")
+    (magit-review-test--git "config" "remote.pushDefault" "origin")
+    (let ((one (concat (magit-review-test--short "HEAD") " feat/x one"))
+          (short-base (concat (magit-review-test--short "main")
+                              " v1 main origin/feat/x base")))
+      (with-current-buffer (magit-review-test--status)
+        (magit-review-test--goto " one$" 'unpushed)
+        (magit-review-comment "Split this")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,one . "\n    ▶ Split this")
+                         (,one . "\n    ▶ Split this"))))
+        (magit-review-test--select " one$" " base$" 'unpushed)
+        (magit-review-comment "Squash these")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `((,one . "\n    ▶ Split this")
+                         (,one . "\n    ▶ Split this")
+                         (,short-base . "\n    ▶ Squash these"))))))))
+
 (ert-deftest magit-review-test-rewritten-commit ()
   "A comment on a commit that is rewritten later stays pending, undrawn.
 It is listed and handed off with the commit's old id and subject."
@@ -788,6 +812,42 @@ the status, stash list and stash buffers."
                                "- " stash " (stash@{1}) On feat/x: stashed b\n"
                                "\n"
                                "Drop both\n")))))))
+
+(ert-deftest magit-review-test-stash-buffer ()
+  "A stash buffer as a whole, and its staged and untracked rows, are its stash.
+A comment on any of them is a stash comment, drawn on the stash's row."
+  (magit-review-test--with-repo
+    (magit-review-test--git "stash" "push" "--quiet" "--include-untracked"
+                            "-m" "everything")
+    (let ((stash (concat "## Stash " (magit-review-test--short "stash@{0}")
+                         " (stash@{0}) On feat/x: everything\n\n"))
+          (drawn (concat "\n    ▶ Whole stash\n    ▶ Staged part"
+                         "\n    ▶ Untracked part\n    ▶ Both parts")))
+      (with-current-buffer (magit-review-test--show 'magit-stash-mode
+                                                    #'magit-stash-show "stash@{0}")
+        (goto-char (point-max))
+        (cl-letf (((symbol-function 'read-string) (lambda (&rest _) "Whole stash")))
+          (call-interactively #'magit-review-comment))
+        (magit-review-test--goto "^Staged")
+        (magit-review-comment "Staged part")
+        (magit-review-test--goto "^Untracked files")
+        (magit-review-comment "Untracked part")
+        ;; A region over its rows is on the stash once.
+        (magit-review-test--select "^Staged" "^Untracked files")
+        (magit-review-comment "Both parts")
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `(("Unstaged" . ,drawn)))))
+      (with-current-buffer (magit-review-test--status)
+        (should (equal (magit-review-test--plain (magit-review-test--drawn))
+                       `(("stash@{0} On feat/x: everything" . ,drawn))))
+        (magit-review-send))
+      (should (equal (magit-review-test--prompt)
+                     (concat "Please address my review comments.  Each one names "
+                             magit-review-test--on
+                             stash "Whole stash\n\n"
+                             stash "Staged part\n\n"
+                             stash "Untracked part\n\n"
+                             stash "Both parts\n"))))))
 
 ;;; Groups and other sections
 

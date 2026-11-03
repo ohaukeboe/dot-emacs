@@ -978,15 +978,15 @@ Code instance as one prompt.  A comment on a hunk, active region or file
 carries the file, new/old line range, the diff it refers to and the (hunk
 or region) patch.  A comment can also go on a commit in a log or the
 status buffer's commit lists (or on all the commits an active region
-selects), on a stash, on a revision buffer's headers or commit message
-(its commit, with a region of the message quoted), on the staged, unstaged
-or untracked changes, or on anything else Magit shows, such as a branch, a
-tag or the "Unmerged into" heading.  Those carry no patch: commits are
-named by short id and subject, a stash also by =stash@{N}= and message, a
-group by its name and anything else by its kind, value and heading, and
-Claude reads the rest itself.  Only the buffer as a whole is refused.  In
-a walkthrough, =@= also comments on a step or a passage of its explanation
-(below).
+selects), on a stash (anywhere in a stash buffer stands for its stash), on
+a revision buffer's headers or commit message (its commit, with a region
+of the message quoted), on the staged, unstaged or untracked changes, or
+on anything else Magit shows, such as a branch, a tag or the "Unmerged
+into" heading.  Those carry no patch: commits are named by short id and
+subject, a stash also by =stash@{N}= and message, a group by its name and
+anything else by its kind, value and heading, and Claude reads the rest
+itself.  Only the buffer as a whole is refused.  In a walkthrough, =@=
+also comments on a step or a passage of its explanation (below).
 
 The review is sent as a bracketed paste, because typing a multi-line string
 into the terminal would submit it at the first newline.  =@ p= pastes without
@@ -998,12 +998,13 @@ review through the =magit_review_comments= MCP tool.
 Comments are drawn in status, diff, revision, log, refs and stash buffers,
 unsent ones highlighted and sent ones dimmed.  A hunk comment sits below
 the last commented line, and file headings show a comment count, so it
-stays visible while a file is collapsed.  A comment on commits sits once
-below the last of them, wherever they appear, and any other below its
-heading.  Commits are matched by their full ids, so a stash comment stays
-on its stash as others are pushed, and a comment on a commit that is
-later amended or rebased is drawn nowhere but stays pending: =@ l= still
-lists it and the hand-off still sends it.
+stays visible while a file is collapsed.  A comment on one commit or stash
+sits below every line that shows it, one on several commits once below
+the last of them, and any other below its heading.  Commits are matched by
+their full ids, so a stash comment stays on its stash as others are
+pushed, and a comment on a commit that is later amended or rebased is
+drawn nowhere but stays pending: =@ l= still lists it and the hand-off
+still sends it.
 
 The loop lives in =magit-review.el= (=packages/=), with its ERT suite
 (=nix build .#test-magit-review -L=).  The package names no agent: the
