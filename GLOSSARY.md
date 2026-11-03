@@ -46,8 +46,15 @@ remembers the set so a project's members can be restored later.
 
 **Review comment**:
 A remark the user attaches to a hunk, a region of a hunk, or a whole file in a
-Magit diff. Pending until handed off, then sent; sent comments stay visible,
-dimmed, until discarded.
+Magit diff, or to a walkthrough's step or a passage of its explanation.
+Pending until handed off, then sent; sent comments stay visible, dimmed, until
+discarded.
+
+**Passage**:
+The part of a step's explanation a review comment is about: the text the user
+selected, or else the list item or paragraph they were in. Handed off quoted,
+so the agent reads which of its words the comment answers.
+_Avoid_: section (a Magit section is something else)
 
 **Review hand-off**:
 Sending the repository's pending review comments, and the accepted findings of
@@ -83,7 +90,8 @@ The user's answer to a finding: agreement with a twist, a correction or a
 question. A finding has at most one, kept with it and handed off under it.
 Replying accepts the finding, even a dismissed or already sent one, which
 is then handed off again.
-_Avoid_: review comment (that is on a diff, not on a finding)
+_Avoid_: review comment (that is on a diff or an explanation, not on a
+finding)
 
 **Follow-up**:
 A finding already handed off that the user then replied to, handed off
