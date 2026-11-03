@@ -22,9 +22,16 @@
 ;; written back to the file, as is the user's reply to a finding
 ;; (`walkthrough-reply'), which accepts it.  `walkthrough-accepted-findings' returns the
 ;; accepted ones shaped like review comments, for the configuration's
-;; hand-off to send; `walkthrough-mark-sent' records that it did.  The
-;; agent is plugged in through `walkthrough-request-function'; this file
-;; names no agent package.
+;; hand-off to send; `walkthrough-mark-sent' records that it did.
+;;
+;; Review comments can also be about a step as a whole or a passage of its
+;; explanation.  `walkthrough-comment-target' says which step or passage a
+;; comment at point would be about; the configuration keeps such comments
+;; with its other review comments and hands them back through
+;; `walkthrough-comments-function', and this file draws them below the
+;; passage or the step heading.  The agent is plugged in through
+;; `walkthrough-request-function'.  This file names no agent package and
+;; does not depend on the configuration's review-comment code.
 
 ;;; Code:
 

@@ -975,7 +975,9 @@ enough. =difftastic-bindings-mode= adds =M-d= / =M-c= to the magit diff menu,
 A [[https://www.hunk.dev/][hunk.dev]]-style review loop: press =@= in a Magit buffer, comment on
 the hunk, active region or file at point, then send all pending comments to
 the running Claude Code instance as one prompt.  Each comment carries the file,
-new/old line range, the diff it refers to and the (hunk or region) patch.
+new/old line range, the diff it refers to and the (hunk or region) patch.  In
+a walkthrough, =@= also comments on a step or a passage of its explanation
+(below).
 
 The review is sent as a bracketed paste, because typing a multi-line string
 into the terminal would submit it at the first newline.  =@ p= pastes without
@@ -995,7 +997,10 @@ visible while a file is collapsed.
     (defvar my/magit-review-comments nil
       "Review comments on Magit diffs, newest first.
   Each comment is a plist with :repo, :file, :where, :new, :old, :patch,
-  :text and :sent.  :new and :old are (START . END) line ranges or nil.")
+  :text and :sent.  :new and :old are (START . END) line ranges or nil.
+  A comment on a walkthrough's step or a passage of its explanation also
+  has :target, what `walkthrough-comment-target' returned, and no :file,
+  :new, :old or :patch.")
 
     (defun my/magit-review--range (section from)
       "Return the (START . END) lines of hunk SECTION on the old side if FROM.
@@ -1041,34 +1046,54 @@ visible while a file is collapsed.
                  ("diff")))))
 
     (defun my/magit-review--read ()
-      "Read a review comment for the hunk, hunk region or file at point."
-      (unless (magit-section-match '(hunk file))
-        (user-error "Not on a diff file or hunk"))
-      (list (read-string "Review comment: ")))
+      "Read a review comment for the thing at point.
+  Return (TEXT TARGET).  In a walkthrough, TARGET is the step heading or
+  passage of its explanation at point (`walkthrough-comment-target');
+  elsewhere it is nil and the comment is on the hunk, hunk region or file."
+      (let ((target (and (derived-mode-p 'walkthrough-mode)
+                         (walkthrough-comment-target))))
+        (unless (or target (magit-section-match '(hunk file)))
+          (user-error "Not on a diff file or hunk"))
+        (list (read-string "Review comment: ") target)))
 
-    (defun my/magit-review--add (text)
-      "Record review comment TEXT on the thing at point and return it."
+    (defun my/magit-review--add (text &optional target)
+      "Record review comment TEXT on the thing at point and return it.
+  TARGET, from `my/magit-review--read', is the walkthrough step or
+  passage the comment is about.  Such a comment is labelled with the
+  walkthrough's commits like a hunk comment there, but has no file, lines
+  or patch, so the hunk and file drawing leaves it alone."
       (when (string-empty-p text)
         (user-error "Empty comment"))
-      (let* ((section (magit-current-section))
-             (hunk (and (magit-section-match 'hunk section) section))
-             (comment (list :repo (magit-toplevel)
-                            :file (magit-file-at-point)
-                            :where (my/magit-review--where section)
-                            :new (and hunk (my/magit-review--range hunk nil))
-                            :old (and hunk (my/magit-review--range hunk t))
-                            ;; A region is sent as it is; a whole hunk
-                            ;; is capped, a new file's being all of it.
-                            :patch (and hunk
-                                        (if (magit-diff-use-hunk-region-p)
-                                            (magit-diff-hunk-region-patch hunk)
-                                          (let ((patch (buffer-substring-no-properties
-                                                        (oref hunk start) (oref hunk end))))
-                                            (if (require 'walkthrough nil t)
-                                                (walkthrough-patch-excerpt patch)
-                                              patch))))
-                            :text text
-                            :sent nil)))
+      (let ((comment
+             (if target
+                 (list :repo (magit-toplevel)
+                       :file nil
+                       :where (walkthrough-diff-label)
+                       :new nil
+                       :old nil
+                       :patch nil
+                       :text text
+                       :sent nil
+                       :target target)
+               (let* ((section (magit-current-section))
+                      (hunk (and (magit-section-match 'hunk section) section)))
+                 (list :repo (magit-toplevel)
+                       :file (magit-file-at-point)
+                       :where (my/magit-review--where section)
+                       :new (and hunk (my/magit-review--range hunk nil))
+                       :old (and hunk (my/magit-review--range hunk t))
+                       ;; A region is sent as it is; a whole hunk
+                       ;; is capped, a new file's being all of it.
+                       :patch (and hunk
+                                   (if (magit-diff-use-hunk-region-p)
+                                       (magit-diff-hunk-region-patch hunk)
+                                     (let ((patch (buffer-substring-no-properties
+                                                   (oref hunk start) (oref hunk end))))
+                                       (if (require 'walkthrough nil t)
+                                           (walkthrough-patch-excerpt patch)
+                                         patch))))
+                       :text text
+                       :sent nil)))))
         (push comment my/magit-review-comments)
         (deactivate-mark)
         comment))
@@ -1077,31 +1102,36 @@ visible while a file is collapsed.
       "Return non-nil when point is on a walkthrough finding."
       (and (derived-mode-p 'walkthrough-mode) (walkthrough-finding-at-point-p)))
 
-    (defun my/magit-review-comment (&optional text)
-      "Attach review comment TEXT to the hunk, hunk region or file at point.
-  Interactively on a walkthrough finding, TEXT is nil and this replies to
-  the finding instead (`walkthrough-reply')."
+    (defun my/magit-review-comment (&optional text target)
+      "Attach review comment TEXT to the thing at point.
+  That is the walkthrough step or passage TARGET when non-nil, else the
+  hunk, hunk region or file at point.  Interactively on a walkthrough
+  finding, TEXT is nil and this replies to the finding instead
+  (`walkthrough-reply')."
       (interactive (if (my/magit-review--on-finding-p)
-                       (list nil)
+                       (list nil nil)
                      (my/magit-review--read)))
       (if (null text)
           (call-interactively #'walkthrough-reply)
-        (my/magit-review--add text)
+        (my/magit-review--add text target)
         (my/magit-review--redecorate (magit-toplevel))
         (message "%d pending review comment(s)"
                  (length (my/magit-review--pending (magit-toplevel))))))
 
-    (defun my/magit-review-comment-send (text &optional no-submit)
+    (defun my/magit-review-comment-send (text &optional target no-submit)
       "Send review comment TEXT on the thing at point to Claude Code at once.
-  Other pending comments stay pending.  With prefix argument NO-SUBMIT,
-  only paste it and show the Claude buffer."
+  TARGET is as for `my/magit-review-comment'.  Other pending comments
+  stay pending.  With prefix argument NO-SUBMIT, only paste it and show
+  the Claude buffer."
       (interactive
        (if (my/magit-review--on-finding-p)
            (user-error "On a finding, reply with `@ c' instead")
          (append (my/magit-review--read) (list current-prefix-arg))))
       (my/magit-review--hand-off
-       (list (my/magit-review--add text))
-       "Here is a comment on this diff: a question or a request.  It names "
+       (list (my/magit-review--add text target))
+       (if target
+           "Here is a comment on the walkthrough of this diff: a question or a request.  It names "
+         "Here is a comment on this diff: a question or a request.  It names ")
        no-submit))
 
     (defun my/magit-review--pending (repo &optional include-sent)
@@ -1129,41 +1159,74 @@ visible while a file is collapsed.
       "Format COMMENTS as a Markdown review prompt.
   COMMENTS may include accepted walkthrough findings, which are headed by
   their severity and title, followed by the user's reply; one handed off
-  before is headed as a follow-up.  INTRO starts the prompt's opening
-  sentence, which goes on to say what each comment names."
-      (cl-flet ((lines (label range)
-                  (when range
-                    (format " %s L%d-%d" label (car range) (cdr range)))))
-        (concat
-         (or intro
-             (if (seq-some #'my/magit-review--finding-p comments)
-                 "Please address my review comments and the review findings I accepted.  Each one names "
-               "Please address my review comments on this diff.  Each one names "))
-         "the file, the new/old line range and the diff it refers to.\n\n"
-         (mapconcat
-          (lambda (c)
-            (let ((patch (plist-get c :patch)))
-              (concat
-               (format "## %s%s%s%s (%s)%s\n\n%s\n"
-                       (if (my/magit-review--finding-p c)
-                           (format "%s [%s] %s: "
-                                   (if (plist-get c :follow-up)
-                                       "Follow-up on finding"
-                                     "Finding")
-                                   (plist-get c :severity) (plist-get c :title))
-                         "")
-                       (or (plist-get c :file) "no file")
-                       (or (lines "new" (plist-get c :new)) "")
-                       (or (lines "old" (plist-get c :old)) "")
-                       (plist-get c :where)
-                       (if (plist-get c :sent) " [already sent]" "")
-                       (concat (plist-get c :text)
-                               (when-let* ((reply (plist-get c :reply)))
-                                 (format "\n\nMy reply: %s" reply))))
-               (when patch
-                 (format "\n```diff\n%s%s```\n" patch
-                         (if (string-suffix-p "\n" patch) "" "\n"))))))
-          comments "\n"))))
+  before is headed as a follow-up.  A comment on a walkthrough's step or
+  passage is headed by the step, its files and the diff, and quotes the
+  passage; the prompt then closes by saying how to treat such comments.
+  INTRO starts the prompt's opening sentence, which goes on to say what
+  each comment names."
+      (let ((on-steps (seq-filter (lambda (c) (plist-get c :target)) comments)))
+        (cl-flet ((lines (label range)
+                    (when range
+                      (format " %s L%d-%d" label (car range) (cdr range))))
+                  (sent (c)
+                    (if (plist-get c :sent) " [already sent]" ""))
+                  (blockquote (text)
+                    (mapconcat (lambda (line)
+                                 (if (string-empty-p line) ">" (concat "> " line)))
+                               (split-string text "\n")
+                               "\n")))
+          (concat
+           (or intro
+               (if (seq-some #'my/magit-review--finding-p comments)
+                   "Please address my review comments and the review findings I accepted.  Each one names "
+                 "Please address my review comments on this diff.  Each one names "))
+           (cond ((null on-steps)
+                  "the file, the new/old line range and the diff it refers to.\n\n")
+                 ((length= on-steps (length comments))
+                  "the walkthrough step it refers to, the step's files and the diff.\n\n")
+                 (t
+                  "either the file, the new/old line range and the diff, or the walkthrough step it refers to.\n\n"))
+           (mapconcat
+            (lambda (c)
+              (if-let* ((target (plist-get c :target)))
+                  (let ((files (plist-get target :files))
+                        (passage (plist-get target :quote)))
+                    (format "## Step %d/%d: %s (%s%s)%s\n\n%s%s\n"
+                            (plist-get target :step) (plist-get target :steps)
+                            (plist-get target :title)
+                            (if files (format "files %s; " (string-join files ", ")) "")
+                            (plist-get c :where)
+                            (sent c)
+                            (if passage (concat (blockquote passage) "\n\n") "")
+                            (plist-get c :text)))
+                (let ((patch (plist-get c :patch)))
+                  (concat
+                   (format "## %s%s%s%s (%s)%s\n\n%s\n"
+                           (if (my/magit-review--finding-p c)
+                               (format "%s [%s] %s: "
+                                       (if (plist-get c :follow-up)
+                                           "Follow-up on finding"
+                                         "Finding")
+                                       (plist-get c :severity) (plist-get c :title))
+                             "")
+                           (or (plist-get c :file) "no file")
+                           (or (lines "new" (plist-get c :new)) "")
+                           (or (lines "old" (plist-get c :old)) "")
+                           (plist-get c :where)
+                           (sent c)
+                           (concat (plist-get c :text)
+                                   (when-let* ((reply (plist-get c :reply)))
+                                     (format "\n\nMy reply: %s" reply))))
+                   (when patch
+                     (format "\n```diff\n%s%s```\n" patch
+                             (if (string-suffix-p "\n" patch) "" "\n")))))))
+            comments "\n")
+           (when on-steps
+             (concat "\nA comment on a walkthrough step quotes the passage of the"
+                     " step's explanation it answers, or quotes nothing when it is"
+                     " about the step as a whole.  Answer or act on these comments"
+                     " here in the conversation; do not rewrite or re-issue the"
+                     " walkthrough.\n"))))))
 
     (defun my/magit-review-send (&optional no-submit)
       "Send pending review comments and accepted findings to Claude Code.
@@ -1323,12 +1386,27 @@ visible while a file is collapsed.
                        (my/magit-review--annotate pos (nreverse cs)))))))))))))
 
     (defun my/magit-review--redecorate (repo)
-      "Redraw review comments in every Magit buffer of REPO."
+      "Redraw review comments in every Magit buffer of REPO.
+  A walkthrough buffer also redraws those on its steps and passages."
       (dolist (buffer (buffer-list))
         (with-current-buffer buffer
           (when (and (derived-mode-p 'magit-status-mode 'magit-diff-mode)
                      (equal (magit-toplevel) repo))
-            (my/magit-review--decorate)))))
+            (my/magit-review--decorate)
+            (when (derived-mode-p 'walkthrough-mode)
+              (walkthrough-redraw-comments))))))
+
+    (defun my/magit-review--walkthrough-comments (label)
+      "Return this repository's comments on walkthrough steps of diff LABEL.
+  Pending and sent, oldest first, each its :text and :sent followed by
+  its target's keys, for `walkthrough-comments-function' to draw."
+      (mapcan (lambda (c)
+                (when-let* ((target (plist-get c :target))
+                            ((equal (plist-get c :where) label)))
+                  (list (append (list :text (plist-get c :text)
+                                      :sent (plist-get c :sent))
+                                target))))
+              (my/magit-review--pending (magit-toplevel) t)))
 
     (add-hook 'magit-refresh-buffer-hook #'my/magit-review--decorate)
 
@@ -1353,7 +1431,7 @@ visible while a file is collapsed.
     :config
     (claude-code-ide-make-tool
      :name "magit_review_comments"
-     :description "Return the user's review comments on the Git diff of the current project, written in Emacs/Magit, and the walkthrough findings the user accepted. Each comment names the file, the new/old line range, which diff it belongs to (unstaged, staged or a revision) and includes the commented diff hunk; a finding is headed by its severity and title."
+     :description "Return the user's review comments on the Git diff of the current project, written in Emacs/Magit, and the walkthrough findings the user accepted. Each comment names the file, the new/old line range, which diff it belongs to (unstaged, staged or a revision) and includes the commented diff hunk; a comment on a walkthrough's step names the step, its files and the diff and quotes the passage it answers; a finding is headed by its severity and title."
      :args '((:name "include_sent"
                     :type boolean
                     :description "Also return comments and findings already sent to Claude"
@@ -1399,8 +1477,24 @@ but does not send it, and =@ k= leaves replies alone.  =@ s= then sends the
 accepted findings, replies under them, together with the pending review
 comments, in one prompt, and marks both sent.
 
-A comment is labelled with the commits of the diff it was made in, so a
-comment made in a walkthrough shows in =magit-diff= of the same commits too.
+=@ c= in a step's explanation comments on a passage of it: the active region,
+or else the list item point is in (without its nested items) or the
+paragraph.  A region that runs out of the explanation is refused, and so is
+a blank line between its blocks.  =@ c= on a step heading comments on the
+step as a whole, and =@ d= sends either kind at once.  These are review
+comments like any other, listed, sent and discarded with the rest, but each
+carries the step's number, title and files and the quoted passage instead of
+a file and lines.  The hand-off names the step, quotes the passage and tells
+the agent to answer in the conversation rather than rewrite or re-issue the
+walkthrough.  =walkthrough.el= draws them, through
+=walkthrough-comments-function=, below the passage's last line or the step
+heading, which counts them.  After a re-run on the same commits a passage is
+found by its text and a step comment by its step's title; one that matches
+nothing is listed under the intro as not placed.
+
+A comment is labelled with the commits of the diff it was made in, so a hunk
+or file comment made in a walkthrough shows in =magit-diff= of the same
+commits too.  A comment on a step or a passage shows only in walkthroughs.
 =@ w= opens the current branch's walkthrough (=C-u= picks another branch's)
 and =@ W= asks the Claude session for one (=C-u= reads the base).
 
@@ -1409,7 +1503,8 @@ and =@ W= asks the Claude session for one (=C-u= reads the base).
     :after magit
     :demand t
     :custom
-    (walkthrough-request-function #'my/claude-code-ide-paste))
+    (walkthrough-request-function #'my/claude-code-ide-paste)
+    (walkthrough-comments-function #'my/magit-review--walkthrough-comments))
 
   (use-package claude-code-ide
     :defer t
