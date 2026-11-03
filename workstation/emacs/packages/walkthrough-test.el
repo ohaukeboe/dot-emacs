@@ -691,6 +691,52 @@ with ◆ and the severity, and the whole block has the finding face."
         (should (string-suffix-p "Step 2/2: Cleanup · 1 finding"
                                  (walkthrough-test--header-line)))))))
 
+;;; Highlighting
+
+(defun walkthrough-test--within-p (inner outer)
+  "Return non-nil when section INNER lies inside section OUTER."
+  (and (>= (oref inner start) (oref outer start))
+       (<= (oref inner end) (oref outer end))))
+
+(defun walkthrough-test--masking-overlays ()
+  "Return the section highlight overlays that cover lines of a hunk.
+Over a hunk they hide the faces of its added and removed lines."
+  (seq-filter (lambda (ov)
+                (and (eq (overlay-get ov 'font-lock-face) 'magit-section-highlight)
+                     (seq-some (lambda (hunk)
+                                 (and (< (overlay-start ov) (oref hunk end))
+                                      (> (overlay-end ov) (oref hunk content))))
+                               (walkthrough-test--sections 'hunk))))
+              magit-section-highlight-overlays))
+
+(ert-deftest walkthrough-test-step-highlight ()
+  "On a step heading its hunks keep their diff faces and get syntax faces."
+  (walkthrough-test--with-repo
+    (let ((magit-diff-fontify-hunk t))
+      (with-current-buffer (walkthrough-test--open (walkthrough-test--draft base head))
+        ;; The first step starts with a finding that has no line, which
+        ;; must not decide how the step is highlighted.
+        (let ((step (car (walkthrough-test--sections 'walkthrough-step))))
+          (goto-char (oref step start))
+          (magit-section-update-highlight t)
+          (should-not (walkthrough-test--masking-overlays))
+          (dolist (hunk (walkthrough-test--sections 'hunk))
+            (should (eq (oref hunk fontified)
+                        (walkthrough-test--within-p hunk step)))))))))
+
+(ert-deftest walkthrough-test-refresh-fontifies-step ()
+  "A refresh with point on a finding leaves the syntax faces of its step."
+  (walkthrough-test--with-repo
+    (let ((magit-diff-fontify-hunk t))
+      (with-current-buffer (walkthrough-test--open (walkthrough-test--draft base head))
+        (walkthrough-test--goto-finding "s1-f2")
+        (magit-refresh-buffer)
+        (should (equal (walkthrough--findings-at-point) '("s1-f2")))
+        (let ((step (car (walkthrough-test--sections 'walkthrough-step))))
+          (dolist (hunk (walkthrough-test--sections 'hunk))
+            (should (eq (oref hunk fontified)
+                        (walkthrough-test--within-p hunk step)))))))))
+
 ;;; Marks
 
 (defun walkthrough-test--state (file id)

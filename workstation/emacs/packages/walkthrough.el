@@ -719,7 +719,8 @@ the walkthrough's steps; diff commands work as in any other diff buffer.
   ;; Explanations and findings are prose, often longer than the window is
   ;; wide; wrapping them is what makes them readable at all.
   (visual-line-mode 1)
-  (add-hook 'post-command-hook #'walkthrough--update-header-line nil t))
+  (add-hook 'post-command-hook #'walkthrough--update-header-line nil t)
+  (add-hook 'magit-refresh-buffer-hook #'walkthrough--fontify-step-at-point nil t))
 
 (with-eval-after-load 'magit-mode
   (add-to-list 'magit-xref-modes 'walkthrough-mode))
@@ -861,9 +862,21 @@ SEVERITY is the highest one present and J how many have it."
             (seq-count (lambda (f) (equal (alist-get 'severity f) severity)) findings)
             severity)))
 
+;; A step's diff has no heading, so Magit would highlight all of it with
+;; `magit-section-highlight', and that overlay hides the faces of its added
+;; and removed lines.  It hands the highlight to its files instead.
+(defclass walkthrough-diff (magit-section) ()
+  "The diff of one walkthrough step.")
+
+(cl-defmethod magit-section-highlight ((section walkthrough-diff))
+  "Highlight the files of SECTION rather than SECTION itself."
+  (mapc #'magit-section-highlight (oref section children)))
+
 (defun walkthrough--insert-step (step index count diff args)
   "Insert STEP, number INDEX of COUNT, with DIFF and diff ARGS."
-  (magit-insert-section (walkthrough-step index)
+  ;; Selective, so a step highlights its parts one by one.  Otherwise its
+  ;; first child decides, and a finding first covers the whole step.
+  (magit-insert-section (walkthrough-step index nil :selective-highlight t)
     (magit-insert-heading
       (propertize (format "Step %d/%d  " (1+ index) count)
                   'font-lock-face 'magit-dimmed)
@@ -913,12 +926,30 @@ SEVERITY is the highest one present and J how many have it."
   (setq walkthrough--header-line nil)
   (walkthrough--update-header-line))
 
-(defun walkthrough--step-at-point ()
-  "Return the index of the step whose section contains point, or nil."
+(defun walkthrough--step-section-at-point ()
+  "Return the section of the step that contains point, or nil."
   (let ((section (magit-current-section)))
     (while (and section (not (magit-section-match 'walkthrough-step section)))
       (setq section (oref section parent)))
-    (and section (oref section value))))
+    section))
+
+(defun walkthrough--step-at-point ()
+  "Return the index of the step whose section contains point, or nil."
+  (when-let* ((section (walkthrough--step-section-at-point)))
+    (oref section value)))
+
+(defun walkthrough--fontify-step-at-point ()
+  "Fontify the hunks of the step at point.
+With `magit-diff-fontify-hunk' t, Magit fontifies a hunk once it becomes
+current, and a refresh drops that again.  Marking or replying to a finding
+refreshes, which would strip the step being read of its syntax faces."
+  (when-let* (((eq magit-diff-fontify-hunk t))
+              (step (walkthrough--step-section-at-point)))
+    (magit-map-sections (lambda (section)
+                          ;; What Magit does to a hunk that becomes current.
+                          (when (magit-section-match 'hunk section)
+                            (magit-section--refine section)))
+                        step)))
 
 (defun walkthrough--update-header-line ()
   "Name the walkthrough, and the step point is in, in the header line."
