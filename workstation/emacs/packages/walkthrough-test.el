@@ -1496,6 +1496,29 @@ after-strings of the overlays ending at the line's end."
                        "  [1 review comment]"))
         (should-not (walkthrough-test--below "^Step 1/2  Core"))))))
 
+(ert-deftest walkthrough-test-comment-rerun-reordered-shared-quote ()
+  "A shared quote follows its step's title when the steps are reordered."
+  (walkthrough-test--with-repo
+    (let* ((where (walkthrough-test--label base head))
+           (walkthrough-comments-function
+            (walkthrough-test--comments
+             (list (walkthrough-test--comment
+                    where 2 "Cleanup" "- Keeps the file list sorted." "Sorted how?"))))
+           (draft (walkthrough-test--explained-draft base head)))
+      (walkthrough-test--open draft)
+      (let ((steps (alist-get 'steps draft)))
+        (setf (alist-get 'steps draft) (vector (aref steps 1) (aref steps 0))))
+      (with-current-buffer (walkthrough-test--open draft)
+        ;; Cleanup is now step 1, so its copy of the quote comes first.
+        (should (equal (substring-no-properties
+                        (walkthrough-test--below "^- Keeps the file list sorted\\.$"))
+                       "\n    ▶ Sorted how?"))
+        (should-not (walkthrough-test--below "^- Keeps the file list sorted\\.$" 2))
+        (should (equal (substring-no-properties
+                        (walkthrough-test--below "^Step 1/2  Cleanup$"))
+                       "  [1 review comment]"))
+        (should-not (walkthrough-test--below "^Step 2/2  Core"))))))
+
 (ert-deftest walkthrough-test-comment-rerun-not-placed ()
   "A comment whose passage or step is gone is listed under the intro."
   (walkthrough-test--with-repo

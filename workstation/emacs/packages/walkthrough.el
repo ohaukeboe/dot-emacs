@@ -1003,26 +1003,31 @@ no such comments are drawn."
     (when-let* ((at (string-search quote (buffer-substring-no-properties start end))))
       (+ start at (length quote)))))
 
+(defun walkthrough--section-titled (title sections)
+  "Return the first of the step SECTIONS whose step is titled TITLE, or nil."
+  (seq-find (lambda (section)
+              (equal (alist-get 'title (walkthrough--step section)) title))
+            sections))
+
 (defun walkthrough--comment-place (comment sections)
   "Return (SECTION . POS) for COMMENT, or nil when it matches nothing.
 SECTIONS are the step sections, in order.  SECTION is the step COMMENT
 is placed on and POS a position on the line below which it is drawn.
-A passage is looked for in the step with COMMENT's number first, so a
-quote that several steps share stays in its own."
-  (if-let* ((quote (plist-get comment :quote)))
-      (seq-some (lambda (section)
-                  (when-let* ((end (walkthrough--passage-end section quote)))
-                    (cons section (1- end))))
-                (let ((step (plist-get comment :step)))
-                  (if-let* (((and (integerp step) (> step 0)))
-                            (own (nth (1- step) sections)))
-                      (cons own sections)
-                    sections)))
-    (when-let* ((section (seq-find (lambda (section)
-                                     (equal (alist-get 'title (walkthrough--step section))
-                                            (plist-get comment :title)))
-                                   sections)))
-      (cons section (oref section start)))))
+A passage is looked for in the step with COMMENT's title first, then in
+the step with its number, so a quote that several steps share stays in
+its own even when a re-run reorders the steps."
+  (let ((titled (walkthrough--section-titled (plist-get comment :title) sections)))
+    (if-let* ((quote (plist-get comment :quote)))
+        (seq-some (lambda (section)
+                    (when-let* ((end (walkthrough--passage-end section quote)))
+                      (cons section (1- end))))
+                  (let ((step (plist-get comment :step)))
+                    (delq nil (append (list titled
+                                            (and (integerp step) (> step 0)
+                                                 (nth (1- step) sections)))
+                                      sections))))
+      (when titled
+        (cons titled (oref titled start))))))
 
 (defun walkthrough--comment-line (comment &optional note)
   "Return COMMENT as a line to show below what it is about.
