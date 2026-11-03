@@ -1042,11 +1042,11 @@ refresh.
                            (or (plist-get context :project-dir)
                                default-directory)))
                       (magit-toplevel)))
-              (comments (and repo
-                             (magit-review-items
-                              repo (eq include-sent t)))))
-         (if comments
-             (magit-review-format comments)
+              (items (and repo
+                          (magit-review-items
+                           repo (eq include-sent t)))))
+         (if items
+             (magit-review-format items)
            "No review comments for this project.")))))
 #+end_src
 

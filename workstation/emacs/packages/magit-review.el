@@ -112,20 +112,19 @@ agent.  Return the agent's buffer.  Nil means no agent is configured."
 (defvar magit-review-comments nil
   "Review comments on what Magit shows, newest first.
 Each comment is a plist with :repo, :target, :text and :sent, and keys
-that depend on :target, which is what the comment is on:
+that depend on :target, the kind of thing the comment is on (see
+`magit-review-comment' for what each kind covers):
 
- `diff'     a hunk, hunk region or file: :file, :where (the diff's
-            label), :new and :old, (START . END) line ranges or nil, and
-            :patch.
- `commits'  one or more commits or stashes: :commits, a list of plists
-            with the full commit :id, the :abbrev git showed and the
-            :subject, plus for a stash its :stash name at comment time;
-            and :quote, the part of a commit message quoted, or nil.
+ `diff'     :file, :where (the diff's label), :new and :old, (START . END)
+            line ranges or nil, and :patch.
+ `commits'  :commits, a list of plists with the full commit :id, the
+            :abbrev git showed and the :subject, plus for a stash its
+            :stash name at comment time; and :quote, the part of a
+            commit message quoted, or nil.
  `group'    :group, the section type `staged', `unstaged' or `untracked'.
- `section'  any other section: its :type, its :value when that is a
-            string, and its :heading line as shown.
- `step'     a walkthrough's step or a passage of its explanation:
-            :where, the walkthrough's diff label, and :step, what
+ `section'  the section's :type, its :value when that is a string, and
+            its :heading line as shown.
+ `step'     :where, the walkthrough's diff label, and :step, what
             `walkthrough-comment-target' returned.")
 
 (defun magit-review--step-comment-p (comment)
@@ -137,17 +136,24 @@ that depend on :target, which is what the comment is on:
 See `walkthrough-comment-target'."
   (and (derived-mode-p 'walkthrough-mode) (walkthrough-comment-target)))
 
+(defun magit-review--region-end ()
+  "Return the end of the active region, before a line it only touches.
+A region ending at the start of a line does not cover that line, so the
+end is then the end of the line before."
+  (let ((end (region-end)))
+    (if (and (> end (region-beginning))
+             (save-excursion (goto-char end) (bolp)))
+        (1- end)
+      end)))
+
 (defun magit-review--range (section from)
   "Return the (START . END) lines of hunk SECTION on the old side if FROM.
 Uses the active region when there is one, else the whole hunk.  Returns
 nil when the region has no lines on that side (only additions for the
 old side, only removals for the new side)."
   (if (magit-diff-use-hunk-region-p)
-      (let* ((beg (magit-diff-hunk-region-beginning))
-             ;; A region ending at the start of a line doesn't cover it.
-             (end (save-excursion
-                    (goto-char (region-end))
-                    (if (and (bolp) (> (point) beg)) (1- (point)) (point)))))
+      (let ((beg (magit-diff-hunk-region-beginning))
+            (end (magit-review--region-end)))
         (when (save-excursion
                 (goto-char beg)
                 (re-search-forward (if from "^[- ]" "^[+ ]") end t))
@@ -184,12 +190,17 @@ one commit.  A root commit, with no parent, is named by its id alone."
           (puthash rev label magit-review--labels))
         label)))
 
-(defun magit-review--log-commit (section)
-  "Return the commit, as Magit shows it, whose patch in a log has SECTION."
+(defun magit-review--log-commit-value (section)
+  "Return the value of the commit section whose patch in a log has SECTION.
+That is the commit's id as the log shows it, abbreviated."
   (when (derived-mode-p 'magit-log-mode)
     (while (and section (not (eq (oref section type) 'commit)))
       (setq section (oref section parent)))
     (and section (oref section value))))
+
+(defun magit-review--revision-id ()
+  "Return the full id of a revision buffer's commit, or nil elsewhere."
+  (and (derived-mode-p 'magit-revision-mode) magit-buffer-revision-oid))
 
 (defun magit-review--where (section)
   "Describe which diff SECTION belongs to.
@@ -204,10 +215,9 @@ reading the old name made every range diff plain \"diff\"."
     ('unstaged "unstaged changes")
     ('staged "staged changes")
     ('untracked "untracked file")
-    (_ (cond ((when-let* ((commit (magit-review--log-commit section)))
+    (_ (cond ((when-let* ((commit (or (magit-review--log-commit-value section)
+                                      (magit-review--revision-id))))
                 (magit-review--commit-label commit)))
-             ((and (derived-mode-p 'magit-revision-mode) magit-buffer-revision-oid)
-              (magit-review--commit-label magit-buffer-revision-oid))
              ((and (require 'walkthrough nil t) (walkthrough-diff-label)))
              ((bound-and-true-p magit-buffer-revision-oid)
               (format "diff of %s" magit-buffer-revision-oid))
@@ -222,7 +232,7 @@ reading the old name made every range diff plain \"diff\"."
     (untracked . "All untracked files"))
   "The status buffer's groups of changes, by section type, with headings.")
 
-(defun magit-review--commit (rev &optional stash)
+(defun magit-review--commit-entry (rev &optional stash)
   "Return commit REV as a commit entry of a `commits' comment.
 The entry is a plist with the full commit :id, the :abbrev git shows and
 the :subject.  If STASH, it is a stash, and the entry also has :stash,
@@ -237,15 +247,15 @@ message."
                  (list :stash (and (string-match-p magit-review--stash-name-re rev)
                                    rev))))))
 
-(defun magit-review--section-entry (section)
+(defun magit-review--section-commit-entry (section)
   "Return the commit entry of commit or stash SECTION.
 In a stash buffer every one is the stash it shows: its root and the rows
 of the stash's own, staged (`stash@{N}^2') and untracked (`stash@{N}^3')
 commits."
   (if (derived-mode-p 'magit-stash-mode)
-      (magit-review--commit magit-buffer-revision t)
-    (magit-review--commit (substring-no-properties (oref section value))
-                          (magit-section-match 'stash section))))
+      (magit-review--commit-entry magit-buffer-revision t)
+    (magit-review--commit-entry (substring-no-properties (oref section value))
+                                (magit-section-match 'stash section))))
 
 (defun magit-review--in-message-p (&optional pos)
   "Return non-nil when POS, or point, is in a revision's commit message."
@@ -254,48 +264,43 @@ commits."
 (defun magit-review--quote ()
   "Return the active region if it lies in a revision's commit message."
   (when-let* (((use-region-p))
-              (beg (region-beginning))
-              (end (region-end))
-              ((magit-review--in-message-p beg))
-              ;; A region ending at the start of a line doesn't cover it.
-              ((magit-review--in-message-p
-                (if (save-excursion (goto-char end) (bolp)) (1- end) end))))
-    (buffer-substring-no-properties beg end)))
+              ((magit-review--in-message-p (region-beginning)))
+              ((magit-review--in-message-p (magit-review--region-end))))
+    (buffer-substring-no-properties (region-beginning) (region-end))))
 
 (defun magit-review--target ()
   "Return what a review comment at point is on, as comment keys.
-:target is `commits' for one or more commits or stashes, `group' for
-the staged, unstaged or untracked changes, `diff' for a hunk, hunk
-region or file, `step' for a walkthrough's step or a passage of its
-explanation, and `section' for any other section.  Only commits and
-stashes widen to every one a region selects.  A revision buffer's
-headers and commit message are on its commit, though Magit makes its
-parents, and commit ids the message mentions, commit sections; a region
-of the message is quoted.  The buffer as a whole is refused, but a stash
-buffer's root and rows are all its stash."
+These are :target and the keys that depend on it, as in
+`magit-review-comments', for the things `magit-review-comment' lists.
+What the section types alone do not say: a revision buffer's headers and
+message, even the commit ids the message mentions, are on its commit,
+but a parent row of its headers is on the parent; only commits and
+stashes widen to every one a region selects; a stash buffer's root is
+its stash, and any other root is refused."
   (let ((section (magit-current-section))
-        (revision (and (derived-mode-p 'magit-revision-mode)
-                       magit-buffer-revision-oid)))
+        (revision (magit-review--revision-id)))
     (magit-review--refuse-root section)
     (cond
      ((when-let* ((step (magit-review--step-target)))
         (list :target 'step :where (walkthrough-diff-label) :step step)))
      ((and revision (magit-review--in-message-p))
       (append (list :target 'commits
-                    :commits (list (magit-review--commit revision)))
+                    :commits (list (magit-review--commit-entry revision)))
               (when-let* ((quote (magit-review--quote)))
                 (list :quote quote))))
      ((and revision
            (magit-section-match '[* headers] section)
            (not (magit-section-match 'commit section)))
-      (list :target 'commits :commits (list (magit-review--commit revision))))
+      (list :target 'commits
+            :commits (list (magit-review--commit-entry revision))))
      ;; A stash buffer's root is a `stash' section too.
      ((when-let* ((sections (or (magit-region-sections '(commit stash) t)
                                 (and (magit-section-match '(commit stash) section)
                                      (list section)))))
         (list :target 'commits
               ;; A region over a stash buffer's rows is on its stash once.
-              :commits (seq-uniq (mapcar #'magit-review--section-entry sections)))))
+              :commits (seq-uniq (mapcar #'magit-review--section-commit-entry
+                                         sections)))))
      ((magit-section-match (mapcar #'car magit-review--groups) section)
       (list :target 'group :group (oref section type)))
      ((magit-section-match '(hunk file) section)
@@ -419,49 +424,49 @@ INCLUDE-SENT."
   "Return non-nil when hand-off ITEM is a walkthrough finding."
   (eq (plist-get item :kind) 'finding))
 
-(defun magit-review-format (comments &optional intro)
-  "Format COMMENTS as a Markdown review prompt.
-COMMENTS are items as `magit-review-items' returns them.  Each is headed
-by what it is on: a diff comment by its file, line ranges and diff,
-followed by its patch; a comment on commits by their short ids and
-subjects, and a stash's name and message, followed by a quoted part of
-the message; a group by its name; another section by its type, value
-and heading.  Accepted walkthrough findings are headed by their severity
-and title, followed by the user's reply; one handed off before is
-headed as a follow-up.  A comment on a walkthrough's step or passage
-is headed by the step, its files and the diff, and quotes the passage;
-the prompt then closes by saying how to treat such comments.  INTRO
-starts the prompt's opening sentence, which goes on to say what each
-comment names."
+(defun magit-review-format (items &optional intro)
+  "Format ITEMS as a Markdown review prompt.
+ITEMS are review comments and findings, as `magit-review-items' returns
+them.  Each is headed by what it is on: a diff comment by its file, line
+ranges and diff, followed by its patch; a comment on commits by their
+short ids and subjects, and a stash's name and message, followed by a
+quoted part of the message; a group by its name; another section by its
+type, value and heading.  Accepted walkthrough findings are headed by
+their severity and title, followed by the user's reply; one handed off
+before is headed as a follow-up.  A comment on a walkthrough's step or
+passage is headed by the step, its files and the diff, and quotes the
+passage; the prompt then closes by saying how to treat such comments.
+INTRO starts the prompt's opening sentence, which goes on to say what
+each item names."
   (concat
    (or intro
-       (if (seq-some #'magit-review--finding-p comments)
+       (if (seq-some #'magit-review--finding-p items)
            "Please address my review comments and the review findings I accepted.  Each one names "
          "Please address my review comments.  Each one names "))
    "what it is on: a file with its new/old line range and the diff it "
    "refers to, one or more commits, "
-   (if (seq-some #'magit-review--step-comment-p comments)
+   (if (seq-some #'magit-review--step-comment-p items)
        "a walkthrough step, "
      "")
    "or another item Magit shows.\n\n"
    (mapconcat
-    (lambda (c)
-      (let ((patch (plist-get c :patch)))
+    (lambda (item)
+      (let ((patch (plist-get item :patch)))
         (concat
          (format "## %s%s\n\n%s%s\n"
-                 (magit-review--heading c)
-                 (if (plist-get c :sent) " [already sent]" "")
-                 (if-let* ((about (magit-review--about c)))
-                     (concat about "\n\n")
+                 (magit-review--heading item)
+                 (if (plist-get item :sent) " [already sent]" "")
+                 (if-let* ((preface (magit-review--commits-and-quote item)))
+                     (concat preface "\n\n")
                    "")
-                 (concat (plist-get c :text)
-                         (when-let* ((reply (plist-get c :reply)))
+                 (concat (plist-get item :text)
+                         (when-let* ((reply (plist-get item :reply)))
                            (format "\n\nMy reply: %s" reply))))
          (when patch
            (format "\n```diff\n%s%s```\n" patch
                    (if (string-suffix-p "\n" patch) "" "\n"))))))
-    comments "\n")
-   (when (seq-some #'magit-review--step-comment-p comments)
+    items "\n")
+   (when (seq-some #'magit-review--step-comment-p items)
      (concat "\nA comment on a walkthrough step quotes the passage of the"
              " step's explanation it answers, or quotes nothing when it is"
              " about the step as a whole.  Answer or act on these comments"
@@ -475,10 +480,12 @@ comment names."
             (format " (%s)" name))
           " " (plist-get entry :subject)))
 
-(defun magit-review--about (item)
-  "Return what goes between hand-off ITEM's heading and its text, or nil.
-That is the list of its commits when there are several, and the quoted
-part of a commit message or of a walkthrough step's explanation."
+(defun magit-review--commits-and-quote (item)
+  "Return hand-off ITEM's list of commits and its quote, or nil.
+The list is there only when it is on several commits, and the quote,
+the part of a commit message or of a walkthrough step's explanation it
+quotes, only when it has one.  They go
+between its heading and its text."
   (let ((commits (plist-get item :commits))
         (quote (or (plist-get item :quote)
                    (plist-get (plist-get item :step) :quote))))
@@ -548,10 +555,10 @@ show the agent's buffer so the prompt can be edited first."
          (user-error "No pending review comments or accepted findings"))
      nil no-submit)))
 
-(defun magit-review--hand-off (comments intro no-submit)
-  "Hand COMMENTS to the agent, opening the prompt with INTRO.
-Mark them sent.  If NO-SUBMIT, only paste them and show the agent's
-buffer."
+(defun magit-review--hand-off (items intro no-submit)
+  "Hand ITEMS, review comments and findings, to the agent.
+Open the prompt with INTRO and mark them sent.  If NO-SUBMIT, only paste
+them and show the agent's buffer."
   (unless magit-review-send-function
     (user-error "No agent is configured; set `magit-review-send-function'"))
   (let* ((repo (magit-toplevel))
@@ -559,12 +566,12 @@ buffer."
          ;; which instance".
          (buffer (let ((current-prefix-arg nil))
                    (funcall magit-review-send-function
-                            (magit-review-format comments intro)
+                            (magit-review-format items intro)
                             (not no-submit)))))
     ;; Comments live in memory; findings in their walkthrough's file.
-    (dolist (c (seq-remove #'magit-review--finding-p comments))
-      (plist-put c :sent t))
-    (when-let* ((findings (seq-filter #'magit-review--finding-p comments)))
+    (dolist (comment (seq-remove #'magit-review--finding-p items))
+      (plist-put comment :sent t))
+    (when-let* ((findings (seq-filter #'magit-review--finding-p items)))
       (walkthrough-mark-sent findings))
     (magit-review--redecorate repo)
     (when no-submit
@@ -572,24 +579,25 @@ buffer."
           (select-window window)
         (pop-to-buffer buffer)))
     (message "%s %d review item(s)"
-             (if no-submit "Pasted" "Sent") (length comments))))
+             (if no-submit "Pasted" "Sent") (length items))))
 
 (defun magit-review-paste ()
-  "Paste pending review comments into the agent's input without submitting."
+  "Paste pending review comments and accepted findings into the agent's input.
+Do not submit them, so the prompt can be edited first."
   (interactive)
   (magit-review-send t))
 
 (defun magit-review-list (&optional include-sent)
-  "Show this repository's pending review comments.
-With prefix argument INCLUDE-SENT, show sent comments too."
+  "Show this repository's pending review comments and accepted findings.
+With prefix argument INCLUDE-SENT, show sent ones too."
   (interactive "P")
   (let* ((repo (or (magit-toplevel) (user-error "Not in a Git repository")))
-         (comments (or (magit-review-items repo include-sent)
-                       (user-error "No review comments"))))
+         (items (or (magit-review-items repo include-sent)
+                    (user-error "No review comments"))))
     (with-current-buffer (get-buffer-create "*magit-review*")
       (let ((inhibit-read-only t))
         (erase-buffer)
-        (insert (magit-review-format comments)))
+        (insert (magit-review-format items)))
       (if (fboundp 'gfm-view-mode) (gfm-view-mode) (view-mode))
       (goto-char (point-min))
       (display-buffer (current-buffer)))))
@@ -694,7 +702,7 @@ comments appear below their last commented line."
               (cons (car fields) (cadr fields))))
           (magit-list-stashes "%gd%x00%H")))
 
-(defun magit-review--section-commit (section stashes)
+(defun magit-review--section-commit-id (section stashes)
   "Return the commit id, maybe abbreviated, that SECTION's line shows, or nil.
 SECTION is a commit or stash section, or a revision buffer's headers.
 A `stash@{N}' value is looked up in STASHES, from
@@ -702,7 +710,7 @@ A `stash@{N}' value is looked up in STASHES, from
 shows nothing: comments made there are on the revision's commit."
   (let ((value (oref section value)))
     (cond ((eq (oref section type) 'headers)
-           (and (derived-mode-p 'magit-revision-mode) magit-buffer-revision-oid))
+           (magit-review--revision-id))
           ((not (stringp value)) nil)
           ((magit-section-match '[commit commit-message] section) nil)
           ((string-match-p "\\`[[:xdigit:]]\\{4,\\}\\'" value) value)
@@ -750,7 +758,7 @@ once, below the last of them in the buffer.  Meant for
                 (magit-review--decorate-diff section diff)))
              ((or 'commit 'stash 'headers)
               (when-let* ((commits)
-                          (id (magit-review--section-commit section stashes))
+                          (id (magit-review--section-commit-id section stashes))
                           (start (oref section start)))
                 (dolist (c commits)
                   (when (magit-review--covers-p c id)

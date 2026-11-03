@@ -19,9 +19,10 @@
 ;; `base', tagged `v1', adds a.el (30 lines) and b.el.  The checked-out
 ;; branch `feat/x' tracks `origin/main' and changes line 20 of a.el in one
 ;; commit, `one', whose message names `base' by its commit id.  The
-;; status buffer lists `one' and `base' as \"Unmerged into origin/main\".  One stash changes b.el's first line.  In
-;; the work tree line 10 of a.el is changed and not staged, b.el's second
-;; line is changed and staged, and new.el is untracked.
+;; status buffer lists `one' and `base' as \"Unmerged into origin/main\".
+;; One stash changes b.el's first line.  In the work tree line 10 of a.el
+;; is changed and not staged, b.el's second line is changed and staged,
+;; and new.el is untracked.
 
 ;;; Code:
 
@@ -169,7 +170,7 @@ SECTION-TYPE is as for `magit-review-test--goto'."
   (magit-review-test--goto to section-type)
   (goto-char (line-end-position)))
 
-(defconst magit-review-test--on
+(defconst magit-review-test--opening-end
   (concat "what it is on: a file with its new/old line range and the diff it "
           "refers to, one or more commits, or another item Magit shows.\n\n")
   "How the opening sentence of every prompt ends.")
@@ -191,7 +192,7 @@ SECTION-TYPE is as for `magit-review-test--goto'."
     (should (equal magit-review-test--sent
                    `((,(concat
                         "Please address my review comments.  Each one names "
-                        magit-review-test--on
+                        magit-review-test--opening-end
                         "## a.el new L7-13 old L7-13 (unstaged changes)\n"
                         "\n"
                         "Rename this\n"
@@ -222,7 +223,7 @@ The comments are handed off oldest first."
     (should (equal (magit-review-test--prompt)
                    (concat
                     "Please address my review comments.  Each one names "
-                    magit-review-test--on
+                    magit-review-test--opening-end
                     "## a.el new L10-10 (unstaged changes)\n"
                     "\n"
                     "Added line\n"
@@ -279,7 +280,7 @@ The comments are handed off oldest first."
     (should (equal (magit-review-test--prompt)
                    (concat
                     "Please address my review comments.  Each one names "
-                    magit-review-test--on
+                    magit-review-test--opening-end
                     "## a.el (unstaged changes)\n"
                     "\n"
                     "Whole file\n"
@@ -321,7 +322,7 @@ Sent items are left out unless INCLUDE-SENT; each sent one is marked
       (should (equal magit-review-test--sent
                      `((,(concat
                           "Here is a review comment: a question or a request.  "
-                          "It names " magit-review-test--on
+                          "It names " magit-review-test--opening-end
                           "## b.el new L1-2 old L1-2 (staged changes)\n"
                           "\n"
                           "Why staged?\n"
@@ -602,7 +603,7 @@ label is that range's."
         (magit-review-send))
       (should (equal (magit-review-test--prompt)
                      (concat "Please address my review comments.  Each one names "
-                             magit-review-test--on
+                             magit-review-test--opening-end
                              "## Commit " one " one\n"
                              "\n"
                              "Split this\n"))))))
@@ -648,7 +649,7 @@ lists them."
         (magit-review-send))
       (should (equal (magit-review-test--prompt)
                      (concat "Please address my review comments.  Each one names "
-                             magit-review-test--on
+                             magit-review-test--opening-end
                              "## Commits\n\n" both "\nSquash these\n"
                              "\n"
                              "## Commits\n\n" both "\nOr reorder them\n"))))))
@@ -734,7 +735,7 @@ mentions does not make the comment about that commit."
         (magit-review-send))
       (should (equal (magit-review-test--prompt)
                      (concat "Please address my review comments.  Each one names "
-                             magit-review-test--on
+                             magit-review-test--opening-end
                              one "On the headers\n\n"
                              one "On the author\n\n"
                              one "On the summary\n\n"
@@ -763,7 +764,7 @@ buffer, below its headers."
       (magit-review-send)
       (should (equal (magit-review-test--prompt)
                      (concat "Please address my review comments.  Each one names "
-                             magit-review-test--on
+                             magit-review-test--opening-end
                              "## Commit " short-base " base\n\nParent note\n"))))))
 
 (ert-deftest magit-review-test-stash ()
@@ -792,7 +793,7 @@ the status, stash list and stash buffers."
         (magit-review-send)
         (should (equal (magit-review-test--prompt)
                        (concat "Please address my review comments.  Each one names "
-                               magit-review-test--on
+                               magit-review-test--opening-end
                                "## Stash " stash " (stash@{0}) On feat/x: stashed b\n"
                                "\n"
                                "Still needed?\n")))
@@ -804,7 +805,7 @@ the status, stash list and stash buffers."
         (magit-review-send)
         (should (equal (magit-review-test--prompt)
                        (concat "Please address my review comments.  Each one names "
-                               magit-review-test--on
+                               magit-review-test--opening-end
                                "## Stashes\n"
                                "\n"
                                "- " (magit-review-test--short "stash@{0}")
@@ -843,7 +844,7 @@ A comment on any of them is a stash comment, drawn on the stash's row."
         (magit-review-send))
       (should (equal (magit-review-test--prompt)
                      (concat "Please address my review comments.  Each one names "
-                             magit-review-test--on
+                             magit-review-test--opening-end
                              stash "Whole stash\n\n"
                              stash "Staged part\n\n"
                              stash "Untracked part\n\n"
@@ -868,7 +869,7 @@ A comment on any of them is a stash comment, drawn on the stash's row."
       (magit-review-send))
     (should (equal (magit-review-test--prompt)
                    (concat "Please address my review comments.  Each one names "
-                           magit-review-test--on
+                           magit-review-test--opening-end
                            "## All staged changes\n\nWrite a commit message\n\n"
                            "## All unstaged changes\n\nStage these?\n\n"
                            "## All untracked files\n\nIgnore these\n")))))
@@ -898,7 +899,7 @@ comment shows in the status and refs buffers alike."
       (magit-review-send))
     (should (equal (magit-review-test--prompt)
                    (concat "Please address my review comments.  Each one names "
-                           magit-review-test--on
+                           magit-review-test--opening-end
                            "## branch feat/x, shown as \"Head: feat/x one\"\n"
                            "\n"
                            "Rebase onto main\n"
@@ -916,7 +917,7 @@ comment shows in the status and refs buffers alike."
       (magit-review-comment-send "Is this released?"))
     (should (equal magit-review-test--sent
                    `((,(concat "Here is a review comment: a question or a request.  "
-                               "It names " magit-review-test--on
+                               "It names " magit-review-test--opening-end
                                "## tag v1, shown as \"v1 base\"\n"
                                "\n"
                                "Is this released?\n")
@@ -993,7 +994,7 @@ in a walkthrough of that one commit."
         (magit-review-send))
       (should (equal (magit-review-test--prompt)
                      (concat "Please address my review comments.  Each one names "
-                             magit-review-test--on
+                             magit-review-test--opening-end
                              "## README new L1-1 (diff of " init ")\n"
                              "\n"
                              "Root note\n"
@@ -1060,7 +1061,8 @@ A reply to a finding already handed off sends it again, as a follow-up."
       (should (equal (magit-review-test--prompt)
                      (concat
                       "Please address my review comments and the review "
-                      "findings I accepted.  Each one names " magit-review-test--on
+                      "findings I accepted.  Each one names "
+                      magit-review-test--opening-end
                       "## a.el new L17-23 old L17-23 (" label ")\n"
                       "\n"
                       "Hunk note\n"
@@ -1086,7 +1088,8 @@ A reply to a finding already handed off sends it again, as a follow-up."
       (should (equal (magit-review-test--prompt)
                      (concat
                       "Please address my review comments and the review "
-                      "findings I accepted.  Each one names " magit-review-test--on
+                      "findings I accepted.  Each one names "
+                      magit-review-test--opening-end
                       "## Follow-up on finding [high] Line 20 is wrong: "
                       "a.el new L20-20 (" label ")\n"
                       "\n"

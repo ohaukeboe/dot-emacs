@@ -21,17 +21,17 @@
 ;; Findings are marked accepted or dismissed in place, and the marks are
 ;; written back to the file, as is the user's reply to a finding
 ;; (`walkthrough-reply'), which accepts it.  `walkthrough-accepted-findings' returns the
-;; accepted ones shaped like review comments, for the configuration's
+;; accepted ones shaped like review comments, for magit-review.el's
 ;; hand-off to send; `walkthrough-mark-sent' records that it did.
 ;;
 ;; Review comments can also be about a step as a whole or a passage of its
 ;; explanation.  `walkthrough-comment-target' says which step or passage a
-;; comment at point would be about; the configuration keeps such comments
+;; comment at point would be about; magit-review.el keeps such comments
 ;; with its other review comments and hands them back through
 ;; `walkthrough-comments-function', and this file draws them below the
 ;; passage or the step heading.  The agent is plugged in through
 ;; `walkthrough-request-function'.  This file names no agent package and
-;; does not depend on the configuration's review-comment code.
+;; does not depend on magit-review.el.
 
 ;;; Code:
 
@@ -508,7 +508,7 @@ Faces are copied to `font-lock-face', which Magit buffers keep.  Without
 (defface walkthrough-sent '((t :inherit shadow :extend t))
   "Face that dims a finding that was handed off.")
 
-;; The look of the configuration's review comments, which this file does
+;; The look of magit-review.el's review comments, which this file does
 ;; not depend on.
 (defface walkthrough-reply '((t :inherit font-lock-warning-face))
   "Face for the user's reply to a finding.")
