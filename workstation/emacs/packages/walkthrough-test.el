@@ -625,6 +625,23 @@ Batch Emacs has `transient-mark-mode' off, so it is turned on here."
                                                :type 'user-error))
                            "Region must stay within the explanation"))))))))
 
+(ert-deftest walkthrough-test-comment-target-region-blank ()
+  "A region of only whitespace inside an explanation has no passage."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--explained-draft base head))
+      (let ((item (walkthrough-test--pos "and orders by")))
+        ;; The indentation of a continuation line, and the blank line
+        ;; between two blocks with the newlines around it.
+        (dolist (ends (list (cons (- item 2) item)
+                            (cons (walkthrough-test--pos "query stays." t)
+                                  (walkthrough-test--pos "- **findByEan**"))))
+          (should (string-blank-p (buffer-substring-no-properties (car ends) (cdr ends))))
+          (should (equal (cadr (should-error (walkthrough-test--target-with-region
+                                              (car ends) (cdr ends))
+                                             :type 'user-error))
+                         "No passage at point")))))))
+
 (ert-deftest walkthrough-test-comment-target-elsewhere ()
   "The intro, findings, hunks and file headings are no comment target."
   (walkthrough-test--with-repo

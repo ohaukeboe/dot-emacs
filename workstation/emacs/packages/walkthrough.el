@@ -1217,15 +1217,17 @@ The passage is the active region, which must lie within one step's
 explanation; without one, it is the innermost list item at point, or
 else the paragraph.  It is the explanation's Markdown source, hidden
 markup included, with trailing whitespace trimmed.  A region with one
-end outside the explanation, or point on a blank line between its
-blocks, signals a `user-error'."
+end outside the explanation, a region of only whitespace, or point on a
+blank line between its blocks, signals a `user-error'."
   (if (use-region-p)
       (let ((first (walkthrough--explanation-at (region-beginning)))
             (last (walkthrough--explanation-at (1- (region-end)))))
         (cond ((and first (eq first last))
-               (walkthrough--comment-target
-                first (string-trim-right (buffer-substring-no-properties
-                                          (region-beginning) (region-end)))))
+               (let ((quote (string-trim-right (buffer-substring-no-properties
+                                                (region-beginning) (region-end)))))
+                 (when (string-empty-p quote)
+                   (user-error "No passage at point"))
+                 (walkthrough--comment-target first quote)))
               ((or first last)
                (user-error "Region must stay within the explanation"))
               (t (walkthrough--target-at-point))))
