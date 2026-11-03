@@ -475,6 +475,198 @@ OVERRIDES is a plist of top-level keys to replace, e.g. :steps."
                "re-run"
                (cadr (should-error (walkthrough-open file) :type 'user-error)))))))
 
+;;; Comment targets
+
+(defconst walkthrough-test--explanation
+  (concat "Splits the lookup in two.\n"
+          "The `findByEan` query stays.\n"
+          "\n"
+          "- **findByEan** inner-joins the EAN table\n"
+          "  and orders by item number.\n"
+          "  - Nested: returns every match.\n"
+          "- Second item.\n"
+          "\n"
+          "A closing paragraph.")
+  "A step explanation with paragraphs, nested bullets and inline code.")
+
+(defun walkthrough-test--explained-draft (base head)
+  "Return the fixture draft between BASE and HEAD, step 1 explained at length.
+Step 1's explanation is `walkthrough-test--explanation'."
+  (let ((draft (walkthrough-test--draft base head)))
+    (setf (alist-get 'explanation (aref (alist-get 'steps draft) 0))
+          walkthrough-test--explanation)
+    draft))
+
+(defun walkthrough-test--pos (string &optional end)
+  "Return the position of the start of STRING, or of its end when END.
+The search is case-sensitive."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((case-fold-search nil))
+      (search-forward string))
+    (if end (point) (match-beginning 0))))
+
+(defun walkthrough-test--target-at (string)
+  "Return the comment target with point at the start of STRING."
+  (goto-char (walkthrough-test--pos string))
+  (walkthrough-comment-target))
+
+(ert-deftest walkthrough-test-comment-target-heading ()
+  "A step heading is a target for the whole step, with no quote."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--explained-draft base head))
+      (let ((core '(:step 1 :steps 2 :title "Core" :files ("a.el" "b.el") :quote nil)))
+        (should (equal (walkthrough-test--target-at "Step 1/2") core))
+        (end-of-line)
+        (should (equal (walkthrough-comment-target) core)))
+      (should (equal (walkthrough-test--target-at "Cleanup")
+                     '(:step 2 :steps 2 :title "Cleanup"
+                             :files ("a.el" "c.el" "img.bin") :quote nil))))))
+
+(ert-deftest walkthrough-test-comment-target-paragraph ()
+  "Outside a list, the passage is the paragraph at point."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--explained-draft base head))
+      (should (equal (walkthrough-test--target-at "query stays")
+                     '(:step 1 :steps 2 :title "Core" :files ("a.el" "b.el")
+                             :quote "Splits the lookup in two.\nThe `findByEan` query stays.")))
+      (should (equal (plist-get (walkthrough-test--target-at "Splits") :quote)
+                     "Splits the lookup in two.\nThe `findByEan` query stays."))
+      ;; The end of the explanation's last line is still in it.
+      (walkthrough-test--target-at "A closing paragraph")
+      (end-of-line)
+      (should (equal (plist-get (walkthrough-comment-target) :quote)
+                     "A closing paragraph."))
+      (should (equal (walkthrough-test--target-at "Changes a.el near the end")
+                     '(:step 2 :steps 2 :title "Cleanup"
+                             :files ("a.el" "c.el" "img.bin")
+                             :quote "Changes a.el near the end, deletes c.el, adds a binary."))))))
+
+(ert-deftest walkthrough-test-comment-target-blank-line ()
+  "A blank line between blocks of an explanation has no passage."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--explained-draft base head))
+      (dolist (after '("query stays." "- Second item."))
+        (goto-char (point-min))
+        (search-forward after)
+        (forward-line 1)
+        (should (looking-at-p "$"))
+        (should (equal (cadr (should-error (walkthrough-comment-target)
+                                           :type 'user-error))
+                       "No passage at point"))))))
+
+(ert-deftest walkthrough-test-comment-target-list-items ()
+  "In a list, the passage is the innermost item's own lines."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--explained-draft base head))
+      ;; A bullet: its marker line and continuation line, not its sub-item.
+      (dolist (at '("inner-joins" "and orders by"))
+        (should (equal (plist-get (walkthrough-test--target-at at) :quote)
+                       "- **findByEan** inner-joins the EAN table\n  and orders by item number.")))
+      ;; A nested sub-item: only the sub-item.
+      (should (equal (plist-get (walkthrough-test--target-at "Nested") :quote)
+                     "  - Nested: returns every match."))
+      (should (equal (plist-get (walkthrough-test--target-at "Second item") :quote)
+                     "- Second item.")))))
+
+(defun walkthrough-test--target-with-region (mark point)
+  "Return the comment target with the region active from MARK to POINT.
+Batch Emacs has `transient-mark-mode' off, so it is turned on here."
+  (let ((transient-mark-mode t))
+    (set-mark mark)
+    (goto-char point)
+    (unwind-protect (walkthrough-comment-target)
+      (deactivate-mark))))
+
+(ert-deftest walkthrough-test-comment-target-region ()
+  "A region inside one explanation is exactly the passage."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--explained-draft base head))
+      (let ((from (walkthrough-test--pos "inner-joins"))
+            (to (walkthrough-test--pos "EAN" t)))
+        (should (equal (walkthrough-test--target-with-region from to)
+                       '(:step 1 :steps 2 :title "Core" :files ("a.el" "b.el")
+                               :quote "inner-joins the EAN")))
+        (should (equal (plist-get (walkthrough-test--target-with-region to from) :quote)
+                       "inner-joins the EAN")))
+      ;; Across lines, and across an item and its sub-item.
+      (should (equal (plist-get (walkthrough-test--target-with-region
+                                 (walkthrough-test--pos "orders by")
+                                 (walkthrough-test--pos "Nested: returns" t))
+                                :quote)
+                     "orders by item number.\n  - Nested: returns"))
+      ;; A whole last line, its newline included, without the trailing newline.
+      (let ((line (walkthrough-test--pos "A closing paragraph.")))
+        (should (equal (plist-get (walkthrough-test--target-with-region
+                                   line (save-excursion (goto-char line)
+                                                        (forward-line 1)
+                                                        (point)))
+                                  :quote)
+                       "A closing paragraph."))))))
+
+(ert-deftest walkthrough-test-comment-target-region-leaves-explanation ()
+  "A region with one end outside the explanation is refused."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--explained-draft base head))
+      (let ((inside (walkthrough-test--pos "inner-joins")))
+        (dolist (outside (list (walkthrough-test--pos "General remark")
+                               (walkthrough-test--pos "+line 10 changed")
+                               (walkthrough-test--pos "Step 1/2")
+                               (walkthrough-test--pos "Changes a.el near the end")))
+          (dolist (ends (list (cons inside outside) (cons outside inside)))
+            (should (equal (cadr (should-error (walkthrough-test--target-with-region
+                                                (car ends) (cdr ends))
+                                               :type 'user-error))
+                           "Region must stay within the explanation"))))))))
+
+(ert-deftest walkthrough-test-comment-target-elsewhere ()
+  "The intro, findings, hunks and file headings are no comment target."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--explained-draft base head))
+      (dolist (pos (list (point-min)
+                         (walkthrough-test--pos "Changes in")
+                         (oref (car (walkthrough-test--sections 'walkthrough-finding))
+                               start)
+                         (walkthrough-test--pos "General remark")
+                         ;; The anchored finding's line.
+                         (walkthrough-test--pos "+line 10 changed")
+                         (oref (car (walkthrough-test--sections 'hunk)) start)
+                         (oref (car (walkthrough-test--sections 'file)) start)
+                         (oref (car (last (walkthrough-test--sections 'file))) start)))
+        (goto-char pos)
+        (should-not (walkthrough-comment-target)))
+      ;; A region within a hunk is left to the hunk.
+      (should-not (walkthrough-test--target-with-region
+                   (walkthrough-test--pos "-line 10")
+                   (walkthrough-test--pos "+line 10 changed" t))))))
+
+(ert-deftest walkthrough-test-comment-target-keeps-markup ()
+  "The quote is the Markdown source, with the markup the buffer hides."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--explained-draft base head))
+      ;; The backticks and asterisks are in the text, but not shown.
+      (dolist (markup '("`findByEan`" "**findByEan**"))
+        (should (invisible-p (walkthrough-test--pos markup))))
+      (should (string-match-p "The `findByEan` query"
+                              (plist-get (walkthrough-test--target-at "query stays")
+                                         :quote)))
+      (should (string-prefix-p "- **findByEan** inner"
+                               (plist-get (walkthrough-test--target-at "inner-joins")
+                                          :quote)))
+      (should (equal (plist-get (walkthrough-test--target-with-region
+                                 (walkthrough-test--pos "`findByEan`")
+                                 (walkthrough-test--pos "`findByEan`" t))
+                                :quote)
+                     "`findByEan`")))))
+
 ;;; Findings
 
 (defun walkthrough-test--finding-overlay (id)
