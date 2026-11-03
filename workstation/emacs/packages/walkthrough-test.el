@@ -1056,6 +1056,283 @@ labelled plain \"diff\"."
                              (magit-get-mode-buffer 'magit-diff-mode))
         (should (null (walkthrough-diff-label)))))))
 
+;;; Comments on steps
+
+(defconst walkthrough-test--core-explanation
+  (concat "Adds `b.el` and changes a.el near the top.\n"
+          "\n"
+          "- `b.el` holds the new\n"
+          "  helper.\n"
+          "  - Its second line is a placeholder.\n"
+          "- Keeps the file list sorted.\n"
+          "\n"
+          "Both files are read at startup.\n")
+  "The first step's explanation in the comment tests.
+A paragraph, a bullet with a continuation line and a sub-item, a bullet
+that the second step repeats, and a closing paragraph.")
+
+(defun walkthrough-test--comment-draft (base head)
+  "Return the fixture's draft between BASE and HEAD, with longer explanations."
+  (let* ((draft (walkthrough-test--draft base head))
+         (steps (alist-get 'steps draft)))
+    (setf (alist-get 'explanation (aref steps 0)) walkthrough-test--core-explanation)
+    (setf (alist-get 'explanation (aref steps 1))
+          (concat "Changes a.el near the end, deletes c.el, adds a binary.\n"
+                  "\n"
+                  "- Keeps the file list sorted."))
+    draft))
+
+(defun walkthrough-test--comment (where step title quote text)
+  "Return a review comment on step STEP, titled TITLE, of the diff WHERE.
+QUOTE is its passage, nil for a comment on the step as a whole, and TEXT
+what the user wrote."
+  (list :where where :step step :steps 2 :title title :files '("a.el")
+        :quote quote :text text :sent nil))
+
+(defun walkthrough-test--comments (comments)
+  "Return a `walkthrough-comments-function' that knows COMMENTS.
+Like the configuration's, it returns those whose :where is the label."
+  (lambda (label)
+    (seq-filter (lambda (c) (equal (plist-get c :where) label)) comments)))
+
+(defun walkthrough-test--below (regexp &optional nth)
+  "Return what is drawn below the first line matching REGEXP, or nil.
+With NTH, below the NTH line matching it.  What is drawn is the
+after-strings of the overlays ending at the line's end."
+  (save-excursion
+    (goto-char (point-min))
+    (re-search-forward regexp nil nil nth)
+    (let* ((eol (line-end-position))
+           (strings (delq nil (mapcar (lambda (ov)
+                                        (and (= (overlay-end ov) eol)
+                                             (overlay-get ov 'after-string)))
+                                      (overlays-in eol eol)))))
+      (and strings (apply #'concat strings)))))
+
+(ert-deftest walkthrough-test-comment-passage ()
+  "A passage comment is drawn below the passage's last line."
+  (walkthrough-test--with-repo
+    (let* ((where (format "diff of %s..%s" base head))
+           (walkthrough-comments-function
+            (walkthrough-test--comments
+             (list (walkthrough-test--comment
+                    where 1 "Core" "- `b.el` holds the new\n  helper." "Why a new file?")
+                   (walkthrough-test--comment
+                    where 1 "Core" "read at startup" "Lazily?")))))
+      (with-current-buffer (walkthrough-test--open
+                            (walkthrough-test--comment-draft base head))
+        ;; A list item: below its continuation line, above its sub-item.
+        (let ((below (walkthrough-test--below "^  helper\\.$")))
+          (should (equal (substring-no-properties below) "\n    ▶ Why a new file?"))
+          (should (memq 'walkthrough-review-comment
+                        (walkthrough-test--faces below (string-match "Why" below)))))
+        (should-not (walkthrough-test--below "holds the new$"))
+        (should-not (walkthrough-test--below "placeholder\\.$"))
+        ;; A phrase: below the line it ends on.
+        (should (equal (substring-no-properties
+                        (walkthrough-test--below "read at startup\\.$"))
+                       "\n    ▶ Lazily?"))))))
+
+(ert-deftest walkthrough-test-comment-step ()
+  "A comment on a step is drawn below the step's heading."
+  (walkthrough-test--with-repo
+    (let* ((where (format "diff of %s..%s" base head))
+           (walkthrough-comments-function
+            (walkthrough-test--comments
+             (list (walkthrough-test--comment
+                    where 2 "Cleanup" nil "This step mixes two concepts.")))))
+      (with-current-buffer (walkthrough-test--open
+                            (walkthrough-test--comment-draft base head))
+        (let ((below (walkthrough-test--below "^Step 2/2  Cleanup")))
+          (should (string-suffix-p "\n    ▶ This step mixes two concepts."
+                                   (substring-no-properties below)))
+          (should (memq 'walkthrough-review-comment
+                        (walkthrough-test--faces below (string-match "This" below)))))
+        (should-not (walkthrough-test--below "^Step 1/2  Core"))))))
+
+(ert-deftest walkthrough-test-comment-sent ()
+  "A sent comment is drawn dimmed and marked, once it is redrawn."
+  (walkthrough-test--with-repo
+    (let* ((where (format "diff of %s..%s" base head))
+           (comment (walkthrough-test--comment
+                     where 1 "Core" "Keeps the file list sorted." "Sorted how?"))
+           (walkthrough-comments-function (walkthrough-test--comments (list comment))))
+      (with-current-buffer (walkthrough-test--open
+                            (walkthrough-test--comment-draft base head))
+        (should (equal (substring-no-properties
+                        (walkthrough-test--below "^- Keeps the file list sorted\\.$"))
+                       "\n    ▶ Sorted how?"))
+        ;; What the configuration does once it handed the comment off.
+        (plist-put comment :sent t)
+        (walkthrough-redraw-comments)
+        (let ((below (walkthrough-test--below "^- Keeps the file list sorted\\.$")))
+          (should (equal (substring-no-properties below) "\n    ▶ Sorted how? (sent)"))
+          (dotimes (i (length below))
+            (should (memq 'walkthrough-review-sent (walkthrough-test--faces below i)))
+            (should-not (memq 'walkthrough-review-comment
+                              (walkthrough-test--faces below i)))))))))
+
+(ert-deftest walkthrough-test-comment-count ()
+  "A step heading counts the comments on the step and its passages."
+  (walkthrough-test--with-repo
+    (let* ((where (format "diff of %s..%s" base head))
+           (on-step (walkthrough-test--comment where 1 "Core" nil "Split this step."))
+           (on-passage (walkthrough-test--comment
+                        where 1 "Core" "read at startup" "Lazily?"))
+           (walkthrough-comments-function
+            (walkthrough-test--comments (list on-step on-passage))))
+      (with-current-buffer (walkthrough-test--open
+                            (walkthrough-test--comment-draft base head))
+        ;; After the finding count, then the comment on the step.
+        (let ((below (walkthrough-test--below "^Step 1/2  Core  2 findings (1 high)$")))
+          (should (equal (substring-no-properties below)
+                         "  [2 review comments]\n    ▶ Split this step."))
+          (should (memq 'walkthrough-review-comment (walkthrough-test--faces below 2))))
+        (should-not (walkthrough-test--below "^Step 2/2  Cleanup$"))
+        ;; One comment left, on a passage: the count alone.
+        (let ((walkthrough-comments-function
+               (walkthrough-test--comments (list on-passage))))
+          (walkthrough-redraw-comments))
+        (should (equal (substring-no-properties
+                        (walkthrough-test--below "^Step 1/2  Core  2 findings (1 high)$"))
+                       "  [1 review comment]"))))))
+
+(ert-deftest walkthrough-test-comment-label ()
+  "Only the comments on the walkthrough's own commits are drawn."
+  (walkthrough-test--with-repo
+    (let* ((where (format "diff of %s..%s" base head))
+           (asked nil)
+           (comments (walkthrough-test--comments
+                      (list (walkthrough-test--comment
+                             where 1 "Core" "read at startup" "Lazily?")
+                            (walkthrough-test--comment
+                             (format "diff of %s..%s" head base)
+                             1 "Core" "Keeps the file list sorted." "Elsewhere")
+                            (walkthrough-test--comment
+                             "unstaged changes" 2 "Cleanup" nil "Not here either"))))
+           (walkthrough-comments-function (lambda (label)
+                                            (push label asked)
+                                            (funcall comments label))))
+      (with-current-buffer (walkthrough-test--open
+                            (walkthrough-test--comment-draft base head))
+        (should (equal (delete-dups asked) (list where)))
+        (should (walkthrough-test--below "read at startup\\.$"))
+        (should-not (walkthrough-test--below "^- Keeps the file list sorted\\.$"))
+        (should-not (walkthrough-test--below "^Step 2/2  Cleanup$"))
+        (should-not (seq-some (lambda (ov)
+                                (string-match-p "Elsewhere\\|Not here"
+                                                (or (overlay-get ov 'after-string) "")))
+                              (overlays-in (point-min) (point-max))))
+        ;; Without a function, nothing is drawn.
+        (let ((walkthrough-comments-function nil))
+          (magit-refresh-buffer))
+        (should-not (walkthrough-test--below "read at startup\\.$"))))))
+
+(ert-deftest walkthrough-test-comment-refresh ()
+  "Comments are drawn again, once, whenever the buffer is refreshed."
+  (walkthrough-test--with-repo
+    (let* ((where (format "diff of %s..%s" base head))
+           (walkthrough-comments-function
+            (walkthrough-test--comments
+             (list (walkthrough-test--comment where 1 "Core" nil "Split this step.")
+                   (walkthrough-test--comment
+                    where 1 "Core" "read at startup" "Lazily?")))))
+      (with-current-buffer (walkthrough-test--open
+                            (walkthrough-test--comment-draft base head))
+        (let ((heading (walkthrough-test--below "^Step 1/2  Core  2 findings (1 high)$"))
+              (passage (walkthrough-test--below "read at startup\\.$")))
+          (magit-refresh-buffer)
+          ;; Marking a finding refreshes too.
+          (walkthrough-test--goto-finding "s1-f2")
+          (walkthrough-accept)
+          (should (equal (walkthrough-test--below
+                          "^Step 1/2  Core  2 findings (1 high)$")
+                         heading))
+          (should (equal (walkthrough-test--below "read at startup\\.$") passage))
+          (should (= 2 (seq-count (lambda (ov)
+                                    (string-search "▶" (or (overlay-get ov 'after-string)
+                                                           "")))
+                                  (overlays-in (point-min) (point-max))))))))))
+
+(ert-deftest walkthrough-test-comment-rerun-reordered ()
+  "After a re-run with the steps reordered, comments follow their text and step."
+  (walkthrough-test--with-repo
+    (let* ((where (format "diff of %s..%s" base head))
+           (walkthrough-comments-function
+            (walkthrough-test--comments
+             (list (walkthrough-test--comment where 1 "Core" nil "Split this step.")
+                   (walkthrough-test--comment
+                    where 1 "Core" "read at startup" "Lazily?"))))
+           (draft (walkthrough-test--comment-draft base head)))
+      (walkthrough-test--open draft)
+      (let ((steps (alist-get 'steps draft)))
+        (setf (alist-get 'steps draft) (vector (aref steps 1) (aref steps 0))))
+      (with-current-buffer (walkthrough-test--open draft)
+        (should (equal (substring-no-properties
+                        (walkthrough-test--below "^Step 2/2  Core  2 findings (1 high)$"))
+                       "  [2 review comments]\n    ▶ Split this step."))
+        (should-not (walkthrough-test--below "^Step 1/2  Cleanup$"))
+        (should (equal (substring-no-properties
+                        (walkthrough-test--below "read at startup\\.$"))
+                       "\n    ▶ Lazily?"))))))
+
+(ert-deftest walkthrough-test-comment-rerun-shared-quote ()
+  "A quote that two steps share stays in the step it was made in."
+  (walkthrough-test--with-repo
+    (let* ((where (format "diff of %s..%s" base head))
+           (walkthrough-comments-function
+            (walkthrough-test--comments
+             (list (walkthrough-test--comment
+                    where 2 "Cleanup" "- Keeps the file list sorted." "Sorted how?"))))
+           (draft (walkthrough-test--comment-draft base head)))
+      (walkthrough-test--open draft)
+      (setf (alist-get 'title (aref (alist-get 'steps draft) 1)) "Tidying up")
+      (with-current-buffer (walkthrough-test--open draft)
+        (should-not (walkthrough-test--below "^- Keeps the file list sorted\\.$"))
+        (should (equal (substring-no-properties
+                        (walkthrough-test--below "^- Keeps the file list sorted\\.$" 2))
+                       "\n    ▶ Sorted how?"))
+        (should (equal (substring-no-properties
+                        (walkthrough-test--below "^Step 2/2  Tidying up$"))
+                       "  [1 review comment]"))
+        (should-not (walkthrough-test--below "^Step 1/2  Core"))))))
+
+(ert-deftest walkthrough-test-comment-rerun-not-placed ()
+  "A comment whose passage or step is gone is listed under the intro."
+  (walkthrough-test--with-repo
+    (let* ((where (format "diff of %s..%s" base head))
+           (gone-step (walkthrough-test--comment
+                       where 3 "Docs" "Documents the helper." "Where?"))
+           (walkthrough-comments-function
+            (walkthrough-test--comments
+             (list (walkthrough-test--comment
+                    where 1 "Core" "read at startup" "Lazily?")
+                   (walkthrough-test--comment where 2 "Cleanup" nil "Split this step.")
+                   gone-step)))
+           (draft (walkthrough-test--comment-draft base head)))
+      (walkthrough-test--open draft)
+      ;; The re-run drops the closing paragraph and retitles the second step.
+      (let ((steps (alist-get 'steps draft)))
+        (setf (alist-get 'explanation (aref steps 0))
+              (car (split-string walkthrough-test--core-explanation "\n\nBoth")))
+        (setf (alist-get 'title (aref steps 1)) "Tidying up"))
+      (with-current-buffer (walkthrough-test--open draft)
+        (should-not (string-search "read at startup" (buffer-string)))
+        (plist-put gone-step :sent t)
+        (walkthrough-redraw-comments)
+        (let ((below (walkthrough-test--below "^Changes in .* in 2 steps\\.$")))
+          (should (equal (substring-no-properties below)
+                         (concat "\n    ▶ Lazily? (not placed: step 1, Core)"
+                                 "\n    ▶ Split this step. (not placed: step 2, Cleanup)"
+                                 "\n    ▶ Where? (not placed: step 3, Docs) (sent)")))
+          (should (memq 'walkthrough-review-comment
+                        (walkthrough-test--faces below (string-match "Lazily" below))))
+          (should (memq 'walkthrough-review-sent
+                        (walkthrough-test--faces below (string-match "Where" below)))))
+        ;; Comments not placed are on no step.
+        (should-not (walkthrough-test--below "^Step 1/2  Core"))
+        (should-not (walkthrough-test--below "^Step 2/2  Tidying up$"))))))
+
 ;;; Starting and reopening
 
 (ert-deftest walkthrough-test-request ()

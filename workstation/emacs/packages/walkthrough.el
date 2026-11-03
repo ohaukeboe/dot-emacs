@@ -924,7 +924,8 @@ SEVERITY is the highest one present and J how many have it."
                         steps))))
   ;; The refresh may have reset the header line, so set it again.
   (setq walkthrough--header-line nil)
-  (walkthrough--update-header-line))
+  (walkthrough--update-header-line)
+  (walkthrough-redraw-comments))
 
 (defun walkthrough--step-section-at-point ()
   "Return the section of the step that contains point, or nil."
@@ -966,6 +967,125 @@ refreshes, which would strip the step being read of its syntax faces."
     (unless (equal line walkthrough--header-line)
       (setq walkthrough--header-line line)
       (magit-set-header-line-format line))))
+
+;;; Comments on steps
+
+(defcustom walkthrough-comments-function nil
+  "Function that returns the review comments to draw on the steps.
+Called in a walkthrough buffer with the buffer's range label (see
+`walkthrough-diff-label').  It returns the review comments on that range
+that are about a step or a passage of its explanation, pending and sent,
+each a plist with :text, :sent and the target's keys :step :steps :title
+:files and :quote (nil for a comment on the step as a whole).  When nil,
+no such comments are drawn."
+  :type '(choice (const :tag "No comments" nil) function))
+
+;; The look of the configuration's review comments, which this file does
+;; not depend on.
+(defface walkthrough-review-comment '((t :inherit font-lock-warning-face))
+  "Face for a pending review comment on a step or a passage.")
+
+(defface walkthrough-review-sent '((t :inherit shadow))
+  "Face for a review comment on a step or a passage that was handed off.")
+
+(defun walkthrough--explanation-bounds (section)
+  "Return (START . END) of the explanation of the step SECTION.
+END is the end of its last line, before the newline."
+  (let ((start (oref section content)))
+    (cons start
+          (+ start (length (string-trim-right
+                            (alist-get 'explanation
+                                       (elt (alist-get 'steps walkthrough--data)
+                                            (oref section value)))))))))
+
+(defun walkthrough--passage-end (section quote)
+  "Return the end of QUOTE in the explanation of the step SECTION, or nil."
+  (pcase-let ((`(,start . ,end) (walkthrough--explanation-bounds section)))
+    (when-let* ((at (string-search quote (buffer-substring-no-properties start end))))
+      (+ start at (length quote)))))
+
+(defun walkthrough--step-title (section)
+  "Return the title of the step SECTION."
+  (alist-get 'title (elt (alist-get 'steps walkthrough--data) (oref section value))))
+
+(defun walkthrough--comment-place (comment sections)
+  "Return (SECTION . POS) for COMMENT, or nil when it matches nothing.
+SECTIONS are the step sections, in order.  SECTION is the step COMMENT
+is placed on and POS a position on the line below which it is drawn.
+A passage is looked for in the step with COMMENT's number first, so a
+quote that several steps share stays in its own."
+  (if-let* ((quote (plist-get comment :quote)))
+      (seq-some (lambda (section)
+                  (when-let* ((end (walkthrough--passage-end section quote)))
+                    (cons section (1- end))))
+                (let ((step (plist-get comment :step)))
+                  (if-let* (((and (integerp step) (> step 0)))
+                            (own (nth (1- step) sections)))
+                      (cons own sections)
+                    sections)))
+    (when-let* ((section (seq-find (lambda (section)
+                                     (equal (walkthrough--step-title section)
+                                            (plist-get comment :title)))
+                                   sections)))
+      (cons section (oref section start)))))
+
+(defun walkthrough--comment-line (comment &optional note)
+  "Return COMMENT as a line to show below what it is about.
+NOTE, when non-nil, follows its text in parentheses."
+  (let ((sent (plist-get comment :sent)))
+    (propertize (concat "\n    ▶ " (plist-get comment :text)
+                        (if note (format " (%s)" note) "")
+                        (if sent " (sent)" ""))
+                'face (if sent 'walkthrough-review-sent 'walkthrough-review-comment))))
+
+(defun walkthrough--comment-count (count)
+  "Return the note of COUNT review comments for a step heading."
+  (propertize (format "  [%d review comment%s]" count (if (= count 1) "" "s"))
+              'face 'walkthrough-review-comment))
+
+(defun walkthrough-redraw-comments ()
+  "Draw the review comments on the current walkthrough's steps again.
+The comments come from `walkthrough-comments-function'.  A refresh draws
+them too; this redraws them alone, after one was added, sent or
+discarded.  Outside a walkthrough buffer it does nothing."
+  (remove-overlays (point-min) (point-max) 'walkthrough-comments t)
+  (when-let* (((derived-mode-p 'walkthrough-mode))
+              walkthrough-comments-function
+              (label (walkthrough-diff-label))
+              (comments (funcall walkthrough-comments-function label)))
+    (let* ((sections (mapcar #'magit-section-at (walkthrough--starts 'walkthrough-step)))
+           (eol (lambda (pos) (save-excursion (goto-char pos) (line-end-position))))
+           ;; Each as (COMMENT SECTION . POS).
+           (placed (delq nil (mapcar (lambda (comment)
+                                       (when-let* ((place (walkthrough--comment-place
+                                                           comment sections)))
+                                         (cons comment place)))
+                                     comments)))
+           ;; Line ends mapped to what is drawn there, last first.
+           lines)
+      ;; A heading's count comes before the comments drawn below it.
+      (dolist (section sections)
+        (let ((count (seq-count (lambda (place) (eq (cadr place) section)) placed)))
+          (when (> count 0)
+            (push (walkthrough--comment-count count)
+                  (alist-get (funcall eol (oref section start)) lines)))))
+      (pcase-dolist (`(,comment ,_ . ,pos) placed)
+        (push (walkthrough--comment-line comment) (alist-get (funcall eol pos) lines)))
+      ;; The rest are listed below the intro's last line, never dropped.
+      (when-let* ((lost (seq-remove (lambda (comment) (assq comment placed)) comments))
+                  (intro (magit-section-at (car (walkthrough--starts 'walkthrough-intro))))
+                  (below (save-excursion (goto-char (oref intro end))
+                                         (line-end-position -1))))
+        (dolist (comment lost)
+          (push (walkthrough--comment-line
+                 comment (format "not placed: step %s, %s"
+                                 (plist-get comment :step) (plist-get comment :title)))
+                (alist-get below lines))))
+      (pcase-dolist (`(,pos . ,found) lines)
+        (let ((ov (make-overlay pos pos)))
+          (overlay-put ov 'walkthrough t)
+          (overlay-put ov 'walkthrough-comments t)
+          (overlay-put ov 'after-string (apply #'concat (reverse found))))))))
 
 ;;; Moving around
 
