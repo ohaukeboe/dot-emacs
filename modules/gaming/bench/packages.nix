@@ -32,6 +32,8 @@
 
 let
   script = name: builtins.readFile ../../../scripts/game-bench/${name};
+  # The helpers both bash halves share, ahead of the script itself.
+  withCommon = name: script "common.sh" + "\n" + script name;
 
   configFile = writeText "game-bench.json" (builtins.toJSON benchConfig);
 
@@ -50,7 +52,7 @@ let
       systemd
     ];
     runtimeEnv.GAME_BENCH_SCX = "${scx.full}/bin";
-    text = script "game-bench-priv.sh";
+    text = withCommon "game-bench-priv.sh";
   };
 
   game-bench-wrap = writeShellApplication {
@@ -101,7 +103,7 @@ let
     };
     # jq programs reference jq variables ($v, $w) inside single quotes.
     excludeShellChecks = [ "SC2016" ];
-    text = script "game-bench.sh";
+    text = withCommon "game-bench.sh";
   };
 in
 {

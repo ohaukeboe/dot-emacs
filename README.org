@@ -54,7 +54,7 @@ The ~silent-boot~ module (on by default) shows an animated NixOS Plymouth splash
 
 ~modules.gaming~ (enabled on ~desktop~) sets up Steam with GE-Proton, Proton's Wayland driver and
 GameMode. Design: ~specs/008-game-performance-tuning/~. Measured decisions (stock kernel, GPU power
-limit 290 W, GameMode for Factorio): ~docs/gaming-benchmarks.md~.
+limit 330 W with a -50 mV undervolt, GameMode for Factorio): ~docs/gaming-benchmarks.md~.
 
 - GameMode for a game: set its launch options to ~gamemoderun %command%~ (a global preload breaks
   the Steam client).

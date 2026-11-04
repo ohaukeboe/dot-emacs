@@ -151,16 +151,7 @@ reaper_pattern() { echo "reaper.*SteamLaunch AppId=$1( |$)"; }
 
 read_or() { cat "$1" 2>/dev/null || echo "$2"; }
 
-gpu_hwmon() {
-  local h
-  for h in /sys/class/hwmon/hwmon*; do
-    if [ "$(cat "$h/name" 2>/dev/null)" = amdgpu ] && [ -e "$h/power1_cap" ]; then
-      echo "$h"
-      return 0
-    fi
-  done
-  return 1
-}
+# gpu_hwmon and booted_stock come from common.sh.
 
 gpu_od_file() {
   local h
@@ -232,13 +223,6 @@ variant_needs_root() {
     or .gpuProfile != null or .gpuPowerCap != null or .gpuUndervoltMv != null'
 }
 
-# Running a non-Zen kernel (the default since docs/gaming-benchmarks.md, or
-# the comparison entry tagged "stock")?
-booted_stock() {
-  case "$(uname -r)" in *zen*) return 1 ;; esac
-  return 0
-}
-
 # Apply a variant's system-wide part; journal each undo first.
 apply_variant() {
   local v=$1 value range current offset
@@ -271,7 +255,8 @@ apply_variant() {
     read -r -a range <<<"$(priv gpu-cap-range)"
     case "$value" in
     max) cap_watts=${range[2]} ;;
-    *%) cap_watts=$((range[1] * ${value%\%} / 100)) ;;
+    # 10#: a leading zero ("050%") would otherwise read as octal.
+    *%) cap_watts=$((range[1] * 10#${value%\%} / 100)) ;;
     *) cap_watts=$value ;;
     esac
     # Back to the limit in force (modules.gaming.gpu.powerCapWatts), not stock.
@@ -375,8 +360,10 @@ kill_game() {
   kill "${pids[@]}" 2>/dev/null || true
   sleep 5
   kill -KILL "${pids[@]}" 2>/dev/null || true
+  # ps -p lists only the PIDs still alive; one kill -0 over all of them
+  # fails as soon as any one is gone.
   for _ in $(seq 30); do
-    kill -0 "${pids[@]}" 2>/dev/null || return 0
+    ps -p "${pids[*]}" >/dev/null || return 0
     sleep 1
   done
   say "game processes survived SIGKILL: $(ps -o pid=,stat=,comm= -p "${pids[*]}" | tr '\n' ' ')"
@@ -396,7 +383,7 @@ run_proton() {
   local dir=$1 v=$2 pattern started=0 marker since=$EPOCHSECONDS
   pattern=$(reaper_pattern "$appid")
   # Steam refuses to launch over a running instance ("already running").
-  if ! game_gone "$pattern"; then
+  if pgrep -f -- "$pattern" >/dev/null; then
     echo "failed:busy" >"$dir/status"
     return
   fi
@@ -711,7 +698,11 @@ cmd_run() {
 
 cmd_build_time() {
   local runs=5 i start end times=()
-  if [ "${1:-}" = -n ]; then runs=$2; fi
+  case "$#:${1:-}" in
+  0:) ;;
+  2:-n) runs=$2 ;;
+  *) die "build-time: usage: game-bench build-time [-n RUNS]" ;;
+  esac
   [[ $runs =~ ^[1-9][0-9]*$ ]] || die "build-time: -n must be a positive number"
   for i in $(seq "$runs"); do
     start=$(date +%s.%N)

@@ -84,6 +84,18 @@ def benchmark_window(run_dir):
     return end - seconds, end
 
 
+def mangohud_window(path, frames):
+    """(start, end) epoch seconds of MangoHud's logging window, or None.
+
+    Logging ends when MangoHud last writes the log (moved with its mtime)
+    and lasts as long as the logged frames took.
+    """
+    if not frames:
+        return None
+    end = path.stat().st_mtime
+    return end - sum(frames) / 1000, end
+
+
 def read_power(path, window):
     """GPU power (W) from power.csv (`epoch,microwatts`) inside window."""
     power = []
@@ -171,17 +183,21 @@ def run_metrics(run_dir, kind):
         game_frames = run_dir / "game-frames.csv"
         mangohud = run_dir / "frames.csv"
         samples, power, sclk, junction = [], [], [], []
+        window = None
         if game_frames.exists():
             samples = read_game_frames(game_frames)
+            window = benchmark_window(run_dir)
         elif mangohud.exists():
             samples, power = read_mangohud(mangohud)
+            window = mangohud_window(mangohud, samples)
         gpu_csv, power_csv = run_dir / "gpu.csv", run_dir / "power.csv"
-        if gpu_csv.exists():
-            power, sclk, junction = read_gpu(
-                gpu_csv, benchmark_window(run_dir)
-            )
-        elif power_csv.exists():
-            power = read_power(power_csv, benchmark_window(run_dir))
+        # Without a window the samples would average in loading screens
+        # and menus, so the GPU columns stay empty.
+        if window and gpu_csv.exists():
+            gpu_power, sclk, junction = read_gpu(gpu_csv, window)
+            power = gpu_power or power
+        elif window and power_csv.exists():
+            power = read_power(power_csv, window)
     if len(samples) < MIN_SAMPLES:
         return None, "excluded:short"
     ordered = sorted(samples)

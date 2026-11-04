@@ -18,6 +18,12 @@ let
   watts = cfg.gpu.powerCapWatts;
   undervolt = cfg.gpu.undervoltMv;
   priv = lib.getExe cfg.benchmark.packages.game-bench-priv;
+  # Both units run once systemd-modules-load is done, so the amdgpu hwmon
+  # device must exist by then: amdgpu loads in the initrd.
+  earlyAmdgpu = setting: {
+    assertion = lib.elem "amdgpu" (config.modules.silent-boot.earlyKms.modules or [ ]);
+    message = "modules/gaming/gpu.nix: modules.gaming.gpu.${setting} is set, but this machine has no amdgpu GPU in modules.silent-boot.earlyKms.modules (machines/machines.nix). The setting is amdgpu-only; unset it.";
+  };
 in
 {
   config = lib.mkIf cfg.enable (
@@ -32,12 +38,7 @@ in
         };
       })
       (lib.mkIf (watts != null) {
-        assertions = [
-          {
-            assertion = lib.elem "amdgpu" (config.modules.silent-boot.earlyKms.modules or [ ]);
-            message = "modules/gaming/gpu.nix: modules.gaming.gpu.powerCapWatts is set, but this machine has no amdgpu GPU in modules.silent-boot.earlyKms.modules (machines/machines.nix). The cap is amdgpu-only; unset it.";
-          }
-        ];
+        assertions = [ (earlyAmdgpu "powerCapWatts") ];
 
         systemd.services.gpu-power-cap = {
           description = "Set the amdgpu power limit to ${toString watts} W";
@@ -53,6 +54,7 @@ in
       })
       (lib.mkIf (undervolt != null) {
         assertions = [
+          (earlyAmdgpu "undervoltMv")
           {
             assertion = cfg.gpu.overdrive.enable;
             message = "modules/gaming/gpu.nix: modules.gaming.gpu.undervoltMv needs modules.gaming.gpu.overdrive.enable.";

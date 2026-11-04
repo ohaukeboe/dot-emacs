@@ -17,25 +17,12 @@ die() {
   exit 2
 }
 
+# gpu_hwmon and booted_stock come from common.sh.
 amdgpu_hwmon() {
-  local h
-  for h in /sys/class/hwmon/hwmon*; do
-    if [ "$(cat "$h/name" 2>/dev/null)" = amdgpu ] && [ -e "$h/power1_cap" ]; then
-      echo "$h"
-      return 0
-    fi
-  done
-  echo "game-bench-priv: no amdgpu hwmon with power1_cap" >&2
-  exit 1
-}
-
-# Running a non-Zen kernel? Either the default (stock since
-# docs/gaming-benchmarks.md) or the comparison entry tagged "stock".
-booted_stock() {
-  case "$(uname -r)" in
-  *zen*) return 1 ;;
-  esac
-  return 0
+  gpu_hwmon || {
+    echo "game-bench-priv: no amdgpu hwmon with power1_cap" >&2
+    exit 1
+  }
 }
 
 # The selected entry of a sysfs list such as "none [kyber] bfq" or
@@ -160,7 +147,8 @@ gpu-cap)
     cat "$h/power1_cap_default" >"$h/power1_cap"
     ;;
   *)
-    [[ $arg =~ ^[0-9]{1,4}$ ]] || die "gpu-cap: expected whole watts or 'default', got '$arg'"
+    # No leading zero: bash arithmetic would read 0330 as octal.
+    [[ $arg =~ ^[1-9][0-9]{0,3}$ ]] || die "gpu-cap: expected whole watts or 'default', got '$arg'"
     min=$(($(cat "$h/power1_cap_min") / 1000000))
     max=$(($(cat "$h/power1_cap_max") / 1000000))
     if ((arg < min || arg > max)); then
