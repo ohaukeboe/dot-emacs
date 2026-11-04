@@ -98,11 +98,10 @@ in
     ];
 
     # Resume: on hibernate systemd records the swapfile's device and offset in
-    # the HibernateLocation EFI variable, which the systemd initrd reads back.
-    # Leave boot.resumeDevice unset: a resume= without a matching
-    # resume_offset makes systemd reject the swapfile, and logind then
-    # degrades suspend-then-hibernate to plain suspend.
-    boot.initrd.systemd.enable = true;
+    # the HibernateLocation EFI variable, which the systemd initrd (the only
+    # initrd NixOS has) reads back. Leave boot.resumeDevice unset: a resume=
+    # without a matching resume_offset makes systemd reject the swapfile, and
+    # logind then degrades suspend-then-hibernate to plain suspend.
 
     # Trigger policy: by default lid-close and idle fall through to hibernate
     # after the delay.

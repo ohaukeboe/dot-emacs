@@ -453,6 +453,21 @@ in
     programs.mcp.servers = lib.foldl' (acc: t: acc // t.mcpServers) { } toolValues;
 
     programs.opencode.enable = true;
+    programs.opencode.package =
+      pkgs.expiringOverride
+        {
+          pkg = pkgs.opencode;
+          brokenAt = "2.2.5";
+          reason = "node_modules outputHash in nixpkgs does not match what bun install fetches";
+        }
+        (
+          p:
+          p.overrideAttrs (old: {
+            node_modules = old.node_modules.overrideAttrs {
+              outputHash = "sha256-prx9dX7kUvs/E3zopkaPk5LXh3xJAy5sZeum/W8L7cA=";
+            };
+          })
+        );
     programs.opencode.settings = {
       model = "openrouter/~anthropic/claude-sonnet-latest";
     };

@@ -8,13 +8,13 @@
 {
   beads = {
     pname = "beads";
-    version = "v1.3.1";
+    version = "v1.3.4";
     src = fetchFromGitHub {
       owner = "gastownhall";
       repo = "beads";
-      rev = "v1.3.1";
+      rev = "v1.3.4";
       fetchSubmodules = false;
-      sha256 = "sha256-k3WUy0FWPoO7Ymu+FFgS2yYZ4u10Fb7mPBYqs17IP2U=";
+      sha256 = "sha256-nfPAhOrqmEMHHmkrLzxFHbldeUrRRyJiPYtwOVoC6ao=";
     };
   };
   boilerplate = {
@@ -68,10 +68,10 @@
   };
   mobile-mcp = {
     pname = "mobile-mcp";
-    version = "1.0.12";
+    version = "1.0.16";
     src = fetchurl {
-      url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.12.tgz";
-      sha256 = "sha256-9AsVPjdLLISX0XbOk/dSurEcfNeLwPoKp/6y6JrDZNw=";
+      url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.16.tgz";
+      sha256 = "sha256-ZEgUXM53E6y0FAjSQrkKUDYOzwMx5BePkXI1se5dsf8=";
     };
   };
   ok = {

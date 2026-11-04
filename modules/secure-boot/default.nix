@@ -68,7 +68,6 @@ in
 
     environment.systemPackages = with pkgs; [ sbctl ] ++ optionals cfg.tpm2Support [ tpm2-tss ];
 
-    boot.initrd.systemd.enable = true;
     boot.loader.systemd-boot.enable = mkForce false;
 
     # systemd-pcrlock will not build a policy for more than 8 variants, and

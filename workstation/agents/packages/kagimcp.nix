@@ -1,6 +1,7 @@
 {
   lib,
   python312,
+  expiringOverride,
   expiringSkipTests,
   src,
 }:
@@ -34,6 +35,11 @@ let
         brokenAt = "4.25.3";
         reason = "via fastmcp: flaky pexpect TIMEOUT in test_behavior[zsh-literal-positional]";
       };
+      fastmcp-slim = expiringOverride {
+        pkg = pyprev.fastmcp-slim;
+        whileMarkedBroken = true;
+        reason = "marked broken against mcp >= 2; build it with mcp_1";
+      } (p: p.override { mcp = pyfinal.mcp_1; });
     };
   };
 in

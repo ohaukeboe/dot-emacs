@@ -51,7 +51,6 @@ in
 
     # Hide kernel and systemd output behind the splash (Esc shows it).
     boot.consoleLogLevel = 3;
-    boot.initrd.verbose = false;
     boot.kernelParams = [
       "quiet"
       "udev.log_level=3"
