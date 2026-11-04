@@ -34,10 +34,6 @@ let
         brokenAt = "4.25.3";
         reason = "via fastmcp: flaky pexpect TIMEOUT in test_behavior[zsh-literal-positional]";
       };
-      anyio = expiringSkipTests pyprev.anyio {
-        brokenAt = "4.14.2";
-        reason = "via fastmcp: test_tls_connectable fails with \"server_hostname can only be specified in client mode\" on Python 3.12";
-      };
     };
   };
 in
