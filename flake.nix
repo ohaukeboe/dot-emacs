@@ -144,6 +144,12 @@
       flake = false;
     };
 
+    # Claude Code marketplace `ponytail`; registered in workstation/agents/default.nix.
+    ponytail = {
+      url = "github:DietrichGebert/ponytail";
+      flake = false;
+    };
+
     kagimcp = {
       url = "github:kagisearch/kagimcp";
       flake = false;

@@ -373,7 +373,9 @@ in
       "frontend-design@claude-plugins-official" = false;
       "code-simplifier@claude-plugins-official" = false;
       "claude-md-management@claude-plugins-official" = false;
+      "ponytail@ponytail" = true;
     };
+    programs.claude-code.marketplaces.ponytail = inputs.ponytail;
 
     programs.claude-code.settings.hooks = lib.zipAttrsWith (_: lib.concatLists) (
       (map (t: t.hooks) toolValues)

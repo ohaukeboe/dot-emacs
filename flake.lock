@@ -771,6 +771,22 @@
         "url": "https://github.com/oslokommune/claude-marketplace"
       }
     },
+    "ponytail": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1793275171,
+        "narHash": "sha256-PhPtZbeX2wBp19GtWRy+fV93+fFYZe5S487eXPDl/us=",
+        "owner": "DietrichGebert",
+        "repo": "ponytail",
+        "rev": "96608e078b2d5ea607c5c3b8b5a54d1c1fba6846",
+        "type": "github"
+      },
+      "original": {
+        "owner": "DietrichGebert",
+        "repo": "ponytail",
+        "type": "github"
+      }
+    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -854,6 +870,7 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs_6",
         "oslokommune-claude-marketplace": "oslokommune-claude-marketplace",
+        "ponytail": "ponytail",
         "privacy-data-protection-skills": "privacy-data-protection-skills",
         "rm-push": "rm-push",
         "rust-overlay": "rust-overlay",
