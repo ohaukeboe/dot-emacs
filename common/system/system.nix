@@ -15,10 +15,9 @@
 
   nix.settings.auto-optimise-store = true;
 
-  boot.kernelPackages = pkgs.linuxPackages_zen;
-  # linuxPackages_zen ≥ 7.1.2 installs the image as `bzImage` (older zen shipped
-  # `vmlinuz`); must match the kernel's actual output or the loader check fails.
-  system.boot.loader.kernelFile = "bzImage";
+  # Stock, not Zen: Zen gained nothing in game-bench (docs/gaming-benchmarks.md)
+  # and broke amdgpu (Renoir) on hibernate resume on laptop.
+  boot.kernelPackages = pkgs.linuxPackages_latest;
 
   # Compressed RAM swap (zram) — faster than disk swap, reduces SSD wear.
   zramSwap = {
