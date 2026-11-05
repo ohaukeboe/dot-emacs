@@ -104,11 +104,11 @@
     "claude-pointer": {
       "flake": false,
       "locked": {
-        "lastModified": 1791315181,
-        "narHash": "sha256-ZLIuZiI4lXC1dlljfI6rLfIEoeELJtncZaL88JLFsf4=",
+        "lastModified": 1793814832,
+        "narHash": "sha256-fnjr8SEo0MwriIUVzl5bXAtIwYIHCBgWpLQpPDKXC5s=",
         "owner": "ohaukeboe",
         "repo": "claude-pointer",
-        "rev": "fa01b50f9f856d4aa8d47cdd70fa98f0ff1df489",
+        "rev": "737b7b4ea2a081cbdaebe817c0fba54edcf1c9ac",
         "type": "github"
       },
       "original": {
