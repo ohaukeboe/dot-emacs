@@ -140,6 +140,9 @@ let
     "misc"
     "productivity"
   ];
+  # Not installed. setup-matt-pocock-skills scaffolds docs/agents/* into each
+  # repo; the user rule ./rules/sdd.md supplies that configuration instead.
+  mattpocockExcluded = [ "setup-matt-pocock-skills" ];
 
   # [{ name, subdir, body }] for every skill in the scanned categories.
   mattpocockAll = lib.concatMap (
@@ -147,7 +150,11 @@ let
     let
       subdir = "skills/${category}";
       dir = "${inputs.mattpocock-skills}/${subdir}";
-      names = builtins.attrNames (lib.filterAttrs (_: type: type == "directory") (builtins.readDir dir));
+      names = builtins.attrNames (
+        lib.filterAttrs (name: type: type == "directory" && !builtins.elem name mattpocockExcluded) (
+          builtins.readDir dir
+        )
+      );
     in
     map (name: {
       inherit name subdir;
@@ -345,6 +352,7 @@ in
     {
       agents.skillOverrides = listingOverrides;
       programs.claude-code.settings.skillOverrides = config.agents.skillOverrides;
+      programs.claude-code.rules.sdd = ./rules/sdd.md;
       home.file.${ccPluginKey}.enable = lib.mkForce false;
       home.file."${config.home.homeDirectory}/.claude/skills".source = skillsWithPlugin;
       xdg.configFile."opencode/skills".source = mergedSkills;
