@@ -18,6 +18,12 @@
 ;; buffer works here: RET visits the file, TAB folds, and review comments
 ;; made with the configuration's `@' are drawn as anywhere else.
 ;;
+;; A project tour or project audit is a walkthrough of `kind' "tour" or
+;; "audit" about the code at one commit instead of a change.  Its steps'
+;; excerpts are rebuilt from that commit as hunks of context lines
+;; (docs/adr/0011), so they too are Magit's own sections; an audit's
+;; findings are marked and handed off like any other.
+;;
 ;; Findings are marked accepted or dismissed in place, and the marks are
 ;; written back to the file, as is the user's reply to a finding
 ;; (`walkthrough-reply'), which accepts it.  `walkthrough-accepted-findings' returns the
@@ -69,6 +75,16 @@ shares it, and it is never tracked."
 (defun walkthrough--file-for-branch (branch)
   "Return the installed walkthrough file of BRANCH."
   (expand-file-name (concat (string-replace "/" "%2F" branch) ".json")
+                    (walkthrough-directory)))
+
+(defun walkthrough--file-for-code (kind area)
+  "Return the installed file of the tour or audit of KIND covering AREA.
+AREA nil is the whole project.  The name starts with a colon, which a
+branch name cannot hold, so it never clashes with a branch's file."
+  (expand-file-name (concat ":" kind
+                            (and area (concat ":" (string-replace
+                                                   "/" "%2F" (directory-file-name area))))
+                            ".json")
                     (walkthrough-directory)))
 
 (defun walkthrough--read (file)
@@ -212,16 +228,36 @@ ranges that are not arrays are left out, for the schema check to name."
                       (mapcar (lambda (r) (append r nil))
                               (seq-filter #'vectorp ranges))))))))
 
+(defun walkthrough--kind (data)
+  "Return the kind of walkthrough DATA: \"changes\", \"tour\" or \"audit\"."
+  (or (alist-get 'kind data) "changes"))
+
+(defun walkthrough--code-p (data)
+  "Return non-nil when DATA is a tour or an audit, about code at one commit."
+  (member (walkthrough--kind data) '("tour" "audit")))
+
 (defun walkthrough--validate-schema (data)
-  "Return the schema errors of walkthrough DATA."
-  (let (errors)
+  "Return the schema errors of walkthrough DATA.
+A tour or audit names one commit instead of a branch, base and head; its
+steps' files are optional and always line ranges, its excerpts."
+  (let ((code (walkthrough--code-p data))
+        errors)
     (cl-flet ((err (fmt &rest args) (push (apply #'format fmt args) errors))
               (vec-p (v) (and (vectorp v) (> (length v) 0))))
       (unless (equal (alist-get 'version data) 1)
         (err "version: must be 1"))
-      (dolist (key '(title branch base head))
+      (unless (member (walkthrough--kind data) '("changes" "tour" "audit"))
+        (err "kind: must be changes, tour or audit"))
+      (dolist (key (if code '(title commit) '(title branch base head)))
         (unless (walkthrough--string-p (alist-get key data))
           (err "%s: must be a non-empty string" key)))
+      (when code
+        (when-let* ((area (alist-get 'area data)))
+          (unless (walkthrough--string-p area)
+            (err "area: must be a non-empty string")))
+        (when-let* ((skipped (alist-get 'skipped data)))
+          (unless (and (vectorp skipped) (seq-every-p #'walkthrough--string-p skipped))
+            (err "skipped: must be an array of non-empty strings"))))
       (if (not (vec-p (alist-get 'steps data)))
           (err "steps: must be a non-empty array")
         (seq-do-indexed
@@ -231,10 +267,17 @@ ranges that are not arrays are left out, for the schema check to name."
              (dolist (key '(title explanation))
                (unless (walkthrough--string-p (alist-get key step))
                  (err "steps[%d].%s: must be a non-empty string" i key)))
-             (if (not (vec-p (alist-get 'files step)))
-                 (err "steps[%d].files: must be a non-empty array" i)
+             (cond
+              ((and code (null (alist-get 'files step))))
+              ((and code (not (vectorp (alist-get 'files step))))
+               (err "steps[%d].files: must be an array" i))
+              ((not (or code (vec-p (alist-get 'files step))))
+               (err "steps[%d].files: must be a non-empty array" i))
+              (t
                (seq-do-indexed
                 (lambda (entry j)
+                  (when (and code (stringp entry))
+                    (err "steps[%d].files[%d]: must be {file, ranges} in a tour or audit" i j))
                   (if-let* ((parsed (walkthrough--entry entry)))
                       (when (and (listp entry) (not (vec-p (alist-get 'ranges entry))))
                         (err "steps[%d].files[%d].ranges: must be a non-empty array"
@@ -252,7 +295,7 @@ ranges that are not arrays are left out, for the schema check to name."
                                                                   range ", "))
                                       range))))
                      (alist-get 'ranges entry))))
-                (alist-get 'files step)))
+                (alist-get 'files step))))
              (let ((owned (delq nil (mapcar (lambda (e) (car (walkthrough--entry e)))
                                             (alist-get 'files step))))
                    (findings (alist-get 'findings step)))
@@ -278,7 +321,8 @@ ranges that are not arrays are left out, for the schema check to name."
                             (cond ((not (walkthrough--string-p file))
                                    (err "steps[%d].findings[%d].anchor.file: must be a non-empty string"
                                         i k))
-                                  ((not (member file owned))
+                                  ;; An audit shows an anchor's code on its own.
+                                  ((and (not code) (not (member file owned)))
                                    (err "steps[%d].findings[%d].anchor.file: %s is not owned by this step"
                                         i k file)))
                             (unless (and (natnump line) (>= line 1))
@@ -287,9 +331,12 @@ ranges that are not arrays are left out, for the schema check to name."
                             (when (and end (not (and (natnump line) (natnump end) (>= end line))))
                               (err "steps[%d].findings[%d].anchor.end_line: must be an integer >= line"
                                    i k))
-                            (unless (member (alist-get 'side anchor) '(nil "new" "old"))
-                              (err "steps[%d].findings[%d].anchor.side: must be new or old"
-                                   i k)))))))
+                            (cond ((and code (alist-get 'side anchor))
+                                   (err "steps[%d].findings[%d].anchor.side: not allowed in an audit"
+                                        i k))
+                                  ((not (member (alist-get 'side anchor) '(nil "new" "old")))
+                                   (err "steps[%d].findings[%d].anchor.side: must be new or old"
+                                        i k))))))))
                   findings)))))
          (alist-get 'steps data))))
     (nreverse errors)))
@@ -369,15 +416,239 @@ and every file without hunks by exactly one whole-file entry."
                     ((cdr idxs) (err "file %s: owned by %s" name (steps idxs)))))))))
     (nreverse errors)))
 
+;;; Code at a commit (tours and audits)
+
+(defconst walkthrough-diagram-max-width 90
+  "Widest line a diagram (a fenced block in an explanation) may have.
+The buffer wraps long lines, which would scramble a wider diagram.")
+
+(defconst walkthrough-excerpt-max-span 80
+  "Most lines one range of a tour's or audit's excerpt may span.")
+
+(defvar walkthrough--code-cache nil
+  "Hash table from (COMMIT . FILE) to its lines, while one is bound.")
+
+(defun walkthrough--code-lines (commit file)
+  "Return the lines of FILE at COMMIT as a vector.
+Return :binary for a file holding a NUL, and nil when FILE does not
+exist at COMMIT.  Memoised in `walkthrough--code-cache' when it is bound."
+  (let ((key (cons commit file)))
+    (or (and walkthrough--code-cache (gethash key walkthrough--code-cache))
+        (let ((value
+               (with-temp-buffer
+                 (let ((object (format "%s:%s" commit file)))
+                   (when (magit-git-success "cat-file" "-e" object)
+                     (magit-git-insert "show" object)
+                     (goto-char (point-min))
+                     (if (search-forward "\0" nil t)
+                         :binary
+                       (let ((lines (split-string (buffer-string) "\n")))
+                         (when (equal (car (last lines)) "")
+                           (setq lines (butlast lines)))
+                         (vconcat lines))))))))
+          (when walkthrough--code-cache
+            (puthash key value walkthrough--code-cache))
+          value))))
+
+(defun walkthrough--fenced-lines (text)
+  "Return (N . LINE) for each line inside a fenced block of TEXT.
+N counts the lines of TEXT from 1."
+  (let ((n 0) inside found)
+    (dolist (line (split-string text "\n"))
+      (cl-incf n)
+      (if (string-match-p "\\`[ \t]*```" line)
+          (setq inside (not inside))
+        (when inside
+          (push (cons n line) found))))
+    (nreverse found)))
+
+(defun walkthrough--validate-code (data)
+  "Return the errors of tour or audit DATA against its commit.
+Excerpts and anchors must name lines that exist there, an excerpt's
+range is short, diagrams are narrow, a tour opens with a diagram and
+has no findings, and an audit's defects are verified."
+  (let* ((commit (alist-get 'commit data))
+         (tour (equal (walkthrough--kind data) "tour"))
+         errors)
+    (cl-flet ((err (fmt &rest args) (push (apply #'format fmt args) errors)))
+      (if (not (magit-git-success "cat-file" "-e" (concat commit "^{commit}")))
+          (err "commit: %s is not a commit" commit)
+        (let ((abbrev (magit-rev-abbrev commit)))
+          (cl-flet ((lines (where file)
+                      (pcase (walkthrough--code-lines commit file)
+                        ('nil (err "%s: %s does not exist at %s" where file abbrev) nil)
+                        (:binary (err "%s: %s is not a text file at %s" where file abbrev) nil)
+                        (found found))))
+            (seq-do-indexed
+             (lambda (step i)
+               (when (listp step)
+                 (when (vectorp (alist-get 'files step))
+                   (seq-do-indexed
+                    (lambda (entry j)
+                      ;; A bare path is reported by the schema check.
+                      (when-let* (((listp entry))
+                                  (file (alist-get 'file entry))
+                                  ((walkthrough--string-p file))
+                                  (text (lines (format "steps[%d].files[%d]" i j) file))
+                                  (ranges (alist-get 'ranges entry))
+                                  ((vectorp ranges)))
+                        (seq-do-indexed
+                         (lambda (range k)
+                           (pcase (append range nil)
+                             ((and `(,start ,end)
+                                   (guard (and (natnump start) (natnump end)
+                                               (<= 1 start end))))
+                              (when (> end (length text))
+                                (err "steps[%d].files[%d].ranges[%d]: [%d, %d] ends after line %d of %s"
+                                     i j k start end (length text) file))
+                              (when (> (- end start -1) walkthrough-excerpt-max-span)
+                                (err "steps[%d].files[%d].ranges[%d]: [%d, %d] spans %d lines, at most %d"
+                                     i j k start end (- end start -1)
+                                     walkthrough-excerpt-max-span)))))
+                         ranges)))
+                    (alist-get 'files step)))
+                 (when-let* ((explanation (alist-get 'explanation step))
+                             ((stringp explanation)))
+                   (pcase-dolist (`(,n . ,line) (walkthrough--fenced-lines explanation))
+                     (when (> (string-width line) walkthrough-diagram-max-width)
+                       (err "steps[%d].explanation line %d: diagram is %d columns wide, at most %d"
+                            i n (string-width line) walkthrough-diagram-max-width)))
+                   (when (and tour (= i 0)
+                              (not (string-match-p "^[ \t]*```" explanation)))
+                     (err "steps[0].explanation: a tour's first step needs a diagram (a fenced block)")))
+                 (let ((findings (alist-get 'findings step)))
+                   (when (vectorp findings)
+                     (if tour
+                         (unless (seq-empty-p findings)
+                           (err "steps[%d].findings: a tour has no findings" i))
+                       (seq-do-indexed
+                        (lambda (finding k)
+                          (when (listp finding)
+                            (let ((type (alist-get 'type finding)))
+                              (unless (member type '("defect" "smell"))
+                                (err "steps[%d].findings[%d].type: must be defect or smell" i k))
+                              (when (equal type "defect")
+                                (unless (member (alist-get 'verdict finding)
+                                                '("CONFIRMED" "PLAUSIBLE"))
+                                  (err "steps[%d].findings[%d].verdict: a defect needs CONFIRMED or PLAUSIBLE"
+                                       i k))
+                                (unless (walkthrough--string-p
+                                         (alist-get 'failure_scenario finding))
+                                  (err "steps[%d].findings[%d].failure_scenario: a defect needs one"
+                                       i k))))
+                            (when-let* ((anchor (alist-get 'anchor finding))
+                                        ((listp anchor))
+                                        (file (alist-get 'file anchor))
+                                        ((walkthrough--string-p file))
+                                        (text (lines (format "steps[%d].findings[%d].anchor.file"
+                                                             i k)
+                                                     file))
+                                        (last (seq-max (seq-filter #'natnump
+                                                                   (list 0 (alist-get 'line anchor)
+                                                                         (alist-get 'end_line anchor))))))
+                              (when (> last (length text))
+                                (err "steps[%d].findings[%d].anchor: line %d is after the end of %s (%d lines)"
+                                     i k last file (length text))))))
+                        findings))))))
+             (alist-get 'steps data))))))
+    (nreverse errors)))
+
 (defun walkthrough-validate (data)
   "Return the list of errors in walkthrough DATA, or nil when it is valid.
-Each error reads \"WHERE: PROBLEM\".  Coverage is only checked once the
-schema and the commits are sound, since it needs both."
-  (let ((errors (append (walkthrough--validate-schema data)
-                        (and (walkthrough--string-p (alist-get 'base data))
-                             (walkthrough--string-p (alist-get 'head data))
-                             (walkthrough--validate-commits data)))))
-    (or errors (walkthrough--validate-coverage data))))
+Each error reads \"WHERE: PROBLEM\".  A walkthrough of changes is checked
+for coverage once the schema and the commits are sound, since it needs
+both; a tour or audit is checked against its commit."
+  (let ((errors (walkthrough--validate-schema data)))
+    (if (walkthrough--code-p data)
+        (let ((walkthrough--code-cache (make-hash-table :test #'equal)))
+          (append errors
+                  (and (walkthrough--string-p (alist-get 'commit data))
+                       (vectorp (alist-get 'steps data))
+                       (walkthrough--validate-code data))))
+      (setq errors (append errors
+                           (and (walkthrough--string-p (alist-get 'base data))
+                                (walkthrough--string-p (alist-get 'head data))
+                                (walkthrough--validate-commits data))))
+      (or errors (walkthrough--validate-coverage data)))))
+
+;; A tour's or audit's code is shown as a diff whose lines are all
+;; context, so it is made of Magit's own file and hunk sections: RET
+;; visits, TAB folds and review comments get the file's line numbers
+;; (docs/adr/0011).
+
+(defvar walkthrough-excerpt-context)
+
+(defun walkthrough--code-hunk (commit file start end)
+  "Return lines START..END of FILE at COMMIT as a hunk of context lines.
+END is clipped to the end of the file."
+  (let* ((lines (walkthrough--code-lines commit file))
+         (end (min end (length lines)))
+         (count (- end start -1)))
+    (concat (format "@@ -%d,%d +%d,%d @@\n" start count start count)
+            (mapconcat (lambda (line) (concat " " line "\n"))
+                       (seq-subseq lines (1- start) end) ""))))
+
+(defun walkthrough--code-ranges (step commit)
+  "Return the code STEP shows at COMMIT, as an alist from files to ranges.
+The ranges are STEP's excerpts plus, for each anchored finding, its lines
+with `walkthrough-excerpt-context' lines around them.  Each is a (START
+END) list, sorted, merged where they overlap or touch, and clipped to the
+file.  Files come in the order STEP first names them."
+  (let ((by-file (make-hash-table :test #'equal))
+        order)
+    (cl-flet ((add (file start end)
+                (let ((lines (walkthrough--code-lines commit file)))
+                  (when (and (vectorp lines) (<= (max 1 start) (min end (length lines))))
+                    (unless (gethash file by-file)
+                      (push file order))
+                    (push (list (max 1 start) (min end (length lines)))
+                          (gethash file by-file))))))
+      (seq-doseq (entry (alist-get 'files step))
+        (pcase-let ((`(,file . ,ranges) (walkthrough--entry entry)))
+          (dolist (range ranges)
+            (add file (car range) (cadr range)))))
+      (seq-doseq (finding (alist-get 'findings step))
+        (when-let* ((anchor (alist-get 'anchor finding))
+                    (line (alist-get 'line anchor)))
+          (add (alist-get 'file anchor)
+               (- line walkthrough-excerpt-context)
+               (+ (or (alist-get 'end_line anchor) line) walkthrough-excerpt-context)))))
+    (mapcar (lambda (file)
+              (let (merged)
+                (dolist (range (sort (gethash file by-file) (lambda (a b) (< (car a) (car b)))))
+                  (if (and merged (<= (car range) (1+ (cadr (car merged)))))
+                      (setcar merged (list (caar merged) (max (cadr (car merged)) (cadr range))))
+                    (push range merged)))
+                (cons file (nreverse merged))))
+            (nreverse order))))
+
+(defun walkthrough--code-shown (step commit)
+  "Return what STEP shows at COMMIT as `walkthrough--shown-hunks' does.
+That is an alist from files to hunk plists with :start and :length."
+  (mapcar (lambda (entry)
+            (cons (car entry)
+                  (mapcar (lambda (range)
+                            (list :start (car range) :length (- (cadr range) (car range) -1)))
+                          (cdr entry))))
+          (walkthrough--code-ranges step commit)))
+
+(defun walkthrough--insert-code-diff (step commit)
+  "Insert and wash the code STEP shows at COMMIT, as context-only hunks."
+  (let ((beg (point)))
+    (pcase-dolist (`(,file . ,ranges) (walkthrough--code-ranges step commit))
+      (insert (format "diff --git %s %s\n--- %s\n+++ %s\n" file file file file))
+      (pcase-dolist (`(,start ,end) ranges)
+        (insert (walkthrough--code-hunk commit file start end))))
+    (if (= (point) beg)
+        (magit-cancel-section)
+      (let ((end (point-marker)))
+        (set-marker-insertion-type end t)
+        (save-restriction
+          (narrow-to-region beg end)
+          (goto-char beg)
+          (magit-diff-wash-diffs '("--no-prefix")))
+        (goto-char end)
+        (set-marker end nil)))))
 
 ;;; Installing
 
@@ -408,14 +679,25 @@ earlier walkthrough, marks and all.  Never signals for a bad draft."
                        (list "draft: must be a JSON object"))))
         (if errors
             (cons 'error errors)
-          (let ((file (walkthrough--file-for-branch (alist-get 'branch data))))
+          ;; A tour or audit is about one commit, kept as both ends of
+          ;; its range, so everything that reads the range reads it.
+          (let* ((code (walkthrough--code-p data))
+                 (area (and code (alist-get 'area data)
+                            (directory-file-name (alist-get 'area data))))
+                 (file (if code
+                           (walkthrough--file-for-code (walkthrough--kind data) area)
+                         (walkthrough--file-for-branch (alist-get 'branch data))))
+                 (base (alist-get (if code 'commit 'base) data))
+                 (head (alist-get (if code 'commit 'head) data)))
             (walkthrough--write
              (walkthrough--assign-ids
-              (walkthrough--put
-               (walkthrough--put
-                (walkthrough--put data 'repo (magit-toplevel))
-                'base (magit-rev-parse (alist-get 'base data)))
-               'head (magit-rev-parse (alist-get 'head data))))
+              (seq-reduce (lambda (data pair) (walkthrough--put data (car pair) (cdr pair)))
+                          `((commit . nil)
+                            (area . ,area)
+                            (repo . ,(magit-toplevel))
+                            (base . ,(magit-rev-parse base))
+                            (head . ,(magit-rev-parse head)))
+                          data))
              file)
             (when walkthrough-open-after-install
               (walkthrough-open file))
@@ -520,7 +802,7 @@ Faces are copied to `font-lock-face', which Magit buffers keep.  Without
   "Face for a review comment on a step or a passage that was handed off.")
 
 (defconst walkthrough--known-keys
-  '(id state severity title body failure_scenario verdict category anchor
+  '(id state severity type title body failure_scenario verdict category anchor
        reply follow_up)
   "Finding keys this file knows; any other key is shown as text.")
 
@@ -569,7 +851,9 @@ appended to the heading.  Faces are set as `font-lock-face'."
            (lambda (line) (concat bar line "\n"))
            (cons (concat
                   "◆ "
-                  (propertize (upcase severity)
+                  (propertize (concat (upcase severity)
+                                      (when-let* ((type (alist-get 'type finding)))
+                                        (concat " " (upcase type))))
                               'font-lock-face (intern (format "walkthrough-%s" severity)))
                   "  " (propertize (alist-get 'title finding) 'font-lock-face 'bold)
                   (if state (format "  [%s]" state) "")
@@ -748,8 +1032,11 @@ the walkthrough's steps; diff commands work as in any other diff buffer.
                                   (concat (alist-get 'base data) "^{commit}"))
                (magit-git-success "cat-file" "-e"
                                   (concat (alist-get 'head data) "^{commit}")))
-    (user-error "The commits of walkthrough %s are gone; re-run /walkthrough on %s"
-                (file-name-nondirectory file) (alist-get 'branch data))))
+    (user-error "The commits of walkthrough %s are gone; re-run %s"
+                (file-name-nondirectory file)
+                (if (walkthrough--code-p data)
+                    (concat "/project-" (walkthrough--kind data))
+                  (concat "/walkthrough on " (alist-get 'branch data))))))
 
 (defun walkthrough--diff-args (&optional args)
   "Return diff ARGS, or the default diff arguments, without --stat.
@@ -787,18 +1074,34 @@ A diffstat per step would repeat itself; each step shows its own files."
   "Insert the walkthrough's title and notices about DATA."
   (magit-insert-section (walkthrough-intro)
     (magit-insert-heading (alist-get 'title data))
-    (insert (format "Changes in %s..%s on %s, in %d steps.\n"
-                    (magit-rev-abbrev (alist-get 'base data))
-                    (magit-rev-abbrev (alist-get 'head data))
-                    (alist-get 'branch data)
-                    (length (alist-get 'steps data))))
-    (when-let* ((tip (walkthrough--branch-moved data)))
-      (insert (propertize
-               (format "Branch %s has moved since this walkthrough (now at %s).\n"
-                       (alist-get 'branch data) (magit-rev-abbrev tip))
-               'font-lock-face 'warning)))
-    (when (seq-every-p (lambda (step) (seq-empty-p (alist-get 'findings step)))
-                       (alist-get 'steps data))
+    (if (not (walkthrough--code-p data))
+        (progn
+          (insert (format "Changes in %s..%s on %s, in %d steps.\n"
+                          (magit-rev-abbrev (alist-get 'base data))
+                          (magit-rev-abbrev (alist-get 'head data))
+                          (alist-get 'branch data)
+                          (length (alist-get 'steps data))))
+          (when-let* ((tip (walkthrough--branch-moved data)))
+            (insert (propertize
+                     (format "Branch %s has moved since this walkthrough (now at %s).\n"
+                             (alist-get 'branch data) (magit-rev-abbrev tip))
+                     'font-lock-face 'warning))))
+      (insert (format "Code at %s%s, in %d steps.\n"
+                      (magit-rev-abbrev (alist-get 'head data))
+                      (if-let* ((area (alist-get 'area data))) (concat " in " area) "")
+                      (length (alist-get 'steps data))))
+      (when-let* ((now (magit-rev-parse "HEAD"))
+                  ((not (equal now (alist-get 'head data)))))
+        (insert (propertize (format "The repository has moved since (HEAD is now %s).\n"
+                                    (magit-rev-abbrev now))
+                            'font-lock-face 'warning)))
+      (unless (seq-empty-p (alist-get 'skipped data))
+        (insert "Not covered:\n"
+                (mapconcat (lambda (s) (concat "- " s "\n")) (alist-get 'skipped data) ""))))
+    ;; A tour has no findings by design, so saying so tells nothing.
+    (when (and (not (equal (walkthrough--kind data) "tour"))
+               (seq-every-p (lambda (step) (seq-empty-p (alist-get 'findings step)))
+                            (alist-get 'steps data)))
       (insert "No findings.\n"))
     (insert "\n")))
 
@@ -898,7 +1201,11 @@ SEVERITY is the highest one present and J how many have it."
                           (append (alist-get 'findings step) nil))))
         (propertize (concat "  " found) 'font-lock-face 'magit-dimmed)))
     (insert (walkthrough--render-markdown (alist-get 'explanation step)) "\n")
-    (let* ((shown (walkthrough--shown-hunks step diff))
+    (let* ((code (walkthrough--code-p walkthrough--data))
+           (commit (alist-get 'head walkthrough--data))
+           (shown (if code
+                      (walkthrough--code-shown step commit)
+                    (walkthrough--shown-hunks step diff)))
            (findings (append (alist-get 'findings step) nil))
            (placed (seq-filter (lambda (f) (walkthrough--placed-p f shown)) findings)))
       ;; Findings without a line to sit under come first, in their order.
@@ -913,7 +1220,9 @@ SEVERITY is the highest one present and J how many have it."
       ;; Its own section, because an empty diff cancels the section it is
       ;; inserted into and would take the step's heading with it.
       (let ((diff-section (magit-insert-section (walkthrough-diff index)
-                            (walkthrough--insert-step-diff step diff args))))
+                            (if code
+                                (walkthrough--insert-code-diff step commit)
+                              (walkthrough--insert-step-diff step diff args)))))
         (when (and placed diff-section)
           (walkthrough--draw-anchored placed diff-section))))
     (insert "\n")))
@@ -927,8 +1236,10 @@ SEVERITY is the highest one present and J how many have it."
     (remove-overlays (point-min) (point-max) 'walkthrough t)
     (let* ((args (walkthrough--diff-args magit-buffer-diff-args))
            (steps (alist-get 'steps data))
-           (diff (walkthrough--parse-diff (alist-get 'base data)
-                                          (alist-get 'head data) args)))
+           (walkthrough--code-cache (make-hash-table :test #'equal))
+           (diff (unless (walkthrough--code-p data)
+                   (walkthrough--parse-diff (alist-get 'base data)
+                                            (alist-get 'head data) args))))
       (magit-insert-section (diffbuf)
         (walkthrough--insert-intro data)
         (seq-do-indexed (lambda (step index)
@@ -971,7 +1282,10 @@ refreshes, which would strip the step being read of its syntax faces."
 
 (defun walkthrough--update-header-line ()
   "Name the walkthrough, and the step point is in, in the header line."
-  (let* ((title (format "Walkthrough: %s" (alist-get 'title walkthrough--data)))
+  (let* ((title (format "%s: %s"
+                        (pcase (walkthrough--kind walkthrough--data)
+                          ("tour" "Tour") ("audit" "Audit") (_ "Walkthrough"))
+                        (alist-get 'title walkthrough--data)))
          (steps (alist-get 'steps walkthrough--data))
          (index (walkthrough--step-at-point))
          (line (if-let* ((step (and index (elt steps index))))
@@ -1466,8 +1780,11 @@ the last line kept.  A hunk that is not two-sided is returned as it is."
 (defun walkthrough--range-label (base head)
   "Return the label of the committed range BASE..HEAD.
 Review comments use the same label, so a comment and a finding on the
-same commits name the same diff."
-  (format "diff of %s..%s" base head))
+same commits name the same diff.  A range of one commit is a tour's or
+audit's code at that commit, and is labelled so."
+  (if (equal base head)
+      (format "code at %s" head)
+    (format "diff of %s..%s" base head)))
 
 (defun walkthrough-diff-label ()
   "Return the label of the current buffer's committed range, or nil.
@@ -1489,7 +1806,8 @@ patch excerpt is cut."
                (range (and anchor (cons (alist-get 'line anchor)
                                         (or (alist-get 'end_line anchor)
                                             (alist-get 'line anchor)))))
-               (hunk (and name
+               (code (walkthrough--code-p data))
+               (hunk (and name (not code)
                           (seq-find (lambda (h) (walkthrough--line-in-hunk-p h line side))
                                     (plist-get (walkthrough--diff-file diff name) :hunks)))))
     (list :repo (alist-get 'repo data)
@@ -1500,8 +1818,14 @@ patch excerpt is cut."
           :new (and range (not (equal side "old")) range)
           :old (and range (equal side "old") range)
           :where (walkthrough--range-label (alist-get 'base data) (alist-get 'head data))
-          :patch (and hunk (walkthrough-patch-excerpt (plist-get hunk :text) range side))
+          :patch (cond
+                  ((and code range (vectorp (walkthrough--code-lines (alist-get 'head data) name)))
+                   (walkthrough--code-hunk (alist-get 'head data) name
+                                           (max 1 (- (car range) walkthrough-excerpt-context))
+                                           (+ (cdr range) walkthrough-excerpt-context)))
+                  (hunk (walkthrough-patch-excerpt (plist-get hunk :text) range side)))
           :severity (alist-get 'severity finding)
+          :type (alist-get 'type finding)
           :title (alist-get 'title finding)
           :text (concat (string-trim-right (alist-get 'body finding))
                         (when-let* ((failure (alist-get 'failure_scenario finding)))
@@ -1528,7 +1852,7 @@ only when INCLUDE-SENT.  Oldest walkthrough first."
                                  (if include-sent '("accepted" "sent") '("accepted"))))
                        (seq-mapcat (lambda (step) (append (alist-get 'findings step) nil))
                                    (alist-get 'steps data))))
-              (diff (and wanted
+              (diff (and wanted (not (walkthrough--code-p data))
                          (ignore-errors
                            (walkthrough--parse-diff (alist-get 'base data)
                                                     (alist-get 'head data) '("-U3"))))))
@@ -1570,15 +1894,80 @@ walkthrough buffers are refreshed."
                               (magit-toplevel)))
                      (directory-files dir t "\\`[^.].*\\.json\\'")))))
 
-(defun walkthrough--read-installed ()
-  "Read one of the repository's walkthroughs, by branch."
-  (let ((files (mapcar (lambda (file)
-                         (cons (string-replace
-                                "%2F" "/" (file-name-base file))
-                               file))
-                       (or (walkthrough--installed)
-                           (user-error "No walkthroughs in this repository")))))
-    (cdr (assoc (completing-read "Walkthrough of branch: " files nil t) files))))
+(defun walkthrough--installed-label (file)
+  "Return how the picker names installed FILE.
+A branch's walkthrough is named by its branch; a tour or audit (a file
+named \":KIND[:AREA]\") by its kind and area."
+  (let ((name (string-replace "%2F" "/" (file-name-base file))))
+    (if (string-match "\\`:\\([^:]+\\)\\(?::\\(.*\\)\\)?\\'" name)
+        (concat (match-string 1 name)
+                (and (match-string 2 name) (concat ": " (match-string 2 name))))
+      name)))
+
+(defun walkthrough--read-installed (&optional kind)
+  "Read one of the repository's walkthroughs, tours and audits.
+With KIND, \"tour\" or \"audit\", only those of that kind."
+  (let ((files (mapcar (lambda (file) (cons (walkthrough--installed-label file) file))
+                       (or (seq-filter
+                            (lambda (file)
+                              (or (null kind)
+                                  (string-prefix-p (concat ":" kind)
+                                                   (file-name-nondirectory file))))
+                            (walkthrough--installed))
+                           (user-error "No %ss in this repository" (or kind "walkthrough"))))))
+    (cdr (assoc (completing-read (if kind (format "%s: " (capitalize kind)) "Walkthrough: ")
+                                 files nil t)
+                files))))
+
+(defun walkthrough--request-code (kind area)
+  "Ask the coding agent for a project tour or audit (KIND) of AREA.
+AREA nil is the whole project."
+  (unless walkthrough-request-function
+    (user-error "No agent is configured; set `walkthrough-request-function'"))
+  (funcall walkthrough-request-function
+           (concat "/project-" kind (and area (concat " " area)))
+           t))
+
+(defun walkthrough--read-area ()
+  "Read a directory of the repository, relative to its toplevel."
+  (let ((top (magit-toplevel)))
+    (directory-file-name
+     (file-relative-name (read-directory-name "Area: " top nil t) top))))
+
+(defun walkthrough-request-tour (&optional area)
+  "Ask the coding agent for a tour of the project.
+With a prefix argument, read the AREA, a directory, to tour."
+  (interactive (list (and current-prefix-arg (walkthrough--read-area))))
+  (walkthrough--request-code "tour" area))
+
+(defun walkthrough-request-audit (&optional area)
+  "Ask the coding agent for an audit of the project.
+With a prefix argument, read the AREA, a directory, to audit."
+  (interactive (list (and current-prefix-arg (walkthrough--read-area))))
+  (walkthrough--request-code "audit" area))
+
+(defun walkthrough--open-code (kind pick)
+  "Open the whole-project tour or audit (KIND), or with PICK choose one.
+Without one, offer to ask the agent for it."
+  (if pick
+      (walkthrough-open (walkthrough--read-installed kind))
+    (let ((file (walkthrough--file-for-code kind nil)))
+      (cond ((file-exists-p file) (walkthrough-open file))
+            ((y-or-n-p (format "No %s of this project yet.  Ask the agent for one? " kind))
+             (walkthrough--request-code kind nil)
+             nil)))))
+
+(defun walkthrough-open-tour (&optional pick)
+  "Open the project's tour and return its buffer.
+With prefix argument PICK, choose among its tours, one per area."
+  (interactive "P")
+  (walkthrough--open-code "tour" pick))
+
+(defun walkthrough-open-audit (&optional pick)
+  "Open the project's audit and return its buffer.
+With prefix argument PICK, choose among its audits, one per area."
+  (interactive "P")
+  (walkthrough--open-code "audit" pick))
 
 (defun walkthrough-request (&optional base)
   "Ask the coding agent for a walkthrough of the current branch.

@@ -1096,6 +1096,21 @@ commits too.  A comment on a step or a passage shows only in walkthroughs.
 =@ w= opens the current branch's walkthrough (=C-u= picks another branch's)
 and =@ W= asks the Claude session for one (=C-u= reads the base).
 
+The same view also shows two kinds of walkthrough about the code at one
+commit rather than a diff.  A /project tour/ (=/project-tour [AREA]=) is the
+agent's guided introduction to the project: an overview with a diagram first,
+then its parts and the flows that cross them.  A /project audit/
+(=/project-audit [AREA]=) is its review of the whole project for defects and
+code smells, one step per area.  Their code excerpts are drawn as hunks of
+context lines rebuilt from the commit (=docs/adr/0011-tours-show-code-as-context-diffs.md=),
+so =RET=, folding, highlighting and =@= comments work as on any hunk; such a
+comment is labelled =code at <commit>=.  A diagram is a fenced block of a
+step's explanation, so =@ c= on its lines comments on it as a passage.  Audit
+findings are marked, replied to and handed off with =@ s= like a
+walkthrough's.  =@ t= and =@ a= open the project's tour and audit (=C-u= picks
+one per area), =@ T= and =@ A= ask the Claude session for one (=C-u= reads
+the area).
+
 #+begin_src elisp
   (use-package walkthrough
     :after magit
@@ -1109,7 +1124,7 @@ and =@ W= asks the Claude session for one (=C-u= reads the base).
     :config
     (claude-code-ide-make-tool
      :name "open_walkthrough"
-     :description "Validate a draft walkthrough JSON file and, when it is valid, install it for the current project's branch and open it in the user's Emacs. Returns \"Opened <file>\" or the validation errors, one per line; fix the draft and call again."
+     :description "Validate a draft walkthrough, project tour or project audit JSON file and, when it is valid, install it for the current project and open it in the user's Emacs. Returns \"Opened <file>\" or the validation errors, one per line; fix the draft and call again."
      :args '((:name "path"
                     :type string
                     :description "Absolute path of the draft walkthrough JSON file"))

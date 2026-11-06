@@ -396,7 +396,7 @@ only paste it and show the agent's buffer."
     (magit-review--hand-off
      (list comment)
      (if (magit-review--step-comment-p comment)
-         "Here is a comment on the walkthrough of this diff: a question or a request.  It names "
+         "Here is a comment on a walkthrough step: a question or a request.  It names "
        "Here is a review comment: a question or a request.  It names ")
      no-submit)))
 
@@ -443,7 +443,7 @@ each item names."
        (if (seq-some #'magit-review--finding-p items)
            "Please address my review comments and the review findings I accepted.  Each one names "
          "Please address my review comments.  Each one names "))
-   "what it is on: a file with its new/old line range and the diff it "
+   "what it is on: a file with its new/old line range and the diff or commit it "
    "refers to, one or more commits, "
    (if (seq-some #'magit-review--step-comment-p items)
        "a walkthrough step, "
@@ -533,11 +533,16 @@ between its heading and its text."
       (_
        (format "%s%s%s%s (%s)"
                (if (magit-review--finding-p item)
-                   (format "%s [%s] %s: "
+                   (format "%s [%s%s] %s: "
                            (if (plist-get item :follow-up)
                                "Follow-up on finding"
                              "Finding")
-                           (plist-get item :severity) (plist-get item :title))
+                           (plist-get item :severity)
+                           ;; An audit's finding is a defect or a smell.
+                           (if-let* ((type (plist-get item :type)))
+                               (concat ", " type)
+                             "")
+                           (plist-get item :title))
                  "")
                (or (plist-get item :file) "no file")
                (lines "new" (plist-get item :new))
@@ -820,7 +825,12 @@ its target's keys.  Meant for `walkthrough-comments-function'."
     ("k" "Discard" magit-review-discard)]
    ["Walkthrough"
     ("w" "Open (C-u: pick)" walkthrough-open-current)
-    ("W" "Ask for one (C-u: base)" walkthrough-request)]])
+    ("W" "Ask for one (C-u: base)" walkthrough-request)]
+   ["Project"
+    ("t" "Tour (C-u: pick)" walkthrough-open-tour)
+    ("T" "Ask for a tour (C-u: area)" walkthrough-request-tour)
+    ("a" "Audit (C-u: pick)" walkthrough-open-audit)
+    ("A" "Ask for an audit (C-u: area)" walkthrough-request-audit)]])
 
 (provide 'magit-review)
 ;;; magit-review.el ends here

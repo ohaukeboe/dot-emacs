@@ -1592,5 +1592,348 @@ after-strings of the overlays ending at the line's end."
         (with-current-buffer (walkthrough-open-current t)
           (should (eq major-mode 'walkthrough-mode)))))))
 
+;;; Tours and audits
+
+(defconst walkthrough-test--diagram
+  "Overview.\n\n```text\nA --> B --> C\n```\n"
+  "An explanation holding a small diagram.")
+
+(defun walkthrough-test--code-draft (kind commit &rest overrides)
+  "Return a valid tour or audit draft of KIND about COMMIT.
+OVERRIDES is a plist of top-level keys to replace, as for
+`walkthrough-test--draft'."
+  (let ((draft
+         (copy-tree
+          `((version . 1)
+            (kind . ,kind)
+            (title . ,(format "Fixture %s" kind))
+            (commit . ,commit)
+            (steps
+             . [((title . "Overview")
+                 (explanation . ,walkthrough-test--diagram))
+                ((title . "Parts")
+                 (explanation . "How a.el is laid out.")
+                 (files . [((file . "a.el") (ranges . [[5 9]]))]))]))
+          t)))
+    (cl-loop for (key value) on overrides by #'cddr
+             do (setf (alist-get (intern (substring (symbol-name key) 1)) draft)
+                      value))
+    draft))
+
+(defun walkthrough-test--code-step (title files &optional findings explanation)
+  "Return a tour or audit step with TITLE, FILES, FINDINGS, EXPLANATION."
+  `((title . ,title)
+    (explanation . ,(or explanation "Explanation."))
+    ,@(and files `((files . ,files)))
+    (findings . ,(or findings []))))
+
+(defun walkthrough-test--defect (line &optional end)
+  "Return a confirmed defect anchored at a.el LINE..END."
+  `((severity . "high") (type . "defect") (title . "Off by one")
+    (body . "The bound is wrong.") (failure_scenario . "Read the last line.")
+    (verdict . "CONFIRMED")
+    (anchor . ((file . "a.el") (line . ,line) ,@(and end `((end_line . ,end)))))))
+
+(ert-deftest walkthrough-test-code-validate ()
+  "Tours and audits are checked against the commit, not a diff."
+  (walkthrough-test--with-repo
+    (should (null (walkthrough-validate (walkthrough-test--code-draft "tour" head))))
+    (should (null (walkthrough-validate (walkthrough-test--code-draft "audit" head))))
+    ;; A step without files, and a long prose line, are fine.
+    (should (null (walkthrough-validate
+                   (walkthrough-test--code-draft
+                    "tour" head
+                    :steps (vector `((title . "Overview")
+                                     (explanation . ,(concat walkthrough-test--diagram
+                                                             (make-string 120 ?x)))))))))
+    (should (walkthrough-test--has-error
+             (walkthrough-validate (walkthrough-test--code-draft "bogus" head))
+             "^kind: must be changes, tour or audit$"))
+    (should (walkthrough-test--has-error
+             (walkthrough-validate
+              (walkthrough-test--code-draft
+               "tour" "0000000000000000000000000000000000000000"))
+             "^commit: 0000000000000000000000000000000000000000 is not a commit$"))
+    (let ((errors (walkthrough-validate
+                   (walkthrough-test--code-draft
+                    "tour" head
+                    :steps (vector
+                            `((title . "Overview")
+                              (explanation
+                               . ,(concat "Wide.\n\n```text\n" (make-string 100 ?-) "\n```\n")))
+                            (walkthrough-test--code-step
+                             "Files"
+                             [((file . "z.el") (ranges . [[1 2]]))
+                              ((file . "img.bin") (ranges . [[1 1]]))
+                              ((file . "a.el") (ranges . [[240 260] [1 120]]))
+                              "a.el"]))))))
+      (walkthrough-test--has-error
+       errors "^steps\\[0\\]\\.explanation line 4: diagram is 100 columns wide, at most 90$")
+      (walkthrough-test--has-error errors "^steps\\[1\\]\\.files\\[0\\]: z\\.el does not exist at ")
+      (walkthrough-test--has-error errors "^steps\\[1\\]\\.files\\[1\\]: img\\.bin is not a text file at ")
+      (walkthrough-test--has-error
+       errors "^steps\\[1\\]\\.files\\[2\\]\\.ranges\\[0\\]: \\[240, 260\\] ends after line 250 of a\\.el$")
+      (walkthrough-test--has-error
+       errors "^steps\\[1\\]\\.files\\[2\\]\\.ranges\\[1\\]: \\[1, 120\\] spans 120 lines, at most 80$")
+      (walkthrough-test--has-error
+       errors "^steps\\[1\\]\\.files\\[3\\]: must be {file, ranges} in a tour or audit$"))))
+
+(ert-deftest walkthrough-test-code-tour-rules ()
+  "A tour opens with a diagram and carries no findings."
+  (walkthrough-test--with-repo
+    (let ((errors (walkthrough-validate
+                   (walkthrough-test--code-draft
+                    "tour" head
+                    :steps (vector (walkthrough-test--code-step "Overview" nil)
+                                   (walkthrough-test--code-step
+                                    "Parts" nil (vector (walkthrough-test--defect 10))))))))
+      (walkthrough-test--has-error
+       errors "^steps\\[0\\]\\.explanation: a tour's first step needs a diagram (a fenced block)$")
+      (walkthrough-test--has-error errors "^steps\\[1\\]\\.findings: a tour has no findings$"))))
+
+(ert-deftest walkthrough-test-code-audit-rules ()
+  "Audit findings have a type; defects a verdict and a failure scenario."
+  (walkthrough-test--with-repo
+    (let* ((smell '((severity . "low") (type . "smell") (title . "Twice")
+                    (body . "Same code twice.")
+                    (anchor . ((file . "b.el") (line . 1)))))
+           (bad (lambda (&rest pairs)
+                  (let ((f (copy-tree (walkthrough-test--defect 10))))
+                    (cl-loop for (k v) on pairs by #'cddr
+                             do (setf (alist-get k f) v))
+                    f)))
+           (draft (lambda (findings)
+                    (walkthrough-test--code-draft
+                     "audit" head
+                     :steps (vector (walkthrough-test--code-step "Area" nil findings))))))
+      ;; A smell needs neither; an anchor's file need not be excerpted.
+      (should (null (walkthrough-validate (funcall draft (vector smell)))))
+      (let ((errors (walkthrough-validate
+                     (funcall draft
+                              (vector (funcall bad 'type "bug")
+                                      (funcall bad 'verdict nil 'failure_scenario nil)
+                                      (funcall bad 'anchor '((file . "a.el") (line . 10)
+                                                             (side . "old")))
+                                      (funcall bad 'anchor '((file . "a.el") (line . 300))))))))
+        (walkthrough-test--has-error errors "^steps\\[0\\]\\.findings\\[0\\]\\.type: must be defect or smell$")
+        (walkthrough-test--has-error
+         errors "^steps\\[0\\]\\.findings\\[1\\]\\.verdict: a defect needs CONFIRMED or PLAUSIBLE$")
+        (walkthrough-test--has-error
+         errors "^steps\\[0\\]\\.findings\\[1\\]\\.failure_scenario: a defect needs one$")
+        (walkthrough-test--has-error
+         errors "^steps\\[0\\]\\.findings\\[2\\]\\.anchor\\.side: not allowed in an audit$")
+        (walkthrough-test--has-error
+         errors "^steps\\[0\\]\\.findings\\[3\\]\\.anchor: line 300 is after the end of a\\.el (250 lines)$")))))
+
+(ert-deftest walkthrough-test-code-install ()
+  "Tours and audits install beside branch walkthroughs, at their commit."
+  (walkthrough-test--with-repo
+    (let* ((walkthrough-open-after-install nil)
+           (short (walkthrough-test--git "rev-parse" "--short" "HEAD"))
+           (result (walkthrough-install
+                    (walkthrough-test--write-draft (walkthrough-test--code-draft "tour" short))))
+           (file (cdr result)))
+      (should (eq (car result) 'ok))
+      (should (equal file (expand-file-name ".git/walkthroughs/:tour.json" walkthrough-test--repo)))
+      (let ((data (walkthrough--read file)))
+        (should (equal (alist-get 'base data) head))
+        (should (equal (alist-get 'head data) head))
+        (should (equal (alist-get 'repo data) walkthrough-test--repo))
+        (should-not (assq 'branch data))
+        (should-not (assq 'commit data)))
+      (should (equal (cdr (walkthrough-install
+                           (walkthrough-test--write-draft
+                            (walkthrough-test--code-draft "audit" head :area "dir/sub/"))))
+                     (expand-file-name ".git/walkthroughs/:audit:dir%2Fsub.json"
+                                       walkthrough-test--repo)))
+      ;; An invalid draft leaves the installed one byte for byte.
+      (let ((before (with-temp-buffer (insert-file-contents-literally file) (buffer-string))))
+        (should (eq 'error (car (walkthrough-install
+                                 (walkthrough-test--write-draft
+                                  (walkthrough-test--code-draft "tour" head :title ""))))))
+        (should (equal before (with-temp-buffer (insert-file-contents-literally file)
+                                                (buffer-string)))))
+      ;; A draft without a kind is still checked for hunk coverage.
+      (walkthrough-test--has-error
+       (walkthrough-validate
+        (walkthrough-test--draft base head
+                                 :steps (vector (walkthrough-test--step "a" ["a.el"]))))
+       "owned by no step"))))
+
+(defun walkthrough-test--hunk-ranges ()
+  "Return (FILE START LENGTH) of each hunk in the buffer, in order."
+  (mapcar (lambda (h) (cons (oref (oref h parent) value) (oref h to-range)))
+          (walkthrough-test--sections 'hunk)))
+
+(ert-deftest walkthrough-test-code-render ()
+  "A tour step shows its excerpts at the commit as context-only hunks."
+  (walkthrough-test--with-repo
+    ;; The work tree differs, and must not leak into the excerpt.
+    (walkthrough-test--write "a.el" (walkthrough-test--lines 250 '(6)))
+    (let ((draft (walkthrough-test--code-draft
+                  "tour" head
+                  :skipped ["vendor/: third-party"]
+                  :steps (vector `((title . "Overview")
+                                   (explanation . ,walkthrough-test--diagram))
+                                 (walkthrough-test--code-step
+                                  "Parts" [((file . "a.el") (ranges . [[5 9] [8 12] [40 41]]))
+                                           ((file . "b.el") (ranges . [[1 2]]))])))))
+      (with-current-buffer (walkthrough-test--open draft)
+        (should (equal magit-buffer-diff-range (format "%s..%s" head head)))
+        (should (equal (walkthrough-test--hunk-ranges)
+                       '(("a.el" 5 8) ("a.el" 40 2) ("b.el" 1 2))))
+        (let ((steps (walkthrough-test--sections 'walkthrough-step)))
+          (should (= 0 (walkthrough-test--count "^ " (car steps))))
+          (should (= 1 (walkthrough-test--count "^ line 6$" (cadr steps))))
+          (should (= 1 (walkthrough-test--count "^ line 10 changed$" (cadr steps))))
+          (should (= 0 (walkthrough-test--count "^[-+]line" (cadr steps)))))
+        (should (equal (walkthrough-diff-label) (format "code at %s" head)))
+        (should (string-match-p "^Code at [0-9a-f]+, in 2 steps\\.$" (buffer-string)))
+        (should (string-match-p "^Not covered:\n- vendor/: third-party$" (buffer-string)))
+        (should-not (string-match-p "has moved" (buffer-string)))
+        (should-not (string-match-p "No findings" (buffer-string)))
+        ;; RET visits the file as of the commit, at the line (research R2).
+        (goto-char (point-min))
+        (re-search-forward "^ line 41$")
+        (let ((buffer (save-window-excursion
+                        (call-interactively #'magit-diff-visit-file)
+                        (current-buffer))))
+          (with-current-buffer buffer
+            (should (equal (magit-rev-parse magit-buffer-revision) head))
+            (should (= (line-number-at-pos) 41)))))
+      (walkthrough-test--git "commit" "--quiet" "-am" "four")
+      (with-current-buffer (walkthrough-open (walkthrough--file-for-code "tour" nil))
+        (should (string-match-p "The repository has moved since (HEAD is now"
+                                (buffer-string)))))))
+
+(ert-deftest walkthrough-test-code-audit-render ()
+  "Audit findings show the code they are anchored to."
+  (walkthrough-test--with-repo
+    (let* ((general '((severity . "low") (type . "smell") (title . "No tests")
+                      (body . "Nothing tests this area.")))
+           (draft (walkthrough-test--code-draft
+                   "audit" head
+                   :steps (vector (walkthrough-test--code-step
+                                   "Area" nil
+                                   (vector (walkthrough-test--defect 20 21) general))))))
+      (with-current-buffer (walkthrough-test--open draft)
+        (should (equal (walkthrough-test--hunk-ranges) '(("a.el" 17 8))))
+        (let ((ov (seq-find (lambda (ov) (overlay-get ov 'walkthrough-finding))
+                            (overlays-in (point-min) (point-max)))))
+          (should ov)
+          (should (equal (buffer-substring-no-properties
+                          (overlay-start ov)
+                          (save-excursion (goto-char (overlay-start ov)) (line-end-position)))
+                         " line 21"))
+          (should (string-match-p "HIGH DEFECT  Off by one" (overlay-get ov 'after-string))))
+        (let ((finding (car (walkthrough-test--sections 'walkthrough-finding)))
+              (diff (car (walkthrough-test--sections 'walkthrough-diff))))
+          (should (string-match-p "LOW SMELL  No tests" (walkthrough-test--text finding)))
+          (should (< (oref finding start) (oref diff start))))))
+    (with-current-buffer (walkthrough-test--open
+                          (walkthrough-test--code-draft
+                           "audit" head :area "lib" :skipped ["lib/gen.el: generated"]))
+      (should (string-match-p "^Code at [0-9a-f]+ in lib, in 2 steps\\.$" (buffer-string)))
+      (should (string-match-p "^No findings\\.$" (buffer-string)))
+      (should (string-match-p "^Not covered:" (buffer-string))))))
+
+(ert-deftest walkthrough-test-code-hand-off ()
+  "Accepted audit findings join the hand-off with their code."
+  (walkthrough-test--with-repo
+    (let ((walkthrough-open-after-install nil)
+          (reply (copy-tree (walkthrough-test--defect 100))))
+      (setf (alist-get 'title reply) "Replied")
+      (walkthrough-install (walkthrough-test--write-draft (walkthrough-test--draft base head)))
+      (walkthrough--set-state (walkthrough--file-for-branch "feat/x") "s1-f1" "accepted")
+      (let ((file (cdr (walkthrough-install
+                        (walkthrough-test--write-draft
+                         (walkthrough-test--code-draft
+                          "audit" head
+                          :steps (vector (walkthrough-test--code-step
+                                          "Area" nil
+                                          (vector (walkthrough-test--defect 20 21)
+                                                  (walkthrough-test--defect 50)
+                                                  reply)))))))))
+        (with-current-buffer (walkthrough-open file)
+          (goto-char (point-min))
+          (re-search-forward "^ line 21$")
+          (walkthrough-accept)
+          (goto-char (point-min))
+          (re-search-forward "^ line 50$")
+          (walkthrough-dismiss)
+          (walkthrough-reply "s1-f3" "Fix it this way"))
+        (should (equal (mapcar (lambda (f) (alist-get 'state f))
+                               (alist-get 'findings (aref (alist-get 'steps (walkthrough--read file)) 0)))
+                       '("accepted" "dismissed" "accepted")))
+        (let* ((items (walkthrough-accepted-findings walkthrough-test--repo))
+               (audit (seq-filter (lambda (i) (equal (plist-get i :walkthrough) file)) items))
+               (item (car audit)))
+          (should (= 3 (length items)))
+          (should (= 2 (length audit)))
+          (should (equal (plist-get item :where) (format "code at %s" head)))
+          (should (equal (plist-get item :new) '(20 . 21)))
+          (should (null (plist-get item :old)))
+          (should (equal (plist-get item :type) "defect"))
+          (should (equal (plist-get item :patch) (walkthrough--code-hunk head "a.el" 17 24)))
+          (should (string-prefix-p "@@ -17,8 +17,8 @@\n line 17\n" (plist-get item :patch)))
+          (walkthrough-mark-sent audit)
+          (should (equal (mapcar (lambda (f) (alist-get 'state f))
+                                 (alist-get 'findings (aref (alist-get 'steps (walkthrough--read file)) 0)))
+                         '("sent" "dismissed" "sent"))))))))
+
+(ert-deftest walkthrough-test-code-comment-targets ()
+  "A diagram is a passage of its step; an excerpt is a hunk."
+  (walkthrough-test--with-repo
+    (with-current-buffer (walkthrough-test--open (walkthrough-test--code-draft "tour" head))
+      (goto-char (point-min))
+      (re-search-forward "^A --> B")
+      (set-mark (line-beginning-position))
+      (end-of-line)
+      (activate-mark)
+      (let ((transient-mark-mode t))
+        (should (equal (plist-get (walkthrough-comment-target) :quote) "A --> B --> C"))
+        (should (equal (plist-get (walkthrough-comment-target) :step) 1)))
+      (deactivate-mark)
+      (re-search-forward "^ line 7$")
+      (should (null (walkthrough-comment-target)))
+      (should (= 7 (magit-diff-hunk-line (magit-current-section) nil))))))
+
+(ert-deftest walkthrough-test-code-open-and-request ()
+  "Tours and audits are requested and reopened like walkthroughs."
+  (walkthrough-test--with-repo
+    (let* ((sent nil)
+           (walkthrough-request-function (lambda (text submit) (push (list text submit) sent))))
+      (walkthrough-request-tour)
+      (walkthrough-request-tour "lib")
+      (walkthrough-request-audit)
+      (walkthrough-request-audit "lib")
+      (should (equal (nreverse sent)
+                     '(("/project-tour" t) ("/project-tour lib" t)
+                       ("/project-audit" t) ("/project-audit lib" t))))
+      (setq sent nil)
+      (cl-letf (((symbol-function 'y-or-n-p) (lambda (&rest _) t)))
+        (should (null (walkthrough-open-tour)))
+        (should (equal sent '(("/project-tour" t)))))
+      (let ((walkthrough-open-after-install nil))
+        (walkthrough-install (walkthrough-test--write-draft (walkthrough-test--draft base head)))
+        (walkthrough-install (walkthrough-test--write-draft (walkthrough-test--code-draft "tour" head)))
+        (walkthrough-install (walkthrough-test--write-draft
+                              (walkthrough-test--code-draft "audit" head :area "a/b"))))
+      (with-current-buffer (walkthrough-open-tour)
+        (should (string-suffix-p ":tour.json" walkthrough--file)))
+      (cl-letf (((symbol-function 'completing-read)
+                 (lambda (_prompt collection &rest _)
+                   (should (equal (sort (mapcar #'car collection) #'string<)
+                                  '("audit: a/b" "feat/x" "tour")))
+                   "audit: a/b")))
+        (with-current-buffer (walkthrough-open-current t)
+          (should (string-suffix-p ":audit:a%2Fb.json" walkthrough--file))))
+      (cl-letf (((symbol-function 'completing-read)
+                 (lambda (_prompt collection &rest _)
+                   (should (equal (mapcar #'car collection) '("audit: a/b")))
+                   "audit: a/b")))
+        (with-current-buffer (walkthrough-open-audit t)
+          (should (string-suffix-p ":audit:a%2Fb.json" walkthrough--file)))))))
+
 (provide 'walkthrough-test)
 ;;; walkthrough-test.el ends here

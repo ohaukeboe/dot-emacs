@@ -69,20 +69,39 @@ _Avoid_: quick comment (clashes with quick prompt)
 
 **Walkthrough**:
 An agent's guided tour of the committed changes between a base and a head
-commit. It splits them into steps in reading order and carries the agent's
-findings on them. Fixed to those two commits, so it does not change as the
-branch moves on.
-_Avoid_: tour, review (which is the user's side)
+commit, or, as a project tour or project audit, of the code at one commit.
+It splits them into steps in reading order and carries the agent's findings
+on them. Fixed to its commits, so it does not change as the branch moves on.
+_Avoid_: tour (unqualified), review (which is the user's side)
+
+**Project tour**:
+A walkthrough that introduces a whole project, or one area of it, at one
+commit: an overview with a diagram first, then its parts and the flows that
+cross them, each saying what it uses and what uses it. It shows code as
+excerpts and carries no findings.
+
+**Project audit**:
+A walkthrough that reviews a whole project, or one area of it, at one commit
+for defects and code smells. Its findings are grouped into one step per area
+and are marked and handed off like any other.
+_Avoid_: review (which is the user's side), security scan (a separate tool)
+
+**Code excerpt**:
+Lines of one file at a project tour's or audit's commit, shown as a hunk of
+context lines, so it is visited and commented on like any hunk. The
+walkthrough stores where the lines are, not the lines.
 
 **Step**:
-One concept of a walkthrough: an explanation plus the diffs that make it up.
-Definitions come before their consumers, wiring after its parts and tests
-beside their subjects.
+One concept of a walkthrough: an explanation plus the diffs or code excerpts
+that make it up. Definitions come before their consumers, wiring after its
+parts and tests beside their subjects.
 
 **Finding**:
-A suggestion the agent makes about a walkthrough's changes, with a severity
-and usually anchored to lines of one file. Unmarked until the user accepts
-or dismisses it. Only accepted findings are handed off.
+A suggestion the agent makes about a walkthrough's changes or code, with a
+severity and usually anchored to lines of one file. A project audit's
+finding is also a defect (behaves wrongly) or a smell (works, but costs to
+keep). Unmarked until the user accepts or dismisses it. Only accepted
+findings are handed off.
 _Avoid_: review comment, which is always the user's own remark
 
 **Reply**:

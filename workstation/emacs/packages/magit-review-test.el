@@ -171,7 +171,7 @@ SECTION-TYPE is as for `magit-review-test--goto'."
   (goto-char (line-end-position)))
 
 (defconst magit-review-test--opening-end
-  (concat "what it is on: a file with its new/old line range and the diff it "
+  (concat "what it is on: a file with its new/old line range and the diff or commit it "
           "refers to, one or more commits, or another item Magit shows.\n\n")
   "How the opening sentence of every prompt ends.")
 
