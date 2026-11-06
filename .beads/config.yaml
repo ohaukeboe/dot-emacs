@@ -57,3 +57,5 @@
 
 sync:
     remote: "git+ssh://git@github.com/ohaukeboe/dot-emacs.git"
+dolt:
+    auto-push: true
