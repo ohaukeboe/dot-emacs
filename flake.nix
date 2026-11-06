@@ -340,7 +340,7 @@
         #   nix build .#test-disk-layout -L
         // onLinux system {
           test-disk-layout = nixpkgsFor.${system}.callPackage ./tests/disk-layout.nix {
-            diskoLib = inputs.disko.lib;
+            inherit (inputs) disko nixpkgs;
           };
           # The ERT suite of workstation/emacs/packages/beads.el; see the file.
           # A package rather than a check because it builds an Emacs closure.
