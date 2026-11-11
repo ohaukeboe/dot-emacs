@@ -17,7 +17,8 @@
 ;; coding agent as one prompt, together with the findings the user accepted
 ;; in the repository's walkthroughs, and marks them sent.
 ;; `magit-review-comment-send' hands one comment off on its own at once (a
-;; direct comment), leaving the others pending.  Comments live in memory,
+;; direct comment), leaving the others pending; on a walkthrough finding it
+;; sends that finding alone, with a reply.  Comments live in memory,
 ;; per repository toplevel, so a comment made in a worktree goes to that
 ;; worktree's agent.  A comment on commits carries no patch and no message
 ;; body: it names each commit by short id and subject, and the agent reads
@@ -79,6 +80,7 @@
 (declare-function walkthrough-patch-excerpt "walkthrough" (hunk &optional range side))
 (declare-function walkthrough-finding-at-point-p "walkthrough" ())
 (declare-function walkthrough-reply "walkthrough" (id text))
+(declare-function walkthrough-read-reply "walkthrough" ())
 (declare-function walkthrough-accepted-findings "walkthrough" (repo &optional include-sent))
 (declare-function walkthrough-mark-sent "walkthrough" (items))
 (declare-function walkthrough-comment-target "walkthrough" ())
@@ -386,18 +388,39 @@ the finding instead (`walkthrough-reply')."
 
 (defun magit-review-comment-send (text &optional no-submit)
   "Hand review comment TEXT on the thing at point to the agent at once.
-Other pending comments stay pending.  With prefix argument NO-SUBMIT,
-only paste it and show the agent's buffer."
+Other pending comments and accepted findings stay pending.  With prefix
+argument NO-SUBMIT, only paste it and show the agent's buffer.
+Interactively on a walkthrough finding, TEXT is nil and this reads a
+reply to the finding instead, records it as `walkthrough-reply' does,
+and hands off that finding alone with its reply."
   (interactive
    (if (magit-review--on-finding-p)
-       (user-error "On a finding, reply with `@ c' instead")
+       (list nil current-prefix-arg)
      (append (magit-review--read) (list current-prefix-arg))))
-  (let ((comment (magit-review--add text)))
+  (if (null text)
+      (magit-review--send-finding no-submit)
+    (let ((comment (magit-review--add text)))
+      (magit-review--hand-off
+       (list comment)
+       (if (magit-review--step-comment-p comment)
+           "Here is a comment on a walkthrough step: a question or a request.  It names "
+         "Here is a review comment: a question or a request.  It names ")
+       no-submit))))
+
+(defun magit-review--send-finding (no-submit)
+  "Reply to the walkthrough finding at point and hand it off alone at once.
+If NO-SUBMIT, only paste it and show the agent's buffer."
+  (pcase-let ((`(,id ,reply) (walkthrough-read-reply))
+              (file (magit-buffer-value)))
+    (when (string-blank-p reply)
+      (user-error "Empty reply"))
+    (walkthrough-reply id reply)
     (magit-review--hand-off
-     (list comment)
-     (if (magit-review--step-comment-p comment)
-         "Here is a comment on a walkthrough step: a question or a request.  It names "
-       "Here is a review comment: a question or a request.  It names ")
+     (seq-filter (lambda (item)
+                   (and (equal (plist-get item :id) id)
+                        (file-equal-p (plist-get item :walkthrough) file)))
+                 (walkthrough-accepted-findings (magit-toplevel)))
+     "Here is a review finding with my reply: a question or a request.  It names "
      no-submit)))
 
 (defun magit-review--pending (repo &optional include-sent)
@@ -817,7 +840,7 @@ its target's keys.  Meant for `walkthrough-comments-function'."
   "Comment on what Magit shows and hand the review to the agent."
   [["Comment"
     ("c" "Thing at point" magit-review-comment)
-    ("d" "Comment and send now" magit-review-comment-send)]
+    ("d" "Comment or reply, send now" magit-review-comment-send)]
    ["Review"
     ("s" "Send to agent" magit-review-send)
     ("p" "Paste, don't submit" magit-review-paste)

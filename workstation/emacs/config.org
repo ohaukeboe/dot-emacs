@@ -995,7 +995,8 @@ The review is sent as a bracketed paste, because typing a multi-line string
 into the terminal would submit it at the first newline.  =@ p= pastes without
 submitting so the prompt can still be edited.  =@ d= writes a direct
 comment: one comment sent at once on its own, for a quick question, leaving
-other pending comments queued.  Claude can also re-read the
+other pending comments queued.  On a walkthrough finding it reads a reply
+instead and sends that finding alone with it (below).  Claude can also re-read the
 review through the =magit_review_comments= MCP tool.
 
 Comments are drawn in status, diff, revision, log, refs and stash buffers,
@@ -1076,7 +1077,9 @@ file and accepts the finding, even a dismissed or sent one, which is then
 handed off again as a follow-up.  Dismissing or unmarking keeps the reply
 but does not send it, and =@ k= leaves replies alone.  =@ s= then sends the
 accepted findings, replies under them, together with the pending review
-comments, in one prompt, and marks both sent.
+comments, in one prompt, and marks both sent.  =@ d= on a finding asks
+for a reply as =@ c= does, refusing an empty one, and hands off that one
+finding with it at once, marked sent like any other; the rest stay queued.
 
 =@ c= in a step's explanation comments on a passage of it: the active region,
 or else the list item point is in (without its nested items) or the

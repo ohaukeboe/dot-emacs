@@ -1613,17 +1613,21 @@ A sent finding cannot be marked again."
   (interactive)
   (walkthrough--mark nil '(nil "accepted" "dismissed")))
 
+(defun walkthrough-read-reply ()
+  "Read a reply to the finding at point, prefilled with its reply.
+Return the finding's id and the reply, as a list."
+  (let ((id (walkthrough--finding-for-command)))
+    (list id (read-string "Reply: "
+                          (alist-get 'reply (walkthrough--finding-by-id
+                                             (walkthrough--read walkthrough--file)
+                                             id))))))
+
 (defun walkthrough-reply (id text)
   "Reply TEXT to finding ID, by default the finding at point.
 The reply is kept with the finding and accepts it, even a dismissed or
 sent one; a sent one is then handed off again as a follow-up.  Empty
 TEXT deletes the reply and leaves the mark as it is."
-  (interactive
-   (let ((id (walkthrough--finding-for-command)))
-     (list id (read-string "Reply: "
-                           (alist-get 'reply (walkthrough--finding-by-id
-                                              (walkthrough--read walkthrough--file)
-                                              id))))))
+  (interactive (walkthrough-read-reply))
   (let ((text (string-trim text)))
     ;; Re-read, like the marks, so other changes to the file are kept.
     (walkthrough--write

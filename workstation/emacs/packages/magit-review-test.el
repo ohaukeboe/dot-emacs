@@ -1050,11 +1050,6 @@ A reply to a finding already handed off sends it again, as a follow-up."
         (walkthrough-accept)
         (magit-review-test--goto-finding "General remark")
         (magit-review-test--reply "Do it anyway.")
-        ;; A finding takes a reply, never a direct comment.
-        (should (string-match-p
-                 "reply with .@ c. instead"
-                 (cadr (should-error (call-interactively #'magit-review-comment-send)
-                                     :type 'user-error))))
         (magit-review-test--goto "^@@ -17,7 \\+17,7 @@")
         (magit-review-comment "Hunk note")
         (magit-review-send))
@@ -1099,6 +1094,97 @@ A reply to a finding already handed off sends it again, as a follow-up."
                       "\n"
                       excerpt)))
       (should (null (magit-review-test--texts))))))
+
+;;; Sending a finding at once
+
+(defun magit-review-test--send-reply (text &optional no-submit)
+  "Send reply TEXT with `@ d' on the finding at point, as the user would.
+With NO-SUBMIT, as with a prefix argument."
+  (cl-letf (((symbol-function 'read-string) (lambda (&rest _) text)))
+    (let ((current-prefix-arg (and no-submit '(4))))
+      (call-interactively #'magit-review-comment-send))))
+
+(defun magit-review-test--findings ()
+  "Return the fixture's accepted and sent findings as (TITLE REPLY FOLLOW-UP SENT)."
+  (mapcar (lambda (item)
+            (list (plist-get item :title) (plist-get item :reply)
+                  (plist-get item :follow-up) (plist-get item :sent)))
+          (seq-filter #'magit-review--finding-p
+                      (magit-review-items magit-review-test--repo t))))
+
+(ert-deftest magit-review-test-direct-reply-to-finding ()
+  "`@ d' on a finding replies to it and hands it off alone at once.
+The reply accepts it, even a dismissed one, and it is marked sent; one
+sent before goes out as a follow-up.  Other pending items stay queued."
+  (magit-review-test--with-repo
+    (let ((label (format "diff of %s..%s" base head))
+          (intro (concat "Here is a review finding with my reply: a question or "
+                         "a request.  It names " magit-review-test--opening-end))
+          (excerpt (concat "```diff\n"
+                           "@@ -18,6 +18,6 @@ line 16\n"
+                           " line 18\n line 19\n"
+                           "-line 20\n+line 20 changed\n"
+                           " line 21\n line 22\n line 23\n"
+                           "```\n"))
+          (walkthrough (magit-review-test--walkthrough base head)))
+      (with-current-buffer walkthrough
+        (magit-review-test--goto "^@@ -17,7 \\+17,7 @@")
+        (magit-review-comment "Hunk note")
+        (magit-review-test--goto-finding "Line 20 is wrong")
+        (walkthrough-accept)
+        (magit-review-test--goto-finding "General remark")
+        ;; An empty reply is refused and nothing is sent.
+        (should-error (magit-review-test--send-reply "  ") :type 'user-error)
+        (should (null magit-review-test--sent))
+        (magit-review-test--send-reply "Why?"))
+      (should (equal magit-review-test--sent
+                     `((,(concat intro
+                                 "## Finding [low] General remark: no file (" label ")\n"
+                                 "\n"
+                                 "Not tied to a line.\n"
+                                 "\n"
+                                 "My reply: Why?\n")
+                        t))))
+      (should (equal (magit-review-test--texts)
+                     '("Hunk note" "The changed line breaks the count.")))
+      (should (equal (magit-review-test--findings)
+                     '(("Line 20 is wrong" nil nil nil)
+                       ("General remark" "Why?" nil t))))
+      ;; A dismissed finding is accepted and sent; with a prefix argument
+      ;; it is only pasted.
+      (with-current-buffer walkthrough
+        (magit-review-test--goto-finding "Line 20 is wrong")
+        (walkthrough-dismiss)
+        (magit-review-test--send-reply "Paste only" t))
+      (should (equal (car magit-review-test--sent)
+                     (list (concat intro
+                                   "## Finding [high] Line 20 is wrong: a.el new L20-20 ("
+                                   label ")\n"
+                                   "\n"
+                                   "The changed line breaks the count.\n"
+                                   "\n"
+                                   "My reply: Paste only\n"
+                                   "\n"
+                                   excerpt)
+                           nil)))
+      (should (equal (magit-review-test--texts) '("Hunk note")))
+      ;; A sent finding goes out again as a follow-up, which then ends.
+      (with-current-buffer walkthrough
+        (magit-review-test--goto-finding "General remark")
+        (magit-review-test--send-reply "And?"))
+      (should (equal (car magit-review-test--sent)
+                     (list (concat intro
+                                   "## Follow-up on finding [low] General remark: no file ("
+                                   label ")\n"
+                                   "\n"
+                                   "Not tied to a line.\n"
+                                   "\n"
+                                   "My reply: And?\n")
+                           t)))
+      (should (equal (magit-review-test--findings)
+                     '(("Line 20 is wrong" "Paste only" nil t)
+                       ("General remark" "And?" nil t))))
+      (should (equal (magit-review-test--texts) '("Hunk note"))))))
 
 (provide 'magit-review-test)
 ;;; magit-review-test.el ends here

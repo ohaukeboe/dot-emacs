@@ -108,7 +108,8 @@ _Avoid_: review comment, which is always the user's own remark
 The user's answer to a finding: agreement with a twist, a correction or a
 question. A finding has at most one, kept with it and handed off under it.
 Replying accepts the finding, even a dismissed or already sent one, which
-is then handed off again.
+is then handed off again. A finding can also be handed off alone with its
+reply the moment it is written, like a direct comment, though it is not one.
 _Avoid_: review comment (that is on a diff or an explanation, not on a
 finding)
 
