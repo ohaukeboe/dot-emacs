@@ -1104,7 +1104,7 @@ With NO-SUBMIT, as with a prefix argument."
     (let ((current-prefix-arg (and no-submit '(4))))
       (call-interactively #'magit-review-comment-send))))
 
-(defun magit-review-test--findings ()
+(defun magit-review-test--accepted-and-sent-findings ()
   "Return the fixture's accepted and sent findings as (TITLE REPLY FOLLOW-UP SENT)."
   (mapcar (lambda (item)
             (list (plist-get item :title) (plist-get item :reply)
@@ -1147,7 +1147,15 @@ sent before goes out as a follow-up.  Other pending items stay queued."
                         t))))
       (should (equal (magit-review-test--texts)
                      '("Hunk note" "The changed line breaks the count.")))
-      (should (equal (magit-review-test--findings)
+      (should (equal (magit-review-test--accepted-and-sent-findings)
+                     '(("Line 20 is wrong" nil nil nil)
+                       ("General remark" "Why?" nil t))))
+      ;; An empty reply leaves the finding's reply and state in the file alone.
+      (with-current-buffer walkthrough
+        (magit-review-test--goto-finding "General remark")
+        (should-error (magit-review-test--send-reply "") :type 'user-error))
+      (should (= 1 (length magit-review-test--sent)))
+      (should (equal (magit-review-test--accepted-and-sent-findings)
                      '(("Line 20 is wrong" nil nil nil)
                        ("General remark" "Why?" nil t))))
       ;; A dismissed finding is accepted and sent; with a prefix argument
@@ -1181,10 +1189,23 @@ sent before goes out as a follow-up.  Other pending items stay queued."
                                    "\n"
                                    "My reply: And?\n")
                            t)))
-      (should (equal (magit-review-test--findings)
+      (should (equal (magit-review-test--accepted-and-sent-findings)
                      '(("Line 20 is wrong" "Paste only" nil t)
                        ("General remark" "And?" nil t))))
       (should (equal (magit-review-test--texts) '("Hunk note"))))))
+
+;; `walkthrough--installed' is stubbed: the bug was a walkthrough not among them.
+(ert-deftest magit-review-test-direct-reply-to-uninstalled-walkthrough ()
+  "`@ d' hands off the finding of a walkthrough not among the installed ones."
+  (magit-review-test--with-repo
+    (let ((walkthrough (magit-review-test--walkthrough base head)))
+      (with-current-buffer walkthrough
+        (magit-review-test--goto-finding "General remark")
+        (cl-letf (((symbol-function 'walkthrough--installed) #'ignore))
+          (magit-review-test--send-reply "Why?")))
+      (should (= 1 (length magit-review-test--sent)))
+      (should (string-suffix-p "\n\nNot tied to a line.\n\nMy reply: Why?\n"
+                               (caar magit-review-test--sent))))))
 
 (provide 'magit-review-test)
 ;;; magit-review-test.el ends here

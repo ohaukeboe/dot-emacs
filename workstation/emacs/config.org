@@ -991,13 +991,14 @@ anything else by its kind, value and heading, and Claude reads the rest
 itself.  Only the buffer as a whole is refused.  In a walkthrough, =@=
 also comments on a step or a passage of its explanation (below).
 
-The review is sent as a bracketed paste, because typing a multi-line string
-into the terminal would submit it at the first newline.  =@ p= pastes without
-submitting so the prompt can still be edited.  =@ d= writes a direct
-comment: one comment sent at once on its own, for a quick question, leaving
-other pending comments queued.  On a walkthrough finding it reads a reply
-instead and sends that finding alone with it (below).  Claude can also re-read the
-review through the =magit_review_comments= MCP tool.
+The review is sent as a bracketed paste, because typing a multi-line
+string into the terminal would submit it at the first newline.  =@ p=
+pastes without submitting so the prompt can still be edited.  =@ d=
+writes a direct comment: one comment sent at once on its own, for a quick
+question, leaving other pending comments queued.  On a walkthrough
+finding it reads a reply instead and sends that finding alone with it
+(below).  Claude can also re-read the review through the
+=magit_review_comments= MCP tool.
 
 Comments are drawn in status, diff, revision, log, refs and stash buffers,
 unsent ones highlighted and sent ones dimmed.  A hunk comment sits below

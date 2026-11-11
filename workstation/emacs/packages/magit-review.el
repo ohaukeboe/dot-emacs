@@ -82,6 +82,7 @@
 (declare-function walkthrough-reply "walkthrough" (id text))
 (declare-function walkthrough-read-reply "walkthrough" ())
 (declare-function walkthrough-accepted-findings "walkthrough" (repo &optional include-sent))
+(declare-function walkthrough-finding-item "walkthrough" (file id))
 (declare-function walkthrough-mark-sent "walkthrough" (items))
 (declare-function walkthrough-comment-target "walkthrough" ())
 (declare-function walkthrough-redraw-comments "walkthrough" ())
@@ -416,10 +417,8 @@ If NO-SUBMIT, only paste it and show the agent's buffer."
       (user-error "Empty reply"))
     (walkthrough-reply id reply)
     (magit-review--hand-off
-     (seq-filter (lambda (item)
-                   (and (equal (plist-get item :id) id)
-                        (file-equal-p (plist-get item :walkthrough) file)))
-                 (walkthrough-accepted-findings (magit-toplevel)))
+     (list (or (walkthrough-finding-item file id)
+               (user-error "No finding %s in %s" id file)))
      "Here is a review finding with my reply: a question or a request.  It names "
      no-submit)))
 

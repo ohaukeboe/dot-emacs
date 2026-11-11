@@ -1838,6 +1838,19 @@ patch excerpt is cut."
           :follow-up (and (alist-get 'follow_up finding) t)
           :sent (equal (alist-get 'state finding) "sent"))))
 
+(defun walkthrough-finding-item (file id)
+  "Return finding ID of walkthrough FILE as a hand-off item, or nil.
+The item is shaped as `walkthrough-accepted-findings' returns them,
+whatever the finding's state, and whether or not FILE is installed."
+  (let* ((data (walkthrough--read file))
+         (finding (walkthrough--finding-by-id data id))
+         (default-directory (file-name-as-directory (alist-get 'repo data))))
+    (and finding
+         (walkthrough--hand-off-item
+          data file finding
+          (ignore-errors
+            (walkthrough--parse-diff (alist-get 'base data) (alist-get 'head data) '("-U3")))))))
+
 (defun walkthrough-accepted-findings (repo &optional include-sent)
   "Return the accepted findings of REPO's walkthroughs as hand-off items.
 Each is a plist shaped like a review comment (:repo :file :new :old
