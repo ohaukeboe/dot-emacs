@@ -96,6 +96,30 @@ let
     }
   ];
 
+  # 54yyyu/zotero-mcp — the skill drives the `zotero-cli` command.
+  zoteroSkill = pkgs.linkFarm "zotero-skill" (
+    map (mkSkillEntry {
+      repo = inputs.zotero-mcp;
+      defaultSubdir = "src/zotero_mcp/skills";
+    }) [ { name = "zotero-cli"; } ]
+  );
+
+  # Upstream's package plus its `pdf` extra (pyproject.toml).
+  # Built from upstream's own nixpkgs, matching its Python set.
+  zoteroMcp =
+    let
+      inherit (pkgs.stdenv.hostPlatform) system;
+      py = inputs.zotero-mcp.inputs.nixpkgs.legacyPackages.${system}.python3Packages;
+    in
+    inputs.zotero-mcp.packages.${system}.default.overridePythonAttrs (old: {
+      dependencies =
+        old.dependencies
+        ++ (with py; [
+          pymupdf
+          ebooklib
+        ]);
+    });
+
   # descoped/llm-skills — comment out any you don't want
   # domain-finder, github-issues-workflow, code-review, claude-settings,
   # statusline, vite-chunk-split, slack-message, session-snapshot, claude-rules
@@ -269,6 +293,7 @@ let
       cavemanSkillsSubset
       cavekitSkills
       humanizerSkill
+      zoteroSkill
       mattpocockSkills
       llmSkillsSubset
       understandAnythingSkills
@@ -350,6 +375,8 @@ in
       };
     in
     {
+      # The zotero-cli skill drives this package's `zotero-cli` command.
+      home.packages = [ zoteroMcp ];
       agents.skillOverrides = listingOverrides;
       programs.claude-code.settings.skillOverrides = config.agents.skillOverrides;
       programs.claude-code.rules.sdd = ./rules/sdd.md;

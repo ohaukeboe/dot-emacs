@@ -92,6 +92,9 @@
       flake = false;
     };
 
+    # No nixpkgs follows: our nixpkgs marks fastmcp broken (mcp >= 2).
+    zotero-mcp.url = "github:54yyyu/zotero-mcp";
+
     anthropics-skills = {
       url = "github:anthropics/skills";
       flake = false;

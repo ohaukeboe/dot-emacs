@@ -755,6 +755,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_8": {
+      "locked": {
+        "lastModified": 1792502884,
+        "narHash": "sha256-IoNisKcGbUjdd45qCqywGMCYmZ5EnkxezvLII0FWwNA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "02c087f3fe673c9e317f206a627cb6b910336dbe",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "oslokommune-claude-marketplace": {
       "flake": false,
       "locked": {
@@ -880,6 +896,7 @@
         "treefmt-nix": "treefmt-nix_3",
         "understand-anything": "understand-anything",
         "zen-browser": "zen-browser",
+        "zotero-mcp": "zotero-mcp",
         "zotra-server": "zotra-server"
       }
     },
@@ -1088,6 +1105,24 @@
       "original": {
         "owner": "0xc000022070",
         "repo": "zen-browser-flake",
+        "type": "github"
+      }
+    },
+    "zotero-mcp": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_8"
+      },
+      "locked": {
+        "lastModified": 1794270569,
+        "narHash": "sha256-t3mHXwXC8GcXQSNqMh23pNOA4yHc1W84LyO0L/DlKxM=",
+        "owner": "54yyyu",
+        "repo": "zotero-mcp",
+        "rev": "b083134d1d470aba63ef70f481a3f2ba897c1591",
+        "type": "github"
+      },
+      "original": {
+        "owner": "54yyyu",
+        "repo": "zotero-mcp",
         "type": "github"
       }
     },
