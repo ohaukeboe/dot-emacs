@@ -53,6 +53,7 @@ nix flake show
 ├── modules/               # Optional feature modules
 │   ├── gaming/            # Gaming setup (Steam, GameMode, game-bench, Lutris)
 │   ├── cosmic-de/         # COSMIC desktop environment
+│   ├── mango/             # Mango window manager session + ReGreet login screen
 │   ├── secure-boot/       # Lanzaboote secure boot
 │   └── sshd/              # SSH daemon configuration
 └── workstation/           # Home Manager user configuration

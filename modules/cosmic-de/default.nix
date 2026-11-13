@@ -283,11 +283,21 @@ in
 {
   options.modules.cosmic-de = {
     enable = mkEnableOption "COSMIC Desktop Environment";
+
+    greeter.enable = mkOption {
+      type = types.bool;
+      default = true;
+      description = ''
+        Whether COSMIC's login screen (cosmic-greeter) is used. Turn off to let
+        another module, such as modules.mango, own the login screen while the
+        COSMIC session stays selectable on it.
+      '';
+    };
   };
 
   config = mkIf cfg.enable {
     # COSMIC Desktop Environment
-    services.displayManager.cosmic-greeter.enable = true;
+    services.displayManager.cosmic-greeter.enable = cfg.greeter.enable;
     services.desktopManager.cosmic.enable = true;
     services.system76-scheduler.enable = true;
     # Backend for COSMIC's power applet. Without it the applet has no way to

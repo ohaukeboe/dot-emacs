@@ -3,6 +3,7 @@
 {
   imports = [
     ./cosmic-de/module.nix
+    ./mango/module.nix
     ./gaming/module.nix
     ./no-rgb
     ./sshd

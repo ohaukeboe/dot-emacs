@@ -323,7 +323,10 @@ I keep most of my things in Nextcloud, and this config relies a lot on me having
   (use-package doom-themes
     :ensure t
     :custom-face
-    (default ((t (:background "#171717"))))
+    ;; On a tty use the terminal's own background, so it matches the
+    ;; terminal's padding instead of the nearest 256-colour grey.
+    (default ((((type tty)) (:background "unspecified-bg"))
+              (t (:background "#171717"))))
     (ansi-color-bright-black ((nil (:inherit font-lock-comment-face
                                              :foreground unspecified
                                              :background unspecified))))

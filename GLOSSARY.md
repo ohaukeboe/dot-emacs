@@ -452,6 +452,44 @@ A machine with an entry in the machine registry, and so a NixOS
 configuration to install or rebuild. Only a registered machine with a
 declarative disk layout can be (re)installed by the installer entrypoint.
 
+### Desktop / sessions
+
+**Session**:
+What the user picks at login and runs until logout: COSMIC
+(`modules/cosmic-de`) or Mango (`modules/mango`). Several can be installed on
+one machine.
+_Avoid_: desktop (ambiguous between session and machine)
+
+**Login screen**:
+The greeter greetd runs before any session starts; it lists every installed
+session. Exactly one module owns it per machine: `cosmic-greeter` from
+`modules/cosmic-de`, or ReGreet from `modules/mango`.
+_Avoid_: display manager (greetd is the display manager; the greeter is its UI)
+
+**Display setup**:
+A known combination of connected displays (matched as a whole set by make,
+model and serial) with each display's position, mode, scale and on/off,
+declared in `modules.mango.displays.setups` and applied by kanshi on hotplug.
+Displays that match no setup get Mango's auto placement, right of the panel.
+_Avoid_: profile (kanshi's word for the generated form), monitor config
+
+**Undocked profile**:
+The kanshi profile `modules/mango` always generates for the laptop panel
+alone, enabled at `0,0`, so undocking from a setup that turned the panel off
+brings it back. The setup name `undocked` is reserved for it.
+
+**Rail**:
+The Mango session's bar: waybar as a 32 px strip on the left edge, in the
+frame colour, with workspaces, clock and status icons
+(`specs/012-mango-rail-bar`).
+_Avoid_: panel (that is the laptop's built-in display)
+
+**Quick controls**:
+The popup the rail's gear opens: volume, brightness, mic, Wi-Fi, Bluetooth,
+power profile, battery and the power menu. Drawn by Quickshell, which in
+this repo draws only the rail's popups, not a desktop shell.
+_Avoid_: control centre
+
 ### Sleep / hibernation
 
 See ADR 0001.
