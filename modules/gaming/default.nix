@@ -261,10 +261,10 @@ in
         enable = true;
         package = pkgs.steam.override {
           # PipeWire screen capture for Remote Play and broadcasting.
-          extraArgs = "-pipewire";
+          # extraArgs = "-pipewire";
           extraEnv = {
             # Equivalent to `PROTON_ENABLE_WAYLAND=1 %command%` on every game
-            PROTON_ENABLE_WAYLAND = "1";
+            # PROTON_ENABLE_WAYLAND = "1"; # Apparently, it breaks remote streaming
           }
           // cfg.tunings.env;
         };
