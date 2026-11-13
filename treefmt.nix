@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ ... }:
 {
   projectRootFile = "flake.nix";
   settings.global.excludes = [
@@ -17,10 +17,4 @@
   programs.nixfmt.enable = true;
   programs.shfmt.enable = true;
   programs.toml-sort.enable = true;
-  programs.toml-sort.package =
-    (import ./lib/expiring-override.nix { inherit (pkgs) lib; }).expiringSkipTests pkgs.toml-sort
-      {
-        brokenAt = "0.24.4";
-        reason = "test_tomlsort[gradle-version-catalog] fails with tomlkit 0.15.1: Inline tables cannot contain a table";
-      };
 }

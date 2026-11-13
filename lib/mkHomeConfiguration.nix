@@ -33,11 +33,20 @@ let
             isIntelX86Platform = final.stdenv.hostPlatform.system == "x86_64-linux";
           in
           {
-            nixgl = import "${nixgl}/default.nix" {
-              pkgs = final;
-              enable32bits = isIntelX86Platform;
-              enableIntelX86Extensions = isIntelX86Platform;
-            };
+            # What nixgl's default.nix does, plus an xorg argument.
+            # shortcut: nixGL.nix still reads the deprecated xorg.libX11/libxcb/
+            # libxshmfence (master, 2026-11-13); hand it the renamed packages
+            # under the old names. Drop the xorg argument once upstream renames them.
+            nixgl = final.callPackage "${nixgl}/nixGL.nix" (
+              {
+                enable32bits = isIntelX86Platform;
+                xorg = {
+                  libX11 = final.libx11;
+                  inherit (final) libxcb libxshmfence;
+                };
+              }
+              // final.lib.optionalAttrs (!isIntelX86Platform) { intel-media-driver = null; }
+            );
           }
         else
           { }

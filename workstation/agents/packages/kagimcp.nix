@@ -32,8 +32,8 @@ let
         reason = "via http-snapshot → openai/mocket: test_docs.py black-formatting assertions fail";
       };
       cyclopts = expiringSkipTests pyprev.cyclopts {
-        brokenAt = "4.25.3";
-        reason = "via fastmcp: flaky pexpect TIMEOUT in test_behavior[zsh-literal-positional]";
+        brokenAt = "5.4.0";
+        reason = "via fastmcp: flaky pexpect TIMEOUTs in tests/completion/test_zsh.py";
       };
       fastmcp-slim = expiringOverride {
         pkg = pyprev.fastmcp-slim;

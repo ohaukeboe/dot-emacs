@@ -10,29 +10,13 @@
 # where they were declared.
 {
   pkgs,
-  applyPatches,
   disko,
   nixpkgs,
 }:
 
 let
-  # shortcut: disko's lib/tests.nix still reads boot.initrd.systemd.enable,
-  # which nixpkgs removed with the scripted initrd, so evaluating the test
-  # throws. Take the systemd-initrd branch it already has. Drop this once
-  # disko's lib/tests.nix no longer names the option (still there on master,
-  # 2026-11-06); --replace-fail stops the build when upstream changes it.
-  diskoSrc = applyPatches {
-    name = "disko-systemd-initrd";
-    src = disko;
-    postPatch = ''
-      substituteInPlace lib/tests.nix \
-        --replace-fail "lib.mkIf (!config.boot.initrd.systemd.enable)" "lib.mkIf false" \
-        --replace-fail "lib.mkIf config.boot.initrd.systemd.enable {" "{"
-    '';
-  };
-
   # What disko's flake.nix passes when it builds `lib`.
-  diskoLib = import "${diskoSrc}/lib" {
+  diskoLib = import "${disko}/lib" {
     inherit (pkgs) lib;
     makeTest = import "${nixpkgs}/nixos/tests/make-test-python.nix";
     eval-config = import "${nixpkgs}/nixos/lib/eval-config.nix";
