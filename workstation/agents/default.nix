@@ -346,7 +346,12 @@ in
     programs.claude-code.enable = true;
     programs.claude-code.settings.remoteControlAtStartup = true;
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
-    programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+    # programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
+    # Code Mode (experimental): Claude writes JavaScript that calls its tools.
+    # Needs claude-code >= 2.1.323, and does not start while agent teams are on
+    # (the line above), so it stays inert until that one is dropped.
+    # https://code.claude.com/docs/en/code-mode
+    programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_CODE_MODE = "1";
     # `bd remember` is the single memory store; see docs/adr/0008-agent-context-hygiene.md.
     programs.claude-code.settings.autoMemoryEnabled = false;
     # Start worktrees (subagent `isolation: worktree` too) from the local HEAD,
