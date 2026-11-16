@@ -108,7 +108,7 @@ let
       # Every failure path keeps the previous command text and carries on: a
       # stage that exits non-zero, prints nothing, or prints something without
       # an updatedInput is treated as "no change". The chain always exits 0,
-      # because exit 2 from a PreToolUse hook blocks the tool call outright.
+      # because exit 2 from a PreToolUse hook blocks the call outright.
       current=$payload
       for stage in "''${stages[@]}"; do
         out=$("$stage" <<<"$current" 2>/dev/null) || continue
