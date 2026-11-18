@@ -199,6 +199,10 @@ none now.
 the rail's two popups (quick controls, calendar); §5 still stands, no
 desktop shell is adopted.
 
+**Update (2026-11-14):** the rail moved from waybar to the session's own
+Quickshell config (`specs/014-quickshell-rail`), with tags from
+`mmsg watch all-tags`. Still no third-party desktop shell.
+
 ## 5. Full desktop shells
 
 | Shell           | Stars | Latest release    | Pinned | Module     | Mango  |

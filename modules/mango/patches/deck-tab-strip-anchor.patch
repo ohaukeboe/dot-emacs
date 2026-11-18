@@ -1,0 +1,36 @@
+--- a/src/manage/tab.c
++++ b/src/manage/tab.c
+@@ -1,4 +1,5 @@
+ #include "mango/manage/tab.h"
++#include "mango/animation/client.h"
+ #include "mango/common/scene_node.h"
+ #include "mango/common/server.h"
+ #include "mango/common/util.h"
+@@ -397,9 +398,24 @@
+ 	if (count < 2)
+ 		return;
+
+-	struct wlr_box anchor = c->animation.current;
+-	if (c->animation.running && c->animation.action == OPEN)
+-		anchor = c->geom;
++	/*
++	 * Anchor the strip to another member, not the focus: a window moved or
++	 * opened into the stack slides in under a still strip, while a strip
++	 * whose whole stack moves (mfact, gaps) still follows it.
++	 */
++	Client *anchor_c = c;
++	for (Client *it = head; it; it = it->tab_next) {
++		if (it != c && tab_member_in_view(it, c->mon)) {
++			anchor_c = it;
++			break;
++		}
++	}
++	struct wlr_box anchor = anchor_c->animation.current;
++	/*
++	 * Clip against the anchor's screen-edge overflow too, else a window
++	 * sliding in from off-screen shrinks the strip until it lands.
++	 */
++	offsets = compute_edge_offsets(anchor_c);
+
+ 	int32_t tab_x = anchor.x;
+ 	int32_t group_h =

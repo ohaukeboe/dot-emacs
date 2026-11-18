@@ -419,6 +419,8 @@
           context-statusline = nixpkgsFor.${system}.callPackage ./tests/context-statusline.nix {
             caveman-src = inputs.caveman;
           };
+          # The Claude token counter for the Mango usage popup; see the file.
+          agent-usage = nixpkgsFor.${system}.callPackage ./tests/agent-usage.nix { };
           # rtk is unfree (BUSL-1.1); `nixpkgsFor` has no unfree predicate.
           rtk-banner = nixpkgsFor.${system}.callPackage ./tests/rtk-banner.nix {
             rtk =

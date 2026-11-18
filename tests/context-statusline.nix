@@ -1,6 +1,7 @@
 # Byte-for-byte tests for workstation/agents/packages/context-statusline.nix,
 # run by `nix flake check`. Contract:
-# specs/007-context-hygiene/contracts/statusline.md.
+# specs/007-context-hygiene/contracts/statusline.md, plus the usage tap's
+# limits.json from specs/013-mango-islands-shell/contracts/usage-record.md.
 #
 # Each case pipes a status-line payload in and compares stdout and the exit
 # code. The badge comes from the real upstream caveman script, reading a
@@ -9,6 +10,7 @@
   runCommand,
   callPackage,
   writeShellScript,
+  jq,
   caveman-src,
 }:
 
@@ -20,6 +22,12 @@ let
       strongTokens = 400000;
       inherit cavemanScript;
     };
+  tapped = callPackage ../workstation/agents/packages/context-statusline.nix {
+    warnTokens = 200000;
+    strongTokens = 400000;
+    cavemanScript = null;
+    usageTap = true;
+  };
 
   withBadge = build "${caveman-src}/src/hooks/caveman-statusline.sh";
   noBadge = build null;
@@ -66,6 +74,36 @@ runCommand "context-statusline-test" { } ''
 
   check "no caveman"    ${noBadge}/bin/context-statusline      "$(tokens 38211)" "$(dim 38K)"
   check "failing badge" ${failingBadge}/bin/context-statusline "$(tokens 38211)" "$(dim 38K)"
+
+  # Usage tap: same output, plus limits.json.
+  export XDG_STATE_HOME="$TMPDIR/state"
+  limits="$XDG_STATE_HOME/agent-usage/limits.json"
+  tap=${tapped}/bin/context-statusline
+  rl='{"context_window":{"total_input_tokens":38211},"rate_limits":{"five_hour":{"used_percentage":42.5,"resets_at":1794668040},"seven_day":{"used_percentage":61,"resets_at":1794992400}}}'
+  check "tap output"    "$tap" "$rl" "$(dim 38K)"
+  # tapfile NAME JQ-FILTER: the filter must hold on limits.json.
+  tapfile() {
+    if ${jq}/bin/jq -e "$2" "$limits" >/dev/null 2>&1; then
+      echo "ok   $1"
+    else
+      echo "FAIL $1"; cat "$limits" 2>/dev/null || echo "  (no file)"
+      failures=$((failures + 1))
+    fi
+  }
+  tapfile "tap writes both" '.session == {used_percentage: 42.5, resets_at: 1794668040}
+    and .weekly == {used_percentage: 61, resets_at: 1794992400}
+    and (.updated_at | type) == "number"'
+  check "tap no limits" "$tap" "$(tokens 38211)" "$(dim 38K)"
+  tapfile "no limits keeps file" '.session.used_percentage == 42.5'
+  check "tap one window" "$tap" '{"rate_limits":{"seven_day":{"used_percentage":70,"resets_at":1}}}' ""
+  tapfile "missing window is null" '.session == null and .weekly.used_percentage == 70'
+  check "tap garbage"   "$tap" 'garbage' ""
+  tapfile "garbage keeps file" '.weekly.used_percentage == 70'
+  rm -rf "$XDG_STATE_HOME"
+  mkdir -p "$XDG_STATE_HOME"
+  chmod a-w "$XDG_STATE_HOME"
+  check "tap unwritable" "$tap" "$rl" "$(dim 38K)"
+  chmod u+w "$XDG_STATE_HOME"
 
   [ "$failures" -eq 0 ] || { echo "$failures case(s) failed"; exit 1; }
   touch "$out"

@@ -78,6 +78,37 @@ rec {
     '';
   };
 
+  # Keyboard backlight keys: nothing in the session handles them. On ROG
+  # N-KEY keyboards the asus-wmi LED (and so UPower) does not reach the
+  # keyboard; asusd does. `asusctl leds next/prev` wrap, so step and clamp
+  # here, and show the level in the rail's OSD (quickshell/shell.qml).
+  kbdBacklight = pkgs.writeShellApplication {
+    name = "mango-kbd-backlight";
+    runtimeInputs = [
+      pkgs.asusctl
+      pkgs.quickshell
+    ];
+    text = ''
+      levels=(off low med high)
+      cur="$(asusctl leds get)"
+      cur="''${cur##*: }"
+      i=0
+      for n in "''${!levels[@]}"; do
+        if [ "''${levels[n]}" = "''${cur,,}" ]; then i=$n; fi
+      done
+      case "''${1:-}" in
+        up) i=$((i < 3 ? i + 1 : 3)) ;;
+        down) i=$((i > 0 ? i - 1 : 0)) ;;
+        *)
+          echo "usage: mango-kbd-backlight up|down" >&2
+          exit 2
+          ;;
+      esac
+      asusctl leds set "''${levels[i]}"
+      quickshell -c mango ipc call osd keyboard "$i" 3
+    '';
+  };
+
   # Mango's reload re-enables every output that has no monitor_rule
   # (src/config/reapply.c), undoing kanshi and the lid; so re-apply both.
   reload = pkgs.writeShellApplication {
@@ -112,28 +143,89 @@ rec {
         (.[] | "  { criteria = \(crit | tojson); enable = \(.enabled);"
           + (if .enabled then
                " mode = \(mode | tojson); position = { x = \(.position.x); y = \(.position.y); }; scale = \(.scale);"
+               + (if (.transform // "normal") != "normal" then " transform = \(.transform | tojson);" else "" end)
              else "" end)
           + " }"),
         "];"'
     '';
   };
 
+  # dmenu for the rail's Quickshell picker (quickshell/Picker.qml): lines on
+  # stdin, the picked one on stdout, exit 1 on cancel, 10 on the alternate
+  # pick (specs/015-picker-layouts/contracts/mango-pick.md). `--layout tiles`,
+  # `sources` or `clipboard` picks a layout; anything else gets the list.
+  # The screencast portal runs it as its chooser, so it names every program
+  # by store path.
+  pick = pkgs.writeShellApplication {
+    name = "mango-pick";
+    runtimeInputs = [
+      pkgs.quickshell
+      pkgs.coreutils
+    ];
+    text = ''
+      layout=""
+      if [[ ''${1:-} == --layout ]]; then
+        layout="''${2:-}"
+        shift 2 || shift
+      fi
+      items="$(cat)"
+      dir="$(mktemp -d)"
+      trap 'rm -rf "$dir"' EXIT
+      mkfifo "$dir/reply"
+      quickshell ipc -c mango --any-display call picker open "''${1:-Select}" "$items" "$dir/reply" "$layout" >/dev/null
+      # Quickshell answers on every close; the timeout covers a shell restart.
+      choice="$(timeout 300 cat "$dir/reply")" || exit 1
+      [[ -n $choice ]] || exit 1
+      if [[ $choice == alt$'\t'* ]]; then
+        printf '%s\n' "''${choice#alt$'\t'}"
+        exit 10
+      fi
+      printf '%s\n' "$choice"
+    '';
+  };
+
+  # Locks with the Quickshell lock screen (Lock.qml) and returns once every
+  # screen is covered, so swayidle's before-sleep holds the suspend until then.
+  # Falls back to swaylock only when Quickshell does not answer: once it has
+  # taken the lock, a second locker would be refused.
+  lockScreen = pkgs.writeShellApplication {
+    name = "mango-lock";
+    runtimeInputs = [
+      pkgs.quickshell
+      pkgs.swaylock
+      pkgs.coreutils
+    ];
+    text = ''
+      ipc() { timeout 2 qs -c mango ipc call lock "$@" 2>/dev/null; }
+      ipc lock >/dev/null || exec swaylock -f
+      for _ in $(seq 20); do
+        [[ $(ipc secure) == true ]] && exit 0
+        sleep 0.1
+      done
+      echo "mango-lock: the lock screen is not secure yet" >&2
+      exit 1
+    '';
+  };
+
   powerMenu = pkgs.writeShellApplication {
     name = "mango-power-menu";
     runtimeInputs = [
-      pkgs.fuzzel
-      pkgs.swaylock
+      pick
+      lockScreen
       systemd
       mango
     ];
     text = ''
-      choice="$(printf '%s\n' lock logout suspend reboot poweroff | fuzzel --dmenu --prompt 'power> ')" || exit 0
+      # label<TAB>icon[<TAB>confirm]: the tiles picker arms confirm items first.
+      choice="$(printf '%s\n' $'Lock\tlock' $'Log out\tlogout\tconfirm' $'Suspend\tsleep' \
+        $'Reboot\trestart\tconfirm' $'Power off\tpower\tconfirm' |
+        mango-pick --layout tiles Power)" || exit 0
       case "$choice" in
-        lock) swaylock -f ;;
-        logout) mmsg dispatch quit ;;
-        suspend) systemctl suspend ;;
-        reboot) systemctl reboot ;;
-        poweroff) systemctl poweroff ;;
+        Lock) mango-lock ;;
+        'Log out') mmsg dispatch quit ;;
+        Suspend) systemctl suspend ;;
+        Reboot) systemctl reboot ;;
+        'Power off') systemctl poweroff ;;
       esac
     '';
   };
@@ -142,9 +234,89 @@ rec {
     name = "mango-clip-pick";
     runtimeInputs = with pkgs; [
       cliphist
-      fuzzel
+      coreutils
+      pick
       wl-clipboard
+      wtype
     ];
-    text = "cliphist list | fuzzel --dmenu | cliphist decode | wl-copy";
+    # Enter (status 0) copies and pastes with Shift+Insert into the window
+    # that had focus; Ctrl+Enter (10) only copies. Cancel exits before
+    # wl-copy, which would otherwise empty the clipboard. The picker has
+    # closed before it answers; the sleep covers focus going back.
+    text = ''
+      status=0
+      choice="$(cliphist list | mango-pick --layout clipboard Clipboard)" || status=$?
+      case "$status" in
+        0 | 10) cliphist decode <<<"$choice" | wl-copy ;;
+        *) exit 0 ;;
+      esac
+      if [[ $status == 0 ]]; then
+        sleep 0.05
+        wtype -M shift -k Insert -m shift
+      fi
+    '';
+  };
+
+  # Tiling layouts by orientation (GLOSSARY: Orientation, Layout cycle).
+  # `next [MONITOR]` steps the active tag through its display's layout cycle
+  # (Super+n, the rail's layout glyph). `watch` swaps a landscape layout for
+  # its vertical variant on a portrait display, and back. Mango can only set
+  # the focused display's active tag, so the swap happens when a tag is
+  # shown on the focused display, not for hidden tags.
+  layout = pkgs.writeShellApplication {
+    name = "mango-layout";
+    runtimeInputs = [
+      pkgs.jq
+      mango
+    ];
+    text = ''
+      # Orientation and layout name of the focused display's active tag.
+      current() {
+        mmsg get all-monitors | jq -r --argjson names "$(names)" '
+          .monitors[] | select(.active)
+          | "\(if .height > .width then "portrait" else "landscape" end) \($names[.layout_symbol] // "")"'
+      }
+      names() { mmsg get layouts | jq -c '.layouts | map({(.symbol): .name}) | add'; }
+
+      case "''${1:-}" in
+        next)
+          if [ -n "''${2:-}" ]; then mmsg dispatch "focusmon,$2"; fi
+          read -r orientation layout < <(current)
+          cycle=(tile scroller grid deck monocle)
+          if [ "$orientation" = portrait ]; then
+            cycle=(vertical_tile vertical_scroller vertical_grid vertical_deck monocle)
+          fi
+          target=''${cycle[0]}
+          for i in "''${!cycle[@]}"; do
+            if [ "''${cycle[$i]}" = "$layout" ]; then
+              target=''${cycle[$(((i + 1) % ''${#cycle[@]}))]}
+            fi
+          done
+          mmsg dispatch "setlayout,$target"
+          ;;
+        watch)
+          # Each event prints a snapshot; ends with the session, as mmsg then fails.
+          while mmsg get version >/dev/null 2>&1; do
+            mmsg watch all-monitors | while read -r _; do
+              read -r orientation layout < <(current)
+              case "$orientation $layout" in
+                "portrait tile" | "portrait scroller" | "portrait grid" | "portrait deck")
+                  mmsg dispatch "setlayout,vertical_$layout"
+                  ;;
+                "landscape vertical_tile" | "landscape vertical_scroller" | \
+                  "landscape vertical_grid" | "landscape vertical_deck")
+                  mmsg dispatch "setlayout,''${layout#vertical_}"
+                  ;;
+              esac
+            done
+            sleep 1
+          done
+          ;;
+        *)
+          echo "usage: mango-layout next [MONITOR] | watch" >&2
+          exit 2
+          ;;
+      esac
+    '';
   };
 }

@@ -40,9 +40,13 @@ in
     # Systemd service to disable RGB on boot
     systemd.services.no-rgb = {
       description = "Disable RGB lighting on boot";
+      # OpenRGB blacks out the ASUS laptop keyboard's Aura HID; asusd restores
+      # it on start, so run first, and stay active so switches don't re-run it.
+      before = [ "asusd.service" ];
       serviceConfig = {
         ExecStart = "${no-rgb}/bin/no-rgb";
         Type = "oneshot";
+        RemainAfterExit = true;
       };
       wantedBy = [ "multi-user.target" ];
     };

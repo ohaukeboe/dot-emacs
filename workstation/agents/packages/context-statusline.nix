@@ -2,7 +2,11 @@
 # at the warning and strong points. Contract:
 # specs/007-context-hygiene/contracts/statusline.md. Tested by
 # tests/context-statusline.nix.
+#
+# With usageTap, it also saves the input's rate limits for the Mango rail
+# (specs/013-mango-islands-shell/contracts/usage-record.md).
 {
+  lib,
   writeShellApplication,
   jq,
   coreutils,
@@ -13,6 +17,7 @@
   strongTokens,
   # The upstream caveman-statusline.sh, or null when caveman is disabled.
   cavemanScript ? null,
+  usageTap ? false,
 }:
 
 writeShellApplication {
@@ -59,6 +64,29 @@ writeShellApplication {
         else empty end
     ' <<<"$input" 2>/dev/null || true)
 
+    ${lib.optionalString usageTap ''
+      # Rate limits for the Mango rail. Absent for API-key use and before the
+      # first response; each window may be missing. Any failure is ignored,
+      # so the status line itself never changes.
+      (
+        record=$(jq -c --argjson now "$(date +%s)" '
+          def window: if type == "object" then {used_percentage, resets_at} else null end;
+          (try .rate_limits catch null) as $r
+          | if ($r | type) == "object" and ($r.five_hour != null or $r.seven_day != null) then
+              {updated_at: $now, session: ($r.five_hour | window), weekly: ($r.seven_day | window)}
+            else empty end
+        ' <<<"$input" 2>/dev/null) || exit 0
+        [[ -n $record ]] || exit 0
+        dir="''${XDG_STATE_HOME:-$HOME/.local/state}/agent-usage"
+        mkdir -p "$dir" || exit 0
+        tmp=$(mktemp "$dir/.limits.XXXXXX") || exit 0
+        if printf '%s\n' "$record" >"$tmp"; then
+          mv -f "$tmp" "$dir/limits.json" || rm -f "$tmp"
+        else
+          rm -f "$tmp"
+        fi
+      ) 2>/dev/null || true
+    ''}
     sep=""
     if [[ -n $badge && -n $size ]]; then
       sep=" "

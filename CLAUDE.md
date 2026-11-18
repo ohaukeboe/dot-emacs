@@ -33,6 +33,8 @@ sudo nixos-rebuild switch --flake .#<hostname>  # hosts: attribute names in mach
   `sops/bootstrap/host-key.yaml`; `nix run github:ohaukeboe/dot-emacs#install`
   from the installer ISO runs the whole install; `just bootstrap` provisions a new machine (only
   step needing the YubiKey)
+- Quickshell UI (`modules/mango/quickshell/`) is built from the tokens and components in its
+  `README.md`; use them instead of literal sizes, colours and ad-hoc `Rectangle`s
 
 ## Gotchas
 

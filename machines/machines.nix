@@ -45,10 +45,9 @@
     modules = [
       # Remove this on a work machine — see modules/attic/default.nix.
       { modules.attic.push.enable = true; }
-      { modules.cosmic-de.enable = true; }
-      # Mango owns the login screen; COSMIC stays selectable on it.
-      { modules.cosmic-de.greeter.enable = false; }
       { modules.mango.enable = true; }
+      # ROG Flow X13: the keyboard backlight is only reachable through asusd.
+      { services.asusd.enable = true; }
       # Known docks: run `mango-display-setup <name>` while docked and paste
       # the printed modules.mango.displays.setups entry here.
       { modules.secure-boot.measuredBoot.enable = true; }

@@ -1,5 +1,7 @@
 # Contract: Popup IPC
 
+> Superseded by `specs/013-mango-islands-shell/contracts/popup-ipc.md`.
+
 The Quickshell config `mango` (HM `programs.quickshell.configs.mango`,
 `activeConfig = "mango"`) runs as a user service bound to
 `mango-session.target` and exposes two `IpcHandler` targets.

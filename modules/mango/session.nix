@@ -1,0 +1,100 @@
+# The user services and tools of the session: terminal, lock, clipboard, tray.
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+
+with lib;
+
+let
+  cfg = config.modules.mango;
+
+  inherit (import ./common.nix { inherit config lib pkgs; })
+    palette
+    sessionTarget
+    lockScreen
+    bindToSession
+    screenshot
+    reload
+    displaySetup
+    pick
+    powerMenu
+    clipPick
+    ;
+
+in
+{
+  config = mkIf cfg.enable {
+    # mango-lock is the Quickshell lock screen (Lock.qml); swaylock is its
+    # fallback when Quickshell is not running.
+    security.pam.services.mango-lock = { };
+    security.pam.services.swaylock = { };
+
+    home-manager.users.${config.user.username} = {
+      home.packages = [
+        cfg.terminal
+        screenshot
+        clipPick
+        displaySetup
+        reload
+        pick
+        powerMenu
+        pkgs.wdisplays
+        pkgs.pwvucontrol
+      ];
+
+      services.wl-clip-persist = {
+        enable = true;
+        clipboardType = "regular";
+        systemdTargets = [ sessionTarget ];
+      };
+
+      programs.satty.enable = true;
+
+      programs.foot = {
+        # cfg.terminal may be another terminal; this styles foot only.
+        enable = getName cfg.terminal == "foot";
+        package = cfg.terminal;
+        settings = {
+          main = {
+            font = "RobotoMono Nerd Font:size=10";
+            pad = "24x24";
+          };
+          # foot 1.28 reads [colors-dark]; [colors] is the deprecated name.
+          colors-dark = {
+            background = palette.app;
+            foreground = palette.fg;
+          };
+        };
+      };
+
+      programs.swaylock = {
+        enable = true;
+        settings.color = palette.frame;
+      };
+
+      services.swayidle = {
+        enable = true;
+        systemdTargets = [ sessionTarget ];
+        events.before-sleep = getExe lockScreen;
+      };
+
+      # `cliphist store` skips what `wl-paste --watch` marks
+      # CLIPBOARD_STATE=sensitive (a password manager's
+      # x-kde-passwordManagerHint), which keeps passwords out of the picker's
+      # clipboard layout (specs/015-picker-layouts research R3).
+      services.cliphist = {
+        enable = true;
+        systemdTargets = [ sessionTarget ];
+      };
+
+      services.hyprpolkitagent.enable = true;
+      systemd.user.services.hyprpolkitagent = bindToSession;
+
+      services.network-manager-applet.enable = true;
+      systemd.user.services.network-manager-applet = bindToSession;
+    };
+  };
+}

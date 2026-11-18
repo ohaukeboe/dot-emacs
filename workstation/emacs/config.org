@@ -129,11 +129,7 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
 
     (cond ((font-exists-p my-font)
            (add-to-list 'default-frame-alist `(font . ,my-font))
-           (add-to-list 'default-frame-alist `(height . 80))
-           (add-to-list 'default-frame-alist `(width . 180))
-           (add-to-list 'initial-frame-alist `(font . ,my-font))
-           (add-to-list 'initial-frame-alist `(height . 80))
-           (add-to-list 'initial-frame-alist `(width  . 180))))
+           (add-to-list 'initial-frame-alist `(font . ,my-font))))
 
     :preface
     (add-to-list 'display-buffer-alist
@@ -179,9 +175,18 @@ Welcome to my literate Emacs configuration. It is written in org-mode as I find 
   ;; All packages are Nix-managed; :ensure t in use-package blocks should be
   ;; a no-op rather than triggering MELPA downloads.
   (setq use-package-ensure-function 'ignore)
+  ;; lsp-mode is byte-compiled for plists (LSP_USE_PLISTS in home.nix), but
+  ;; home.sessionVariables only reach login shells, so an Emacs started by
+  ;; systemd or the compositor decodes hash tables, replies to server
+  ;; requests with "id":null and crashes nixd.  lsp-mode reads this on load.
+  (setenv "LSP_USE_PLISTS" "true")
   (push '(tool-bar-lines . 0) default-frame-alist)
   (push '(menu-bar-lines . 0) default-frame-alist)
   (push '(vertical-scroll-bars) default-frame-alist)
+  ;; The tiling WM owns the frame size: keep font and UI changes from
+  ;; resizing the frame, and fill the tile to the pixel.
+  (setq frame-inhibit-implied-resize t
+        frame-resize-pixelwise t)
 #+end_src
 
 ** Windows
@@ -3446,7 +3451,35 @@ A terminal emulator
             (consult-buffer (list source))
           (user-error "No global ghostel buffers"))))
 
+    ;; The window manager's terminal key (modules/mango/compositor.nix) runs
+    ;; this in a fresh emacsclient frame, which then lives and dies with the
+    ;; buffer: exiting the shell kills the buffer, which deletes the window's
+    ;; dedicated frame; closing the frame kills the buffer and its shell.
+    (defun my/ghostel-frame ()
+      "Open a new ghostel buffer that owns the selected frame."
+      (let ((buf (ghostel '(4)))
+            (frame (selected-frame)))
+        ;; Weakly dedicated, so C-z can still switch buffers in it.
+        (set-window-dedicated-p nil 'weak)
+        (set-frame-parameter frame 'my/ghostel-buffer buf)
+        ;; Untag first when the buffer dies, so the frame it then deletes
+        ;; does not try to kill the buffer a second time.
+        (with-current-buffer buf
+          (add-hook 'kill-buffer-hook
+                    (lambda ()
+                      (when (frame-live-p frame)
+                        (set-frame-parameter frame 'my/ghostel-buffer nil)))
+                    nil t))))
+
+    (defun my/ghostel-frame-kill-buffer (frame)
+      "Kill the ghostel buffer FRAME was opened for, without asking."
+      (when-let* ((buf (frame-parameter frame 'my/ghostel-buffer))
+                  ((buffer-live-p buf)))
+        (let ((kill-buffer-query-functions nil))
+          (kill-buffer buf))))
+
     :init
+    (add-hook 'delete-frame-functions #'my/ghostel-frame-kill-buffer)
     (add-to-list 'project-switch-commands '(project-toggle-ghostel "Ghostel" "t") t)
     (add-to-list 'project-kill-buffer-conditions '(major-mode . ghostel-mode)))
 #+end_src

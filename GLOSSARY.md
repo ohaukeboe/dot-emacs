@@ -464,12 +464,12 @@ _Avoid_: desktop (ambiguous between session and machine)
 **Login screen**:
 The greeter greetd runs before any session starts; it lists every installed
 session. Exactly one module owns it per machine: `cosmic-greeter` from
-`modules/cosmic-de`, or ReGreet from `modules/mango`.
+`modules/cosmic-de`, or the Quickshell greeter from `modules/mango`.
 _Avoid_: display manager (greetd is the display manager; the greeter is its UI)
 
 **Display setup**:
 A known combination of connected displays (matched as a whole set by make,
-model and serial) with each display's position, mode, scale and on/off,
+model and serial) with each display's position, mode, scale, rotation and on/off,
 declared in `modules.mango.displays.setups` and applied by kanshi on hotplug.
 Displays that match no setup get Mango's auto placement, right of the panel.
 _Avoid_: profile (kanshi's word for the generated form), monitor config
@@ -479,17 +479,69 @@ The kanshi profile `modules/mango` always generates for the laptop panel
 alone, enabled at `0,0`, so undocking from a setup that turned the panel off
 brings it back. The setup name `undocked` is reserved for it.
 
+**Orientation**:
+Whether a display is landscape (wider than tall) or portrait (taller than
+wide), as it is currently shown, rotation included. Read from the live
+display, not from its display setup, so unknown displays have one too.
+_Avoid_: rotation (one cause of portrait, not the same thing)
+
+**Tiling layout**:
+How Mango arranges the windows of one tag: tile, scroller, grid, deck,
+monocle, their vertical variants, and others. Each tag has its own. A tag
+shown on a portrait display never keeps a landscape layout from the layout
+cycle: it gets the vertical variant, and the reverse on a landscape display.
+_Avoid_: layout alone (the picker and the disk have layouts too)
+
+**Layout cycle**:
+The tiling layouts Super+n, or a click on the rail's layout glyph, steps
+through for the active tag: tile, scroller, grid, deck, monocle on a
+landscape display; their vertical variants and monocle on a portrait one.
+
 **Rail**:
-The Mango session's bar: waybar as a 32 px strip on the left edge, in the
-frame colour, with workspaces, clock and status icons
-(`specs/012-mango-rail-bar`).
+The Mango session's bar: three capsules in the island colour along the top
+edge of each screen, on the frame (workspaces, clock, status), with gaps
+between them. Drawn by Quickshell together with its popups
+(`specs/012-mango-rail-bar`, restyled in `specs/013-mango-islands-shell`,
+moved off waybar in `specs/014-quickshell-rail`).
 _Avoid_: panel (that is the laptop's built-in display)
 
+**Island**:
+A rounded surface in the `island` colour on the frame: each rail capsule
+and each popup card. Rows inside an island use the `raised` colour.
+_Avoid_: card (for the rail capsules), bubble
+
+**Picker**:
+The clock-island popup that `mango-pick` opens for a script's choice
+(dmenu-style: lines in, the picked one out), in one of four layouts: list
+(the default), tiles (the power menu), sources (the screencast chooser) or
+clipboard (Super+v) (`specs/015-picker-layouts`).
+_Avoid_: menu, dmenu, launcher
+
 **Quick controls**:
-The popup the rail's gear opens: volume, brightness, mic, Wi-Fi, Bluetooth,
-power profile, battery and the power menu. Drawn by Quickshell, which in
-this repo draws only the rail's popups, not a desktop shell.
+The popup the rail's phone, Wi-Fi, sound and battery icons open (they share
+one capsule): volume, brightness, mic, Wi-Fi, Bluetooth, power profile, the
+phone card, battery and the power menu. Drawn by
+Quickshell, which in this repo draws the rail, its popups and notification
+popups, not a full desktop shell.
 _Avoid_: control centre
+
+**Notification popup**:
+A desktop notification shown as an island card under the rail's status
+capsule, newest on top. Quickshell owns the notification service in the
+Mango session (mako is off). Critical ones are accent-filled and stay until
+dismissed; others hide after their timeout, 5 s by default.
+_Avoid_: toast, banner
+
+**Usage pill**:
+The rail item showing the Claude Code session limit as a ring, with the
+percentage in its tooltip; it opens the usage popup with both limits and recent token use.
+_Avoid_: token meter, quota bar
+
+**Phone card**:
+The KDE Connect row in quick controls: the active phone's name, battery and
+notification count, four actions (ring, send file, clipboard, browse), and
+an arrow to the phone page.
+_Avoid_: device tile, KDE Connect widget
 
 ### Sleep / hibernation
 

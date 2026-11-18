@@ -23,6 +23,9 @@ Facts below were checked against the pinned nixpkgs on 2026-11-13
 
 ## R2. Bar program for the rail
 
+> Superseded by `specs/014-quickshell-rail` (research R1, R3): the rail is
+> drawn by Quickshell, with tags from `mmsg watch all-tags`.
+
 - **Decision**: Keep waybar. The pinned version is now **0.16.0**, so switch
   `ext/workspaces` to the native `mango/workspaces` module.
 - **Rationale**: `waybar-mango-workspaces(5)` provides `hide-empty` ("buttons

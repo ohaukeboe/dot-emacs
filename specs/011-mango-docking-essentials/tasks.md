@@ -199,7 +199,8 @@ Bluetooth/audio controls, power menu.
   (`format = "⏻"`, `on-click` = the menu) at the end of `modules-right`.
 - [X] T025 [US4] Build gate (fmt, flake check, laptop toplevel); confirm the
   portal check fails if `Screenshot` is temporarily misspelled, then revert.
-- [ ] T026 [US4] **(user)** Deploy, re-login, run quickstart G1–G6.
+- [X] T026 [US4] **(user)** Deploy, re-login, run quickstart G1–G6.
+  G1–G4 and G6 pass; G5 is deferred to the Quickshell quick-controls menu.
 
 ---
 

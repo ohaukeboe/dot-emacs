@@ -321,6 +321,7 @@ in
     ./sandbox.nix
     ./skills.nix
     ./statusline.nix
+    ./usage.nix
   ];
 
   config = {
@@ -344,6 +345,8 @@ in
       ];
 
     programs.claude-code.enable = true;
+    # The timer is a systemd user unit, so Linux only.
+    agents.usage.enable = lib.mkDefault isLinux;
     programs.claude-code.settings.remoteControlAtStartup = true;
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     # programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";

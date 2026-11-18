@@ -38,6 +38,9 @@ PIN prompts.
 | Media         | MPRIS           | `Services.Mpris`           | -                       |
 | Notifications | D-Bus name      | only by replacing mako     | keep mako (or swaync)   |
 
+**Update (2026-11-14):** the rail itself moved to Quickshell in
+`specs/014-quickshell-rail`; waybar is gone from the Mango session.
+
 **Recommendation.** Keep the rail in waybar and the popups in Quickshell.
 Point waybar's `network`, `wireplumber` and a new `bluetooth` module at
 three new Quickshell popups (same `popupToggle` IPC as today) and build them

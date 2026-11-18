@@ -10,6 +10,7 @@ let
 
   contextStatusline = pkgs.callPackage ./packages/context-statusline.nix {
     inherit (cfg) warnTokens strongTokens;
+    usageTap = config.agents.usage.enable;
     cavemanScript =
       if config.agents.tools.caveman.enable then
         "${inputs.caveman}/src/hooks/caveman-statusline.sh"

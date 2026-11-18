@@ -57,6 +57,20 @@ in
       "systemd.show_status=auto"
     ];
 
+    # systemd arms the hardware watchdog for the reboot and never disarms it,
+    # which the kernel reports on the console ("watchdog did not stop!"). The
+    # cost: a reboot that hangs is no longer reset after 10 minutes.
+    systemd.settings.Manager.RebootWatchdogSec = "off";
+
+    # plymouthd survives systemd's final kill on purpose and runs from the
+    # root filesystem, so the root cannot be unmounted and systemd reports it
+    # on the console ("Failed to unmount", "Could not detach DM"). Stop it
+    # just before, leaving the last splash frame on screen.
+    systemd.shutdown.plymouth-quit = pkgs.writeShellScript "plymouth-quit" ''
+      ${config.boot.plymouth.package}/bin/plymouth quit --retain-splash
+      ${config.boot.plymouth.package}/bin/plymouth --wait
+    '';
+
     boot.initrd.kernelModules = mkIf cfg.earlyKms.enable cfg.earlyKms.modules;
 
     # Hidden menu: hold Space during POST to show it.
