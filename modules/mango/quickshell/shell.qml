@@ -59,6 +59,12 @@ ShellRoot {
     }
   }
 
+  // Super+Space: Proton Pass quick access (Pass.qml, PassPopup.qml).
+  IpcHandler {
+    target: "pass"
+    function toggle(): void { Rail.toggle("pass"); }
+  }
+
   IpcHandler {
     target: "shell"
     function openTarget(): string { return Rail.openTarget; }
@@ -116,6 +122,15 @@ ShellRoot {
       target: "picker"
       island: Component { ClockIsland {} }
       PickerList {}
+    }
+  }
+
+  Variants {
+    model: Quickshell.screens
+    RailPopup {
+      target: "pass"
+      island: Component { ClockIsland {} }
+      PassPopup {}
     }
   }
 

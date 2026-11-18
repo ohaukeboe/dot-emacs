@@ -14,8 +14,8 @@ import Quickshell.Networking
 Singleton {
   id: shell
 
-  // "" (closed), "controls", "calendar", "usage", "launcher" or "picker";
-  // one popup at a time.
+  // "" (closed), "controls", "calendar", "usage", "launcher", "picker" or
+  // "pass" (Proton Pass quick access); one popup at a time.
   property string openTarget: ""
   property string openOutput: ""
   property string pendingTarget: ""

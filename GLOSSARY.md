@@ -517,6 +517,13 @@ The clock-island popup that `mango-pick` opens for a script's choice
 clipboard (Super+v) (`specs/015-picker-layouts`).
 _Avoid_: menu, dmenu, launcher
 
+**Quick access**:
+The clock-island popup on Super+Space that finds a Proton Pass item and
+copies one of its fields. The shell draws it; `cosmic-pass serve`, a child
+process of the shell, does the searching and copying
+(`specs/016-proton-pass-quick-access`).
+_Avoid_: password manager, vault popup, cosmic-pass (that is the backend)
+
 **Quick controls**:
 The popup the rail's phone, Wi-Fi, sound and battery icons open (they share
 one capsule): volume, brightness, mic, Wi-Fi, Bluetooth, power profile, the

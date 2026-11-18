@@ -163,7 +163,9 @@ and confirm its system closure no longer contains Mango or its tools.
   shortcuts the COSMIC module provides (Proton Pass, 1Password).
 - **FR-009**: Every package the module installs MUST come from nixpkgs. A
   component not in nixpkgs MUST be omitted, or replaced by a nixpkgs
-  alternative, and the gap recorded.
+  alternative, and the gap recorded. Exception: the Proton Pass quick
+  access backend comes from the `cosmic-pass` flake input
+  (`specs/016-proton-pass-quick-access` FR-025).
 - **FR-010**: With the module disabled, it MUST contribute nothing to a
   machine's configuration.
 - **FR-011**: Enabling the module MUST NOT change the COSMIC session's

@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs,
+  inputs,
   ...
 }:
 
@@ -61,6 +62,10 @@ let
       pwMetadata = getExe' config.services.pipewire.package "pw-metadata";
       brightnessctl = getExe pkgs.brightnessctl;
       cliphist = getExe pkgs.cliphist;
+      # The one package from outside nixpkgs (specs/016 FR-025, an exception
+      # to specs/010-mango-wm-session FR-009).
+      passBackend = getExe inputs.cosmic-pass.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      passClearSecs = toString cfg.pass.clipboardClearSeconds;
       powerMenu = getExe powerMenu;
       lock = getExe lockScreen;
       kdeconnect = lib.boolToString kdeconnect;

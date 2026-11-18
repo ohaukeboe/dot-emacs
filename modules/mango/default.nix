@@ -25,6 +25,16 @@ in
     };
 
     terminal = mkPackageOption pkgs "foot" { };
+
+    # The range cosmic-pass enforces (config::CLIPBOARD_CLEAR_RANGE).
+    pass.clipboardClearSeconds = mkOption {
+      type = types.ints.between 10 600;
+      default = 90;
+      description = ''
+        Seconds a secret copied from the Proton Pass quick access stays on
+        the clipboard (specs/016-proton-pass-quick-access).
+      '';
+    };
   };
 
   config = mkIf cfg.enable {

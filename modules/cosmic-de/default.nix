@@ -355,6 +355,11 @@ in
     # PROTON_PASS_LINUX_KEYRING above, pass-cli's own database key.
     systemd.packages = [ cosmic-pass ];
     systemd.user.services.cosmic-pass.wantedBy = [ "graphical-session.target" ];
+    # The Mango session runs its own backend (cosmic-pass serve, from its
+    # Quickshell config); two would race on one cache file
+    # (specs/016-proton-pass-quick-access research R6). Negated, so a missing
+    # variable starts it as before.
+    systemd.user.services.cosmic-pass.unitConfig.ConditionEnvironment = "!XDG_CURRENT_DESKTOP=mango";
 
     home-manager.users.${config.user.username} = {
       services.flatpak.remotes = [

@@ -141,11 +141,11 @@
         "nixpkgs-pass-cli": "nixpkgs-pass-cli"
       },
       "locked": {
-        "lastModified": 1789997638,
-        "narHash": "sha256-Lljibig+xUuhBkeBENaOyVvxrbRolO47Zfo1/9plcHI=",
+        "lastModified": 1795012478,
+        "narHash": "sha256-6aLfLdcz+IsoF7y36zVEBckJ0U/dDpSOpWmnptR1sUA=",
         "owner": "ohaukeboe",
         "repo": "cosmic-pass",
-        "rev": "7d1d41141b1c1d5cc53c3836cd94ebd5c924dc6e",
+        "rev": "0c36ff8612c206e90b1c5b831a984900fb44e8f8",
         "type": "github"
       },
       "original": {

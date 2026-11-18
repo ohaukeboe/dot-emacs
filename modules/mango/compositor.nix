@@ -37,10 +37,6 @@ let
     exec ${emacs}/bin/emacsclient -c -a "" -e "(my/ghostel-frame)"
   '';
 
-  # Proton Pass: the quick-access popup the COSMIC module binds (cosmic-pass)
-  # is a COSMIC applet from a flake input, not nixpkgs, so Mango opens the
-  # full nixpkgs app instead (specs/010-mango-wm-session research R5).
-  protonPass = getExe pkgs.proton-pass;
   onePassword = "${getExe' config.programs._1password-gui.package "1password"} --quick-access";
 
   # Mango's key=value config. Keys may repeat (bind, env, exec_once), so it
@@ -158,7 +154,9 @@ let
     "bind=SUPER+SHIFT,s,spawn,${getExe screenshot} region"
     # Ctrl+Fn+F6: the whole display, since the laptop has no Print key.
     "bind=SUPER+CTRL+SHIFT,s,spawn,${getExe screenshot} full"
-    "bind=SUPER,space,spawn,${protonPass}"
+    # Proton Pass quick access (specs/016-proton-pass-quick-access); the
+    # full app is in the launcher.
+    "bind=SUPER,space,spawn,${getExe pkgs.quickshell} -c mango ipc call pass toggle"
     "bind=SUPER+SHIFT,space,spawn,${onePassword}"
 
     "bindl=NONE,XF86AudioRaiseVolume,spawn,${osd} volumeUp"

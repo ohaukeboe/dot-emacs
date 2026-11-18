@@ -128,6 +128,9 @@ the `mango` package it builds, on 2026-11-11.
   no Proton Pass quick-access popup under Mango, only the full app.
 - **Alternatives considered**: reusing `cosmic-pass` when COSMIC is on —
   rejected, it would break the moment COSMIC is turned off (FR-014).
+- **Superseded** by `specs/016-proton-pass-quick-access`: `Super+Space`
+  opens a Rail popup driven by `cosmic-pass serve`, which runs without
+  COSMIC; the gap is closed.
 
 ## R6. Coexistence with COSMIC
 

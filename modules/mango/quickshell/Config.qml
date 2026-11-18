@@ -30,6 +30,9 @@ Singleton {
   readonly property string pwMetadata: "@pwMetadata@"
   readonly property string brightnessctl: "@brightnessctl@"
   readonly property string cliphist: "@cliphist@"
+  // Proton Pass quick access (Pass.qml): the backend and its clipboard timeout.
+  readonly property string passBackend: "@passBackend@"
+  readonly property string passClearSecs: "@passClearSecs@"
   readonly property string powerMenu: "@powerMenu@"
   readonly property string lock: "@lock@"
   readonly property string systemctl: "@systemctl@"
