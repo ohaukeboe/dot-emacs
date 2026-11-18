@@ -351,6 +351,8 @@ in
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     # programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_CODE_MODE = "1";
+    # Also load CLAUDE.md from directories added with --add-dir / additionalDirectories.
+    programs.claude-code.settings.env.CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD = "1";
     programs.claude-code.settings.autoMemoryEnabled = false;
     programs.claude-code.settings.worktree.baseRef = "head";
 
