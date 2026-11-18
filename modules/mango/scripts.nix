@@ -124,6 +124,35 @@ rec {
     '';
   };
 
+  # Swaps the visible windows of the focused monitor and the next one, each
+  # onto the other monitor's current tag; focus and cursor follow the focused
+  # window.
+  swapMonitors = pkgs.writeShellApplication {
+    name = "mango-swap-monitors";
+    runtimeInputs = [
+      pkgs.jq
+      mango
+    ];
+    text = ''
+      active() { mmsg get all-monitors | jq -r '.monitors[] | select(.active) | .name'; }
+      visible() { mmsg get all-clients | jq -r --arg m "$1" '.clients[] | select(.monitor == $m and .is_visible) | .id'; }
+      focused=$(mmsg get focusing-client | jq -r '.id // empty')
+      # focusmon,next skips disabled outputs, which all-monitors still lists.
+      a=$(active)
+      mmsg dispatch focusmon,next
+      b=$(active)
+      [ "$a" != "$b" ] || exit 0
+      from_a=$(visible "$a")
+      from_b=$(visible "$b")
+      for id in $from_a; do mmsg dispatch "tagmon,$b,0" "client,$id"; done
+      for id in $from_b; do mmsg dispatch "tagmon,$a,0" "client,$id"; done
+      # focusid leaves the cursor behind and focusmon (which warps it) is a
+      # no-op on the selected monitor, so step to $a first.
+      mmsg dispatch "focusmon,$a"
+      mmsg dispatch "focusmon,$b" ''${focused:+"client,$focused"}
+    '';
+  };
+
   # Prints the connected displays as a displays.setups entry to paste into
   # machines/machines.nix.
   displaySetup = pkgs.writeShellApplication {

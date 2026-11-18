@@ -23,6 +23,7 @@ let
     reload
     powerMenu
     clipPick
+    swapMonitors
     ;
 
   # The OSD's IPC target in the rail's Quickshell config (shell.qml).
@@ -143,6 +144,8 @@ let
     # With Ctrl, the window keeps its tag number and the monitor switches to it.
     "bind=SUPER+CTRL,comma,tagmon,prev,1"
     "bind=SUPER+CTRL,period,tagmon,next,1"
+    # Swap what the focused monitor and the next one show.
+    "bind=SUPER,o,spawn,${getExe swapMonitors}"
     "bind=SUPER,f,togglefullscreen,"
     "bind=SUPER+SHIFT,f,togglefloating,"
     # Steps the tag through its display's layout cycle (mango-layout).
