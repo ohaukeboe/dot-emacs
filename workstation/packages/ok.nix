@@ -14,7 +14,7 @@ buildGoModule {
   src = nvSources.ok.src;
 
   # Not tracked by nvfetcher; `just fix-hashes` (run by `just update`) bumps it.
-  vendorHash = "sha256-OJM9WO129g/Onk6E0BkHHohpkfqDsvyq7WiIefBKxDU=";
+  vendorHash = "sha256-4uDCCLgoLcGttsVpIPZPtM8r5xRtmTXs+5qVSiF3KKM=";
 
   subPackages = [ "." ];
   ldflags = [

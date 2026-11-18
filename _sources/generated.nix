@@ -68,21 +68,21 @@
   };
   mobile-mcp = {
     pname = "mobile-mcp";
-    version = "1.0.17";
+    version = "1.0.18";
     src = fetchurl {
-      url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.17.tgz";
-      sha256 = "sha256-meXumzlDu573CmQ99EyYymaB2Isy0i3yQtdX5CJPVNY=";
+      url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-1.0.18.tgz";
+      sha256 = "sha256-XPLoT0hYyJnLL0W+Jp8tL1yZv5UqtaTPTatVZ7o/2Cw=";
     };
   };
   ok = {
     pname = "ok";
-    version = "v5.23.0";
+    version = "v5.23.1";
     src = fetchFromGitHub {
       owner = "oslokommune";
       repo = "ok";
-      rev = "v5.23.0";
+      rev = "v5.23.1";
       fetchSubmodules = false;
-      sha256 = "sha256-j/m/6Dk2+cwUk7bkZ8TpiWRDQNhLviMQ3YDfRIFxesw=";
+      sha256 = "sha256-gUfICbUzVe19YQVMBsLUPQtd8PXeffBjKdHgZwYqW3o=";
     };
   };
   pgmacs = {

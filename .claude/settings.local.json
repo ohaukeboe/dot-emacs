@@ -4,7 +4,10 @@
       "allowWrite": [
         "~/.local/share/nvfetcher",
         "~/.npm/_cacache",
-        "~/.cache/treefmt"
+        "~/.cache/treefmt",
+        "~/.cargo/registry",
+        "~/.cargo/git",
+        "/run/user/1000/just"
       ]
     }
   }
