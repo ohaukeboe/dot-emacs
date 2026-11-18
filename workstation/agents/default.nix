@@ -347,21 +347,13 @@ in
     programs.claude-code.enable = true;
     # The timer is a systemd user unit, so Linux only.
     agents.usage.enable = lib.mkDefault isLinux;
-    programs.claude-code.settings.remoteControlAtStartup = true;
+    # programs.claude-code.settings.remoteControlAtStartup = true;
     programs.claude-code.settings.skipAutoPermissionPrompt = true;
     # programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
-    # Code Mode (experimental): Claude writes JavaScript that calls its tools.
-    # Needs claude-code >= 2.1.323, and does not start while agent teams are on
-    # (the line above), so it stays inert until that one is dropped.
-    # https://code.claude.com/docs/en/code-mode
     programs.claude-code.settings.env.CLAUDE_CODE_EXPERIMENTAL_CODE_MODE = "1";
-    # `bd remember` is the single memory store; see docs/adr/0008-agent-context-hygiene.md.
     programs.claude-code.settings.autoMemoryEnabled = false;
-    # Start worktrees (subagent `isolation: worktree` too) from the local HEAD,
-    # not origin's default branch. From main, an agent has to reset onto the
-    # feature branch, and that fails in the sandbox with EBUSY whenever the
-    # branch changes the masked .claude/settings.json.
     programs.claude-code.settings.worktree.baseRef = "head";
+
     # Give the CLAUDE.md git rule teeth. Prompt text only shapes what the
     # agent tries; an ask rule is enforced by the harness, and still prompts
     # inside a sandboxed auto-allow session. The Bash rules are generated from
@@ -381,7 +373,7 @@ in
       "frontend-design@claude-plugins-official" = false;
       "code-simplifier@claude-plugins-official" = false;
       "claude-md-management@claude-plugins-official" = false;
-      "ponytail@ponytail" = true;
+      # "ponytail@ponytail" = true;
     };
     programs.claude-code.marketplaces.ponytail = inputs.ponytail;
 

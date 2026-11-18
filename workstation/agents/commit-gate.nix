@@ -102,11 +102,9 @@ in
 
     # The agent must not choose its own mode. Sandboxed Bash cannot write
     # $HOME, but the Edit and Write tools run outside the sandbox. `//` makes
-    # the rule path absolute.
-    programs.claude-code.settings.permissions.deny = [
-      "Edit(/${overridePath})"
-      "Write(/${overridePath})"
-    ];
+    # the rule path absolute. An Edit rule covers Write too; a Write rule never
+    # matches and Claude Code warns about it.
+    programs.claude-code.settings.permissions.deny = [ "Edit(/${overridePath})" ];
 
     assertions = [
       {
