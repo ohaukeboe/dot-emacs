@@ -134,6 +134,15 @@ let
     "bind=SUPER,q,killclient,"
     "bind=SUPER,Tab,focusstack,next"
     "bind=SUPER+SHIFT,Tab,focusstack,prev"
+    # Cycle focus between monitors; with Shift, send the window to that
+    # monitor's current tag.
+    "bind=SUPER,comma,focusmon,prev"
+    "bind=SUPER,period,focusmon,next"
+    "bind=SUPER+SHIFT,comma,tagmon,prev,0"
+    "bind=SUPER+SHIFT,period,tagmon,next,0"
+    # With Ctrl, the window keeps its tag number and the monitor switches to it.
+    "bind=SUPER+CTRL,comma,tagmon,prev,1"
+    "bind=SUPER+CTRL,period,tagmon,next,1"
     "bind=SUPER,f,togglefullscreen,"
     "bind=SUPER+SHIFT,f,togglefloating,"
     # Steps the tag through its display's layout cycle (mango-layout).
