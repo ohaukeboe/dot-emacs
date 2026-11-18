@@ -83,7 +83,7 @@ The new source appears as `pkgs.nvSources.<pkg>` with `.src` and `.version` attr
 
 ### A5. npm caveat
 
-For npm packages, nvfetcher only hashes the **source tarball**. `buildNpmPackage`'s `npmDepsHash` (and any checked-in lock file like `chrome-devtools-mcp-lock.json`) must still be regenerated **by hand** on a version bump — nvfetcher does not touch them. Flag this to the user when adding an npm source.
+For npm packages, nvfetcher only hashes the **source tarball**. `buildNpmPackage`'s `npmDepsHash` (and Go's `vendorHash`) is rewritten by `just fix-hashes`, which `just update` runs; any checked-in lock file like `chrome-devtools-mcp-lock.json` must still be regenerated **by hand** on a version bump — nvfetcher does not touch them. Flag this to the user when adding an npm source.
 
 ---
 

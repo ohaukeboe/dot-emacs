@@ -13,7 +13,7 @@ buildGoModule {
   version = lib.removePrefix "v" nvSources.ok.version;
   src = nvSources.ok.src;
 
-  # Not tracked by nvfetcher: bump by hand whenever go.mod/go.sum change.
+  # Not tracked by nvfetcher; `just fix-hashes` (run by `just update`) bumps it.
   vendorHash = "sha256-OJM9WO129g/Onk6E0BkHHohpkfqDsvyq7WiIefBKxDU=";
 
   subPackages = [ "." ];

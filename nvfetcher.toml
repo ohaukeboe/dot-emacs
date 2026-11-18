@@ -12,14 +12,14 @@ src.github = "gastownhall/beads"
 
 # gruntwork-io/boilerplate (Go). Publishes GitHub releases -> github (latest
 # release). Built from source with buildGoModule, so vendorHash in
-# workstation/packages/boilerplate.nix still has to be bumped by hand.
+# workstation/packages/boilerplate.nix is bumped by `just fix-hashes`.
 [boilerplate]
 fetch.github = "gruntwork-io/boilerplate"
 src.github = "gruntwork-io/boilerplate"
 
 # npm packages: no native npm source, so track latest via `npm view` (the
 # update-sources recipe puts nodejs on PATH). nvfetcher hashes the tarball;
-# buildNpmPackage's npmDepsHash still has to be bumped by hand.
+# buildNpmPackage's npmDepsHash is bumped by `just fix-hashes`.
 [caveman-shrink]
 fetch.url = "https://registry.npmjs.org/caveman-shrink/-/caveman-shrink-$ver.tgz"
 src.cmd = "npm view caveman-shrink version"
@@ -44,7 +44,7 @@ fetch.url = "https://registry.npmjs.org/@mobilenext/mobile-mcp/-/mobile-mcp-$ver
 src.cmd = "npm view @mobilenext/mobile-mcp version"
 
 # Oslo kommune infrastructure CLI (Go). Built from source with buildGoModule,
-# so vendorHash in workstation/packages/ok.nix still has to be bumped by hand.
+# so vendorHash in workstation/packages/ok.nix is bumped by `just fix-hashes`.
 # Versions come from git tags (ls-remote), not the GitHub API: the org enforces
 # SAML SSO, so the API rejects the update-sources token on non-work machines
 # (docs/adr/0007-saml-sso-github-sources.md).

@@ -2,8 +2,8 @@
 default:
     @just --list
 
-# Update flake inputs and nvfetcher sources, then report which fix references have landed
-update: && update-sources check-fixes
+# Update flake inputs and nvfetcher sources, fix stale hashes, then report which fix references have landed
+update: && update-sources fix-hashes check-fixes
     nix flake update
 
 import 'just/bootstrap.just'
