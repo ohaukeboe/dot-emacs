@@ -1,7 +1,8 @@
 pragma Singleton
 pragma ComponentBehavior: Bound
 
-// A dmenu-style choice drawn in the clock island's popup (PickerList.qml),
+// A dmenu-style choice drawn in the clock island's popup (PickerList.qml,
+// with its search field in the island, PickerIsland.qml),
 // for scripts through mango-pick. mango-pick passes the lines, a FIFO to
 // answer on and a layout (specs/015-picker-layouts): the list (default),
 // tiles (the power menu, PickerTiles.qml), sources (the screencast portal's
@@ -43,6 +44,34 @@ Singleton {
   }
 
   onQueryChanged: index = 0
+
+  // The width of the layout's content; the island's field is as wide.
+  readonly property int contentWidth: layout === "clipboard" ? 672 : layout === "sources" ? 492 : Config.listWidth
+  // Sources only: the screen cards, which come before the window rows.
+  readonly property int screenCount: results.filter(l => l.startsWith("Monitor:")).length
+
+  // Sources only: an arrow key's move. Cards sit two per row; Up/Down step a
+  // row of cards, then into the rows. False when the key moves nothing.
+  function step(key) {
+    const i = index;
+    const n = screenCount;
+    const last = results.length - 1;
+    let next = i;
+    if (i < n) {
+      if (key === Qt.Key_Left) next = Math.max(0, i - 1);
+      else if (key === Qt.Key_Right) next = Math.min(n - 1, i + 1);
+      else if (key === Qt.Key_Up) next = i >= 2 ? i - 2 : i;
+      else next = i + 2 < n ? i + 2 : Math.min(n, last);
+    } else if (key === Qt.Key_Up) {
+      next = i === n ? Math.max(0, n - 1) : i - 1;
+    } else if (key === Qt.Key_Down) {
+      next = Math.min(last, i + 1);
+    } else {
+      return false;
+    }
+    index = next;
+    return true;
+  }
 
   // What a row shows: the text after a cliphist id and its tab.
   function label(line) {

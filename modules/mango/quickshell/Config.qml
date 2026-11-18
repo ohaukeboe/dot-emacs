@@ -81,6 +81,8 @@ Singleton {
   readonly property int slow: 240
   // The launcher's card, and its search island once open.
   readonly property int launcherWidth: 600
+  // A popup's list of rows (the picker's list, Proton Pass).
+  readonly property int listWidth: 480
   // Distance from the screen's side edge, the same as the rail's.
   readonly property int edgeGap: 12
 }

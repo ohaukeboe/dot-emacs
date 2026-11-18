@@ -3,8 +3,8 @@ pragma ComponentBehavior: Bound
 
 // Proton Pass quick access (specs/016-proton-pass-quick-access): runs
 // `cosmic-pass serve` for the whole session and keeps the last snapshot it
-// printed. PassPopup.qml draws that snapshot and sends intents back through
-// send(). Contract: specs/016-proton-pass-quick-access/contracts/.
+// printed. PassPopup.qml and PassIsland.qml draw that snapshot and send intents
+// back through send(). Contract: specs/016-proton-pass-quick-access/contracts/.
 // The snapshot can hold a revealed secret: it is replaced whole by each
 // line, copied into no other property and never logged.
 import QtQuick
@@ -20,6 +20,9 @@ Singleton {
   property string openedUrl: ""
   // Restarts in a row without a snapshot in between; the loop stops at 5.
   property int failures: 0
+  // What the search field holds (PassIsland.qml), to tell "no matches" from
+  // "no items".
+  property string query: ""
 
   function send(intent) {
     if (backend.running) backend.write(JSON.stringify(intent) + "\n");

@@ -120,7 +120,9 @@ controls and 8 when it holds rows. The rail's own measures are `railTop`,
 | `CapsuleSlider` | A slider with its icon inside                              |
 | `Meter`         | A thin progress bar                                        |
 | `TextBox`       | A text field with a background                             |
-| `QueryInput`    | A bare search or filter input with a placeholder           |
+| `QueryInput`    | A bare one-line input with a placeholder                   |
+| `SearchField`   | A popup's search capsule: glyph, prompt, query, list keys  |
+| `SearchIsland`  | The clock island that opens into a popup's `SearchField`   |
 | `ToggleRow`     | A toggle, its label and status, and an arrow to a page     |
 | `ListRow`       | A list entry: label, detail, optional side action          |
 | `LetterTile`    | A first-letter tile for a row without an icon              |

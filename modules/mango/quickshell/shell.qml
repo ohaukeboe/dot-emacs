@@ -120,7 +120,7 @@ ShellRoot {
     model: Quickshell.screens
     RailPopup {
       target: "picker"
-      island: Component { ClockIsland {} }
+      island: Component { PickerIsland {} }
       PickerList {}
     }
   }
@@ -129,7 +129,7 @@ ShellRoot {
     model: Quickshell.screens
     RailPopup {
       target: "pass"
-      island: Component { ClockIsland {} }
+      island: Component { PassIsland {} }
       PassPopup {}
     }
   }

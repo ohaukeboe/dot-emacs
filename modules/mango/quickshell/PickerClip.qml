@@ -1,11 +1,10 @@
 pragma ComponentBehavior: Bound
 
 // The picker's clipboard layout (Picker.qml; `mango-pick --layout clipboard`,
-// Super+v): a search capsule with the match count, the cliphist rows with
-// type and size, and a preview of the selected entry. Rows and the preview
-// decode their entry through cliphist on demand. Typing filters, Up/Down or
-// C-p/C-n move, Enter pastes, Ctrl+Enter copies only, Delete forgets the
-// entry, Alt+1 to Alt+9 pick, Esc cancels.
+// Super+v): the cliphist rows with type and size, and a preview of the
+// selected entry, under the search field in the island (PickerIsland.qml,
+// which has the keys). Rows and the preview decode their entry through
+// cliphist on demand.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -32,16 +31,7 @@ ColumnLayout {
     return lines === undefined ? "text" : "text · " + lines + (lines === 1 ? " line" : " lines");
   }
 
-  function takeFocus() {
-    if (Rail.openTarget !== "picker") return;
-    query.text = "";
-    query.forceActiveFocus();
-  }
-
-  Component.onCompleted: {
-    takeFocus();
-    showPreview();
-  }
+  Component.onCompleted: showPreview()
 
   function showPreview() {
     previewText = "";
@@ -62,13 +52,6 @@ ColumnLayout {
   }
 
   onLineChanged: showPreview()
-
-  Connections {
-    target: Rail
-    function onOpenTargetChanged() {
-      pane.takeFocus();
-    }
-  }
 
   Connections {
     target: Picker
@@ -96,57 +79,6 @@ ColumnLayout {
       if (seq !== pane.previewSeq) return;
       if (code === 0) pane.previewImage = "file://" + path;
       else pane.previewFailed = true;
-    }
-  }
-
-  Rectangle {
-    Layout.fillWidth: true
-    Layout.preferredHeight: 40
-    radius: height / 2
-    color: Config.raised
-
-    RowLayout {
-      anchors.fill: parent
-      anchors.leftMargin: 14
-      anchors.rightMargin: 14
-      spacing: 10
-
-      Glyph {
-        text: Icons.search
-        color: Config.dim
-        font.pixelSize: Config.iconMedium
-      }
-
-      RailText {
-        text: Picker.prompt
-        color: Config.dim
-        font.weight: Font.DemiBold
-      }
-
-      QueryInput {
-        id: query
-        Layout.fillWidth: true
-        onTextChanged: Picker.query = text
-
-        Keys.onPressed: (event) => {
-          const ctrl = (event.modifiers & Qt.ControlModifier) !== 0;
-          const alt = (event.modifiers & Qt.AltModifier) !== 0;
-          if (event.key === Qt.Key_Up || ctrl && event.key === Qt.Key_P) Picker.move(-1);
-          else if (event.key === Qt.Key_Down || ctrl && event.key === Qt.Key_N) Picker.move(1);
-          else if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && ctrl) Picker.chooseAlt(Picker.index);
-          else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) Picker.choose(Picker.index);
-          else if (event.key === Qt.Key_Delete) Picker.forget(Picker.index);
-          else if (alt && event.key >= Qt.Key_1 && event.key <= Qt.Key_9) Picker.choose(event.key - Qt.Key_1);
-          else return;
-          event.accepted = true;
-        }
-        Keys.onEscapePressed: Rail.close()
-        placeholder: "Type to search…"
-      }
-
-      Detail {
-        text: Picker.results.length + " of " + Picker.items.length
-      }
     }
   }
 
@@ -198,7 +130,7 @@ ColumnLayout {
     }
 
     Rectangle {
-      Layout.preferredWidth: 360
+      Layout.preferredWidth: Picker.contentWidth - 300 - 12
       Layout.fillHeight: true
       radius: Config.pillRadius
       color: Config.app

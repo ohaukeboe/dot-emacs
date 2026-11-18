@@ -22,12 +22,6 @@ ColumnLayout {
     }
   }
 
-  Rectangle {
-    Layout.fillWidth: true
-    Layout.preferredHeight: 1
-    color: Config.raised
-  }
-
   Hint {
     Layout.leftMargin: 8
     text: Apps.query.trim() !== "" ? "RESULTS"

@@ -3,9 +3,9 @@ pragma ComponentBehavior: Bound
 // The picker's sources layout (Picker.qml; `mango-pick --layout sources`,
 // the screencast portal's chooser): "Monitor:" lines as screen cards with a
 // live thumbnail, then "Window:" lines as rows with app and tag from Mango.
-// Typing filters the windows; the cards stay. Arrows move across the cards
-// and down into the rows, Enter, Alt+1 to Alt+9 (cards first) or a click
-// pick, Esc cancels.
+// Typing in the island's field (PickerIsland.qml) filters the windows; the
+// cards stay. Arrows move across the cards and down into the rows
+// (Picker.step), Enter, Alt+1 to Alt+9 (cards first) or a click pick.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -15,77 +15,14 @@ ColumnLayout {
   id: sources
   spacing: 8
 
-  readonly property int cardWidth: 240
-  readonly property int screenCount: Picker.results.filter(l => l.startsWith("Monitor:")).length
+  readonly property int cardWidth: (Picker.contentWidth - 12) / 2
+  readonly property int screenCount: Picker.screenCount
   readonly property var windows: Picker.results.slice(screenCount)
-
-  function takeFocus() {
-    if (Rail.openTarget !== "picker") return;
-    query.text = "";
-    query.forceActiveFocus();
-  }
-
-  Component.onCompleted: takeFocus()
-
-  Connections {
-    target: Rail
-    function onOpenTargetChanged() {
-      sources.takeFocus();
-    }
-  }
 
   function screenNamed(name) {
     for (let i = 0; i < Quickshell.screens.length; i++)
       if (Quickshell.screens[i].name === name) return Quickshell.screens[i];
     return null;
-  }
-
-  // Cards sit two per row; Up/Down step a row of cards, then into the rows.
-  function step(key) {
-    const i = Picker.index;
-    const n = screenCount;
-    const last = Picker.results.length - 1;
-    let next = i;
-    if (i < n) {
-      if (key === Qt.Key_Left) next = Math.max(0, i - 1);
-      else if (key === Qt.Key_Right) next = Math.min(n - 1, i + 1);
-      else if (key === Qt.Key_Up) next = i >= 2 ? i - 2 : i;
-      else next = i + 2 < n ? i + 2 : Math.min(n, last);
-    } else if (key === Qt.Key_Up) {
-      next = i === n ? Math.max(0, n - 1) : i - 1;
-    } else if (key === Qt.Key_Down) {
-      next = Math.min(last, i + 1);
-    } else {
-      return false;
-    }
-    Picker.index = next;
-    return true;
-  }
-
-  RailText {
-    Layout.leftMargin: 4
-    text: Picker.prompt
-    font.pixelSize: Config.fontTitle
-    font.weight: Font.DemiBold
-  }
-
-  QueryInput {
-    id: query
-    Layout.fillWidth: true
-    Layout.leftMargin: 4
-    onTextChanged: Picker.query = text
-
-    Keys.onPressed: (event) => {
-      const alt = (event.modifiers & Qt.AltModifier) !== 0;
-      if ([Qt.Key_Left, Qt.Key_Right, Qt.Key_Up, Qt.Key_Down].includes(event.key)) {
-        if (!sources.step(event.key)) return;
-      } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) Picker.choose(Picker.index);
-      else if (alt && event.key >= Qt.Key_1 && event.key <= Qt.Key_9) Picker.choose(event.key - Qt.Key_1);
-      else return;
-      event.accepted = true;
-    }
-    Keys.onEscapePressed: Rail.close()
-    placeholder: "Type to filter windows…"
   }
 
   SectionLabel {
@@ -185,7 +122,7 @@ ColumnLayout {
       readonly property var info: Picker.source(modelData)
       readonly property bool picked: at === Picker.index
 
-      Layout.preferredWidth: 2 * sources.cardWidth + 12
+      Layout.preferredWidth: Picker.contentWidth
       Layout.preferredHeight: 40
       radius: Config.pillRadius
       color: picked ? Config.raised : "transparent"
