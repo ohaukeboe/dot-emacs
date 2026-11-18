@@ -13,37 +13,19 @@ let
   # (app-cosmic-emacs-<pid>.scope). An OOM kill works on whole cgroups, so one
   # runaway session took Emacs and every other session down with it.
   #
-  # Each session now gets its own scope, and every Bash tool command gets its
-  # own scope too (process-cap.nix), all under one user slice with a hard
+  # Each session now gets its own scope under one user slice with a hard
   # ceiling. When agents run out of memory, the kernel's OOM killer fires inside
-  # that slice — or inside the one scope that overran — before the rest of the
-  # desktop is under pressure. This needs no OOM daemon.
+  # that slice, on its largest process, before the rest of the desktop is under
+  # pressure. This needs no OOM daemon.
+  #
+  # The slice ceiling is the only limit. Scopes carry none, and nothing sets
+  # MemoryHigh: inside the sandbox every Bash command shares its session's
+  # scope, so a per-session MemoryHigh throttled `nix flake check` to a crawl
+  # without protecting Emacs any better (dot-emacs-584).
   #
   # Limits are percentages: systemd resolves them against physical RAM (swap
   # size for MemorySwapMax), so one setting fits both 32 GB and 64 GB machines.
   slice = "agents.slice";
-
-  memoryProps = limits: [
-    "MemoryHigh=${limits.high}"
-    "MemoryMax=${limits.max}"
-  ];
-
-  limitsOption = what: high: max: {
-    high = lib.mkOption {
-      type = lib.types.str;
-      default = high;
-      description = ''
-        MemoryHigh for ${what}. Above it the kernel throttles and reclaims
-        aggressively, which slows the processes down before they hit the
-        hard limit.
-      '';
-    };
-    max = lib.mkOption {
-      type = lib.types.str;
-      default = max;
-      description = "MemoryMax for ${what}. Above it the kernel OOM-kills inside the cgroup.";
-    };
-  };
 
   # Runs one Claude Code session in its own scope. The scope keeps the caller's
   # terminal, environment and PID (`systemd-run --scope` execs the command in
@@ -66,7 +48,6 @@ let
         --slice=${slice} \
         --unit="claude-$$" \
         --description="Claude Code session in $PWD" \
-        ${lib.concatMapStringsSep " " (p: "-p ${p}") (memoryProps cfg.session)} \
         -- "$real" "$@"
     '';
   };
@@ -104,7 +85,15 @@ in
       description = "Claude Code package to wrap.";
     };
 
-    slice = limitsOption "all agents together (sessions and their Bash commands)" "50%" "60%" // {
+    slice = {
+      max = lib.mkOption {
+        type = lib.types.str;
+        default = "60%";
+        description = ''
+          MemoryMax for all agents together (sessions and their Bash
+          commands). Above it the kernel OOM-kills inside the slice.
+        '';
+      };
       swapMax = lib.mkOption {
         type = lib.types.str;
         default = "25%";
@@ -117,14 +106,10 @@ in
       };
     };
 
-    session = limitsOption "one Claude Code session (the CLI and its MCP servers)" "15%" "20%";
-
-    command = limitsOption "one Bash tool command (builds, tests)" "35%" "40%";
-
     commandScopeArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       readOnly = true;
-      default = [ "--slice=${slice}" ] ++ map (p: "--property=${p}") (memoryProps cfg.command);
+      default = [ "--slice=${slice}" ];
       description = "Extra systemd-run arguments that put a Bash tool command in the agent slice.";
     };
   };
@@ -133,7 +118,6 @@ in
     systemd.user.slices.agents = {
       Unit.Description = "Coding agents (memory-limited)";
       Slice = {
-        MemoryHigh = cfg.slice.high;
         MemoryMax = cfg.slice.max;
         MemorySwapMax = cfg.slice.swapMax;
       };

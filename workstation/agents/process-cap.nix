@@ -7,8 +7,8 @@
 let
   cfg = config.agents.processCap;
 
-  # With memory-cap.nix enabled, a command also lands in the agent slice with
-  # its own memory limit, so a runaway build is OOM-killed on its own.
+  # With memory-cap.nix enabled, a command also lands in the agent slice, under
+  # its memory ceiling.
   memoryScopeArgs = lib.optionals config.agents.memoryCap.enable config.agents.memoryCap.commandScopeArgs;
 
   # Runtime cap for agent-spawned shell commands.
@@ -61,8 +61,8 @@ let
       # own instead: every command runs in a bwrap with --die-with-parent and a
       # private PID namespace, so nothing a command starts outlives it. What is
       # left to enforce is the runtime allowance, which `timeout` does from
-      # inside. The per-command memory scope is lost; the session's scope still
-      # bounds everything the sandbox runs.
+      # inside. The command stays in the session's scope, which is in the agent
+      # slice, so the slice's memory ceiling still applies.
       if [ "''${SANDBOX_RUNTIME:-}" = 1 ]; then
         set +e
         SECONDS=0
