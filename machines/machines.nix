@@ -65,7 +65,7 @@
   dig-laptop = {
     stateVersion = "26.11";
     modules = [
-      { modules.cosmic-de.enable = true; }
+      { modules.mango.enable = true; }
       { modules.secure-boot.measuredBoot.enable = true; }
       { modules.silent-boot.earlyKms.modules = [ "i915" ]; }
       {
