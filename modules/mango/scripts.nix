@@ -139,10 +139,12 @@ rec {
           else [.make, .model, .serial] | map(select(. != null and . != "")) | join(" ")
           end;
         def mode: first(.modes[] | select(.current)) | "\(.width)x\(.height)@\(.refresh)";
+        # Shift the layout so its top-left corner is 0,0: positions are unsigned.
+        (map(select(.enabled) | .position) | [(map(.x) | min // 0), (map(.y) | min // 0)]) as [$minx, $miny] |
         "modules.mango.displays.setups.\($name).outputs = [",
         (.[] | "  { criteria = \(crit | tojson); enable = \(.enabled);"
           + (if .enabled then
-               " mode = \(mode | tojson); position = { x = \(.position.x); y = \(.position.y); }; scale = \(.scale);"
+               " mode = \(mode | tojson); position = { x = \(.position.x - $minx); y = \(.position.y - $miny); }; scale = \(.scale);"
                + (if (.transform // "normal") != "normal" then " transform = \(.transform | tojson);" else "" end)
              else "" end)
           + " }"),
