@@ -30,6 +30,18 @@ Singleton {
   readonly property string pwMetadata: "@pwMetadata@"
   readonly property string brightnessctl: "@brightnessctl@"
   readonly property string cliphist: "@cliphist@"
+  // The displays card (Displays.qml): read and change the displays, name
+  // the matched display setup, copy the layout as a setup entry.
+  readonly property string wlrRandr: "@wlrRandr@"
+  readonly property string kanshictl: "@kanshictl@"
+  readonly property string displaySetup: "@displaySetup@"
+  // Duplicating displays (specs/020-duplicate-display): how far below its
+  // source a copy is parked, the laptop panel's output name, the guard that
+  // keeps focus and windows off a copy, and the lid's state.
+  readonly property int parkGap: @parkGap@
+  readonly property string panel: "@panel@"
+  readonly property string copyGuard: "@copyGuard@"
+  readonly property string lidSync: "@lidSync@"
   // Proton Pass quick access (Pass.qml): the backend and its clipboard timeout.
   readonly property string passBackend: "@passBackend@"
   readonly property string passClearSecs: "@passClearSecs@"

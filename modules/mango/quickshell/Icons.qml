@@ -42,6 +42,7 @@ Singleton {
   readonly property string close: String.fromCodePoint(0xF0156)
   readonly property string bell: String.fromCodePoint(0xF009A)
   readonly property string keyboard: String.fromCodePoint(0xF030C)
+  readonly property string monitor: String.fromCodePoint(0xF0379)
 
   // Rail status icons, the sets waybar's format-icons used.
   readonly property var wifiLevels: [0xF091F, 0xF0922, 0xF0925, 0xF0928].map(c => String.fromCodePoint(c))

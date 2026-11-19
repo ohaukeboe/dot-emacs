@@ -20,6 +20,10 @@ let
     powerMenu
     lockScreen
     layout
+    displaySetup
+    copyGuard
+    lidSync
+    parkGap
     ;
 
   mango = config.programs.mango.package;
@@ -62,6 +66,14 @@ let
       pwMetadata = getExe' config.services.pipewire.package "pw-metadata";
       brightnessctl = getExe pkgs.brightnessctl;
       cliphist = getExe pkgs.cliphist;
+      wlrRandr = getExe pkgs.wlr-randr;
+      kanshictl = getExe' pkgs.kanshi "kanshictl";
+      displaySetup = getExe displaySetup;
+      # Duplicating displays (specs/020-duplicate-display).
+      parkGap = toString parkGap;
+      panel = cfg.displays.internal;
+      copyGuard = getExe copyGuard;
+      lidSync = getExe lidSync;
       # The one package from outside nixpkgs (specs/016 FR-025, an exception
       # to specs/010-mango-wm-session FR-009).
       passBackend = getExe inputs.cosmic-pass.packages.${pkgs.stdenv.hostPlatform.system}.default;
@@ -73,7 +85,7 @@ let
   );
   quickshellDir = pkgs.runCommand "mango-quickshell" { } ''
     mkdir $out
-    cp ${./quickshell}/*.qml $out/
+    cp ${./quickshell}/*.qml ${./quickshell}/displayLayout.mjs $out/
     install -m644 ${quickshellConfig} $out/Config.qml
     ${optionalString (!kdeconnect) "rm $out/Phone.qml $out/PhoneIcon.qml"}
   '';
@@ -142,6 +154,21 @@ let
     touch $out
   '';
 
+  # The displays card's geometry (quickshell/displayLayout.mjs): no overlap,
+  # every display reachable, the exact wlr-randr arguments
+  # (specs/018-display-layout-card, research R4), and the rules for displays
+  # that copy another (specs/020-duplicate-display, research R6).
+  displayLayoutTest =
+    pkgs.runCommand "mango-display-layout-test" { nativeBuildInputs = [ pkgs.nodejs ]; }
+      ''
+        cp ${./quickshell}/displayLayout.mjs ${./quickshell}/displayLayout.test.mjs .
+        if ! node displayLayout.test.mjs; then
+          echo "modules/mango/quickshell: displayLayout test failed; fix displayLayout.mjs" >&2
+          exit 1
+        fi
+        touch $out
+      '';
+
   # qmllint misses errors that only show when Quickshell loads the config
   # (a reserved property name once stopped the whole shell). This loads the
   # built config against the running Wayland session for a few seconds, with
@@ -180,7 +207,10 @@ in
 {
   config = mkIf cfg.enable {
     system.build.mangoQsCheck = qsCheck;
-    system.extraDependencies = [ qmlCheck ];
+    system.extraDependencies = [
+      qmlCheck
+      displayLayoutTest
+    ];
 
     # Quickshell draws a plain window, so cage runs it full screen, on the
     # last output only (-m last) so a dock does not split it across screens.

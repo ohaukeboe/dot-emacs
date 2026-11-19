@@ -7,6 +7,7 @@ pragma ComponentBehavior: Bound
 //   qs -c mango ipc call calendar toggle
 //   qs -c mango ipc call usage toggle
 //   qs -c mango ipc call launcher toggle   (Super+d)
+//   qs -c mango ipc call displays toggle   (the displays card, Displays.qml)
 //   qs -c mango ipc call shell openTarget
 //   qs -c mango ipc call shell open controls wifi   (page "" for the tiles)
 //   qs -c mango ipc call shell close
@@ -16,7 +17,8 @@ pragma ComponentBehavior: Bound
 //                                          cancel, 10 on the alternate pick)
 //   qs -c mango ipc call osd volumeUp   (and the rest of the "osd" target)
 //   mango-lock   (the "lock" target, Lock.qml; Super+Escape)
-// It also owns desktop notifications (Notifications.qml).
+// It also owns desktop notifications (Notifications.qml) and the picture on
+// a display that copies another (Mirror.qml, specs/020-duplicate-display).
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -48,6 +50,12 @@ ShellRoot {
   IpcHandler {
     target: "launcher"
     function toggle(): void { Rail.toggle("launcher"); }
+  }
+
+  // The displays card (DisplaysCard.qml); "Displays" in the launcher.
+  IpcHandler {
+    target: "displays"
+    function toggle(): void { Rail.toggle("displays"); }
   }
 
   // mango-pick only; it passes the FIFO it waits on for the answer and the
@@ -86,6 +94,17 @@ ShellRoot {
     function keyboard(level: int, steps: int): void {
       Rail.showOsd("keyboard", steps > 0 ? level / steps : 0, false, steps);
     }
+  }
+
+  Variants {
+    model: Quickshell.screens
+    DisplaysCard {}
+  }
+
+  // The picture on a display that copies another (Mirror.qml).
+  Variants {
+    model: Quickshell.screens
+    Mirror {}
   }
 
   Variants {

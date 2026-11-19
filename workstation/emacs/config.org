@@ -296,6 +296,15 @@ This is a handy package which helps to show what packages are slowing down the E
                 (run-at-time 5 nil 'benchmark-init/deactivate))))
 #+end_src
 
+** Wayland clipboard
+Without this, yanking stops seeing the system clipboard after the first kill of a session. =wl-clip-persist= (=modules/mango/session.nix=) requests every target Emacs offers for a kill. One of them is the X11 =DELETE= target, and Emacs answers it by giving up the clipboard. Wayland then sends no event back, so pgtk keeps its record that Emacs owns the clipboard, and every later read returns Emacs's own last kill. Not offering =DELETE= avoids that: the clipboard manager takes the clipboard over normally and Emacs is told that it lost it.
+
+#+begin_src elisp
+  (when (featurep 'pgtk)
+    (setq selection-converter-alist
+          (assq-delete-all 'DELETE selection-converter-alist)))
+#+end_src
+
 ** MacOS
 I am trying out MacOS at the moment, and it appears that applications launched using the desktop entry does not inherit environment variables from the shell. The package [[https://github.com/purcell/exec-path-from-shell][exec-path-from-shell]] synchronizes environment variables from the shell to Emacs. This makes it a lot easier to deal with external programs on macOS
 

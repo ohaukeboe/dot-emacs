@@ -5,6 +5,7 @@
   pkgs,
   mango,
   panel,
+  parkGap,
   systemd,
 }:
 
@@ -48,6 +49,8 @@ rec {
   # ignore), so undocked lid close still suspends (ADR 0001).
   # `open` (lid opened) turns the panel on, then lets kanshi re-apply the
   # matched setup, which may turn it off again on purpose.
+  # `state` only prints `open` or `closed` (`open` on a machine with no
+  # lid), for the displays card (specs/020-duplicate-display).
   lidSync = pkgs.writeShellApplication {
     name = "mango-lid-sync";
     runtimeInputs = [
@@ -58,19 +61,26 @@ rec {
       mango
     ];
     text = ''
+      lid_state() {
+        local lid="" f
+        for f in /proc/acpi/button/lid/*/state; do
+          if [ -r "$f" ]; then lid="$(cat "$f")"; fi
+        done
+        case "$lid" in
+          *closed*) echo closed ;;
+          *) echo open ;;
+        esac
+      }
+      if [ "''${1:-sync}" = state ]; then
+        lid_state
+        exit 0
+      fi
       if [ "''${1:-sync}" = open ]; then
         mmsg dispatch enable_monitor,${panel}
         kanshictl reload || true
         exit 0
       fi
-      lid=""
-      for f in /proc/acpi/button/lid/*/state; do
-        if [ -r "$f" ]; then lid="$(cat "$f")"; fi
-      done
-      case "$lid" in
-        *closed*) ;;
-        *) exit 0 ;;
-      esac
+      [ "$(lid_state)" = closed ] || exit 0
       others="$(wlr-randr --json | jq --arg p ${escapeShellArg panel} '[.[] | select(.name != $p)] | length')"
       if [ "$others" -gt 0 ]; then
         mmsg dispatch disable_monitor,${panel}
@@ -153,21 +163,134 @@ rec {
     '';
   };
 
+  # Keeps focus and windows off a display that copies another
+  # (specs/020-duplicate-display, research R5). The displays card parks a
+  # copy where the pointer cannot go, but focusmon and tagmon still reach
+  # it. Runs while a copy exists, with COPY=SOURCE for each:
+  # a window on a copy goes to its source; a focused copy passes focus on to
+  # the next display that is not a copy, in the direction it came from.
+  copyGuard = pkgs.writeShellApplication {
+    name = "mango-copy-guard";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.jq
+      mango
+    ];
+    text = ''
+      usage() {
+        echo "usage: mango-copy-guard COPY=SOURCE [COPY=SOURCE ...]" >&2
+        exit 2
+      }
+      [ "$#" -gt 0 ] || usage
+      declare -A source_of
+      for pair in "$@"; do
+        case "$pair" in
+          ?*=?*) source_of["''${pair%%=*}"]="''${pair#*=}" ;;
+          *) usage ;;
+        esac
+      done
+
+      # The last focused display that is not a copy: where focus came from.
+      last=""
+      sweep() {
+        local monitors active id monitor names n i from to forward step target
+        while read -r id monitor; do
+          if [ -n "''${source_of[$monitor]:-}" ]; then
+            mmsg dispatch "tagmon,''${source_of[$monitor]},0" "client,$id"
+          fi
+        done < <(mmsg get all-clients | jq -r '.clients[] | "\(.id) \(.monitor)"')
+        monitors=$(mmsg get all-monitors)
+        active=$(jq -r 'first(.monitors[] | select(.active) | .name) // empty' <<<"$monitors")
+        [ -n "$active" ] || return 0
+        if [ -z "''${source_of[$active]:-}" ]; then
+          last=$active
+          return 0
+        fi
+        # Displays that are off are listed with no size; focusmon skips them.
+        mapfile -t names < <(jq -r '.monitors[] | select(.width > 0) | .name' <<<"$monitors")
+        n=''${#names[@]}
+        from=-1
+        to=-1
+        for i in "''${!names[@]}"; do
+          if [ "''${names[$i]}" = "$last" ]; then from=$i; fi
+          if [ "''${names[$i]}" = "$active" ]; then to=$i; fi
+        done
+        target=''${source_of[$active]}
+        if [ "$from" -ge 0 ] && [ "$to" -ge 0 ]; then
+          forward=$(((to - from + n) % n))
+          step=1
+          if [ "$forward" -gt $((n - forward)) ]; then step=-1; fi
+          i=$to
+          for _ in "''${names[@]}"; do
+            i=$(((i + step + n) % n))
+            if [ -z "''${source_of[''${names[$i]}]:-}" ]; then
+              target=''${names[$i]}
+              break
+            fi
+          done
+        fi
+        mmsg dispatch "focusmon,$target"
+      }
+
+      dir=$(mktemp -d)
+      mkfifo "$dir/events"
+      mmsg watch all-monitors >"$dir/events" &
+      a=$!
+      mmsg watch all-clients >"$dir/events" &
+      b=$!
+      trap 'kill "$a" "$b" 2>/dev/null || true; rm -rf "$dir"' EXIT
+      trap 'exit 0' TERM INT
+      exec 3<"$dir/events"
+      sweep
+      # Ends with the shell that started it, also when that one was killed.
+      while kill -0 "$PPID" 2>/dev/null; do
+        status=0
+        read -r -t 5 _ <&3 || status=$?
+        if [ "$status" -eq 0 ]; then
+          # One sweep answers a burst of events.
+          while read -r -t 0.05 _ <&3; do :; done
+          sweep
+        elif [ "$status" -le 128 ]; then
+          # Not a timeout: the watchers ended, and so has the session.
+          break
+        fi
+      done
+    '';
+  };
+
   # Prints the connected displays as a displays.setups entry to paste into
-  # machines/machines.nix.
+  # machines/machines.nix. `--copy` puts it on the clipboard instead, for the
+  # displays card (quickshell/Displays.qml). A display parked as a copy
+  # (specs/020-duplicate-display) is written as an extended one, right of the
+  # others: a setup cannot describe a duplicate.
   displaySetup = pkgs.writeShellApplication {
     name = "mango-display-setup";
     runtimeInputs = [
       pkgs.jq
+      pkgs.wl-clipboard
       pkgs.wlr-randr
     ];
     text = ''
-      wlr-randr --json | jq -r --arg name "''${1:-new-setup}" --arg panel ${escapeShellArg panel} '
+      copy=""
+      if [ "''${1:-}" = --copy ]; then
+        copy=1
+        shift
+      fi
+      entry="$(wlr-randr --json | jq -r --arg name "''${1:-new-setup}" --arg panel ${escapeShellArg panel} --argjson gap ${toString parkGap} '
         def crit:
           if .name == $panel then .name
           else [.make, .model, .serial] | map(select(. != null and . != "")) | join(" ")
           end;
         def mode: first(.modes[] | select(.current)) | "\(.width)x\(.height)@\(.refresh)";
+        def width:
+          first(.modes[] | select(.current)) as $m
+          | (if (.transform // "normal") | test("90$|270$") then $m.height else $m.width end) / .scale | floor;
+        # A copy is parked a gap or more below its source.
+        (map(select(.enabled and .position.y < $gap) | .position.x + width) | max // 0) as $right |
+        reduce .[] as $o ({ out: [], x: $right };
+          if $o.enabled and $o.position.y >= $gap
+          then .x as $x | .out += [$o | .position = { x: $x, y: 0 }] | .x += ($o | width)
+          else .out += [$o] end) | .out |
         # Shift the layout so its top-left corner is 0,0: positions are unsigned.
         (map(select(.enabled) | .position) | [(map(.x) | min // 0), (map(.y) | min // 0)]) as [$minx, $miny] |
         "modules.mango.displays.setups.\($name).outputs = [",
@@ -177,7 +300,14 @@ rec {
                + (if (.transform // "normal") != "normal" then " transform = \(.transform | tojson);" else "" end)
              else "" end)
           + " }"),
-        "];"'
+        "];"')"
+      if [ -n "$copy" ]; then
+        # Typed: wl-copy would guess application/x-ruby from the leading
+        # "module" and offer no text type, so Emacs could not paste it.
+        printf '%s\n' "$entry" | wl-copy --type text/plain
+      else
+        printf '%s\n' "$entry"
+      fi
     '';
   };
 
@@ -278,7 +408,14 @@ rec {
       status=0
       choice="$(cliphist list | mango-pick --layout clipboard Clipboard)" || status=$?
       case "$status" in
-        0 | 10) cliphist decode <<<"$choice" | wl-copy ;;
+        0 | 10)
+          # Text is typed: wl-copy guesses from the content, and a guess such
+          # as application/x-ruby (text starting with "module") comes with no
+          # text type, which Emacs cannot paste. Images keep the guess.
+          type=(--type text/plain)
+          [[ $choice =~ ^[0-9]+$'\t'"[[ binary data " ]] && type=()
+          cliphist decode <<<"$choice" | wl-copy "''${type[@]}"
+          ;;
         *) exit 0 ;;
       esac
       if [[ $status == 0 ]]; then

@@ -128,6 +128,8 @@ let
     # Swaps the focused window with the master; new windows open in the stack.
     "bind=SUPER+SHIFT,Return,zoom,"
     "bind=SUPER,d,spawn,${getExe pkgs.quickshell} -c mango ipc call launcher toggle"
+    # The displays card (quickshell/DisplaysCard.qml).
+    "bind=SUPER,p,spawn,${getExe pkgs.quickshell} -c mango ipc call displays toggle"
     "bind=SUPER,q,killclient,"
     "bind=SUPER,Tab,focusstack,next"
     "bind=SUPER+SHIFT,Tab,focusstack,prev"

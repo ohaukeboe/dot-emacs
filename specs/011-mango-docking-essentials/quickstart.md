@@ -34,8 +34,9 @@ Log out and in to Mango (group `video` and udev rules need a new login).
 
 1. **Unknown display**: plug in any external display. Within 5 s it shows the
    wallpaper and a bar, right of the panel; panel stays on (SC-002).
-2. **Display tool**: open `wdisplays` from fuzzel, move the display left of
-   the panel, apply. Unplug, replug: it is back on the right (R6).
+2. **Display tool**: open "Displays" from the launcher (the displays card,
+   specs/018-display-layout-card, which replaced wdisplays), move the display
+   left of the panel, apply and keep. Unplug, replug: it is back on the right (R6).
 3. **Record a setup**: while docked, run `mango-display-setup`; paste its
    output into `machines/machines.nix` under `laptop`, rebuild, re-login.
    Unplug and replug: the recorded arrangement returns within 5 s, 10 times

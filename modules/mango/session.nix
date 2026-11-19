@@ -41,9 +41,18 @@ in
         reload
         pick
         powerMenu
-        pkgs.wdisplays
         pkgs.pwvucontrol
       ];
+
+      # The displays card (quickshell/DisplaysCard.qml) in the launcher; it
+      # took wdisplays' place (specs/018-display-layout-card).
+      xdg.desktopEntries.mango-displays = {
+        name = "Displays";
+        genericName = "Display layout";
+        exec = "${getExe pkgs.quickshell} -c mango ipc call displays toggle";
+        icon = "video-display";
+        categories = [ "Settings" ];
+      };
 
       services.wl-clip-persist = {
         enable = true;

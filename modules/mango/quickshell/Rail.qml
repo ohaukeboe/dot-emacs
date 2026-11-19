@@ -14,8 +14,9 @@ import Quickshell.Networking
 Singleton {
   id: shell
 
-  // "" (closed), "controls", "calendar", "usage", "launcher", "picker" or
-  // "pass" (Proton Pass quick access); one popup at a time.
+  // "" (closed), "controls", "calendar", "usage", "launcher", "picker",
+  // "pass" (Proton Pass quick access) or "displays" (the displays card,
+  // which is not a rail popup but shares the rule); one popup at a time.
   property string openTarget: ""
   property string openOutput: ""
   property string pendingTarget: ""
@@ -67,8 +68,10 @@ Singleton {
   }
 
   // Unknown output (null from mmsg): show on every screen rather than none.
+  // A display that copies another (specs/020-duplicate-display) is covered
+  // by its mirror, so what would open there opens on its source.
   function showsOn(name) {
-    return openOutput === "" || openOutput === name
+    return openOutput === "" || Displays.sourceOf(openOutput) === name
       || !Quickshell.screens.some(s => s.name === openOutput);
   }
 

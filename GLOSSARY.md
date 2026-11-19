@@ -479,6 +479,31 @@ The kanshi profile `modules/mango` always generates for the laptop panel
 alone, enabled at `0,0`, so undocking from a setup that turned the panel off
 brings it back. The setup name `undocked` is reserved for it.
 
+**Displays card**:
+The floating card, "Displays" in the launcher, that draws the connected
+displays to scale and lets the user drag them, change one display's mode,
+scale, rotation and on/off, and apply the result. An applied layout reverts
+after ten seconds unless kept. It stores nothing: a layout that should
+return on hotplug is copied from it as a display setup
+(`specs/018-display-layout-card`).
+_Avoid_: display settings, wdisplays (the program it replaced)
+
+**Copy** (display):
+A display that shows another display's picture instead of a part of the
+desktop. The displays card makes one and the shell draws the picture; the
+pointer, focus and windows never go to it
+(`specs/020-duplicate-display`).
+_Avoid_: mirror, clone
+
+**Source** (display):
+The display a copy shows. In every other way an ordinary display; it can
+have several copies, and a copy is never a source.
+
+**Stack** (displays):
+A source and its copies, drawn and dragged as one tile in the displays
+card.
+_Avoid_: stacked split (that is a window layout)
+
 **Orientation**:
 Whether a display is landscape (wider than tall) or portrait (taller than
 wide), as it is currently shown, rotation included. Read from the live

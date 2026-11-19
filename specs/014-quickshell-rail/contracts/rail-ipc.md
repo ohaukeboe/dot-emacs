@@ -13,6 +13,7 @@ path.
 | `controls` | `toggle()`     | nothing | Open, or close if open       |
 | `calendar` | `toggle()`     | nothing | Open, or close if open       |
 | `usage`    | `toggle()`     | nothing | Open, or close if open       |
+| `displays` | `toggle()`     | nothing | Open, or close if open       |
 | `shell`    | `openTarget()` | string  | `""` or the open target name |
 
 Opening one target closes the others. An IPC toggle opens on the monitor

@@ -59,6 +59,41 @@
         # s2idle and the hibernate delay cannot fire.
         modules.sleep-then-hibernate.sleepAction = "suspend";
       }
+      {
+        modules.mango.displays.setups.home-docked.outputs = [
+          {
+            criteria = "Samsung Electric Company Odyssey G80SD H1AK500000";
+            enable = true;
+            mode = "3840x2160@60.000000";
+            position = {
+              x = 1440;
+              y = 361;
+            };
+            scale = 1.250000;
+          }
+          {
+            criteria = "Ancor Communications Inc ASUS PB278 D1LMTF015081";
+            enable = true;
+            mode = "2560x1440@59.951000";
+            position = {
+              x = 0;
+              y = 0;
+            };
+            scale = 1.000000;
+            transform = "270";
+          }
+          {
+            criteria = "eDP-1";
+            enable = true;
+            mode = "1920x1200@120.002998";
+            position = {
+              x = 1440;
+              y = 2089;
+            };
+            scale = 1.000000;
+          }
+        ];
+      }
     ];
   };
 

@@ -10,8 +10,15 @@ with lib;
 
 let
   cfg = config.modules.mango;
+
+  # How far below its source the displays card parks a display that copies
+  # another, in layout pixels (specs/020-duplicate-display, research R3).
+  # The card, mango-copy-guard and mango-display-setup all read this value.
+  parkGap = 8192;
 in
 rec {
+  inherit parkGap;
+
   # Every session service is tied to this target, which mango starts itself
   # (and which the mango package ships, see systemd.packages in default.nix).
   # graphical-session.target would also start them under COSMIC.
@@ -41,7 +48,7 @@ rec {
   };
 }
 // import ./scripts.nix {
-  inherit lib pkgs;
+  inherit lib pkgs parkGap;
   mango = config.programs.mango.package;
   panel = cfg.displays.internal;
   systemd = config.systemd.package;
