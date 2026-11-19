@@ -105,26 +105,34 @@
         modules.mango.displays.setups.home-office.outputs = [
           {
             criteria = "Samsung Electric Company Odyssey G80SD H1AK500000";
+            enable = true;
             mode = "3840x2160@59.997002";
             position = {
               x = 1440;
               y = 339;
             };
-            scale = 1.199219;
+            scale = 1.250000;
           }
           {
             criteria = "Ancor Communications Inc ASUS PB278 D1LMTF015081";
+            enable = true;
             mode = "2560x1440@59.951000";
             position = {
               x = 0;
               y = 0;
             };
-            scale = 1.0;
+            scale = 1.000000;
             transform = "270";
           }
           {
             criteria = "eDP-1";
-            enable = false;
+            enable = true;
+            mode = "1920x1200@60.002998";
+            position = {
+              x = 1440;
+              y = 2067;
+            };
+            scale = 1.000000;
           }
         ];
       }
