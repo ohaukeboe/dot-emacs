@@ -1207,5 +1207,311 @@ sent before goes out as a follow-up.  Other pending items stay queued."
       (should (string-suffix-p "\n\nNot tied to a line.\n\nMy reply: Why?\n"
                                (caar magit-review-test--sent))))))
 
+;;; Threads
+
+(ert-deftest magit-review-test-thread-mode ()
+  "The `@' options select no thread, per item or per hand-off grouping.
+`--new-thread' alone selects nothing: it only matters with `--thread'."
+  (dolist (case '((() . nil)
+                  (("--new-thread") . nil)
+                  (("--thread") . item)
+                  (("--thread" "--new-thread") . hand-off)))
+    (cl-letf (((symbol-function 'transient-args)
+               (lambda (prefix)
+                 (should (eq prefix 'magit-review))
+                 (car case))))
+      (should (eq (magit-review--thread-mode) (cdr case))))))
+
+(ert-deftest magit-review-test-thread-options-remembered ()
+  "The `@' options keep their value on exit and quit, and only hand-offs
+read them: `@ c' and `@ l' never consult the thread mode."
+  (should (equal (oref (get 'magit-review 'transient--prefix) remember-value)
+                 '(exit quit)))
+  (magit-review-test--with-repo
+    (with-current-buffer (magit-review-test--status)
+      (cl-letf (((symbol-function 'magit-review--thread-mode)
+                 (lambda () (error "Thread mode consulted"))))
+        (magit-review-test--goto "^@@ -7,7 \\+7,7 @@")
+        (magit-review-comment "First")
+        (magit-review-list)
+        (should (equal (magit-review-test--texts) '("First")))))))
+
+;; Threads are chosen through `magit-review--thread-mode', stubbed here so
+;; the hand-off is tested apart from the transient's state.
+(defvar magit-review-test--threads nil
+  "Thread buffers made by the three-argument agent, newest first.")
+
+(defmacro magit-review-test--with-threads (mode &rest body)
+  "Run BODY with the thread mode MODE and a three-argument agent.
+Each hand-off pushes (TEXT SUBMIT THREAD) onto `magit-review-test--sent'
+and returns the buffer it went to: THREAD when that is a buffer, else a
+fresh one, pushed onto `magit-review-test--threads' and killed after
+BODY.  Finding links start empty."
+  (declare (indent 1))
+  `(let* ((magit-review-test--threads nil)
+          (magit-review--finding-threads (make-hash-table :test #'equal))
+          (magit-review-send-function
+           (lambda (text submit &optional thread)
+             (push (list text submit thread) magit-review-test--sent)
+             (if (bufferp thread)
+                 thread
+               (car (push (generate-new-buffer " *magit-review-test-thread*")
+                          magit-review-test--threads))))))
+     (unwind-protect
+         (cl-letf (((symbol-function 'magit-review--thread-mode)
+                    (lambda () ,mode)))
+           ,@body)
+       (mapc #'kill-buffer magit-review-test--threads))))
+
+(ert-deftest magit-review-test-thread-hand-offs ()
+  "With threads on, every hand-off goes to a new thread with the same text.
+`@ s' submits, `@ p' and `C-u @ d' only paste, and what was sent is
+marked sent."
+  (magit-review-test--with-repo
+    (with-current-buffer (magit-review-test--status)
+      (magit-review-test--goto "^@@ -7,7 \\+7,7 @@")
+      (magit-review-comment "First")
+      (magit-review-send)
+      (let ((plain (magit-review-test--prompt))
+            (comment (car magit-review-comments)))
+        ;; The same comment again, now to a thread.
+        (plist-put comment :sent nil)
+        (setq magit-review-test--sent nil)
+        (magit-review-test--with-threads 'hand-off
+          (magit-review-send)
+          (should (equal (mapcar #'cdr magit-review-test--sent) '((t new))))
+          (should (equal (magit-review-test--prompt) plain))
+          (should (equal (magit-review-test--texts t) '("First (sent)")))
+          (magit-review-comment "Second")
+          (magit-review-test--goto "^@@ -1,2 \\+1,2 @@" 'staged)
+          (magit-review-comment-send "Why staged?")
+          (should (equal (cdar magit-review-test--sent) '(t new)))
+          ;; Pasting shows the thread's buffer, so it comes last.
+          (save-current-buffer (magit-review-comment-send "Paste only" t))
+          (should (equal (cdar magit-review-test--sent) '(nil new)))
+          (magit-review-paste)
+          (should (equal (cdar magit-review-test--sent) '(nil new)))
+          (should (= 4 (length magit-review-test--sent)))
+          (should (null (magit-review-test--texts))))))))
+
+(ert-deftest magit-review-test-thread-reply-to-finding ()
+  "With threads on, `@ d' on a finding sends it and its reply to a new thread."
+  (magit-review-test--with-repo
+    (let ((walkthrough (magit-review-test--walkthrough base head)))
+      (magit-review-test--with-threads 'hand-off
+        (with-current-buffer walkthrough
+          (magit-review-test--goto-finding "General remark")
+          (magit-review-test--send-reply "Why?")
+          (magit-review-test--goto-finding "Line 20 is wrong")
+          (magit-review-test--send-reply "Paste only" t))
+        (should (equal (mapcar #'cdr magit-review-test--sent)
+                       '((nil new) (t new))))
+        (should (string-suffix-p "My reply: Why?\n"
+                                 (car (cadr magit-review-test--sent))))
+        (should (equal (mapcar #'car (magit-review-test--accepted-and-sent-findings))
+                       '("Line 20 is wrong" "General remark")))
+        (should (seq-every-p #'cadddr
+                             (magit-review-test--accepted-and-sent-findings)))))))
+
+(ert-deftest magit-review-test-thread-failure-sends-nothing ()
+  "When the thread cannot be reached, nothing is marked sent."
+  (magit-review-test--with-repo
+    (let ((walkthrough (magit-review-test--walkthrough base head)))
+      (with-current-buffer walkthrough
+        (magit-review-test--goto-finding "Line 20 is wrong")
+        (walkthrough-accept)
+        (magit-review-test--goto "^@@ -17,7 \\+17,7 @@")
+        (magit-review-comment "Hunk note")
+        (cl-letf (((symbol-function 'magit-review--thread-mode)
+                   (lambda () 'hand-off))
+                  (magit-review-send-function
+                   (lambda (_text _submit &optional _thread)
+                     (user-error "No conversation id"))))
+          (should-error (magit-review-send) :type 'user-error)
+          (should-error (magit-review-comment-send "Now") :type 'user-error)))
+      (should (equal (magit-review-test--texts)
+                     '("Hunk note" "Now" "The changed line breaks the count.")))
+      (should (equal (magit-review-test--accepted-and-sent-findings)
+                     '(("Line 20 is wrong" nil nil nil)))))))
+
+;;; Per-item threads
+
+(defun magit-review-test--comment (text)
+  "Return the fixture's review comment with TEXT."
+  (or (seq-find (lambda (c) (equal (plist-get c :text) text))
+                magit-review-comments)
+      (ert-fail (list "no comment" text))))
+
+(defun magit-review-test--item (text)
+  "Return the fixture's pending review item with TEXT."
+  (or (seq-find (lambda (item) (equal (plist-get item :text) text))
+                (magit-review-items magit-review-test--repo))
+      (ert-fail (list "no item" text))))
+
+(defun magit-review-test--threads-used ()
+  "Return the THREAD argument of each hand-off, oldest first."
+  (reverse (mapcar #'caddr magit-review-test--sent)))
+
+(ert-deftest magit-review-test-thread-per-item-comments ()
+  "Per item, never-sent comments share one new thread, which becomes theirs.
+A later direct comment on the same target goes back to that thread."
+  (magit-review-test--with-repo
+    (magit-review-test--with-threads 'item
+      (with-current-buffer (magit-review-test--status)
+        (magit-review-test--goto "^@@ -7,7 \\+7,7 @@")
+        (magit-review-comment "First")
+        (magit-review-test--goto "^@@ -1,2 \\+1,2 @@" 'staged)
+        (magit-review-comment "Second")
+        (magit-review-send)
+        (should (equal (magit-review-test--threads-used) '(new)))
+        (let ((thread (car magit-review-test--threads)))
+          (should (eq (plist-get (magit-review-test--comment "First") :thread)
+                      thread))
+          (should (eq (plist-get (magit-review-test--comment "Second") :thread)
+                      thread))
+          (magit-review-test--goto "^@@ -7,7 \\+7,7 @@")
+          (magit-review-comment-send "Again")
+          (should (equal (magit-review-test--threads-used) (list 'new thread)))
+          (should (= 1 (length magit-review-test--threads)))
+          (should (eq (plist-get (magit-review-test--comment "Again") :thread)
+                      thread))
+          ;; A direct comment on another target starts its own thread.
+          (magit-review-test--goto "^modified +a\\.el$" 'unstaged)
+          (magit-review-comment-send "Whole file")
+          (should (eq (caddr (car magit-review-test--sent)) 'new)))))))
+
+(ert-deftest magit-review-test-thread-direct-comment-without-threads ()
+  "With threads off, a direct comment does not take its target's thread.
+It goes to the main instance, so a later per-item hand-off of it forks
+a new thread instead of going to a thread it was never in."
+  (magit-review-test--with-repo
+    (magit-review-test--with-threads 'item
+      (with-current-buffer (magit-review-test--status)
+        (magit-review-test--goto "^@@ -7,7 \\+7,7 @@")
+        (magit-review-comment-send "First")
+        (cl-letf (((symbol-function 'magit-review--thread-mode) #'ignore))
+          (magit-review-comment-send "Main"))
+        (should (equal (magit-review-test--threads-used) '(new nil)))
+        (should-not (plist-get (magit-review-test--comment "Main") :thread))))))
+
+(ert-deftest magit-review-test-thread-per-item-partition ()
+  "Per item, a hand-off goes to each item's live thread, in first-seen order.
+The items without one go together to a new thread.  Each send holds
+only its own items."
+  (magit-review-test--with-repo
+    (magit-review-test--with-threads 'item
+      (let ((status (magit-review-test--status))
+            (walkthrough (magit-review-test--walkthrough base head))
+            t1 t2)
+        (with-current-buffer status
+          (magit-review-test--goto "^@@ -1,2 \\+1,2 @@" 'staged)
+          (magit-review-comment "B"))
+        (with-current-buffer walkthrough
+          (magit-review-test--goto-finding "Line 20 is wrong")
+          (walkthrough-accept)
+          (magit-review-send))
+        (setq t1 (car magit-review-test--threads))
+        (with-current-buffer status
+          (magit-review-test--goto "^@@ -7,7 \\+7,7 @@")
+          (magit-review-comment-send "A"))
+        (setq t2 (car magit-review-test--threads))
+        (should-not (eq t1 t2))
+        ;; Both comments and the finding come up again, with a new comment.
+        (plist-put (magit-review-test--comment "B") :sent nil)
+        (plist-put (magit-review-test--comment "A") :sent nil)
+        (with-current-buffer walkthrough
+          (magit-review-test--goto-finding "Line 20 is wrong")
+          (magit-review-test--reply "Still wrong."))
+        (with-current-buffer status
+          (magit-review-test--goto "^Untracked files")
+          (magit-review-comment "C"))
+        (setq magit-review-test--sent nil)
+        (let ((expected
+               (mapcar (lambda (texts)
+                         (magit-review-format
+                          (mapcar #'magit-review-test--item texts)))
+                       '(("B" "The changed line breaks the count.") ("A") ("C")))))
+          (with-current-buffer status
+            (magit-review-send))
+          (should (equal (magit-review-test--threads-used) (list t1 t2 'new)))
+          (should (equal (reverse (mapcar #'car magit-review-test--sent))
+                         expected)))
+        (should (eq (plist-get (magit-review-test--comment "C") :thread)
+                    (car magit-review-test--threads)))
+        (should (null (magit-review-test--texts)))))))
+
+(ert-deftest magit-review-test-thread-finding-follow-ups ()
+  "Per item, a finding's follow-up goes back to its thread while it is open.
+Once that thread is killed, the next hand-off forks a new one, which
+becomes the finding's thread."
+  (magit-review-test--with-repo
+    (magit-review-test--with-threads 'item
+      (let ((walkthrough (magit-review-test--walkthrough base head)))
+        (with-current-buffer walkthrough
+          (magit-review-test--goto-finding "Line 20 is wrong")
+          (walkthrough-accept)
+          (magit-review-send)
+          (magit-review-test--reply "Still wrong.")
+          (magit-review-send)
+          (magit-review-test--send-reply "And now?"))
+        (let ((thread (car magit-review-test--threads)))
+          (should (equal (magit-review-test--threads-used)
+                         (list 'new thread thread)))
+          (kill-buffer thread)
+          (with-current-buffer walkthrough
+            (magit-review-test--goto-finding "Line 20 is wrong")
+            (magit-review-test--send-reply "Anyone?")
+            (magit-review-test--send-reply "Still there?"))
+          (should-not (eq thread (car magit-review-test--threads)))
+          (should (equal (nthcdr 3 (magit-review-test--threads-used))
+                         (list 'new (car magit-review-test--threads)))))))))
+
+(ert-deftest magit-review-test-thread-new-each-time ()
+  "Per hand-off, a linked item still gets a new thread, which becomes its link."
+  (magit-review-test--with-repo
+    (let ((walkthrough (magit-review-test--walkthrough base head)))
+      (magit-review-test--with-threads 'hand-off
+        (with-current-buffer (magit-review-test--status)
+          (magit-review-test--goto "^@@ -7,7 \\+7,7 @@")
+          (magit-review-comment-send "A")
+          (magit-review-comment-send "A again")
+          (should (equal (magit-review-test--threads-used) '(new new)))
+          (should (eq (plist-get (magit-review-test--comment "A again") :thread)
+                      (car magit-review-test--threads))))
+        (with-current-buffer walkthrough
+          (magit-review-test--goto-finding "General remark")
+          (magit-review-test--send-reply "Why?")
+          (magit-review-test--send-reply "Why not?"))
+        (should (equal (magit-review-test--threads-used) '(new new new new)))
+        ;; Back to per item, the finding continues in its latest thread.
+        (cl-letf (((symbol-function 'magit-review--thread-mode)
+                   (lambda () 'item)))
+          (with-current-buffer walkthrough
+            (magit-review-test--goto-finding "General remark")
+            (magit-review-test--send-reply "Well?")))
+        (should (eq (caddr (car magit-review-test--sent))
+                    (car magit-review-test--threads)))))))
+
+(ert-deftest magit-review-test-thread-failure-partway ()
+  "When a later send fails, the groups sent before it stay sent."
+  (magit-review-test--with-repo
+    (magit-review-test--with-threads 'item
+      (with-current-buffer (magit-review-test--status)
+        (magit-review-test--goto "^@@ -7,7 \\+7,7 @@")
+        (magit-review-comment-send "A")
+        (plist-put (magit-review-test--comment "A") :sent nil)
+        (magit-review-test--goto "^Untracked files")
+        (magit-review-comment "C")
+        (let ((send magit-review-send-function))
+          (setq magit-review-send-function
+                (lambda (text submit &optional thread)
+                  (if (eq thread 'new)
+                      (user-error "Fork failed")
+                    (funcall send text submit thread))))
+          (should-error (magit-review-send) :type 'user-error))
+        (should (equal (magit-review-test--threads-used)
+                       (list 'new (car magit-review-test--threads))))
+        (should (equal (magit-review-test--texts t) '("A (sent)" "C")))))))
+
 (provide 'magit-review-test)
 ;;; magit-review-test.el ends here

@@ -1014,6 +1014,22 @@ finding it reads a reply instead and sends that finding alone with it
 (below).  Claude can also re-read the review through the
 =magit_review_comments= MCP tool.
 
+With =-t= (Separate thread) on in the =@= menu, =@ s=, =@ p= and =@ d=
+send to a thread instead: a new Claude instance named =review-N: <label>=,
+forked from the project's main conversation, so it knows the context while the
+main conversation gets nothing (see Claude Code below).  The prompt is
+the same as without it, and items are marked sent only once it has been
+delivered; if the fork fails, they stay pending.
+
+By default each comment and finding keeps the thread it was sent in.  A
+follow-up on a finding, and a new direct comment on the same target (the
+same hunk lines, file, commits, step or passage), go back to that thread
+while it is still open, and items without one go together to one new
+thread, so =@ s= may send to several threads at once.  A closed thread
+counts as none, and the links last only as long as Emacs runs.  With
+=-n= (New thread each time) on as well, every hand-off forks a new thread
+instead, even for a follow-up.
+
 Comments are drawn in status, diff, revision, log, refs and stash buffers,
 unsent ones highlighted and sent ones dimmed.  A hunk comment sits below
 the last commented line, and file headings show a comment count, so it
@@ -4390,32 +4406,181 @@ fail when nothing has started it yet.  Which instance receives the text is
 =claude-code-ide='s own choice: the only one, the only visible one, or the
 most recently used, and a prefix argument asks.  The paste goes through each
 terminal backend's paste primitive rather than being typed, so a newline in
-the text does not submit half of it.  Both lean on =claude-code-ide=
-internals (=claude-code-ide--resolve-session=,
+the text does not submit half of it.
+
+A review hand-off can instead go to a /thread/ (=@ -t=, see magit-review
+above): a new instance named =review-N: <label>=, the label being the
+start of the prompt's first =## = heading, whose CLI runs with =--resume
+<id> --fork-session=, so it starts with the main conversation's history
+but adds nothing to it.  The id is the main instance's =sessionId= in
+=~/.claude/sessions/<cli-pid>.json=, read at fork time.  A submitted
+prompt goes in as the CLI's initial prompt; a pasted one, or one too long
+for a command-line argument, waits until the new instance is connected
+and its terminal is quiet, at most =my/claude-review-thread-timeout=
+seconds, and is pasted there (then submitted if it was to be).  Threads are left out when
+picking the main instance, so one is never forked from or sent a plain
+hand-off.
+
+Both lean on =claude-code-ide= internals (=claude-code-ide--resolve-session=,
 =claude-code-ide-mcp--sessions-for-project=,
 =claude-code-ide--get-working-directory=,
-=claude-code-ide--terminal-send-return=); re-check them when bumping the
-flake input.
+=claude-code-ide--terminal-send-return=, =claude-code-ide--start-session=,
+=claude-code-ide--read-instance-name=, =claude-code-ide-mcp-session-cli-pid=,
+=claude-code-ide--session-display-name=, the dynamic variable
+=claude-code-ide--session=, =claude-code-ide-mcp-session-instance-name=,
+=claude-code-ide-mcp-session-client=) and on Claude Code's own =~/.claude/sessions/*.json=; re-check them when
+bumping the flake input.
 
 #+begin_src elisp
-  (defun my/claude-code-ide-paste (text submit)
+  (defcustom my/claude-review-thread-timeout 30
+    "Seconds to wait for a new review thread before pasting into it."
+    :type 'number
+    :group 'claude-code-ide)
+
+  (defvar my/claude-review-threads nil
+    "The claude-code-ide instances started as review threads.")
+
+  (defconst my/claude-review-argv-limit 100000
+    "Bytes above which a thread's prompt is pasted, not passed on the command line.
+  Kept well below the kernel's argument-size limits.")
+
+  ;; Let-bound below, so dynamic even before claude-code-ide is loaded.
+  (defvar claude-code-ide--session)
+  (defvar claude-code-ide-cli-extra-flags)
+
+  (defun my/claude-code-ide-paste (text submit &optional thread)
     "Paste TEXT into this project's Claude Code terminal; press RET if SUBMIT.
-  Return the terminal buffer."
+  THREAD nil means the main instance, `new' a new thread forked from it,
+  and a buffer a thread returned before.  Return the terminal buffer."
     (require 'claude-code-ide)
-    (let* ((session (or (claude-code-ide--resolve-session
-                         'auto "Send to Claude instance: ")
-                        (user-error "No Claude Code session for this project")))
-           (buffer (claude-code-ide-mcp-session-buffer session)))
-      (with-current-buffer buffer
-        (pcase claude-code-ide-terminal-backend
-          ('ghostel (ghostel-paste-string text))
-          ('vterm (vterm-send-string text t))
-          ('eat (eat-term-send-string-as-yank eat-terminal text))
-          (_ (claude-code-ide--terminal-send-string text)))
-        (when submit
-          (sit-for 0.1)
-          (claude-code-ide--terminal-send-return)))
-      buffer))
+    (cond
+     ((bufferp thread) (my/claude-code-ide--paste-into thread text submit))
+     ((eq thread 'new) (my/claude-review--fork text submit))
+     (t (my/claude-code-ide--paste-into
+         (claude-code-ide-mcp-session-buffer (my/claude-review--main-session))
+         text submit))))
+
+  (defun my/claude-code-ide--paste-into (buffer text submit)
+    "Paste TEXT into Claude terminal BUFFER; press RET if SUBMIT.  Return BUFFER."
+    (with-current-buffer buffer
+      (pcase claude-code-ide-terminal-backend
+        ('ghostel (ghostel-paste-string text))
+        ('vterm (vterm-send-string text t))
+        ('eat (eat-term-send-string-as-yank eat-terminal text))
+        (_ (claude-code-ide--terminal-send-string text)))
+      (when submit
+        (sit-for 0.1)
+        (claude-code-ide--terminal-send-return)))
+    buffer)
+
+  (defun my/claude-review--thread-p (session)
+    "Return non-nil when SESSION is a live review thread."
+    (and (memq session my/claude-review-threads)
+         (buffer-live-p (claude-code-ide-mcp-session-buffer session))))
+
+  (defun my/claude-review--main-session ()
+    "Return this project's main Claude instance, never a review thread.
+  It is picked among the other instances as `claude-code-ide--resolve-session'
+  picks, and a prefix argument asks."
+    (let* ((all (symbol-function 'claude-code-ide-mcp--sessions-for-project))
+           (session
+            (cl-letf (((symbol-function 'claude-code-ide-mcp--sessions-for-project)
+                       (lambda (dir)
+                         (cl-remove-if #'my/claude-review--thread-p
+                                       (funcall all dir)))))
+              (let ((claude-code-ide--session
+                     (unless (my/claude-review--thread-p claude-code-ide--session)
+                       claude-code-ide--session)))
+                (claude-code-ide--resolve-session
+                 'auto "Send to Claude instance: ")))))
+      (or session (user-error "No Claude Code session for this project"))))
+
+  (defun my/claude-review--conversation-id (session)
+    "Return the Claude conversation id SESSION's CLI is in.
+  It is read from Claude Code's ~/.claude/sessions/<pid>.json, an internal file."
+    (let* ((name (claude-code-ide--session-display-name session))
+           (pid (or (claude-code-ide-mcp-session-cli-pid session)
+                    (user-error "Claude instance %s has not connected yet" name)))
+           (file (expand-file-name (format "~/.claude/sessions/%s.json" pid))))
+      (or (and (file-readable-p file)
+               (gethash "sessionId"
+                        (with-temp-buffer
+                          (insert-file-contents file)
+                          (json-parse-buffer))))
+          (user-error "No conversation id for Claude instance %s in %s"
+                      name file))))
+
+  (defun my/claude-review--fork (text submit)
+    "Fork this project's main Claude instance into a new thread; deliver TEXT.
+  With SUBMIT, TEXT is the new CLI's initial prompt, unless it is longer
+  than `my/claude-review-argv-limit'.  Otherwise, and then, wait for the
+  thread to be ready and paste TEXT there, pressing RET if SUBMIT.  The
+  thread is named `review-N: LABEL', see `my/claude-review--label'.
+  Return its buffer."
+    (let* ((id (my/claude-review--conversation-id (my/claude-review--main-session)))
+           (dir (claude-code-ide--get-working-directory))
+           (names (mapcar #'claude-code-ide-mcp-session-instance-name
+                          (claude-code-ide-mcp--sessions-for-project dir)))
+           ;; The number alone keeps names unique, whatever the labels.
+           (n (cl-loop for n from 1
+                       for prefix = (format "review-%d" n)
+                       unless (cl-some (lambda (name)
+                                         (and name
+                                              (or (equal name prefix)
+                                                  (string-prefix-p (concat prefix ":")
+                                                                   name))))
+                                       names)
+                       return n))
+           (label (my/claude-review--label text))
+           (name (if label (format "review-%d: %s" n label) (format "review-%d" n)))
+           (named (lambda ()
+                    (cl-find name (claude-code-ide-mcp--sessions-for-project dir)
+                             :key #'claude-code-ide-mcp-session-instance-name
+                             :test #'equal)))
+           (positional (and submit
+                            (<= (string-bytes text) my/claude-review-argv-limit)))
+           (claude-code-ide-cli-extra-flags
+            (concat claude-code-ide-cli-extra-flags
+                    " --resume " (shell-quote-argument id) " --fork-session"
+                    (if positional (concat " " (shell-quote-argument text)) "")))
+           (current-prefix-arg nil))
+      (cl-letf (((symbol-function 'claude-code-ide--read-instance-name)
+                 (lambda (&rest _) name)))
+        (claude-code-ide--start-session))
+      (let* ((session (or (funcall named)
+                          (error "Review thread %s did not start" name)))
+             (buffer (claude-code-ide-mcp-session-buffer session)))
+        (setq my/claude-review-threads
+              (cons session (cl-remove-if-not #'my/claude-review--thread-p
+                                              my/claude-review-threads)))
+        (unless positional
+          (my/claude-review--wait-ready session)
+          (my/claude-code-ide--paste-into buffer text submit))
+        buffer)))
+
+  (defun my/claude-review--label (text)
+    "Return a short label for a thread from TEXT's first `## ' heading, or nil.
+  It is cut to 30 characters, with an ellipsis when cut."
+    (when (string-match "^## +\\(.+\\)$" text)
+      (truncate-string-to-width (string-trim (match-string 1 text)) 30 nil nil "…")))
+
+  (defun my/claude-review--wait-ready (session)
+    "Wait until SESSION's CLI is connected and its terminal quiet for a second.
+  Signal `user-error' after `my/claude-review-thread-timeout' seconds."
+    (let ((buffer (claude-code-ide-mcp-session-buffer session))
+          (deadline (+ (float-time) my/claude-review-thread-timeout))
+          (tick nil)
+          (quiet-since nil))
+      (while (not (and (claude-code-ide-mcp-session-client session)
+                       quiet-since
+                       (>= (- (float-time) quiet-since) 1.0)))
+        (unless (and (buffer-live-p buffer) (< (float-time) deadline))
+          (user-error "Review thread %s was not ready in time"
+                      (claude-code-ide--session-display-name session)))
+        (let ((now (buffer-modified-tick buffer)))
+          (unless (eql now tick)
+            (setq tick now quiet-since (float-time))))
+        (accept-process-output nil 0.2))))
 
   (defun my/claude-code-ide-session-p ()
     "Return non-nil when this project has a Claude Code session."

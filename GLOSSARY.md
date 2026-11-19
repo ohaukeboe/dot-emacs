@@ -59,7 +59,15 @@ _Avoid_: section (a Magit section is something else)
 **Review hand-off**:
 Sending the repository's pending review comments, and the accepted findings of
 its walkthroughs, to its Claude instance as one prompt, which marks them sent.
-Dismissed findings are not mentioned.
+Dismissed findings are not mentioned. It may go to a thread instead of the
+main conversation.
+
+**Thread**:
+A Claude instance forked from the project's main conversation to receive
+review hand-offs, named `review-N: <label>` after what it is about. It
+starts with the main conversation's history but adds nothing to it, and it
+is never itself a fork source.
+_Avoid_: branch (git), session
 
 **Direct comment**:
 A review comment handed off alone, the moment it is written, leaving other

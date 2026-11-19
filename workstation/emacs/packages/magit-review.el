@@ -44,6 +44,14 @@
 ;;   (add-hook 'magit-refresh-buffer-hook #'magit-review-decorate)
 ;;   (keymap-set magit-mode-map "@" #'magit-review)
 ;;
+;; The menu's options `-t' (Separate thread) and `-n' (New thread each
+;; time) send hand-offs to a separate agent thread instead of the main
+;; one, passed as the third argument of `magit-review-send-function'.
+;; They are read by `magit-review-send', `magit-review-paste' and
+;; `magit-review-comment-send' only, keep their value for the rest of the
+;; session once the menu is left, and `C-x C-s' in the menu saves them as
+;; the default.
+;;
 ;; walkthrough.el is used when it is available, through a soft `require':
 ;; for the label of a committed range, patch excerpts, comments on steps,
 ;; replies to findings and the accepted findings handed off with the
@@ -94,12 +102,18 @@
 
 (defcustom magit-review-send-function nil
   "Function that hands a review prompt to the repository's coding agent.
-Called as (TEXT SUBMIT) from the Magit buffer the hand-off was made in.
-Deliver TEXT to the agent's input as one paste, so a newline in it does
-not submit half of it, and press return only when SUBMIT is non-nil.
-`current-prefix-arg' is nil during the call, since the hand-off's prefix
-argument means \"do not submit\".  Signal `user-error' when there is no
-agent.  Return the agent's buffer.  Nil means no agent is configured."
+Called as (TEXT SUBMIT &optional THREAD) from the Magit buffer the
+hand-off was made in.  Deliver TEXT to the agent's input as one paste,
+so a newline in it does not submit half of it, and press return only
+when SUBMIT is non-nil.  THREAD is passed only when the `--thread'
+option of `magit-review' is on: `new' means deliver to a new thread
+forked from the agent's main conversation, and a live buffer this
+function returned before means deliver to that thread.  Without THREAD,
+deliver to the main conversation.  `current-prefix-arg' is nil during
+the call, since the hand-off's prefix argument means \"do not submit\".
+Signal an error when TEXT could not be delivered, such as `user-error'
+when there is no agent.  Return the buffer that received TEXT.  Nil
+means no agent is configured."
   :type '(choice (const :tag "No agent" nil) function))
 
 (defface magit-review-comment
@@ -401,6 +415,10 @@ and hands off that finding alone with its reply."
   (if (null text)
       (magit-review--send-finding no-submit)
     (let ((comment (magit-review--add text)))
+      ;; Per item, it goes back to the thread of its target.
+      (when-let* (((eq (magit-review--thread-mode) 'item))
+                  (thread (magit-review--target-thread comment)))
+        (magit-review--set-thread comment thread))
       (magit-review--hand-off
        (list comment)
        (if (magit-review--step-comment-p comment)
@@ -582,25 +600,102 @@ show the agent's buffer so the prompt can be edited first."
          (user-error "No pending review comments or accepted findings"))
      nil no-submit)))
 
+(defvar magit-review--finding-threads (make-hash-table :test #'equal)
+  "The thread each walkthrough finding was last handed off in.
+Keyed by (WALKTHROUGH-FILE . FINDING-ID), the :walkthrough and :id of
+its hand-off item.  A comment keeps its thread as :thread instead.")
+
+(defun magit-review--comment-target (comment)
+  "Return what COMMENT is on: its plist without :text, :sent and :thread."
+  (cl-loop for (key value) on comment by #'cddr
+           unless (memq key '(:text :sent :thread))
+           append (list key value)))
+
+(defun magit-review--finding-key (item)
+  "Return the key of finding ITEM in `magit-review--finding-threads'."
+  (cons (plist-get item :walkthrough) (plist-get item :id)))
+
+(defun magit-review--thread (item)
+  "Return the thread remembered for hand-off ITEM, live or not.
+A finding's is in `magit-review--finding-threads', a comment's is its
+:thread."
+  (if (magit-review--finding-p item)
+      (gethash (magit-review--finding-key item) magit-review--finding-threads)
+    (plist-get item :thread)))
+
+(defun magit-review--set-thread (item thread)
+  "Remember THREAD as the thread of hand-off ITEM."
+  (if (magit-review--finding-p item)
+      (puthash (magit-review--finding-key item) thread
+               magit-review--finding-threads)
+    (plist-put item :thread thread)))
+
+(defun magit-review--live-thread (item)
+  "Return the thread hand-off ITEM was last sent in, if it is still live."
+  (let ((thread (magit-review--thread item)))
+    (and (buffer-live-p thread) thread)))
+
+(defun magit-review--target-thread (comment)
+  "Return the live thread of the latest other comment on COMMENT's target.
+Relies on `magit-review-comments' being newest first, so the first match
+is the latest."
+  (let ((target (magit-review--comment-target comment)))
+    (seq-some (lambda (c)
+                (and (not (eq c comment))
+                     (equal (magit-review--comment-target c) target)
+                     (magit-review--live-thread c)))
+              magit-review-comments)))
+
+(defun magit-review--partition (items)
+  "Split hand-off ITEMS into (THREAD . ITEMS) groups, one send each.
+THREAD is the argument for `magit-review-send-function': nil without
+threads; `new' for all of ITEMS with a new thread per hand-off; per
+item, each live thread among ITEMS with its items in first-seen order,
+then `new' with the items that have none."
+  (pcase (magit-review--thread-mode)
+    ('nil (list (cons nil items)))
+    ('hand-off (list (cons 'new items)))
+    (_ (let ((groups (seq-group-by (lambda (item)
+                                     (or (magit-review--live-thread item) 'new))
+                                   items)))
+         ;; `seq-group-by' keeps each group's items in order, but not
+         ;; the groups.
+         (append (seq-remove (lambda (group) (eq (car group) 'new))
+                             (seq-sort-by (lambda (group)
+                                            (seq-position items (cadr group) #'eq))
+                                          #'< groups))
+                 (seq-filter (lambda (group) (eq (car group) 'new)) groups))))))
+
 (defun magit-review--hand-off (items intro no-submit)
   "Hand ITEMS, review comments and findings, to the agent.
-Open the prompt with INTRO and mark them sent.  If NO-SUBMIT, only paste
-them and show the agent's buffer."
+Open the prompt with INTRO and mark them sent once it is delivered.  With
+the `--thread' option on, deliver them to threads: with `--new-thread'
+all to a new one, else each to the thread it was last sent in while that
+is live, and those without one together to a new thread.  Each send
+holds only its own items and marks them sent when it returns.  If
+NO-SUBMIT, only paste them and show the agent's buffer."
   (unless magit-review-send-function
     (user-error "No agent is configured; set `magit-review-send-function'"))
-  (let* ((repo (magit-toplevel))
-         ;; The prefix argument means "don't submit" here, not "ask
-         ;; which instance".
-         (buffer (let ((current-prefix-arg nil))
-                   (funcall magit-review-send-function
-                            (magit-review-format items intro)
-                            (not no-submit)))))
-    ;; Comments live in memory; findings in their walkthrough's file.
-    (dolist (comment (seq-remove #'magit-review--finding-p items))
-      (plist-put comment :sent t))
-    (when-let* ((findings (seq-filter #'magit-review--finding-p items)))
-      (walkthrough-mark-sent findings))
-    (magit-review--redecorate repo)
+  (let ((repo (magit-toplevel))
+        buffer)
+    (unwind-protect
+        (pcase-dolist (`(,thread . ,group) (magit-review--partition items))
+          (let ((args (list (magit-review-format group intro) (not no-submit))))
+            ;; The prefix argument means "don't submit" here, not "ask
+            ;; which instance".
+            (setq buffer (let ((current-prefix-arg nil))
+                           ;; Without threads, exactly the two arguments of old.
+                           (apply magit-review-send-function
+                                  (if thread (append args (list thread)) args))))
+            ;; Comments live in memory; findings in their walkthrough's file.
+            (dolist (comment (seq-remove #'magit-review--finding-p group))
+              (plist-put comment :sent t))
+            (when-let* ((findings (seq-filter #'magit-review--finding-p group)))
+              (walkthrough-mark-sent findings))
+            (when thread
+              (dolist (item group)
+                (magit-review--set-thread item buffer)))))
+      (magit-review--redecorate repo))
     (when no-submit
       (if-let* ((window (get-buffer-window buffer t)))
           (select-window window)
@@ -835,8 +930,25 @@ its target's keys.  Meant for `walkthrough-comments-function'."
 
 ;;; The menu
 
+(defun magit-review--thread-mode ()
+  "Return how hand-offs are grouped into threads by the `@' options.
+Nil means no threads, `item' a thread per item and `hand-off' a new
+thread per hand-off."
+  (let ((args (transient-args 'magit-review)))
+    (cond ((not (member "--thread" args)) nil)
+          ((member "--new-thread" args) 'hand-off)
+          (t 'item))))
+
 (transient-define-prefix magit-review ()
-  "Comment on what Magit shows and hand the review to the agent."
+  "Comment on what Magit shows and hand the review to the agent.
+The options `-t' (Separate thread) and `-n' (New thread each time,
+only with `-t') send the hand-offs of `s', `p' and `d' to a separate
+agent thread.  They keep their value for the session once the menu is
+left; `C-x C-s' in the menu saves them as the default."
+  :remember-value '(exit quit)
+  ["Options"
+   ("-t" "Separate thread" "--thread")
+   ("-n" "New thread each time" "--new-thread")]
   [["Comment"
     ("c" "Thing at point" magit-review-comment)
     ("d" "Comment or reply, send now" magit-review-comment-send)]
