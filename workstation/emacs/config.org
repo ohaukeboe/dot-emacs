@@ -345,6 +345,12 @@ I keep most of my things in Nextcloud, and this config relies a lot on me having
                                              :foreground unspecified
                                              :background unspecified))))
     (hl-line ((t (:background "#202020"))))
+    ;; doom-themes-base refines words with :inverse-video, which turns each
+    ;; changed word's foreground (often a syntax colour, since
+    ;; magit-diff-fontify-hunk is on) into a yellow/purple/blue block.  Use a
+    ;; stronger red/green background instead and keep the syntax colours.
+    (diff-refine-added ((t (:inverse-video nil :background "#4a5a2e"))))
+    (diff-refine-removed ((t (:inverse-video nil :background "#7a3535"))))
     :config
     (load-theme 'doom-tomorrow-night t)
 
@@ -845,9 +851,10 @@ Consult is a package that provides a set of commands for searching and navigatin
     :custom
     (magit-display-buffer-function
      #'magit-display-buffer-same-window-except-diff-v1)
-    (magit-diff-refine-hunk t)
     (magit-diff-paint-whitespace t)
-    (magit-diff-highlight-indendation t)
+    ;; An alist of (REPO-REGEXP . INDENT), not a boolean: flag tab indentation
+    ;; in every repository.
+    (magit-diff-highlight-indentation '(("" . tabs)))
     (magit-diff-highlight-trailing t)
     (magit-diff-refine-hunk 'all)
     :preface
