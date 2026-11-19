@@ -2032,11 +2032,19 @@ When in a C# project, it is important to set the variable =lsp-csharp-solution-f
         :activation-fn (lsp-activate-on "kotlin")
         :major-modes '(kotlin-mode kotlin-ts-mode)
         :priority -1
-        ;; IntelliJ-specific progress notifications lsp-mode doesn't know
-        :notification-handlers (ht ("intellij/ready-for-test" #'ignore)
-                                   ("intellij/importLog" #'ignore)
-                                   ("intellij/workspaceImportStatus" #'ignore))
         :server-id 'kotlin-lsp))
+
+      ;; kotlin-lsp sends IntelliJ-specific notifications (intellij/importLog,
+      ;; intellij/workspaceImportState, ...) that lsp-mode warns about as
+      ;; unknown.  Handlers match exact method names, so drop the whole
+      ;; intellij/ namespace instead of chasing each new one.
+      (defun my/lsp-ignore-intellij-notifications (fn workspace notification)
+        "Call FN unless NOTIFICATION is an IntelliJ-specific one."
+        (let ((method (lsp-get notification :method)))
+          (unless (and (stringp method) (string-prefix-p "intellij/" method))
+            (funcall fn workspace notification))))
+      (advice-add 'lsp--on-notification :around
+                  #'my/lsp-ignore-intellij-notifications)
 
       (lsp-register-custom-settings
        '(("jetbrains.kotlin.hints.settings.types.property" t)
