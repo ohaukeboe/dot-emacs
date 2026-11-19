@@ -87,13 +87,13 @@
   };
   pgmacs = {
     pname = "pgmacs";
-    version = "v0.42";
+    version = "v0.31";
     src = fetchFromGitHub {
       owner = "emarsden";
       repo = "pgmacs";
-      rev = "v0.42";
+      rev = "v0.31";
       fetchSubmodules = false;
-      sha256 = "sha256-AjhtU+YfEeYL/soJTB5o2vHYXyewwtsOoS6oCYnxyF0=";
+      sha256 = "sha256-Z7MJ6Gx7aHy92GwVDlaLh0aPC5paf4tgcLWcSC1yYk0=";
     };
   };
 }

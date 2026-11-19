@@ -54,6 +54,9 @@ src.cmd = "git ls-remote --tags --refs https://github.com/oslokommune/ok | grep 
 
 # Emacs packages (built via epkgs.trivialBuild in workstation/home.nix).
 # pgmacs publishes no GitHub releases, only tags -> github_tag.
+# Upstream tag v0.42 is a stray old tag (its pgmacs.el says Version 0.14) that
+# outsorts the real releases (v0.31, ...), so exclude it.
 [pgmacs]
 fetch.github = "emarsden/pgmacs"
 src.github_tag = "emarsden/pgmacs"
+src.exclude_regex = "^v0\\.42$"
