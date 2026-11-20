@@ -25,7 +25,32 @@
           192000
         ];
       }
-      { modules.cosmic-de.enable = true; }
+      { modules.mango.enable = true; }
+      {
+        modules.mango.displays.setups.desktop.outputs = [
+          {
+            criteria = "Ancor Communications Inc ASUS PB278 D1LMTF015081";
+            enable = true;
+            mode = "2560x1440@59.951000";
+            position = {
+              x = 0;
+              y = 0;
+            };
+            scale = 1.000000;
+            transform = "270";
+          }
+          {
+            criteria = "Samsung Electric Company Odyssey G80SD H1AK500000";
+            enable = true;
+            mode = "3840x2160@239.914001";
+            position = {
+              x = 1440;
+              y = 420;
+            };
+            scale = 1.250000;
+          }
+        ];
+      }
       { modules.gaming.enable = true; }
       # The GPU's overdrive power limit with a -50 mV undervolt, decided by
       # game-bench (docs/gaming-benchmarks.md).
