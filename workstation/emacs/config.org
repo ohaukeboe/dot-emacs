@@ -4797,14 +4797,23 @@ bumping the flake input.
 
 Claude Code reads files on its own, but not buffers without one --
 =*compilation*=, REPLs, terminals, =*Messages*=.  =C-c o s= shares the
-current buffer with it, or only the region when one is active; sharing
-the buffer again replaces what was shared.  =C-u C-c o s= hides the current
-buffer again, =C-c o S= hides every shared buffer.  The agent reads them
+current buffer with it, or only the lines the region touches when one is
+active -- whole lines, so what the agent reads matches what the markers
+show; sharing the buffer again replaces what was shared.  =C-u C-c o s= hides the current
+buffer again, =C-c o S= hides every shared buffer.  A shared buffer's mode
+line says =Claude=, with the line range when only a region is shared; it
+sits in =mode-line-misc-info=, which doom-modeline's =misc-info= segment
+shows.  The agent reads them
 through two MCP tools, =list_shared_buffers= and =read_buffer=, which
 refuse any buffer not shared, since buffers can hold secrets (decrypted
 sops files, mail, =pass= output).  It reads when it calls the tool, so a
 buffer that keeps changing is read as it is then.  A shared region is held
-by markers, so it moves and grows with edits around and inside it.
+by an overlay, so it moves and grows with edits around and inside it.  In a
+graphical frame the overlay draws a thin bar in the left fringe beside
+each of its lines, in the face =my/claude-shared-fringe= (the =warning=
+colour of the mode-line indicator), and leaves the background alone: the
+theme's greys for the background, =hl-line= and =org-block= are too close
+together for a shade to sit between them.
 
 The commands live outside the =use-package= block, so the keys work before
 =claude-code-ide= loads; the tools are registered when it does.
@@ -4812,14 +4821,40 @@ The commands live outside the =use-package= block, so the keys work before
 #+begin_src elisp
   (defvar my/claude-shared-buffers nil
     "What Claude may read through the read_buffer MCP tool.
-  Each entry is (BUFFER) for the whole buffer, or (BUFFER START END) with
-  START and END markers bounding the shared region of it.")
+  Each entry is (BUFFER) for the whole buffer, or (BUFFER OVERLAY) with
+  OVERLAY covering, and highlighting, the shared region of it.")
+
+  (defface my/claude-shared-fringe
+    '((t :inherit warning))
+    "Face of the fringe bar beside a region shared with Claude Code.
+  Only its foreground is used."
+    :group 'claude-code-ide)
+
+  ;; Three pixels wide at the fringe's left edge, repeated down the line.
+  (when (fboundp 'define-fringe-bitmap)
+    (define-fringe-bitmap 'my/claude-shared-bar [#b11100000] nil nil '(top t)))
+
+  (defun my/claude--share-region-bounds ()
+    "Return (START . END) of the whole lines the active region touches.
+  END is the start of the line after the last one, or the buffer's end;
+  a region ending at a line start leaves that line out."
+    (let ((start (save-excursion (goto-char (region-beginning))
+                                 (line-beginning-position)))
+          (end (region-end)))
+      (save-excursion
+        (goto-char end)
+        (unless (and (bolp) (> end start))
+          (forward-line 1))
+        (cons start (point)))))
 
   (defun my/claude--drop-share (entry)
-    "Remove ENTRY from `my/claude-shared-buffers' and free its markers."
-    (dolist (marker (cdr entry))
-      (set-marker marker nil))
-    (setq my/claude-shared-buffers (delq entry my/claude-shared-buffers)))
+    "Remove ENTRY from `my/claude-shared-buffers' and delete its overlay."
+    (when (cadr entry)
+      (delete-overlay (cadr entry)))
+    (setq my/claude-shared-buffers (delq entry my/claude-shared-buffers))
+    (when (buffer-live-p (car entry))
+      (with-current-buffer (car entry)
+        (force-mode-line-update))))
 
   (defun my/claude--live-shares ()
     "Drop shares of killed buffers; return the rest."
@@ -4829,19 +4864,23 @@ The commands live outside the =use-package= block, so the keys work before
     my/claude-shared-buffers)
 
   (defun my/claude--share-lines (entry)
-    "Return \"lines A-B\" for a region ENTRY, or \"whole buffer\"."
-    (pcase-let ((`(,buffer ,start ,end) entry))
+    "Return \"lines A-B\" (or \"line A\") for a region ENTRY, else \"whole buffer\"."
+    (pcase-let* ((`(,buffer ,overlay) entry)
+                 (start (and overlay (overlay-start overlay)))
+                 (end (and overlay (overlay-end overlay))))
       (if start
           (with-current-buffer buffer
-            (format "lines %d-%d"
-                    (line-number-at-pos start t)
-                    ;; A region ending at a line start ends on the line before.
-                    (line-number-at-pos
-                     (if (and (> end start)
-                              (save-excursion (goto-char end) (bolp)))
-                         (1- end)
-                       end)
-                     t)))
+            (let ((first (line-number-at-pos start t))
+                  ;; A region ending at a line start ends on the line before.
+                  (last (line-number-at-pos
+                         (if (and (> end start)
+                                  (save-excursion (goto-char end) (bolp)))
+                             (1- end)
+                           end)
+                         t)))
+              (if (= first last)
+                  (format "line %d" first)
+                (format "lines %d-%d" first last))))
         "whole buffer")))
 
   (defun my/claude-share-buffer (&optional unshare)
@@ -4858,10 +4897,25 @@ The commands live outside the =use-package= block, so the keys work before
                    (buffer-name))
         (let ((entry (cons (current-buffer)
                            (when (use-region-p)
-                             (list (copy-marker (region-beginning))
-                                   (copy-marker (region-end) t))))))
+                             (pcase-let* ((`(,start . ,end)
+                                           (my/claude--share-region-bounds))
+                                          ;; Text typed at either edge joins the region.
+                                          (overlay (make-overlay start end nil nil t)))
+                               ;; On a tty the fringe spec would show as a
+                               ;; stray space, so the mode line has to do.
+                               (when (display-graphic-p)
+                                 (let ((bar (propertize
+                                             " " 'display
+                                             '(left-fringe my/claude-shared-bar
+                                                           my/claude-shared-fringe))))
+                                   ;; Every line the overlay covers, wrapped
+                                   ;; continuation lines included.
+                                   (overlay-put overlay 'line-prefix bar)
+                                   (overlay-put overlay 'wrap-prefix bar)))
+                               (list overlay))))))
           (push entry my/claude-shared-buffers)
           (deactivate-mark)
+          (force-mode-line-update)
           (message "%s shared with Claude (%s)"
                    (buffer-name) (my/claude--share-lines entry))))))
 
@@ -4871,6 +4925,17 @@ The commands live outside the =use-package= block, so the keys work before
     (let ((n (length my/claude-shared-buffers)))
       (mapc #'my/claude--drop-share (copy-sequence my/claude-shared-buffers))
       (message "Hid %d buffer%s from Claude" n (if (= n 1) "" "s"))))
+
+  (defun my/claude--share-indicator ()
+    "Return the mode-line text saying the current buffer is shared, or nil."
+    (when-let* ((entry (assq (current-buffer) my/claude-shared-buffers)))
+      (propertize (if (cdr entry)
+                      (format "[Claude %s] " (my/claude--share-lines entry))
+                    "[Claude] ")
+                  'face 'warning
+                  'help-echo "Shared with Claude Code; C-u C-c o s hides it")))
+
+  (add-to-list 'mode-line-misc-info '(:eval (my/claude--share-indicator)))
 
   (keymap-global-set "C-c o s" #'my/claude-share-buffer)
   (keymap-global-set "C-c o S" #'my/claude-unshare-all)
@@ -4886,13 +4951,13 @@ The commands live outside the =use-package= block, so the keys work before
      (lambda ()
        (if-let* ((shares (my/claude--live-shares)))
            (mapconcat
-            (pcase-lambda (`(,buffer . ,region))
+            (pcase-lambda ((and entry `(,buffer ,overlay)))
               (with-current-buffer buffer
                 (format "%s\t%s\t%s\t%d chars"
                         (buffer-name) major-mode
-                        (my/claude--share-lines (cons buffer region))
-                        (if region
-                            (- (cadr region) (car region))
+                        (my/claude--share-lines entry)
+                        (if overlay
+                            (- (overlay-end overlay) (overlay-start overlay))
                           (buffer-size)))))
             shares "\n")
          "No buffers are shared.")))
@@ -4909,12 +4974,14 @@ The commands live outside the =use-package= block, so the keys work before
                              :test #'equal)))
          (if (null entry)
              (format "Buffer %s is not shared with Claude." name)
-           (pcase-let ((`(,buffer ,start ,end) entry))
+           (pcase-let ((`(,buffer ,overlay) entry))
              (with-current-buffer buffer
                (save-restriction
                  (widen)
-                 (buffer-substring-no-properties
-                  (or start (point-min)) (or end (point-max)))))))))))
+                 (if overlay
+                     (buffer-substring-no-properties (overlay-start overlay)
+                                                     (overlay-end overlay))
+                   (buffer-string))))))))))
 #+end_src
 
 ** MCP Server
