@@ -3647,7 +3647,21 @@ subprocess, hence =after-init= rather than a mode hook.  Do not enable
 #+end_src
 ** Postgresql
 
+PGmacs' worker thread loops forever when it can't reach the database, logging
+`PGmacs worker thread error' to `*Messages*'. Its loop only catches `error', so a
+`quit' signal ends it.
+
 #+begin_src elisp
+  (defun my/pgmacs-kill-worker-threads ()
+    "Stop every PGmacs worker thread by signalling `quit' to it."
+    (interactive)
+    (let ((count 0))
+      (dolist (th (all-threads))
+        (when (equal (thread-name th) "PGmacs worker thread")
+          (thread-signal th 'quit nil)
+          (setq count (1+ count))))
+      (message "Signalled %d PGmacs worker thread(s)" count)))
+
   (use-package pg
     :ensure t
     :after pgmacs)
