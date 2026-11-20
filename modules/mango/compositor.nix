@@ -117,6 +117,11 @@ let
     "window_rule_once=tags:2,app_id:^emacs$"
     "exec_once=${getExe hm.programs.zen-browser.finalPackage}"
     "exec_once=${getExe emacs}"
+  ]
+  # Mango runs no XDG autostart, so modules/gaming's autostart/steam.desktop
+  # only works under COSMIC.
+  ++ optional config.programs.steam.enable "exec_once=${getExe config.programs.steam.package} -silent"
+  ++ [
     "switchbind=fold,spawn,${getExe lidSync}"
     "switchbind=unfold,spawn,${getExe lidSync} open"
 
