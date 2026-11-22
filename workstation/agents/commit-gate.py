@@ -21,6 +21,8 @@ AGENT_COMMIT_GATE_CONFIG. In order:
    Emacs writes (by repository, then "*"), then the Nix default.
    - ask: the ordinary permission prompt.
    - deny: refused.
+   - free: allowed, given the plainest form an allow can cover (see
+     plain_commit); any other form asks.
    - emacs: Emacs opens a Magit commit buffer with the agent's message and
      the staged diff, and makes the commit itself when the user finishes it.
      The agent's own command is then denied with the outcome as the reason,
@@ -103,7 +105,7 @@ REDIRECTING_ENV = {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR
 # Commit options the Emacs review reproduces: the message, and noise.
 REVIEW_QUIET = {"-q", "--quiet"}
 
-MODES = ("ask", "emacs", "deny")
+MODES = ("ask", "emacs", "deny", "free")
 
 STAGING_REASON = (
     "Denied: this command {found}. The user reviews the staged changes "
@@ -377,7 +379,8 @@ def shell_inert(command):
     literal except for `$` and backticks, and unquoted text may not contain
     any SHELL_SPECIAL character. A commit message with a `Co-Authored-By:
     Name <email>` trailer and newlines inside quotes therefore passes, while
-    `"$(cmd)"` or an unquoted redirect does not.
+    `"$(cmd)"` or an unquoted redirect does not. The only unquoted backslash
+    allowed is the `'\\''` idiom for an apostrophe in a single-quoted message.
     """
     quote = None
     i = 0
@@ -395,6 +398,11 @@ def shell_inert(command):
                 quote = None
         elif c in "'\"":
             quote = c
+        elif command[i - 1 : i + 3] == "'\\''":
+            # The '\'' idiom for an apostrophe inside a single-quoted
+            # message: close, escaped quote, reopen. Skip the escaped quote;
+            # the next one reopens the quoting.
+            i += 1
         elif c == "&":
             if command[i : i + 2] != "&&":
                 return False
@@ -675,6 +683,13 @@ def decide(payload, config):
 
     mode, source, notes = resolve_mode(config, directory)
     note = f" ({'; '.join(notes)})" if notes else ""
+    if mode == "free":
+        if directory and plain_commit(command, commit, directory):
+            return "allow", f"Agent commits are free (mode from {source}){note}."
+        return "ask", (
+            "Agent commits are free, but only a plain `git commit -m` is "
+            f"allowed without asking (mode from {source}){note}."
+        )
     if mode == "deny":
         return "deny", f"Agent commits are disabled (mode from {source}){note}."
     if mode == "ask":

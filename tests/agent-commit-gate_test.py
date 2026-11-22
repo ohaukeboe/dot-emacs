@@ -245,6 +245,19 @@ class Modes(Fixture):
         self.assertEqual(decision, "deny")
         self.assertIn("env AGENT_COMMIT_GATE", reason)
 
+    def test_free_mode(self):
+        # Free allows a plain commit on any checkout, from Nix or an override.
+        decision, reason = self.decide("git commit -m m", mainCheckout="free")
+        self.assertEqual(decision, "allow")
+        self.assertIn("mode from nix", reason)
+        self.set_override({"*": "free"})
+        self.assertEqual(self.decide("git commit -m m")[0], "allow")
+        # The allow covers the whole command, so anything but the plainest
+        # form asks instead, and the staging guard still comes first.
+        self.assertEqual(self.decide("git commit -m m && git push")[0], "ask")
+        self.assertEqual(self.decide('git commit -m "$(id)"')[0], "ask")
+        self.assertEqual(self.decide("git commit -am m")[0], "deny")
+
     def test_repository_key_matches_from_a_worktree(self):
         self.set_override({os.path.join(self.repo, ".git"): "deny"})
         self.assertEqual(self.decide("git commit -m m", cwd=self.wt)[0], "deny")
@@ -288,6 +301,8 @@ class Worktrees(Fixture):
             'git commit -m "chore: Add a.txt\n\nCo-Authored-By: Claude <noreply@anthropic.com>"',
             "git commit -m 'a; b > c $(d) `e`'",
             'git commit -m "quote \\" and (parens) & stuff!"',
+            # An apostrophe in a single-quoted message, written as '\''.
+            "git commit -m 'fix: the user'\\''s commit'",
         ):
             with self.subTest(command=command):
                 decision, _ = self.decide(command, cwd=self.wt, claudeWorktrees="free")
@@ -301,6 +316,8 @@ class Worktrees(Fixture):
             "git commit -m x 2>&1",
             "git commit -m 'unterminated",
             "git commit -m x\\;y",
+            "git commit -m x\\'y",
+            "git commit -m 'a'\\'",
             "git -c core.hooksPath=/dev/null commit -m x",
             "git --exec-path=/tmp commit -m x",
             "GIT_EDITOR=true git commit -m x",

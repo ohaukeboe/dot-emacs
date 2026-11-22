@@ -33,7 +33,7 @@ Each value is a plist (:request DIR :process PROC :buffer BUF
 (defvar-local agent-commit-gate--review nil
   "The review plist of this commit buffer, if it was opened for the gate.")
 
-(defconst agent-commit-gate-modes '("ask" "emacs" "deny")
+(defconst agent-commit-gate-modes '("ask" "emacs" "deny" "free")
   "Modes the gate understands.")
 
 ;;;; Result

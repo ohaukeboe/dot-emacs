@@ -38,7 +38,7 @@ fails before it decides, Claude Code sees the original text, the static
 2.1.295 adds `onFailure = "block"`. The chain sets it once the installed
 version supports it.
 
-**The mode is ask, emacs or deny.** It comes from the `AGENT_COMMIT_GATE`
+**The mode is ask, emacs, deny or free.** It comes from the `AGENT_COMMIT_GATE`
 env var at launch, then from an override file that Emacs writes
 (per repository, then `*`), then from Nix. The agent can't change it:
 sandboxed Bash can't write `$HOME`, the Edit and Write tools have deny rules
@@ -62,7 +62,10 @@ makes the command fall back to the mode. So does anything the shell would
 expand, substitute or redirect, judged with quoting: single-quoted text is
 literal, and double-quoted text only expands `$` and backticks. Claude's
 usual message, with a `Co-Authored-By: Name <email>` trailer in double
-quotes, therefore qualifies.
+quotes, therefore qualifies, as does a single-quoted message with an
+apostrophe written as `'\''`. The `free` mode applies the same allow to any
+checkout, so the user can let the agent commit freely in one repository or
+in all of them.
 
 ## Consequences
 

@@ -26,7 +26,7 @@ Rules:
 
 | Command | Effect |
 |---|---|
-| `agent-commit-gate-set` | Prompts for a scope (this repository or `*`) and a mode (`ask` `emacs` `deny` `default`), then writes the override file. `default` removes the key |
+| `agent-commit-gate-set` | Prompts for a scope (this repository or `*`) and a mode (`ask` `emacs` `deny` `free` `default`), then writes the override file. `default` removes the key |
 | `agent-commit-gate-show` | Echoes the effective mode for the current repository and where it comes from |
 
 The override file path is fixed by convention:

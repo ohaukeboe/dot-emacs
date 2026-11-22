@@ -5,7 +5,7 @@ Declared in `workstation/agents/commit-gate.nix`, which replaces `commit-guard.n
 | Option | Type | Default | Meaning |
 |---|---|---|---|
 | `enable` | bool | `true` | Gate on. When it is off, the static ask rule and the plain re-assertion still apply (today's behaviour minus the staging guard) |
-| `mainCheckout` | enum `ask` `emacs` `deny` | `"ask"` | Default mode for commits that are not in an agent worktree |
+| `mainCheckout` | enum `ask` `emacs` `deny` `free` | `"ask"` | Default mode for commits that are not in an agent worktree |
 | `claudeWorktrees` | enum `gated` `free` | `"gated"` | Whether commits in an agent worktree skip the gate |
 | `emacsTimeout` | `ints.between 30 3000` | `1200` | Seconds the gate waits for a review |
 

@@ -8,7 +8,7 @@ let
   cfg = config.agents.commitGate;
 
   # Decides every `git commit` the agent runs: the staging guard, free
-  # commits in the agent's own worktrees, and the ask/emacs/deny mode. Run by
+  # commits in the agent's own worktrees, and the ask/emacs/deny/free mode. Run by
   # the rewriter chain rather than as a hook of its own, because an allow
   # only works when the chain also rewrites the command text (the static ask
   # rule is matched against the rewritten text). See commit-gate.py and
@@ -49,12 +49,14 @@ in
         "ask"
         "emacs"
         "deny"
+        "free"
       ];
       default = "ask";
       description = ''
         Default handling of a commit outside the agent's own worktrees:
         "ask" prompts, "emacs" opens the commit for review in Magit and lets
-        Emacs make it, "deny" refuses. AGENT_COMMIT_GATE at launch, or the
+        Emacs make it, "deny" refuses, "free" allows a plain
+        `git commit -m` without asking. AGENT_COMMIT_GATE at launch, or the
         override file set with `M-x agent-commit-gate-set`, takes precedence.
       '';
     };

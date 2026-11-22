@@ -1380,7 +1380,8 @@ The mode comes from =AGENT_COMMIT_GATE= when the agent session was started
 with it, then from the override file written by =M-x agent-commit-gate-set=
 (for this repository, or for all), then from
 =agents.commitGate.mainCheckout= in Nix.  =M-x agent-commit-gate-show= says
-which override applies here.
+which override applies here.  The =free= mode lets the agent commit
+without asking, as long as the command is a plain =git commit -m=.
 
 #+begin_src elisp
   ;; Autoloaded rather than loaded after Magit: the gate's emacsclient call
