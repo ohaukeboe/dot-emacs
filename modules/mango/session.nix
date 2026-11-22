@@ -24,6 +24,25 @@ let
     clipPick
     ;
 
+  # swayidle's idle timer restarts on every input, and locking is input, so
+  # this blanks the outputs 5 minutes after the lock unless someone touches
+  # the machine. It does nothing while unlocked.
+  blankWhenLocked = pkgs.writeShellApplication {
+    name = "mango-blank-when-locked";
+    runtimeInputs = [
+      pkgs.quickshell
+      pkgs.wlopm
+      pkgs.procps
+      pkgs.coreutils
+    ];
+    text = ''
+      if [[ $(timeout 2 qs -c mango ipc call lock secure 2>/dev/null) == true ]] ||
+        pgrep -x swaylock >/dev/null; then
+        wlopm --off '*'
+      fi
+    '';
+  };
+
 in
 {
   config = mkIf cfg.enable {
@@ -88,6 +107,13 @@ in
         enable = true;
         systemdTargets = [ sessionTarget ];
         events.before-sleep = getExe lockScreen;
+        timeouts = [
+          {
+            timeout = 300;
+            command = getExe blankWhenLocked;
+            resumeCommand = "${getExe pkgs.wlopm} --on '*'";
+          }
+        ];
       };
 
       # `cliphist store` skips what `wl-paste --watch` marks
