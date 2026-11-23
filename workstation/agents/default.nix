@@ -356,6 +356,31 @@ in
     programs.claude-code.settings.autoMemoryEnabled = false;
     programs.claude-code.settings.worktree.baseRef = "head";
 
+    # Let the agent clean up its own worktrees (.claude/worktrees/<name> on
+    # branch worktree-<name>) without the auto-mode classifier or a prompt.
+    # The sandbox already runs `git worktree remove`/`prune` outside it
+    # (agents.sandbox.excludedCommands); these rules decide the permission.
+    # Branch deletion is matched with and without the rtk rewrite, because the
+    # docs do not say which text allow rules see.
+    programs.claude-code.settings.permissions.allow =
+      let
+        branchDelete = [
+          "git branch -d worktree-*"
+          "git branch -D worktree-*"
+        ];
+      in
+      map (c: "Bash(${c})") (
+        [
+          "git worktree remove .claude/worktrees/*"
+          "git worktree remove */.claude/worktrees/*"
+          "git worktree remove --force .claude/worktrees/*"
+          "git worktree remove --force */.claude/worktrees/*"
+          "git worktree prune"
+        ]
+        ++ branchDelete
+        ++ map (c: "rtk ${c}") branchDelete
+      );
+
     # Give the CLAUDE.md git rule teeth. Prompt text only shapes what the
     # agent tries; an ask rule is enforced by the harness, and still prompts
     # inside a sandboxed auto-allow session. The Bash rules are generated from

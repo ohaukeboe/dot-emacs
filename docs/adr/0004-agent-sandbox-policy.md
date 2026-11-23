@@ -80,7 +80,10 @@ already stop commands outliving their session.
   project (`agents.sandbox.excludedCommands`). Claude Code mounts
   `.git/worktrees` read-only, so inside the sandbox they leave stale worktree
   metadata behind, and no policy can lift a protected path. Both only delete
-  worktree checkouts and their metadata.
+  worktree checkouts and their metadata. Permission allow rules in
+  `workstation/agents/default.nix` let the agent run them, and delete the
+  `worktree-*` branch, without asking, but only for its own worktrees under
+  `.claude/worktrees/`.
 - If prompt injection enters the threat model, this ADR is superseded by a
   whole-process boundary.
 - Supersedes the "Keep the Claude Code sandbox off" comment in
