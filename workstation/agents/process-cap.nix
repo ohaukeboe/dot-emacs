@@ -158,7 +158,12 @@ let
       pkgs.jq
     ];
     text = ''
-      helper=${lib.getExe helper}
+      # Called by name, not by store path: the rewritten command is what the
+      # transcript and permission prompts show, and the helper is on PATH
+      # through home.packages. A project PATH could shadow the name, which
+      # escapes only the cap the agent's own command is under.
+      helper=${helper.meta.mainProgram}
+      helper_path=${lib.getExe helper}
       token=${lib.escapeShellArg cfg.optOutToken}
 
       payload=$(cat)
@@ -168,7 +173,7 @@ let
 
       # Never wrap a wrapper.
       case "$command" in
-        "$helper run "*) exit 0 ;;
+        "$helper run "* | "$helper_path run "*) exit 0 ;;
       esac
 
       # The explicit opt-out. A command marked with the leading token runs
