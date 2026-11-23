@@ -8,6 +8,9 @@ docs/adr/0006-agent-commit-gate.md and specs/005-agent-commit-gate/.
 
     agent-commit-gate has-commit   exit 0 when a segment runs `git commit`
     agent-commit-gate decide       print {"decision": ..., "reason": ...}
+    agent-commit-gate merge-check  a PreToolUse hook of its own: deny a merge
+                                   of an agent worktree branch that is not
+                                   `--ff-only` (see merge_problem)
 
 `decide` reads its Nix settings from the JSON file named by
 AGENT_COMMIT_GATE_CONFIG. In order:
@@ -238,6 +241,97 @@ def problem(command):
         if found:
             return f"`git commit` {found}"
     return None
+
+
+# Merge and pull options that take their value as the next word. Their value
+# (a message, say) is not a branch, even when it names one.
+MERGE_VALUE_OPTIONS = {
+    "-m",
+    "-F",
+    "-s",
+    "-X",
+    "--message",
+    "--file",
+    "--strategy",
+    "--strategy-option",
+    "--into-name",
+    "--cleanup",
+}
+# Options that decide how the merge is made; the last one given wins.
+MERGE_STYLE_OPTIONS = {"--ff", "--no-ff", "--ff-only", "--squash", "--no-squash"}
+AGENT_BRANCH = re.compile(r"(?:^|/)worktree-[^/\s]+$")
+
+MERGE_REASON = (
+    "Denied: {found}. Merge the agent's own worktree branches only by "
+    "fast-forward: `git merge --ff-only {branch}`. If that fails, rebase "
+    "the branch onto the active branch inside its worktree first "
+    "(`git rebase <active-branch>`), then merge with `--ff-only` again."
+)
+
+
+def merge_problem(command):
+    """A reason to deny a merge of an agent worktree branch, or None.
+
+    Applies to `git merge` and `git pull` naming a `worktree-<name>` branch
+    (also as `refs/heads/...` or `<remote>/...`). Allowed only when the last
+    merge-style option is `--ff-only`, so the active branch never gets a
+    merge commit or a squash from an agent worktree.
+    """
+    try:
+        parsed = [git_subcommand(s) for s in segments(command)]
+    except ValueError:
+        # Unparseable: judge on the words alone, and deny when unsure.
+        if (
+            re.search(r"\b(merge|pull)\b", command)
+            and "worktree-" in command
+            and "--ff-only" not in command
+        ):
+            return MERGE_REASON.format(
+                found="this command could not be parsed and may merge an "
+                "agent worktree branch without --ff-only",
+                branch="worktree-<name>",
+            )
+        return None
+    for sub, args in filter(None, parsed):
+        if sub not in ("merge", "pull"):
+            continue
+        branches, style = [], None
+        skip = False
+        for word in args:
+            if skip:
+                skip = False
+            elif word in MERGE_VALUE_OPTIONS:
+                skip = True
+            elif word in MERGE_STYLE_OPTIONS:
+                style = word
+            elif word == "--":
+                continue
+            elif not word.startswith("-") and AGENT_BRANCH.search(word):
+                branches.append(word)
+        if branches and style != "--ff-only":
+            how = f"with `{style}`" if style else "without `--ff-only`"
+            return MERGE_REASON.format(
+                found=f"`git {sub}` of {branches[0]} {how}",
+                branch=branches[0],
+            )
+    return None
+
+
+def merge_check(payload):
+    """The merge-check hook output for `payload`, or None to stay silent."""
+    if (payload or {}).get("tool_name") != "Bash":
+        return None
+    command = ((payload or {}).get("tool_input") or {}).get("command") or ""
+    reason = merge_problem(command)
+    if not reason:
+        return None
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": "merge gate: " + reason,
+        }
+    }
 
 
 def has_commit(command):
@@ -720,8 +814,14 @@ def main():
         command = ((payload or {}).get("tool_input") or {}).get("command") or ""
         sys.exit(0 if payload and has_commit(command) else 1)
 
+    if action == "merge-check":
+        out = merge_check(payload)
+        if out:
+            json.dump(out, sys.stdout)
+        sys.exit(0)
+
     if action != "decide":
-        print("usage: agent-commit-gate has-commit|decide", file=sys.stderr)
+        print("usage: agent-commit-gate has-commit|decide|merge-check", file=sys.stderr)
         sys.exit(2)
 
     try:

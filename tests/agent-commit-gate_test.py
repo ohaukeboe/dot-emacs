@@ -130,6 +130,54 @@ class StagingGuard(Fixture):
         self.assertEqual(decision, "deny")
 
 
+class MergeGate(unittest.TestCase):
+    def test_denies_agent_branch_without_ff_only(self):
+        for command in (
+            "git merge worktree-foo",
+            "git merge --no-ff worktree-foo",
+            "git merge --squash worktree-foo",
+            "git merge --ff-only --no-ff worktree-foo",
+            "cd /r && rtk git -C /r merge refs/heads/worktree-foo",
+            "git pull . worktree-foo",
+            "git merge -m 'x' worktree-foo",
+        ):
+            with self.subTest(command=command):
+                self.assertIsNotNone(gate.merge_problem(command))
+
+    def test_allows_ff_only_and_other_branches(self):
+        for command in (
+            "git merge --ff-only worktree-foo",
+            "git merge --no-ff --ff-only worktree-foo",
+            "git -C /r merge --ff-only worktree-foo && git worktree remove x",
+            "git merge feature",
+            "git merge --no-ff -m 'merge worktree-foo' feature",
+            "git merge --abort",
+            "git log worktree-foo",
+            "echo git merge worktree-foo",
+        ):
+            with self.subTest(command=command):
+                self.assertIsNone(gate.merge_problem(command))
+
+    def test_main_prints_deny_or_nothing(self):
+        script = os.path.join(os.path.dirname(gate.__file__), "commit_gate.py")
+        for command, denied in (
+            ("git merge worktree-foo", True),
+            ("git merge --ff-only worktree-foo", False),
+        ):
+            result = subprocess.run(
+                [sys.executable, script, "merge-check"],
+                input=json.dumps(payload(command, "/")),
+                text=True,
+                capture_output=True,
+            )
+            self.assertEqual(result.returncode, 0)
+            if denied:
+                out = json.loads(result.stdout)["hookSpecificOutput"]
+                self.assertEqual(out["permissionDecision"], "deny")
+            else:
+                self.assertEqual(result.stdout, "")
+
+
 class HasCommit(unittest.TestCase):
     def test_detects_commit_segments(self):
         self.assertTrue(gate.has_commit("cd x && git -C y commit -m m"))

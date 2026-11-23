@@ -7,6 +7,7 @@
 - Stage and commit in separate Bash calls. First `git add` exactly the files for the commit. Then run `git commit -m ...` alone: no `-a`, no pathspecs, no `git add` chained in. The user reviews the staged diff at the commit prompt, so the commit must contain exactly what is staged. A hook denies commits that break this.
 - A commit gate decides each `git commit`. It may prompt, refuse, or open the commit in the user's Emacs for review, where the user can edit the message. A denial saying "The user reviewed and committed this in Emacs as <sha>" means the commit is done: report the sha and do not run `git commit` again. "The user did not commit" means nothing was committed: ask before trying again.
 - In a worktree Claude Code created for you (`.claude/worktrees/<name>` on branch `worktree-<name>`) the gate may let a commit through without asking. That is permission to commit your own work there, not to merge or push it.
+- When merging a `worktree-<name>` branch into the active branch, always fast-forward: `git merge --ff-only worktree-<name>`. Never create a merge commit. If the fast-forward fails, rebase the worktree branch onto the active branch inside the worktree first (`git rebase <active-branch>`), then merge with `--ff-only` again.
 
 ## Code navigation
 

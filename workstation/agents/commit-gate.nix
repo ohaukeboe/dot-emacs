@@ -102,6 +102,35 @@ in
   config = lib.mkIf cfg.enable {
     agents.tools.commit-gate.packages = [ gate ];
 
+    # Merges of the agent's worktree branches must fast-forward. A hook of
+    # its own rather than a chain stage: it only denies and never rewrites,
+    # so it cannot race the chain's updatedInput, and a deny from any hook
+    # wins. Python starts only for commands that mention a merge or pull.
+    agents.tools.commit-gate.hooks.PreToolUse = [
+      {
+        matcher = "Bash";
+        hooks = [
+          {
+            type = "command";
+            command = lib.getExe (
+              pkgs.writeShellApplication {
+                name = "agent-merge-gate";
+                text = ''
+                  payload=$(cat)
+                  case $payload in
+                    *merge* | *pull*) ;;
+                    *) exit 0 ;;
+                  esac
+                  ${lib.getExe gate} merge-check <<<"$payload"
+                '';
+              }
+            );
+            timeout = 10;
+          }
+        ];
+      }
+    ];
+
     # The agent must not choose its own mode. Sandboxed Bash cannot write
     # $HOME, but the Edit and Write tools run outside the sandbox. `//` makes
     # the rule path absolute. An Edit rule covers Write too; a Write rule never
