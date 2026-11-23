@@ -160,6 +160,39 @@
             scale = 1.000000;
           }
         ];
+        modules.mango.displays.setups.helsfyr.outputs = [
+          {
+            criteria = "LG Electronics LG ULTRAFINE 201NTPCCW040";
+            enable = true;
+            mode = "3840x2160@60.000000";
+            position = {
+              x = 0;
+              y = 0;
+            };
+            scale = 1.250000;
+          }
+          {
+            criteria = "LG Electronics LG ULTRAFINE 210MASXPQQ78";
+            enable = true;
+            mode = "3840x2160@60.000000";
+            position = {
+              x = 3072;
+              y = 0;
+            };
+            scale = 1.250000;
+          }
+          {
+            criteria = "eDP-1";
+            enable = true;
+            mode = "1920x1200@60.002998";
+            position = {
+              x = 524;
+              y = 1728;
+            };
+            scale = 1.000000;
+          }
+        ];
+
       }
       { modules.secure-boot.measuredBoot.enable = true; }
       { modules.silent-boot.earlyKms.modules = [ "i915" ]; }
