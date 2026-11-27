@@ -10,24 +10,17 @@ Personal NixOS and Home Manager configuration using flakes, supporting multiple 
 sudo nixos-rebuild switch
 #+end_src
 
-~/etc/nixos/flake.nix~ is symlinked to this checkout (see ~system.flakePath~), so
-~nixos-rebuild~ finds the flake on its own and takes the attribute from the
-hostname. The fish alias ~nrs~ does the same. To rebuild a *different* machine,
-or from a checkout that is not the symlinked one, be explicit:
+~/etc/nixos/flake.nix~ is symlinked to this checkout (see ~system.flakePath~), so ~nixos-rebuild~ finds the flake on its own and takes the attribute from the hostname. The fish alias ~nrs~ does the same. To rebuild a *different* machine, or from a checkout that is not the symlinked one, be explicit:
 
 #+begin_src sh
 sudo nixos-rebuild switch --flake .#<hostname>
 #+end_src
 
-Where ~<hostname>~ is one of the machines in [[file:machines/machines.nix][machines/machines.nix]]: ~x13-laptop~,
-~work-laptop~, or ~desktop~.
+Where ~<hostname>~ is one of the machines in [[file:machines/machines.nix][machines/machines.nix]]: ~x13-laptop~, ~work-laptop~, or ~desktop~.
 
 ** New Machine
 
-Installing on fresh hardware is a separate procedure — see
-[[file:docs/new-machine.md][docs/new-machine.md]]. Two of its steps (putting firmware into Secure Boot
-Setup Mode, and setting a password before the first reboot) leave you with an
-unusable install if skipped, so read it through first.
+Installing on fresh hardware is a separate procedure — see [[file:docs/new-machine.md][docs/new-machine.md]]. Two of its steps (putting firmware into Secure Boot Setup Mode, and setting a password before the first reboot) leave you with an unusable install if skipped, so read it through first.
 
 * Features
 
@@ -41,23 +34,18 @@ unusable install if skipped, so read it through first.
 
 * Boot
 
-The ~silent-boot~ module (on by default) shows an animated NixOS Plymouth splash
-([[https://github.com/SergioRibera/s4rchiso-plymouth-theme][mac-style]] theme), hides kernel output, and hides the systemd-boot menu.
+The ~silent-boot~ module (on by default) shows an animated NixOS Plymouth splash ([[https://github.com/SergioRibera/s4rchiso-plymouth-theme][mac-style]] theme), hides kernel output, and hides the systemd-boot menu.
 
 - Show the boot menu: hold (or repeatedly tap) =Space= while the machine powers on.
 - Show it on the next boot only, from a running system: ~sudo bootctl set-timeout-oneshot 10~
 - Show boot messages behind the splash: press =Esc= during boot.
-- Disable for a machine: ~{ modules.silent-boot.enable = false; }~ in ~machines/machines.nix~,
-  or only the early GPU driver loading with ~modules.silent-boot.earlyKms.enable = false~.
+- Disable for a machine: ~{ modules.silent-boot.enable = false; }~ in ~machines/machines.nix~, or only the early GPU driver loading with ~modules.silent-boot.earlyKms.enable = false~.
 
 * Gaming
 
-~modules.gaming~ (enabled on ~desktop~) sets up Steam with GE-Proton, Proton's Wayland driver and
-GameMode. Design: ~specs/008-game-performance-tuning/~. Measured decisions (stock kernel, GPU power
-limit 330 W with a -50 mV undervolt, GameMode for Factorio): ~docs/gaming-benchmarks.md~.
+~modules.gaming~ (enabled on ~desktop~) sets up Steam with GE-Proton, Proton's Wayland driver and GameMode. Design: ~specs/008-game-performance-tuning/~. Measured decisions (stock kernel, GPU power limit 330 W with a -50 mV undervolt, GameMode for Factorio): ~docs/gaming-benchmarks.md~.
 
-- GameMode for a game: set its launch options to ~gamemoderun %command%~ (a global preload breaks
-  the Steam client).
+- GameMode for a game: set its launch options to ~gamemoderun %command%~ (a global preload breaks the Steam client).
 - Compare Zen against stock again: set ~boot.kernelPackages~ back to Zen and turn on
   ~modules.gaming.kernelComparison.enable~; it adds a boot entry tagged ~stock~.
 
@@ -75,10 +63,7 @@ game-bench run -w cyberpunk -v "baseline gamemode scx-bpfland" -n 5
 game-bench compare ~/.local/share/game-bench/<session> ~/.local/share/game-bench/<session>
 #+end_src
 
-Setup and the full procedure: ~specs/008-game-performance-tuning/quickstart.md~. Results and
-decisions: ~docs/gaming-benchmarks.md~. Each Proton run logs GPU power, clocks and temperatures to
-~gpu.csv~ in its run directory. The undervolt variants (~uv-*~) need
-~modules.gaming.gpu.overdrive.enable~ (ADR 0010).
+Setup and the full procedure: ~specs/008-game-performance-tuning/quickstart.md~. Results and decisions: ~docs/gaming-benchmarks.md~. Each Proton run logs GPU power, clocks and temperatures to ~gpu.csv~ in its run directory. The undervolt variants (~uv-*~) need ~modules.gaming.gpu.overdrive.enable~ (ADR 0010).
 
 * Some Tips
 
